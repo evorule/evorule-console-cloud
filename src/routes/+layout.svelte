@@ -24,6 +24,8 @@
 	} from '@evorule/console';
 	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
 	import { netConfig, toggleNetMode } from '$lib/config/net-config';
+	import { llmConfig, isLlmConfigured } from '$lib/config/llm-config';
+	import { CloudLlmAssistant } from '$lib/assistant/cloud-llm-assistant';
 
 	let { children } = $props();
 
@@ -44,8 +46,29 @@
 		cloudBackend.reconfigure({ mode: cfg.mode, remoteBaseUrl: cfg.remoteBaseUrl });
 	});
 
-	// === 注入 assistant(Phase 1: null 扩展槽;Phase 3-4: 换 CloudLlmAssistant) ===
-	provideAssistant(null);
+	// === 注入 LLM assistant(Phase 3+4: 条件注入 CloudLlmAssistant) ===
+	// 配置完备(enabled + endpoint + key + model)→ 注入,内核 LLM 按钮渲染
+	// 配置不完备 → 注入 null,行为与内核一致(LLM 按钮不渲染)
+	//
+	// 重要:Svelte 的 setContext 必须在组件初始化期间同步调用,
+	//       不能放在 $effect 内($effect 在初始化之后运行,setContext 无效)。
+	//       因此这里同步读取 llmConfig 当前值并注入。
+	//
+	// 配置变更处理:
+	//   - 大众版设置面板修改 llmConfig 后,提示用户刷新页面以重新注入
+	//   - 或用户切换 tab 触发组件重新挂载(视图层)
+	//   - 这种"刷新生效"模式与基础版的"重启服务器生效"心智一致
+	const initialLlm = get(llmConfig);
+	if (isLlmConfigured(initialLlm)) {
+		const assistant = new CloudLlmAssistant(initialLlm);
+		provideAssistant(assistant);
+	} else {
+		provideAssistant(null);
+	}
+
+	// llmConfig 后续变化(运行时切换)无法重注入 context,
+	// 但 CloudLlmAssistant 内部已防御性拷贝配置,所以这种"刷新生效"模式是预期的。
+	// 设置面板在保存配置后会调用 location.reload() 强制重注入。
 
 	// === 连接状态 ===
 	let connected = $state<boolean | null>(null);
