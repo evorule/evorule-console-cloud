@@ -1,18 +1,18 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- evorule-console-cloud 根布局 — 顶部导航 + backend 注入 + assistant 注入(null) + 主题 -->
+<!-- evorule-console-cloud 根布局 — 顶部导航 + backend 注入 + assistant 注入(null) + 主题 + 联网切换 -->
 <!--
-  Phase 1 最小验证:
-    - 注入 HttpBackend(内核默认,Phase 2 换 CloudHttpBackend)
-    - 注入 assistant = null(扩展槽为空,LLM 按钮不渲染;Phase 3-4 换 CloudLlmAssistant)
-    - 渲染 5 视图 tab(复用内核 VIEW_LIST)
-    - 主题切换 + 视图状态持久化(localStorage)
-    - 连接徽标反映 evorule-server 是否在线
+  Phase 2: 用 CloudHttpBackend 替代内核 HttpBackend
+    - 支持联网/离线双模式(netConfig store)
+    - reconfigure 时实例不变,视图自动用新 baseUrl
+  Phase 3-4: assistant 从 null 换成 CloudLlmAssistant
+  Phase 6: topbar 加正式"设置"入口(替换临时联网按钮)
 -->
 
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import {
 		currentView,
 		setView,
@@ -20,28 +20,41 @@
 		VIEW_LIST,
 		provideBackend,
 		provideAssistant,
-		CONSOLE_VERSION,
-		type ExecutionBackend
+		CONSOLE_VERSION
 	} from '@evorule/console';
+	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
+	import { netConfig, toggleNetMode } from '$lib/config/net-config';
 
 	let { children } = $props();
 
-	// 注入 backend — Phase 1 先用内核默认 HttpBackend(127.0.0.1:18080)
-	// Phase 2 换 CloudHttpBackend(baseUrl 可配,支持远程 server)
-	const backend = provideBackend() as ExecutionBackend;
+	// === 注入 backend(Phase 2: CloudHttpBackend 双模式) ===
+	// 取 netConfig 初始值,创建 CloudHttpBackend
+	const initialNet = get(netConfig);
+	const cloudBackend = new CloudHttpBackend({
+		mode: initialNet.mode,
+		remoteBaseUrl: initialNet.remoteBaseUrl
+	});
+	// provideBackend 注入(返回 ExecutionBackend 接口类型,视图用)
+	// cloudBackend 变量保留用于 reconfigure(reconfigure 是 CloudHttpBackend 特有方法)
+	const backend = provideBackend(cloudBackend);
 
-	// 注入 assistant = null — 扩展槽为空,LLM 按钮不渲染(与 evorule-console 内核行为一致)
-	// Phase 3-4 注入 CloudLlmAssistant 后,LLM 按钮才渲染
+	// 监听 netConfig 变化,reconfigure backend(实例不变,视图自动用新 baseUrl)
+	$effect(() => {
+		const cfg = $netConfig;
+		cloudBackend.reconfigure({ mode: cfg.mode, remoteBaseUrl: cfg.remoteBaseUrl });
+	});
+
+	// === 注入 assistant(Phase 1: null 扩展槽;Phase 3-4: 换 CloudLlmAssistant) ===
 	provideAssistant(null);
 
-	// 连接状态:null=检测中, true=已连接, false=未连接
+	// === 连接状态 ===
 	let connected = $state<boolean | null>(null);
 
-	// 主题(light/dark)
+	// === 主题 ===
 	let theme = $state<'light' | 'dark'>('light');
 
 	onMount(() => {
-		// === 主题恢复 ===
+		// 主题恢复
 		const savedTheme = localStorage.getItem('theme');
 		if (savedTheme === 'dark' || savedTheme === 'light') {
 			theme = savedTheme;
@@ -50,10 +63,10 @@
 		}
 		document.documentElement.setAttribute('data-theme', theme);
 
-		// === 视图恢复 ===
+		// 视图恢复
 		restoreView();
 
-		// === backend 健康检查 ===
+		// backend 健康检查(反映当前 baseUrl 是否在线)
 		backend
 			.health()
 			.then((ok) => {
@@ -94,13 +107,28 @@
 		</nav>
 
 		<div class="topbar-actions">
+			<!-- 临时联网切换按钮(Phase 6 换正式 Settings 入口) -->
+			<button
+				class="net-toggle"
+				class:online={$netConfig.mode === 'online'}
+				class:offline={$netConfig.mode === 'offline'}
+				onclick={toggleNetMode}
+				title={$netConfig.mode === 'online'
+					? `联网模式 · {$netConfig.remoteBaseUrl} · 点击切回本地`
+					: '离线模式 · 127.0.0.1:18080 · 点击切到联网'}
+				aria-label="切换联网/离线模式"
+			>
+				<span class="net-icon">{$netConfig.mode === 'online' ? '☁️' : '🖥️'}</span>
+				<span class="net-text">{$netConfig.mode === 'online' ? '联网' : '本地'}</span>
+			</button>
+
 			<span
 				class="conn-badge"
 				class:online={connected === true}
 				class:offline={connected === false}
 				class:checking={connected === null}
 				title={connected === false
-					? '需要 evorule-server 跑在 127.0.0.1:18080(Phase 2 后可配远程)'
+					? 'evorule-server 未响应(检查地址或启动服务器)'
 					: 'evorule-server 连接状态'}
 			>
 				<span class="conn-dot"></span>
@@ -211,6 +239,36 @@
 		gap: var(--spacing-md);
 		flex-shrink: 0;
 	}
+
+	/* 临时联网切换按钮 */
+	.net-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		background: transparent;
+		color: var(--color-gray-300);
+		border: 1px solid var(--color-gray-700);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		cursor: pointer;
+		font-size: var(--text-xs);
+		transition: all var(--transition-fast);
+	}
+	.net-toggle:hover {
+		background: rgba(255, 255, 255, 0.08);
+		color: #fff;
+	}
+	.net-toggle.online {
+		border-color: var(--color-info);
+		color: var(--color-info);
+	}
+	.net-toggle.offline {
+		border-color: var(--color-gray-600);
+	}
+	.net-icon {
+		font-size: var(--text-sm);
+	}
+
 	.conn-badge {
 		display: inline-flex;
 		align-items: center;
@@ -292,6 +350,9 @@
 		}
 		.nav-tab.active .tab-label {
 			display: inline;
+		}
+		.net-toggle .net-text {
+			display: none;
 		}
 	}
 </style>
