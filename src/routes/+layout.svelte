@@ -22,12 +22,31 @@
 		provideAssistant,
 		CONSOLE_VERSION
 	} from '@evorule/console';
+	import type { ViewId } from '@evorule/console';
 	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
 	import { netConfig, toggleNetMode } from '$lib/config/net-config';
 	import { llmConfig, isLlmConfigured } from '$lib/config/llm-config';
 	import { CloudLlmAssistant } from '$lib/assistant/cloud-llm-assistant';
+	import Settings from '$lib/views/Settings/Settings.svelte';
 
 	let { children } = $props();
+
+	// === 设置入口(Phase 6: 不修改内核 VIEW_LIST,大众版独立管理) ===
+	let showSettings = $state(false);
+
+	function openSettings() {
+		showSettings = true;
+	}
+
+	function closeSettings() {
+		showSettings = false;
+	}
+
+	// 用户点击 nav-tab 时,关闭设置(回到视图模式)
+	function handleNavClick(viewId: ViewId) {
+		showSettings = false;
+		setView(viewId);
+	}
 
 	// === 注入 backend(Phase 2: CloudHttpBackend 双模式) ===
 	// 取 netConfig 初始值,创建 CloudHttpBackend
@@ -118,19 +137,30 @@
 			{#each VIEW_LIST as view (view.id)}
 				<button
 					class="nav-tab"
-					class:active={$currentView === view.id}
-					onclick={() => setView(view.id)}
+					class:active={$currentView === view.id && !showSettings}
+					onclick={() => handleNavClick(view.id)}
 					title={view.essence}
-					aria-pressed={$currentView === view.id}
+					aria-pressed={$currentView === view.id && !showSettings}
 				>
 					<span class="tab-icon">{view.icon}</span>
 					<span class="tab-label">{view.label}</span>
 				</button>
 			{/each}
+			<!-- 设置入口(Phase 6: 大众版独有,不修改内核 VIEW_LIST) -->
+			<button
+				class="nav-tab settings-tab"
+				class:active={showSettings}
+				onclick={openSettings}
+				title="设置(联网模式 + LLM 配置)"
+				aria-pressed={showSettings}
+			>
+				<span class="tab-icon">⚙️</span>
+				<span class="tab-label">设置</span>
+			</button>
 		</nav>
 
 		<div class="topbar-actions">
-			<!-- 临时联网切换按钮(Phase 6 换正式 Settings 入口) -->
+			<!-- 联网状态徽标(快捷切换,正式配置在 Settings 面板) -->
 			<button
 				class="net-toggle"
 				class:online={$netConfig.mode === 'online'}
@@ -138,7 +168,7 @@
 				onclick={toggleNetMode}
 				title={$netConfig.mode === 'online'
 					? `联网模式 · {$netConfig.remoteBaseUrl} · 点击切回本地`
-					: '离线模式 · 127.0.0.1:18080 · 点击切到联网'}
+					: '离线模式 · 127.0.0.1:18080 · 点击切到联网(详细配置在设置面板)'}
 				aria-label="切换联网/离线模式"
 			>
 				<span class="net-icon">{$netConfig.mode === 'online' ? '☁️' : '🖥️'}</span>
@@ -172,8 +202,12 @@
 	</header>
 
 	<main class="main-content">
-		{@render children()}
-	</main>
+			{#if showSettings}
+				<Settings onclose={closeSettings} />
+			{:else}
+				{@render children()}
+			{/if}
+		</main>
 </div>
 
 <style>
@@ -197,6 +231,13 @@
 		top: 0;
 		z-index: 10;
 		flex-wrap: wrap;
+	}
+
+	/* 设置 tab 视觉区分(大众版独有,不属于内核 5 视图) */
+	.nav-tab.settings-tab {
+		border-left: 1px solid var(--color-gray-700);
+		margin-left: var(--spacing-sm);
+		padding-left: var(--spacing-md);
 	}
 
 	.brand {
