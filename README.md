@@ -12,8 +12,9 @@
 `evorule-console-cloud` 在 [`@evorule/console`](https://gitee.com/evo-rule-lab/evorule-console) 内核基础上扩展:
 
 - ☁️ **联网**:可连接远程 evorule-server(非仅本地 loopback)
-- ✨ **云 LLM 辅助**:OpenAI 兼容协议,多厂商预设(通义/智谱/OpenAI),辅助生成规则草案/解释规则/生成测试输入
+- ✨ **云 LLM 辅助**:OpenAI 兼容协议,多厂商预设(智谱/通义/DeepSeek/OpenAI),辅助生成规则草案/解释规则/生成测试输入
 - 🎯 **用户审核确认**:LLM 只生成草案,最终规则是用户审核的 JSON,不破坏 evorule「确定性执行」基调
+- 🖥️ **本地 LLM(L2)**:规划中,付费扩展,详见 [L2 规划文档](./docs/L2_LOCAL_LLM_PLAN.md)
 
 > **LLM 是辅助层,不参与确定性执行** — 执行链路完全不经过 LLM,规则即数据,用户审核才生效。
 
@@ -61,10 +62,11 @@ npm run dev    # 访问 http://localhost:5174
 ## 验证
 
 ```bash
-npm run verify   # vitest:验证 @evorule/console 导入通路(CONSOLE_VERSION=0.1.1 + 所有导出可用)
-npm run check     # svelte-check:0 errors / 0 warnings
-npm run test      # playwright:e2e(Phase 8 补充)
-npm run build     # adapter-static:产出静态文件到 build/
+npm run verify     # vitest:验证 @evorule/console 导入通路(CONSOLE_VERSION=0.1.1 + 所有导出可用)
+npm run check      # svelte-check:0 errors / 0 warnings
+npm run test:unit  # vitest:单元测试(assistant + backend + types)
+npm run test       # playwright:e2e(navigation + assistant-flow + settings-flow)
+npm run build      # adapter-static:产出静态文件到 build/
 ```
 
 ---
@@ -85,15 +87,24 @@ npm run build     # adapter-static:产出静态文件到 build/
 evorule-console-cloud/
 ├── src/
 │   ├── routes/
-│   │   ├── +layout.svelte    # 根布局:导航 + backend 注入 + assistant 注入(null) + 主题
-│   │   └── +page.svelte      # 视图容器:根据 currentView 渲染 5 视图
-│   ├── app.css               # 设计令牌(与内核对齐)
-│   └── verify.test.ts        # 导入验证(vitest)
-├── static/favicon.svg
-├── tests/                    # playwright e2e(Phase 8 补充)
-├── package.json              # @evorule/console git URL 依赖
-├── svelte.config.js          # adapter-static
-├── vite.config.ts            # port 5174
+│   │   ├── +layout.svelte     # 根布局:导航 6 tab + backend + assistant + 主题 + 设置入口
+│   │   └── +page.svelte       # 视图容器:根据 currentView 渲染 5 视图
+│   ├── lib/
+│   │   ├── backend/           # CloudHttpBackend(联网/离线双模式)
+│   │   ├── assistant/         # CloudLlmAssistant + llm-fetch + prompts + types
+│   │   ├── config/            # net-config + llm-config + llm-presets(厂商预设)
+│   │   ├── stores/            # assistant-ui(dialog 状态)
+│   │   └── views/
+│   │       ├── Assistant/    # DraftRuleDialog / ExplainRuleDialog / GenerateInputDialog
+│   │       └── Settings/      # Settings(联网+LLM 两 tab)/ LlmSettings
+│   ├── app.css                # 设计令牌(与内核对齐)
+│   └── verify.test.ts         # 导入验证(vitest)
+├── tests/                     # playwright e2e(navigation + assistant-flow + settings-flow)
+├── docs/
+│   └── L2_LOCAL_LLM_PLAN.md   # L2 本地 LLM 规划(v0.2.0+ 付费扩展)
+├── package.json               # @evorule/console 依赖(开发期 file:,发版 git URL)
+├── svelte.config.js           # adapter-static
+├── vite.config.ts             # port 5174
 └── README.md(本文件)
 ```
 
