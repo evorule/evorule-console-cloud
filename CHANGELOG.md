@@ -13,6 +13,7 @@
 ### 新增
 
 #### Phase 1：项目骨架 + 依赖内核
+
 - 基于 SvelteKit 5 + Svelte 5（runes 模式）建仓
 - 经 `@evorule/console` v0.1.1 依赖（开发期 `file:` 路径，发版后切 git URL）
 - 5 视图渲染（规则库 / 执行台 / 状态 / 审计 / 时间旅行）
@@ -21,6 +22,7 @@
 - `verify.test.ts`：内核导入通路验证（CONSOLE_VERSION + 所有导出）
 
 #### Phase 2：联网扩展（CloudHttpBackend）
+
 - `CloudHttpBackend`：继承内核 HttpBackend，支持 `mode: 'online' | 'offline'` 双模式
 - `reconfigure()` 方法：切换 baseUrl 时实例不变，视图自动用新地址
 - `net-config` store：联网模式 + 远程 URL + localStorage 持久化
@@ -28,6 +30,7 @@
 - 联网配置面板（在 Settings 内）
 
 #### Phase 3+4：LLM 抽象 + CloudLlmAssistant
+
 - `LlmAssistant` 接口：继承内核 `AssistantProvider` 三方法 + 大众版独有 `isConfigured()` + `testConnection()`
 - `CloudLlmConfig` 类型：enabled + provider + apiEndpoint + apiKey + model
 - `llm-config` store：localStorage 持久化
@@ -42,6 +45,7 @@
 - 单测：mock fetch 三方法 happy path + 各错误场景 + apiKey 不泄露断言
 
 #### Phase 5：LLM 三用途 UI
+
 - `DraftRuleDialog`：自然语言 → 草案 → 校验 → 采用/放弃
 - `ExplainRuleDialog`：JSON 规则 → 自然语言说明（只读）
 - `GenerateInputDialog`：自然语言 → 测试输入 JSON → 采用并复制到剪贴板
@@ -51,6 +55,7 @@
 - e2e：mock LLM API 完整流程（assistant-flow.spec.ts）
 
 #### Phase 6：LLM 配置面板
+
 - `llm-presets.ts`：6 个厂商预设
   - 智谱 GLM（推荐，有免费额度，`/v4/chat/completions`）
   - 通义千问（阿里云，`/compatible-mode/v1/chat/completions`）
@@ -73,6 +78,7 @@
 - e2e：21 项设置面板测试（settings-flow.spec.ts）
 
 #### Phase 7：L2 本地 LLM 规划文档
+
 - `docs/L2_LOCAL_LLM_PLAN.md`：L0/L1/L2 三层矩阵 + LocalLlmAssistant 接口设计 + Ollama 集成方案 + GPU 配置面板设计 + 实施时机 + 与高级版边界 + 安全考量 + 验收标准
 - README 标注 L2 为付费扩展规划（v0.2.0+）
 
@@ -91,6 +97,35 @@
   - settings-flow.spec.ts：21 项（联网 + LLM 配置 + apiKey 安全 + 持久化）
 - `npm run build`：adapter-static 产出 `build/` 静态文件
 
+### 全流程生产模式跑通里程碑（2026-08-03）
+
+**evorule-console-cloud 第一次全流程生产模式跑通** — `npm run build` + `npm run preview` + 真实 LLM API 三用途 + evorule-server 真连接 + 真提交命令到 reactor + 主题切换 + 持久化，全部 8/8 测试步骤通过。
+
+| #   | 测试步骤                                                   | 结果 | 关键数据                                                               |
+| --- | ---------------------------------------------------------- | ---- | ---------------------------------------------------------------------- |
+| 1   | 读 LLM key + 启 chromium                                   | ✅   | key 35 字符                                                            |
+| 2   | 注入 llm-config + net-config + 初始加载                    | ✅   | conn=已连接, AI 按钮=2                                                 |
+| 3   | 5 视图导航（规则库/执行台/状态/审计/时间旅行）             | ✅   | 5 视图全加载                                                           |
+| 4   | DraftRuleDialog 真实调 LLM 生成规则                        | ✅   | 1.8s / 989 字符 / RuleValidator confidence=0.7（高置信档）/ G1-G7 通过 |
+| 5   | ExplainRuleDialog 真实调 LLM 解释规则                      | ✅   | 1.9s / 141 字符                                                        |
+| 6   | GenerateInputDialog 真实调 LLM 生成测试输入 + 复制到剪贴板 | ✅   | 1.1s / 103 字符 / 剪贴板写入成功                                       |
+| 7   | 真提交命令到 evorule-server reactor                        | ✅   | 提交 `{"type":"login",...}`                                            |
+| 8   | 状态/审计 + 主题切换 + 持久化                              | ✅   | light→dark→reload→dark 持久化通过                                      |
+
+**TOTAL: 8/8 测试步骤通过，无浏览器控制台错误。**
+
+### 踩坑与修复（全流程测试发现）
+
+| 坑                         | 性质                                                        | 修复                                                                             |
+| -------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **CORS 跨域阻断**          | evorule-server 默认严格同源，跨端口被拒                     | evorule-server 启动加 `--allowed-origins`；README 补充启动顺序说明               |
+| **vite preview host 对齐** | `localhost` 与 `127.0.0.1` 是不同 origin                    | `net-config` 默认值改为 `http://localhost:18080`（与 vite dev/preview 默认对齐） |
+| **空 sessions**            | evorule-server 启动后 sessions 为空，执行台 UI 不显示提交区 | 手动 `POST /api/sessions` 创建初始 session；README 补充说明                      |
+
+### 发版治理文件齐全
+
+11 项治理文件全部就绪：LICENSE / NOTICE.md / AUTHORS.md / CODE_OF_CONDUCT.md / CONTRIBUTING.md / SECURITY.md / TRADEMARK.md / CLA-individual.md / DUAL_LICENSE.md / COMMERCIAL_LICENSE.md / FREE_COMMERCIAL_LICENSE.md。详见 [RELEASE_PROCESS.md](./RELEASE_PROCESS.md)。
+
 ### 架构验证
 
 #### LLM 不阻塞执行链路
@@ -98,6 +133,7 @@
 关键约束：**LLM 是辅助层，不参与确定性执行**。
 
 验证依据：
+
 1. `ExecutionPad.svelte` `handleSubmit()` 调用 `submitCommand(backend, instruction)`，仅使用 `backend`（CloudHttpBackend），**不调用 LLM**
 2. AI 按钮仅在用户显式点击 + Dialog 确认后才调用 LLM
 3. LLM 调用失败时降级为"用户手动编辑 JSON"，不阻塞规则引擎工作
@@ -106,6 +142,7 @@
 #### 内核零修改
 
 大众版不修改内核 `@evorule/console` 任何代码：
+
 - 通过 `provideAssistant()` 扩展槽注入 LLM
 - 通过 `provideBackend()` 注入 CloudHttpBackend
 - 内核 `VIEW_LIST` 不变（5 视图），设置 tab 是大众版独有
@@ -156,6 +193,6 @@ git push origin v0.1.0
 
 ## 修订记录
 
-| 日期       | 修订内容                              |
-| ---------- | ------------------------------------- |
+| 日期       | 修订内容                                |
+| ---------- | --------------------------------------- |
 | 2026-08-03 | 初版 CHANGELOG，记录 Phase 1-7 开发进度 |

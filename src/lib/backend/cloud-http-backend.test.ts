@@ -40,7 +40,7 @@ describe('CloudHttpBackend 默认配置', () => {
 		expect(b.mode).toBe('offline');
 	});
 
-	test('默认 baseUrl=localBaseUrl(127.0.0.1:18080)', () => {
+	test('默认 baseUrl=localBaseUrl(localhost:18080)', () => {
 		const b = new CloudHttpBackend();
 		expect(b.baseUrl).toBe(DEFAULT_LOCAL_BASE_URL);
 	});
