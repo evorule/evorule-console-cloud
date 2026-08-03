@@ -199,6 +199,8 @@ test(e2e): add apiKey security verification case
 
 ## 🧪 测试要求
 
+> **完整测试指南**（环境准备 → 4 种测试 → 联调 → 排查）见 [docs/TESTING.md](./docs/TESTING.md)。本节仅列贡献者的额外要求。
+
 ### 单元测试（vitest）
 
 - 新功能必须有对应单元测试
