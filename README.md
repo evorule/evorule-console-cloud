@@ -114,6 +114,28 @@ npm run preview -- --host 127.0.0.1 --port 4173
 
 ---
 
+## 测试
+
+完整的测试指南（环境准备 → 4 种自动化测试 → evorule-server 联调 → LLM 联调 → 排查常见问题）见 **[docs/TESTING.md](./docs/TESTING.md)**。
+
+**快速跑全测试**（提 PR 前必须全绿）：
+
+```bash
+npm run check && npx vitest run && npm run test && npm run build
+```
+
+| 测试 | 命令 | 当前通过数 |
+| --- | --- | --- |
+| 类型检查 | `npm run check` | 0 errors / 0 warnings |
+| 单元测试 | `npx vitest run` | 82/82 |
+| e2e 测试 | `npm run test` | 47/47 |
+| 生产构建 | `npm run build` | ✔ build/ |
+
+> **e2e 首次跑需先装浏览器**：`npx playwright install chromium`
+> **e2e 为什么 `workers: 1`？** 见 [TESTING.md §4.3](./docs/TESTING.md#43-为什么-workers-1)
+
+---
+
 ## 验证
 
 ```bash
