@@ -3,7 +3,7 @@
 
 # evorule-console-cloud
 
-> evorule 大众版 — **内核 + 联网 + 云 LLM** 的规则引擎面板,面向大众/中小企业,开箱即用
+> evorule 规则引擎面板 · **联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM）
 
 [![version](https://img.shields.io/badge/version-0.0.1--dev-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
@@ -22,13 +22,15 @@
 
 ## 定位
 
-| 层级                      | 仓   | 定位                        | LLM               | 网络               | 依赖                     |
-| ------------------------- | ---- | --------------------------- | ----------------- | ------------------ | ------------------------ |
-| evorule-console(内核)    | 独立 | 灵魂产品内核,无智能只有执行 | ❌ 无             | ❌ 无(仅本地 HTTP) | 0(消费 evorule 核心)     |
-| **evorule-console-cloud(本仓)** | 独立 | 在内核基础上扩展          | ☁️ 云 LLM(默认开) | ✅ 联网            | `npm i @evorule/console` |
-| 高级版                    | 独立 | 保密行业定制                | 🖥️ 本地 GPU LLM   | ✅ 联网/Tauri      | `npm i @evorule/console` |
+evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
 
-三仓各自独立 semver,通过 npm 依赖松绑。
+| 层级 | 仓 | 定位 | LLM | 网络 | 依赖 |
+| --- | --- | --- | --- | --- | --- |
+| evorule-console（内核） | 独立 | 规则引擎面板内核，无智能只有执行 | ❌ 无 | ❌ 无（仅本地 HTTP） | 0（消费 evorule 核心） |
+| **evorule-console-cloud（本仓）** | 独立 | 二次开发者专业起点 | ☁️ 云 LLM | ✅ 联网 | `npm i @evorule/console` |
+| 高级版 | 独立 | 保密行业定制 | 🖥️ 本地 GPU LLM | ✅ 联网/Tauri | `npm i @evorule/console` |
+
+三仓各自独立 semver,通过 npm 依赖松绑。**起点必须一致，功能各不相同。**
 
 ---
 
@@ -55,7 +57,60 @@ npm install
 npm run dev    # 访问 http://localhost:5174
 ```
 
-> 规则库视图不需要后端,可离线试用;执行台/状态/审计/时间旅行需要 evorule-server 跑在 `127.0.0.1:18080`(Phase 2 后可配远程)。
+> 规则库视图不需要后端,可离线试用;执行台/状态/审计/时间旅行需要 evorule-server 跑在 `localhost:18080`(联网模式可配远程)。
+
+---
+
+## 本地开发（含 evorule-server 联调）
+
+完整跑通执行台/状态/审计等视图需启动 evorule-server。**注意 CORS 配置**（关键踩坑）：
+
+### 启动顺序
+
+1. **启动 evorule-server**（带 CORS 允许大众版 dev/preview 源）:
+
+   ```bash
+   cd D:\evorule-server
+   target\release\evorule-server.exe --addr 127.0.0.1:18080 \
+     --allowed-origins "http://localhost:5174,http://localhost:4173,http://127.0.0.1:5174,http://127.0.0.1:4173"
+   ```
+
+2. **启动大众版 dev server**:
+
+   ```bash
+   cd D:\evorule-console-cloud
+   npm run dev    # http://localhost:5174
+   ```
+
+3. **创建初始 session**（让执行台 UI 显示提交区）:
+
+   ```bash
+   curl -X POST http://127.0.0.1:18080/api/sessions
+   # → {"message":"Session created","session_id":1}
+   ```
+
+4. **浏览器打开**: `http://localhost:5174/`
+
+### 生产预览模式
+
+```bash
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4173
+```
+
+### 已知坑（必读）
+
+| 坑 | 现象 | 解决 |
+| --- | --- | --- |
+| **CORS 跨域** | evorule-server 默认严格同源，跨端口被拒 | 启动时加 `--allowed-origins` |
+| **host 对齐** | `localhost` 与 `127.0.0.1` 是不同 origin | 大众版 `net-config` 默认 `localhost:18080`（与 vite dev 对齐）；preview 用 `--host 127.0.0.1` 时需对应改 net-config |
+| **空 sessions** | evorule-server 启动后 sessions 为空，执行台 UI 不显示提交区 | 手动 `POST /api/sessions` 创建初始 session |
+
+### LLM 配置
+
+大众版 LLM apiKey **只**走浏览器 localStorage（`evorule-console-cloud:llm-config`），不读 .env。在设置面板 → LLM 配置 tab 中填写。
+
+推荐使用**智谱 GLM-4-Flash**（有免费额度）：在 [智谱开放平台](https://open.bigmodel.cn/usercenter/apikeys) 获取 apiKey。
 
 ---
 
@@ -110,9 +165,23 @@ evorule-console-cloud/
 
 ---
 
-## 许可
+## 许可与治理
 
-**AGPL-3.0-or-later** — 详见 [LICENSE](./LICENSE)。
+**AGPL-3.0-or-later** + 商业双许可 — 详见 [LICENSE](./LICENSE) / [DUAL_LICENSE.md](./DUAL_LICENSE.md)。
+
+| 文件 | 说明 |
+| --- | --- |
+| [NOTICE.md](./NOTICE.md) | 声明（与 evorule-console 内核的关系） |
+| [CHANGELOG.md](./CHANGELOG.md) | 变更记录 |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南（含核心原则 + 禁止事项） |
+| [SECURITY.md](./SECURITY.md) | 安全政策（含 LLM apiKey 安全设计） |
+| [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) | 发布流程 |
+| [AUTHORS.md](./AUTHORS.md) | 作者 |
+| [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | 贡献者公约 |
+| [TRADEMARK.md](./TRADEMARK.md) | 商标政策 |
+| [CLA-individual.md](./CLA-individual.md) | 个人贡献者许可协议 |
+| [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md) | 商业许可 |
+| [FREE_COMMERCIAL_LICENSE.md](./FREE_COMMERCIAL_LICENSE.md) | 免费商业豁免资格 |
 
 ---
 
