@@ -5,11 +5,13 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "dev": "node scripts/dev.mjs",
+    "clean": "node scripts/clean-ports.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "playwright test",
+    "pretest": "npm run clean",
     "test:unit": "vitest",
     "verify": "vitest run src/verify.test.ts"
   },
