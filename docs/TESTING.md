@@ -307,19 +307,24 @@ evorule-server.exe --addr 127.0.0.1:18080 \
   --allowed-origins "http://localhost:5174,http://localhost:4173"
 ```
 
-### 7.2 端口 5174 被占用
+### 7.2 端口 5174 被占用（e2e 测试后常见）
 
-**现象**：`npm run dev` 报 `Port 5174 is in use`。
+**现象**：`npm run dev` 报 `Port 5174 is in use`，或浏览器访问 `http://localhost:5174/` 显示 "This site can't be reached"。
+
+**根因**：`npm run test`（playwright e2e）结束后，Windows 上 `npm → vite → node` 子进程树不一定被完全清理，残留的 node 进程会持有端口 5174。下次 `npm run dev` 时 vite（`strictPort: true`）会直接报错。
 
 **解决**：
 
 ```bash
-# 查找占用进程
-Get-NetTCPConnection -LocalPort 5174 | Select-Object OwningProcess
+# 一键清理（推荐）
+npm run clean && npm run dev
 
-# 停止进程（替换 PID）
+# 或手动查找并停止
+Get-NetTCPConnection -LocalPort 5174 -State Listen | Select-Object OwningProcess
 Stop-Process -Id <PID> -Force
 ```
+
+> **预防**：每次跑完 `npm run test` 后，先 `npm run clean` 再 `npm run dev`。
 
 ### 7.3 空 sessions（执行台不显示提交区）
 
