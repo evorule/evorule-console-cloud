@@ -63,7 +63,10 @@ npm run dev    # 访问 http://localhost:5174
 
 ## 本地开发（含 evorule-server 联调）
 
-完整跑通执行台/状态/审计等视图需启动 evorule-server。**注意 CORS 配置**（关键踩坑）：
+完整跑通执行台/状态/审计等视图需启动 evorule-server。**注意 CORS 配置**（关键踩坑,二选一）：
+
+- **方案 A**（直连 + `--allowed-origins`）：evorule-server 启动时显式允许大众版 dev/preview 源（见下文启动顺序）。适用于 online 模式或生产部署。
+- **方案 C**（vite proxy,零配置）：net-config 的 localBaseUrl 留空（同源），vite dev/preview 自动把 `/api` 代理到 `127.0.0.1:18080`（见 `vite.config.ts` 的 `server.proxy`）。仅适用于 offline 本地开发,无需配 server。
 
 ### 启动顺序
 
@@ -102,8 +105,9 @@ npm run preview -- --host 127.0.0.1 --port 4173
 
 | 坑 | 现象 | 解决 |
 | --- | --- | --- |
-| **CORS 跨域** | evorule-server 默认严格同源，跨端口被拒 | 启动时加 `--allowed-origins` |
+| **CORS 跨域** | evorule-server 默认严格同源，跨端口被拒 | 方案 A：启动时加 `--allowed-origins`；方案 C：net-config 的 localBaseUrl 留空（同源），vite proxy 自动代理 `/api` → `127.0.0.1:18080`（仅 dev/preview） |
 | **host 对齐** | `localhost` 与 `127.0.0.1` 是不同 origin | 大众版 `net-config` 默认 `localhost:18080`（与 vite dev 对齐）；preview 用 `--host 127.0.0.1` 时需对应改 net-config |
+| **端口占用** | e2e 测试后 `npm run dev` 报 `Port 5174 is in use` 或浏览器显示 "This site can't be reached" | `npm run clean && npm run dev`（清理僵尸进程） |
 | **空 sessions** | evorule-server 启动后 sessions 为空，执行台 UI 不显示提交区 | 手动 `POST /api/sessions` 创建初始 session |
 
 ### LLM 配置

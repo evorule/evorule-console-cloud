@@ -17,9 +17,11 @@ import {
 	type ExecutionBackend,
 	type SessionId,
 	type SessionState,
+	type HistoricalState,
 	type SessionAudit,
 	type VerifyResult,
 	type Fact,
+	type FactRecord,
 	type DiffResult,
 	type CausalChain,
 	type CommandResult
@@ -106,7 +108,8 @@ export class CloudHttpBackend implements ExecutionBackend {
 	getReplay(id: SessionId, from?: number, to?: number | null): Promise<Fact[]> {
 		return this.backend.getReplay(id, from, to);
 	}
-	getFacts(id: SessionId, prefix?: string): Promise<Fact[]> {
+	// C4 修复(2026-08-03):对齐内核 HttpBackend,返回 FactRecord[](非 Fact[])
+	getFacts(id: SessionId, prefix?: string): Promise<FactRecord[]> {
 		return this.backend.getFacts(id, prefix);
 	}
 	getAudit(id: SessionId): Promise<SessionAudit> {
@@ -118,7 +121,8 @@ export class CloudHttpBackend implements ExecutionBackend {
 	getCausalChain(id: SessionId, factId: number): Promise<CausalChain> {
 		return this.backend.getCausalChain(id, factId);
 	}
-	getStateAtVersion(id: SessionId, version: number): Promise<SessionState> {
+	// D2-A 修复(2026-08-03):对齐内核 HttpBackend,返回 HistoricalState(无 reactor)
+	getStateAtVersion(id: SessionId, version: number): Promise<HistoricalState> {
 		return this.backend.getStateAtVersion(id, version);
 	}
 	getDiff(id: SessionId, a: number, b: number): Promise<DiffResult> {
