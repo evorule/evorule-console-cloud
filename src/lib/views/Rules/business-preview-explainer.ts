@@ -140,6 +140,9 @@ function explainCondition(condition: BusinessRuleShape["condition"]): string {
     case "not":
       return `不满足 ${String(value ?? "")}`;
     default:
+      if (typeof console !== "undefined") {
+        console.warn(`[explainStructured] 未知条件 domain: ${domain}`);
+      }
       return `(未知条件类型: ${domain ?? "无"})`;
   }
 }

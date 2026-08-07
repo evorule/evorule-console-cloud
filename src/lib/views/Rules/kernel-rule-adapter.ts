@@ -322,11 +322,10 @@ export function buildKernelRuleContent(
   const kernel = wrapAsKernelTransform(business);
   const full: KernelRuleJson & {
     id?: string;
-    version?: number;
     description?: string;
   } = { ...kernel };
   if (meta?.id) full.id = meta.id;
-  if (meta?.version !== undefined) full.version = meta.version;
   if (meta?.description) full.description = meta.description;
+  // 不透传 version — 由内核管理(rule 创建时自动 +1)
   return JSON.stringify(full, null, 2);
 }

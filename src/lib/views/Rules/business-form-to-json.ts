@@ -134,14 +134,18 @@ function setPath(
 
     if (typeof k === "number") {
       const arr = current as unknown[];
-      if (arr[k] === undefined || typeof arr[k] !== "object") {
+      if (arr[k] === undefined) {
         arr[k] = typeof nextK === "number" ? [] : {};
+      } else if (typeof arr[k] !== "object" || arr[k] === null) {
+        return; // 已有非对象值,不覆盖丢失
       }
       current = arr[k];
     } else {
       const record = current as Record<string, unknown>;
-      if (record[k] === undefined || typeof record[k] !== "object") {
+      if (record[k] === undefined) {
         record[k] = typeof nextK === "number" ? [] : {};
+      } else if (typeof record[k] !== "object" || record[k] === null) {
+        return; // 已有非对象值,不覆盖丢失
       }
       current = record[k];
     }
