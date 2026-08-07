@@ -6,6 +6,7 @@ dist/
 test-results/
 e2e-runs.log
 *.log
+*.txt
 .env
 .env.*
 !.env.example

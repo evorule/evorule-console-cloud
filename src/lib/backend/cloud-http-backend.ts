@@ -27,6 +27,7 @@ import {
 	type CommandResult
 } from '@evorule/console';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
+import { fetchProductionState, type ProductionState } from '../stores/production-state';
 
 export class CloudHttpBackend implements ExecutionBackend {
 	private backend: HttpBackend;
@@ -130,5 +131,30 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 	forkSession(parentId: SessionId, version: number): Promise<SessionId> {
 		return this.backend.forkSession(parentId, version);
+	}
+
+	// === Cloud 专属方法(不在内核 ExecutionBackend 接口内) ===
+	//
+	// 内核 ExecutionBackend 的 15 方法对齐 evorule-server 的会话/审计/时间旅行端点,
+	// 不含第四梯队新增的 production state / publish queue / sandbox 端点(内核无此概念)。
+	// cloud 版在此扩展这些方法,复用已解析的 this.baseUrl(随 mode 切换自动更新)。
+	//
+	// 视图层用法:
+	//   const backend = useBackend();
+	//   if (backend instanceof CloudHttpBackend) {
+	//     const ps = await backend.getProductionState();
+	//   }
+	// T5 的 MockBackend(adapter-static 无后端场景)应实现同名方法返回 offline 默认值。
+
+	/**
+	 * 拉取生产运行状态(消费 evorule-server `GET /api/production/state`)。
+	 *
+	 * cloud 版 L1 监控大屏(P05) + HomeRouter 状态 C 默认层选择(T1 resolveDefaultLayer)
+	 * 需要此数据。复用 `this.baseUrl`(随 mode 切换),错误容错见 [`fetchProductionState`]。
+	 *
+	 * @returns ProductionState;失败时返回 status="offline" 的默认值,不抛错
+	 */
+	async getProductionState(): Promise<ProductionState> {
+		return fetchProductionState(this.baseUrl);
 	}
 }

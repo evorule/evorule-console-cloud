@@ -1,0 +1,90 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 EvoRule Project
+#
+# P10 在线 demo 部署 — GitHub Pages + adapter-static + MockBackend(零网络依赖)
+# P10_TASKFLOW_DEMO_DESIGN.md §3.4 定义。
+#
+# 触发:push 到 main 分支(src/ 或 package.json 变更时)
+# 产物:SvelteKit adapter-static build → GitHub Pages 公网可访问
+# URL:https://<owner>.github.io/evorule-console-cloud/
+#
+# demo 模式:未登录访客自动进入状态 A(DemoHome),4 个引导任务可用 MockBackend 体验
+
+name: Deploy Demo to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "static/**"
+      - "package.json"
+      - "package-lock.json"
+      - "svelte.config.js"
+      - "vite.config.ts"
+      - ".github/workflows/deploy-demo.yml"
+  # 允许手动触发
+  workflow_dispatch:
+
+# GitHub Pages 部署权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一个部署
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build demo (adapter-static)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure GitHub Pages base path
+        # GitHub Pages 部署在 /evorule-console-cloud/ 子路径下
+        # 通过环境变量传给 svelte.config.js(动态 base)
+        run: |
+          echo "GITHUB_PAGES=true" >> $GITHUB_ENV
+
+      - name: Type check
+        run: npm run check
+
+      - name: Unit tests
+        run: npx vitest run --reporter=verbose
+
+      - name: Build (adapter-static)
+        run: npm run build
+        env:
+          # adapter-static 预渲染:demo 模式不依赖后端,可全量预渲染
+          GITHUB_PAGES: "true"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

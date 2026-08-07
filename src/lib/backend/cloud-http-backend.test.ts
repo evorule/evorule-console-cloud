@@ -183,6 +183,75 @@ describe('代理方法(验证调用内部 HttpBackend)', () => {
 	});
 });
 
+// ============ Cloud 专属方法(getProductionState) ============
+
+describe('Cloud 专属方法 getProductionState', () => {
+	test('调用 /api/production/state 并返回适配后的 ProductionState', async () => {
+		// 模拟服务器返回 snake_case 响应(对齐 ProductionStateRecord)
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			status: 200,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => ({
+				id: 1,
+				current_session_id: 42,
+				ruleset_version: 3,
+				ruleset_hash: 'blake3-abc',
+				last_operated_by: 'admin',
+				updated_at: '2026-08-07T12:00:00Z',
+			}),
+		} as unknown as Response);
+
+		const b = new CloudHttpBackend({ mode: 'offline', localBaseUrl: 'http://test:18080' });
+		const ps = await b.getProductionState();
+
+		// 字段映射 + status 推导
+		expect(ps.currentSessionId).toBe(42);
+		expect(ps.rulesetVersion).toBe(3);
+		expect(ps.rulesetHash).toBe('blake3-abc');
+		expect(ps.status).toBe('running');
+		expect(ps.updatedAt).toBe('2026-08-07T12:00:00Z');
+
+		// 验证 fetch URL 用的是正确的 baseUrl
+		const calledUrl = mockFetch.mock.calls[0][0] as string;
+		expect(calledUrl).toBe('http://test:18080/api/production/state');
+	});
+
+	test('reconfigure 后 getProductionState 用新 baseUrl', async () => {
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			status: 200,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => ({
+				id: 1,
+				current_session_id: null,
+				ruleset_version: 0,
+				ruleset_hash: null,
+				updated_at: null,
+			}),
+		} as unknown as Response);
+
+		const b = new CloudHttpBackend({ mode: 'offline', localBaseUrl: 'http://old:18080' });
+		b.reconfigure({ mode: 'online', remoteBaseUrl: 'http://new:9000' });
+		await b.getProductionState();
+
+		const calledUrl = mockFetch.mock.calls[0][0] as string;
+		expect(calledUrl).toContain('http://new:9000');
+		expect(calledUrl).not.toContain('http://old:18080');
+	});
+
+	test('服务器不可达时返回 offline 默认值(不抛错)', async () => {
+		mockFetch.mockRejectedValueOnce(new TypeError('ECONNREFUSED'));
+
+		const b = new CloudHttpBackend({ mode: 'offline', localBaseUrl: 'http://test:18080' });
+		const ps = await b.getProductionState();
+
+		expect(ps.status).toBe('offline');
+		expect(ps.currentSessionId).toBeNull();
+		expect(ps.rulesetVersion).toBe(0);
+	});
+});
+
 // ============ 满足 ExecutionBackend 接口 ============
 
 describe('接口完整性', () => {

@@ -10,413 +10,534 @@
 -->
 
 <script lang="ts">
-	import '../app.css';
-	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
-	import {
-		currentView,
-		setView,
-		restoreView,
-		VIEW_LIST,
-		provideBackend,
-		provideAssistant,
-		CONSOLE_VERSION
-	} from '@evorule/console';
-	import type { ViewId } from '@evorule/console';
-	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
-	import { netConfig, toggleNetMode } from '$lib/config/net-config';
-	import { llmConfig, isLlmConfigured } from '$lib/config/llm-config';
-	import { CloudLlmAssistant } from '$lib/assistant/cloud-llm-assistant';
-	import Settings from '$lib/views/Settings/Settings.svelte';
+  import "../app.css";
+  import { onMount } from "svelte";
+  import { get } from "svelte/store";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import {
+    VIEW_LIST,
+    provideBackend,
+    provideAssistant,
+    CONSOLE_VERSION,
+  } from "@evorule/console";
+  import type { ViewId } from "@evorule/console";
+  import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
+  import { netConfig, toggleNetMode } from "$lib/config/net-config";
+  import { llmConfig, isLlmConfigured } from "$lib/config/llm-config";
+  import { CloudLlmAssistant } from "$lib/assistant/cloud-llm-assistant";
+  import { sessionStore } from "$lib/stores/session";
+  import Settings from "$lib/views/Settings/Settings.svelte";
+  import Toast from "$lib/views/Feedback/Toast.svelte";
+  import UserMenu from "$lib/views/Auth/UserMenu.svelte";
+  import NotificationBell from "$lib/views/Notifications/NotificationBell.svelte";
+  import TaskFlowDropdown from "$lib/views/Home/TaskFlowDropdown.svelte";
+  import TaskFlowWizard from "$lib/views/Home/TaskFlowWizard.svelte";
 
-	let { children } = $props();
+  let { children } = $props();
 
-	// === 设置入口(Phase 6: 不修改内核 VIEW_LIST,大众版独立管理) ===
-	let showSettings = $state(false);
+  // === 设置入口(Phase 6: 不修改内核 VIEW_LIST,大众版独立管理) ===
+  let showSettings = $state(false);
 
-	function openSettings() {
-		showSettings = true;
-	}
+  function openSettings() {
+    showSettings = true;
+  }
 
-	function closeSettings() {
-		showSettings = false;
-	}
+  function closeSettings() {
+    showSettings = false;
+  }
 
-	// 用户点击 nav-tab 时,关闭设置(回到视图模式)
-	function handleNavClick(viewId: ViewId) {
-		showSettings = false;
-		setView(viewId);
-	}
+  // 用户点击 nav-tab 时,关闭设置 + 跳转到 /view/{viewId}(T1:5 视图迁移到 /view/[id] 路由)
+  function handleNavClick(viewId: ViewId) {
+    showSettings = false;
+    goto(`/view/${viewId}`);
+  }
 
-	// === 注入 backend(Phase 2: CloudHttpBackend 双模式) ===
-	// 取 netConfig 初始值,创建 CloudHttpBackend
-	const initialNet = get(netConfig);
-	const cloudBackend = new CloudHttpBackend({
-		mode: initialNet.mode,
-		remoteBaseUrl: initialNet.remoteBaseUrl
-	});
-	// provideBackend 注入(返回 ExecutionBackend 接口类型,视图用)
-	// cloudBackend 变量保留用于 reconfigure(reconfigure 是 CloudHttpBackend 特有方法)
-	const backend = provideBackend(cloudBackend);
+  // T4: 跳转到独立导出中心路由(/export)
+  function handleExportClick() {
+    showSettings = false;
+    goto("/export");
+  }
 
-	// 监听 netConfig 变化,reconfigure backend(实例不变,视图自动用新 baseUrl)
-	$effect(() => {
-		const cfg = $netConfig;
-		cloudBackend.reconfigure({ mode: cfg.mode, remoteBaseUrl: cfg.remoteBaseUrl });
-	});
+  // === 注入 backend(Phase 2: CloudHttpBackend 双模式) ===
+  // 取 netConfig 初始值,创建 CloudHttpBackend
+  const initialNet = get(netConfig);
+  const cloudBackend = new CloudHttpBackend({
+    mode: initialNet.mode,
+    remoteBaseUrl: initialNet.remoteBaseUrl,
+  });
+  // provideBackend 注入(返回 ExecutionBackend 接口类型,视图用)
+  // cloudBackend 变量保留用于 reconfigure(reconfigure 是 CloudHttpBackend 特有方法)
+  const backend = provideBackend(cloudBackend);
 
-	// === 注入 LLM assistant(Phase 3+4: 条件注入 CloudLlmAssistant) ===
-	// 配置完备(enabled + endpoint + key + model)→ 注入,内核 LLM 按钮渲染
-	// 配置不完备 → 注入 null,行为与内核一致(LLM 按钮不渲染)
-	//
-	// 重要:Svelte 的 setContext 必须在组件初始化期间同步调用,
-	//       不能放在 $effect 内($effect 在初始化之后运行,setContext 无效)。
-	//       因此这里同步读取 llmConfig 当前值并注入。
-	//
-	// 配置变更处理:
-	//   - 大众版设置面板修改 llmConfig 后,提示用户刷新页面以重新注入
-	//   - 或用户切换 tab 触发组件重新挂载(视图层)
-	//   - 这种"刷新生效"模式与基础版的"重启服务器生效"心智一致
-	const initialLlm = get(llmConfig);
-	if (isLlmConfigured(initialLlm)) {
-		const assistant = new CloudLlmAssistant(initialLlm);
-		provideAssistant(assistant);
-	} else {
-		provideAssistant(null);
-	}
+  // 监听 netConfig 变化,reconfigure backend(实例不变,视图自动用新 baseUrl)
+  $effect(() => {
+    const cfg = $netConfig;
+    cloudBackend.reconfigure({
+      mode: cfg.mode,
+      remoteBaseUrl: cfg.remoteBaseUrl,
+    });
+  });
 
-	// llmConfig 后续变化(运行时切换)无法重注入 context,
-	// 但 CloudLlmAssistant 内部已防御性拷贝配置,所以这种"刷新生效"模式是预期的。
-	// 设置面板在保存配置后会调用 location.reload() 强制重注入。
+  // === 注入 LLM assistant(Phase 3+4: 条件注入 CloudLlmAssistant) ===
+  // 配置完备(enabled + endpoint + key + model)→ 注入,内核 LLM 按钮渲染
+  // 配置不完备 → 注入 null,行为与内核一致(LLM 按钮不渲染)
+  //
+  // 重要:Svelte 的 setContext 必须在组件初始化期间同步调用,
+  //       不能放在 $effect 内($effect 在初始化之后运行,setContext 无效)。
+  //       因此这里同步读取 llmConfig 当前值并注入。
+  //
+  // 配置变更处理:
+  //   - 大众版设置面板修改 llmConfig 后,提示用户刷新页面以重新注入
+  //   - 或用户切换 tab 触发组件重新挂载(视图层)
+  //   - 这种"刷新生效"模式与基础版的"重启服务器生效"心智一致
+  const initialLlm = get(llmConfig);
+  if (isLlmConfigured(initialLlm)) {
+    const assistant = new CloudLlmAssistant(initialLlm);
+    provideAssistant(assistant);
+  } else {
+    provideAssistant(null);
+  }
 
-	// === 连接状态 ===
-	let connected = $state<boolean | null>(null);
+  // llmConfig 后续变化(运行时切换)无法重注入 context,
+  // 但 CloudLlmAssistant 内部已防御性拷贝配置,所以这种"刷新生效"模式是预期的。
+  // 设置面板在保存配置后会调用 location.reload() 强制重注入。
 
-	// === 主题 ===
-	let theme = $state<'light' | 'dark'>('light');
+  // === 连接状态 ===
+  let connected = $state<boolean | null>(null);
 
-	onMount(() => {
-		// 主题恢复
-		const savedTheme = localStorage.getItem('theme');
-		if (savedTheme === 'dark' || savedTheme === 'light') {
-			theme = savedTheme;
-		} else {
-			theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-		}
-		document.documentElement.setAttribute('data-theme', theme);
+  // === 主题 ===
+  let theme = $state<"light" | "dark">("light");
 
-		// 视图恢复
-		restoreView();
+  onMount(() => {
+    // 主题恢复
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark" || savedTheme === "light") {
+      theme = savedTheme;
+    } else {
+      theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
+    document.documentElement.setAttribute("data-theme", theme);
 
-		// backend 健康检查(反映当前 baseUrl 是否在线)
-		backend
-			.health()
-			.then((ok) => {
-				connected = ok;
-			})
-			.catch(() => {
-				connected = false;
-			});
-	});
+    // T1:5 视图迁移到 /view/[id] 路由后,不再需要 restoreView()
+    // (currentView store 由 /view/[id]/+page.svelte 的 $effect 同步)
 
-	function toggleTheme() {
-		theme = theme === 'light' ? 'dark' : 'light';
-		document.documentElement.setAttribute('data-theme', theme);
-		localStorage.setItem('theme', theme);
-	}
+    // backend 健康检查(反映当前 baseUrl 是否在线)
+    backend
+      .health()
+      .then((ok) => {
+        connected = ok;
+      })
+      .catch(() => {
+        connected = false;
+      });
+  });
+
+  function toggleTheme() {
+    theme = theme === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }
 </script>
 
 <div class="app">
-	<header class="topbar">
-		<div class="brand">
-			<span class="brand-name">evorule-console-cloud</span>
-			<span class="brand-tag">大众版 · 内核 v{CONSOLE_VERSION} · 联网 + 云 LLM</span>
-		</div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-name">evorule-console-cloud</span>
+      <span class="brand-tag"
+        >大众版 · 内核 v{CONSOLE_VERSION} · 联网 + 云 LLM</span
+      >
+    </div>
 
-		<nav class="nav-tabs" aria-label="视图切换">
-			{#each VIEW_LIST as view (view.id)}
-				<button
-					class="nav-tab"
-					class:active={$currentView === view.id && !showSettings}
-					onclick={() => handleNavClick(view.id)}
-					title={view.essence}
-					aria-pressed={$currentView === view.id && !showSettings}
-				>
-					<span class="tab-icon">{view.icon}</span>
-					<span class="tab-label">{view.label}</span>
-				</button>
-			{/each}
-			<!-- 设置入口(Phase 6: 大众版独有,不修改内核 VIEW_LIST) -->
-			<button
-				class="nav-tab settings-tab"
-				class:active={showSettings}
-				onclick={openSettings}
-				title="设置(联网模式 + LLM 配置)"
-				aria-pressed={showSettings}
-			>
-				<span class="tab-icon">⚙️</span>
-				<span class="tab-label">设置</span>
-			</button>
-		</nav>
+    <nav
+      class="nav-tabs"
+      class:hidden={!$sessionStore.loggedIn}
+      aria-label="视图切换"
+    >
+      {#each VIEW_LIST as view (view.id)}
+        <button
+          class="nav-tab"
+          class:active={$page.params.id === view.id && !showSettings}
+          onclick={() => handleNavClick(view.id)}
+          title={view.essence}
+          aria-pressed={$page.params.id === view.id && !showSettings}
+        >
+          <span class="tab-icon">{view.icon}</span>
+          <span class="tab-label">{view.label}</span>
+        </button>
+      {/each}
+      <!-- T4: 导出中心入口(P07 独立路由,大众版独有,不属于内核 5 视图) -->
+      <button
+        class="nav-tab export-tab"
+        class:active={$page.url.pathname === "/export" && !showSettings}
+        onclick={handleExportClick}
+        title="通用结果导出中心 — 6 种内容 × 4 种格式,BLAKE3 完整性自证"
+        aria-pressed={$page.url.pathname === "/export" && !showSettings}
+      >
+        <span class="tab-icon">📤</span>
+        <span class="tab-label">导出</span>
+      </button>
+      <!-- T5a P08: 协作路由入口(已登录时显示,权限守卫在 +layout.ts) -->
+      {#if $sessionStore.loggedIn}
+        <button
+          class="nav-tab collab-tab"
+          class:active={$page.url.pathname === "/publish-queue" &&
+            !showSettings}
+          onclick={() => {
+            showSettings = false;
+            goto("/publish-queue");
+          }}
+          title="发布队列 — 规则集发布审批与紧急回滚"
+          aria-pressed={$page.url.pathname === "/publish-queue" &&
+            !showSettings}
+        >
+          <span class="tab-icon">📤</span>
+          <span class="tab-label">发布队列</span>
+        </button>
+        <button
+          class="nav-tab collab-tab"
+          class:active={$page.url.pathname === "/version-history" &&
+            !showSettings}
+          onclick={() => {
+            showSettings = false;
+            goto("/version-history");
+          }}
+          title="版本历史 — 生产规则集版本时间线"
+          aria-pressed={$page.url.pathname === "/version-history" &&
+            !showSettings}
+        >
+          <span class="tab-icon">📜</span>
+          <span class="tab-label">版本</span>
+        </button>
+        <button
+          class="nav-tab collab-tab"
+          class:active={$page.url.pathname === "/audit" && !showSettings}
+          onclick={() => {
+            showSettings = false;
+            goto("/audit");
+          }}
+          title="审计员工作台 — BLAKE3 审计链 + 因果链回溯"
+          aria-pressed={$page.url.pathname === "/audit" && !showSettings}
+        >
+          <span class="tab-icon">🔍</span>
+          <span class="tab-label">审计</span>
+        </button>
+      {/if}
+      <!-- 设置入口(Phase 6: 大众版独有,不修改内核 VIEW_LIST) -->
+      <button
+        class="nav-tab settings-tab"
+        class:active={showSettings}
+        onclick={openSettings}
+        title="设置(联网模式 + LLM 配置)"
+        aria-pressed={showSettings}
+      >
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">设置</span>
+      </button>
+    </nav>
 
-		<div class="topbar-actions">
-			<!-- 联网状态徽标(快捷切换,正式配置在 Settings 面板) -->
-			<button
-				class="net-toggle"
-				class:online={$netConfig.mode === 'online'}
-				class:offline={$netConfig.mode === 'offline'}
-				onclick={toggleNetMode}
-				title={$netConfig.mode === 'online'
-					? `联网模式 · {$netConfig.remoteBaseUrl} · 点击切回本地`
-					: '离线模式 · 127.0.0.1:18080 · 点击切到联网(详细配置在设置面板)'}
-				aria-label="切换联网/离线模式"
-			>
-				<span class="net-icon">{$netConfig.mode === 'online' ? '☁️' : '🖥️'}</span>
-				<span class="net-text">{$netConfig.mode === 'online' ? '联网' : '本地'}</span>
-			</button>
+    <div class="topbar-actions">
+      <!-- T5c P10: 任务流下拉入口(所有模式可见,demo 模式自动以只读启动) -->
+      <TaskFlowDropdown />
 
-			<span
-				class="conn-badge"
-				class:online={connected === true}
-				class:offline={connected === false}
-				class:checking={connected === null}
-				title={connected === false
-					? 'evorule-server 未响应(检查地址或启动服务器)'
-					: 'evorule-server 连接状态'}
-			>
-				<span class="conn-dot"></span>
-				<span class="conn-text">
-					{connected === null ? '检测中' : connected ? '已连接' : '未连接'}
-				</span>
-			</span>
+      <!-- T5a P08: 通知铃铛(已登录时显示) -->
+      {#if $sessionStore.loggedIn}
+        <NotificationBell />
+      {/if}
 
-			<button
-				class="theme-toggle"
-				onclick={toggleTheme}
-				title="切换主题"
-				aria-label="切换主题"
-			>
-				{theme === 'light' ? '🌙' : '☀️'}
-			</button>
-		</div>
-	</header>
+      <!-- T5a P08: 用户菜单(已登录显示 UserMenu,未登录显示登录按钮) -->
+      <UserMenu />
 
-	<main class="main-content">
-			{#if showSettings}
-				<Settings onclose={closeSettings} />
-			{:else}
-				{@render children()}
-			{/if}
-		</main>
+      <!-- 联网状态徽标(快捷切换,正式配置在 Settings 面板) -->
+      <button
+        class="net-toggle"
+        class:online={$netConfig.mode === "online"}
+        class:offline={$netConfig.mode === "offline"}
+        onclick={toggleNetMode}
+        title={$netConfig.mode === "online"
+          ? `联网模式 · {$netConfig.remoteBaseUrl} · 点击切回本地`
+          : "离线模式 · 127.0.0.1:18080 · 点击切到联网(详细配置在设置面板)"}
+        aria-label="切换联网/离线模式"
+      >
+        <span class="net-icon"
+          >{$netConfig.mode === "online" ? "☁️" : "🖥️"}</span
+        >
+        <span class="net-text"
+          >{$netConfig.mode === "online" ? "联网" : "本地"}</span
+        >
+      </button>
+
+      <span
+        class="conn-badge"
+        class:online={connected === true}
+        class:offline={connected === false}
+        class:checking={connected === null}
+        title={connected === false
+          ? "evorule-server 未响应(检查地址或启动服务器)"
+          : "evorule-server 连接状态"}
+      >
+        <span class="conn-dot"></span>
+        <span class="conn-text">
+          {connected === null ? "检测中" : connected ? "已连接" : "未连接"}
+        </span>
+      </span>
+
+      <button
+        class="theme-toggle"
+        onclick={toggleTheme}
+        title="切换主题"
+        aria-label="切换主题"
+      >
+        {theme === "light" ? "🌙" : "☀️"}
+      </button>
+    </div>
+  </header>
+
+  <!-- T5c P10: 任务流进度条(运行中时显示在导航栏下方) -->
+  <TaskFlowWizard />
+
+  <main class="main-content">
+    {#if showSettings}
+      <Settings onclose={closeSettings} />
+    {:else}
+      {@render children()}
+    {/if}
+  </main>
+
+  <!-- 全局 Toast 通知(T1 P11 缺口 1:操作反馈) -->
+  <Toast />
 </div>
 
 <style>
-	.app {
-		min-height: 100vh;
-		display: flex;
-		flex-direction: column;
-		background: var(--color-gray-50);
-	}
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-gray-50);
+  }
 
-	/* === 顶部导航栏 === */
-	.topbar {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-lg);
-		padding: 0 var(--spacing-xl);
-		background: var(--color-gray-900);
-		color: #fff;
-		box-shadow: var(--shadow-md);
-		position: sticky;
-		top: 0;
-		z-index: 10;
-		flex-wrap: wrap;
-	}
+  /* 未登录时隐藏 nav-tabs(demo 模式不需要 5 视图导航,T1 状态机守卫) */
+  .nav-tabs.hidden {
+    display: none;
+  }
 
-	/* 设置 tab 视觉区分(大众版独有,不属于内核 5 视图) */
-	.nav-tab.settings-tab {
-		border-left: 1px solid var(--color-gray-700);
-		margin-left: var(--spacing-sm);
-		padding-left: var(--spacing-md);
-	}
+  /* === 顶部导航栏 === */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: 0 var(--spacing-xl);
+    background: var(--color-gray-900);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-wrap: wrap;
+  }
 
-	.brand {
-		display: flex;
-		flex-direction: column;
-		padding: var(--spacing-sm) 0;
-		flex-shrink: 0;
-	}
-	.brand-name {
-		font-size: var(--text-lg);
-		font-weight: 600;
-		letter-spacing: 0.02em;
-	}
-	.brand-tag {
-		font-size: var(--text-xs);
-		color: var(--color-gray-400);
-		margin-top: 2px;
-	}
+  /* 设置 tab 视觉区分(大众版独有,不属于内核 5 视图) */
+  .nav-tab.settings-tab {
+    border-left: 1px solid var(--color-gray-700);
+    margin-left: var(--spacing-sm);
+    padding-left: var(--spacing-md);
+  }
 
-	/* === 导航 tabs === */
-	.nav-tabs {
-		display: flex;
-		gap: var(--spacing-xs);
-		flex: 1;
-		justify-content: center;
-	}
-	.nav-tab {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		padding: var(--spacing-sm) var(--spacing-md);
-		background: transparent;
-		color: var(--color-gray-300);
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: 0;
-		cursor: pointer;
-		font-size: var(--text-sm);
-		transition:
-			color var(--transition-fast),
-			border-color var(--transition-fast);
-	}
-	.nav-tab:hover {
-		color: #fff;
-		background: rgba(255, 255, 255, 0.06);
-	}
-	.nav-tab.active {
-		color: #fff;
-		border-bottom-color: var(--color-primary);
-		background: rgba(255, 255, 255, 0.04);
-	}
-	.tab-icon {
-		font-size: var(--text-base);
-	}
-	.tab-label {
-		font-weight: 500;
-	}
+  /* T4: 导出 tab 视觉区分(P07 独立入口,不属于内核 5 视图) */
+  .nav-tab.export-tab {
+    color: var(--color-info, #3b82f6);
+  }
+  .nav-tab.export-tab.active {
+    color: #fff;
+  }
 
-	/* === 右侧操作区 === */
-	.topbar-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-md);
-		flex-shrink: 0;
-	}
+  /* T5a: 协作 tab 视觉区分(P08 独立入口) */
+  .nav-tab.collab-tab {
+    color: var(--color-success, #22c55e);
+  }
+  .nav-tab.collab-tab.active {
+    color: #fff;
+  }
 
-	/* 临时联网切换按钮 */
-	.net-toggle {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		background: transparent;
-		color: var(--color-gray-300);
-		border: 1px solid var(--color-gray-700);
-		border-radius: var(--radius-md);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		cursor: pointer;
-		font-size: var(--text-xs);
-		transition: all var(--transition-fast);
-	}
-	.net-toggle:hover {
-		background: rgba(255, 255, 255, 0.08);
-		color: #fff;
-	}
-	.net-toggle.online {
-		border-color: var(--color-info);
-		color: var(--color-info);
-	}
-	.net-toggle.offline {
-		border-color: var(--color-gray-600);
-	}
-	.net-icon {
-		font-size: var(--text-sm);
-	}
+  .brand {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-sm) 0;
+    flex-shrink: 0;
+  }
+  .brand-name {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .brand-tag {
+    font-size: var(--text-xs);
+    color: var(--color-gray-400);
+    margin-top: 2px;
+  }
 
-	.conn-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		font-size: var(--text-xs);
-		color: var(--color-gray-400);
-	}
-	.conn-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: var(--radius-full);
-		background: var(--color-gray-500);
-	}
-	.conn-badge.online .conn-dot {
-		background: var(--color-success);
-	}
-	.conn-badge.online .conn-text {
-		color: var(--color-success);
-	}
-	.conn-badge.offline .conn-dot {
-		background: var(--color-error);
-	}
-	.conn-badge.offline .conn-text {
-		color: var(--color-error);
-	}
-	.conn-badge.checking .conn-dot {
-		background: var(--color-warning);
-		animation: pulse 1.2s ease-in-out infinite;
-	}
-	@keyframes pulse {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.4;
-		}
-	}
+  /* === 导航 tabs === */
+  .nav-tabs {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex: 1;
+    justify-content: center;
+  }
+  .nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    color: var(--color-gray-300);
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: var(--text-sm);
+    transition:
+      color var(--transition-fast),
+      border-color var(--transition-fast);
+  }
+  .nav-tab:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .nav-tab.active {
+    color: #fff;
+    border-bottom-color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .tab-icon {
+    font-size: var(--text-base);
+  }
+  .tab-label {
+    font-weight: 500;
+  }
 
-	.theme-toggle {
-		background: transparent;
-		color: var(--color-gray-300);
-		border: 1px solid var(--color-gray-700);
-		border-radius: var(--radius-md);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		cursor: pointer;
-		font-size: var(--text-base);
-		line-height: 1;
-	}
-	.theme-toggle:hover {
-		background: rgba(255, 255, 255, 0.08);
-		color: #fff;
-	}
+  /* === 右侧操作区 === */
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-shrink: 0;
+  }
 
-	/* === 主内容区 === */
-	.main-content {
-		flex: 1;
-		width: 100%;
-		overflow: auto;
-	}
+  /* 临时联网切换按钮 */
+  .net-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    background: transparent;
+    color: var(--color-gray-300);
+    border: 1px solid var(--color-gray-700);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    cursor: pointer;
+    font-size: var(--text-xs);
+    transition: all var(--transition-fast);
+  }
+  .net-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+  .net-toggle.online {
+    border-color: var(--color-info);
+    color: var(--color-info);
+  }
+  .net-toggle.offline {
+    border-color: var(--color-gray-600);
+  }
+  .net-icon {
+    font-size: var(--text-sm);
+  }
 
-	@media (max-width: 768px) {
-		.topbar {
-			padding: 0 var(--spacing-md);
-		}
-		.brand-tag {
-			display: none;
-		}
-		.nav-tabs {
-			gap: 0;
-			justify-content: flex-start;
-			overflow-x: auto;
-		}
-		.nav-tab {
-			padding: var(--spacing-sm);
-		}
-		.tab-label {
-			display: none;
-		}
-		.nav-tab.active .tab-label {
-			display: inline;
-		}
-		.net-toggle .net-text {
-			display: none;
-		}
-	}
+  .conn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--text-xs);
+    color: var(--color-gray-400);
+  }
+  .conn-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-gray-500);
+  }
+  .conn-badge.online .conn-dot {
+    background: var(--color-success);
+  }
+  .conn-badge.online .conn-text {
+    color: var(--color-success);
+  }
+  .conn-badge.offline .conn-dot {
+    background: var(--color-error);
+  }
+  .conn-badge.offline .conn-text {
+    color: var(--color-error);
+  }
+  .conn-badge.checking .conn-dot {
+    background: var(--color-warning);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  .theme-toggle {
+    background: transparent;
+    color: var(--color-gray-300);
+    border: 1px solid var(--color-gray-700);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    cursor: pointer;
+    font-size: var(--text-base);
+    line-height: 1;
+  }
+  .theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  /* === 主内容区 === */
+  .main-content {
+    flex: 1;
+    width: 100%;
+    overflow: auto;
+  }
+
+  @media (max-width: 768px) {
+    .topbar {
+      padding: 0 var(--spacing-md);
+    }
+    .brand-tag {
+      display: none;
+    }
+    .nav-tabs {
+      gap: 0;
+      justify-content: flex-start;
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: var(--spacing-sm);
+    }
+    .tab-label {
+      display: none;
+    }
+    .nav-tab.active .tab-label {
+      display: inline;
+    }
+    .net-toggle .net-text {
+      display: none;
+    }
+  }
 </style>

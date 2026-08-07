@@ -3,6 +3,8 @@
 > **状态**：规划中，**不在 v0.1.0 大众版实现**。本文档是设计草案，作为后续版本的实施依据。
 >
 > **定位**：L2 是面向隐私敏感型企业用户的**付费扩展**，大众版 v0.1.0 仅含 L1 云 LLM。
+>
+> **2026-08-06 同步**：L1 云 LLM 设计已在 [HOME_DESIGN.md §15](./HOME_DESIGN.md) 定稿（6 厂商预设 glm/qwen/deepseek/openai/ernie/custom + NetMode offline/online + CloudLlmConfig store 均已实现）。本文档 §3.2/§7.1 的 L1 引用已与 HOME_DESIGN §15.3 对齐。v0.1.0 P0 设计全部完成（18 份文档），v0.1.0 路线图状态从"开发中"更新为"设计完成"。
 
 ---
 
@@ -10,11 +12,11 @@
 
 ### 1.1 L0 / L1 / L2 三层 LLM 矩阵
 
-| 层级 | 名称        | 部署模式                  | 是否联网 | 大众版包含 | 目标用户             |
-| ---- | ----------- | ------------------------- | -------- | ---------- | -------------------- |
-| L0   | 无 LLM      | 内核 evorule-console      | 否       | 否         | 纯确定性执行场景     |
-| L1   | 云 LLM      | 调用厂商 OpenAI 兼容端点  | 是       | ✅ 是      | 大众 / 中小企业      |
-| L2   | 本地 LLM    | Ollama / llama.cpp 本地   | 否       | ❌ 否(付费)| 隐私敏感型政企 / 涉密 |
+| 层级 | 名称     | 部署模式                 | 是否联网 | 大众版包含  | 目标用户              |
+| ---- | -------- | ------------------------ | -------- | ----------- | --------------------- |
+| L0   | 无 LLM   | 内核 evorule-console     | 否       | 否          | 纯确定性执行场景      |
+| L1   | 云 LLM   | 调用厂商 OpenAI 兼容端点 | 是       | ✅ 是       | 大众 / 中小企业       |
+| L2   | 本地 LLM | Ollama / llama.cpp 本地  | 否       | ❌ 否(付费) | 隐私敏感型政企 / 涉密 |
 
 ### 1.2 为什么需要 L2
 
@@ -55,7 +57,7 @@ L2 通过**本地推理**解决以上场景，所有数据不离开本机。
 ```typescript
 // src/lib/assistant/local-llm-assistant.ts（v0.2.0+ 实现）
 
-import type { LlmAssistant } from './types';
+import type { LlmAssistant } from "./types";
 
 /**
  * 本地 LLM 配置（L2）。
@@ -98,7 +100,7 @@ export class LocalLlmAssistant implements LlmAssistant {
 
 ### 3.2 与 L1 的接口对齐
 
-`LlmAssistant` 抽象已在 v0.1.0 大众版定义（[src/lib/assistant/types.ts](../src/lib/assistant/types.ts)）：
+`LlmAssistant` 抽象已在 v0.1.0 大众版定义并实现（[HOME_DESIGN.md §15.3.3](./HOME_DESIGN.md) + [src/lib/assistant/types.ts](../src/lib/assistant/types.ts)）：
 
 ```typescript
 export interface LlmAssistant extends AssistantProvider {
@@ -111,9 +113,9 @@ export interface LlmAssistant extends AssistantProvider {
 
 ```typescript
 // +layout.svelte（v0.2.0+ 修改）
-if (llmMode === 'cloud' && isCloudLlmConfigured(cloudCfg)) {
+if (llmMode === "cloud" && isCloudLlmConfigured(cloudCfg)) {
   provideAssistant(new CloudLlmAssistant(cloudCfg));
-} else if (llmMode === 'local' && isLocalLlmConfigured(localCfg)) {
+} else if (llmMode === "local" && isLocalLlmConfigured(localCfg)) {
   provideAssistant(new LocalLlmAssistant(localCfg));
 } else {
   provideAssistant(null);
@@ -172,13 +174,13 @@ Ollama 默认监听 `127.0.0.1:11434`，但浏览器 fetch 需要 CORS 头。两
 
 针对 evorule 三用途（草案 / 解释 / 输入）的轻量任务特点，推荐以下模型（按显存需求排序）：
 
-| 模型              | 大小   | 显存需求（GPU）  | 适用场景                       |
-| ----------------- | ------ | ---------------- | ------------------------------ |
-| qwen2.5:1.5b      | 1.5B   | 2GB              | 入门 / 低配 GPU                |
-| qwen2.5:7b        | 7B     | 6GB              | **推荐**，性价比高，JSON 输出稳定 |
-| qwen2.5:14b       | 14B    | 12GB             | 高质量草案生成                 |
-| llama3.1:8b       | 8B     | 6GB              | Meta 系，英文场景              |
-| glm4:9b           | 9B     | 8GB              | 智谱系，中文场景优秀           |
+| 模型         | 大小 | 显存需求（GPU） | 适用场景                          |
+| ------------ | ---- | --------------- | --------------------------------- |
+| qwen2.5:1.5b | 1.5B | 2GB             | 入门 / 低配 GPU                   |
+| qwen2.5:7b   | 7B   | 6GB             | **推荐**，性价比高，JSON 输出稳定 |
+| qwen2.5:14b  | 14B  | 12GB            | 高质量草案生成                    |
+| llama3.1:8b  | 8B   | 6GB             | Meta 系，英文场景                 |
+| glm4:9b      | 9B   | 8GB             | 智谱系，中文场景优秀              |
 
 > **JSON 输出稳定性**：推荐所有用户使用支持 `response_format: { type: 'json_object' }` 的模型（qwen2.5 / glm4 系列均支持），避免草案 JSON 解析失败。
 
@@ -258,12 +260,12 @@ L2 是付费扩展，实施时机取决于：
 
 ### 6.2 路线图建议
 
-| 版本          | 计划                                        | 状态         |
-| ------------- | ------------------------------------------- | ------------ |
-| v0.1.0        | L1 云 LLM 完整实现                          | 开发中       |
-| v0.2.0        | L2 Ollama 集成 + 基础 GPU 配置面板          | 规划中       |
-| v0.3.0        | L2 模型管理 UI（拉取 / 删除 / 切换）         | 规划中       |
-| v0.4.0        | L2 高级特性（多卡、显存预警、自动降级）      | 规划中       |
+| 版本   | 计划                                                | 状态        |
+| ------ | --------------------------------------------------- | ----------- |
+| v0.1.0 | L1 云 LLM 完整实现（6 厂商预设,见 HOME_DESIGN §15） | ✅ 设计完成 |
+| v0.2.0 | L2 Ollama 集成 + 基础 GPU 配置面板                  | 规划中      |
+| v0.3.0 | L2 模型管理 UI（拉取 / 删除 / 切换）                | 规划中      |
+| v0.4.0 | L2 高级特性（多卡、显存预警、自动降级）             | 规划中      |
 
 ### 6.3 与高级版边界
 
@@ -283,6 +285,7 @@ L2 是付费扩展，实施时机取决于：
 - 大众版 v0.1.0 **不**包含 `local-llm-assistant.ts` / `local-llm-config.ts`
 - LlmSettings.svelte 已含 L2 占位（"本地 LLM（付费扩展，敬请期待）"）
 - 占位指向本文档
+- L1 云 LLM 已实现 6 厂商预设（glm/qwen/deepseek/openai/ernie/custom），见 [HOME_DESIGN.md §15.3.2](./HOME_DESIGN.md)
 
 ### 7.2 v0.2.0 引入 L2 的代码变更
 
@@ -306,12 +309,12 @@ L2 作为付费扩展，可能采用以下许可模型之一（v0.2.0 发布前�
 
 ### 8.1 与 L1 的安全对比
 
-| 维度         | L1 云 LLM                          | L2 本地 LLM                       |
-| ------------ | ---------------------------------- | --------------------------------- |
-| 数据出本机   | ✅ 是（调厂商 API）                 | ❌ 否（仅本机推理）                |
-| apiKey 风险  | 中（localStorage 明文）             | 无（本地无鉴权）                   |
-| 网络风险     | 中（依赖厂商可用性）                | 低（仅本机 loopback）              |
-| 审计能力     | 弱（厂商日志不可控）                | 强（Ollama 日志可留痕）            |
+| 维度        | L1 云 LLM               | L2 本地 LLM             |
+| ----------- | ----------------------- | ----------------------- |
+| 数据出本机  | ✅ 是（调厂商 API）     | ❌ 否（仅本机推理）     |
+| apiKey 风险 | 中（localStorage 明文） | 无（本地无鉴权）        |
+| 网络风险    | 中（依赖厂商可用性）    | 低（仅本机 loopback）   |
+| 审计能力    | 弱（厂商日志不可控）    | 强（Ollama 日志可留痕） |
 
 ### 8.2 LLM 输出确定性
 
@@ -350,6 +353,7 @@ L2 不引入新的确定性风险点。
 
 ## 修订记录
 
-| 日期       | 版本 | 修订内容                                       |
-| ---------- | ---- | ---------------------------------------------- |
-| 2026-08-03 | v0.1 | 初稿，作为 evorule-console-cloud v0.1.0 L2 规划 |
+| 日期       | 版本 | 修订内容                                                                                            |
+| ---------- | ---- | --------------------------------------------------------------------------------------------------- |
+| 2026-08-03 | v0.1 | 初稿，作为 evorule-console-cloud v0.1.0 L2 规划                                                     |
+| 2026-08-06 | v0.2 | 与 HOME_DESIGN §15 同步（6 厂商预设 + NetMode + CloudLlmConfig）；v0.1.0 路线图状态更新为"设计完成" |

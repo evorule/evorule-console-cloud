@@ -1,63 +1,16 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- evorule-console-cloud 主视图容器 -->
+<!-- evorule-console-cloud 首页 — 状态感知 + 层感知路由 -->
 <!--
   职责:
-    - 根据 currentView 渲染 5 视图之一(内核视图组件)
-    - 给 RuleLibraryView 传 LLM callback(onaiGenerateDraft / onaiExplainRule)
-    - 给 ExecutionPadView 传 LLM callback(onaiGenerateInput)
-    - 根据 activeAssistantDialog 渲染对应的 Dialog
-
-  LLM callback → openAssistantDialog():
-    - 视图的 LLM 按钮被点 → 调 callback → openAssistantDialog(type)
-    - Dialog 显示,LLM 交互由 Dialog 内部管理
-    - Dialog 关闭后用户继续操作
-
-  内核边界:
-    - 内核视图只调 callback,不感知 Dialog
-    - 大众版通过 callback 接通 LLM 按钮 → Dialog
+    - / 路由的入口页,把决策委托给 HomeRouter
+    - HomeRouter 根据 sessionStore + isEmptyDb + homeModeStore 决策 A/B/C
+    - 5 视图渲染已迁移到 /view/[id]/+page.svelte(T1 阶段)
+  关联设计:HOME_DESIGN.md §4.4(状态感知路由)
 -->
 
 <script lang="ts">
-	import {
-		currentView,
-		RuleLibraryView,
-		ExecutionPadView,
-		StateView,
-		AuditView,
-		TimeTravelView
-	} from '@evorule/console';
-	import {
-		activeAssistantDialog,
-		openAssistantDialog
-	} from '$lib/stores/assistant-ui';
-	import DraftRuleDialog from '$lib/views/Assistant/DraftRuleDialog.svelte';
-	import ExplainRuleDialog from '$lib/views/Assistant/ExplainRuleDialog.svelte';
-	import GenerateInputDialog from '$lib/views/Assistant/GenerateInputDialog.svelte';
+	import HomeRouter from '$lib/views/Home/HomeRouter.svelte';
 </script>
 
-{#if $currentView === 'rules'}
-	<RuleLibraryView
-		onaiGenerateDraft={() => openAssistantDialog('draft')}
-		onaiExplainRule={() => openAssistantDialog('explain')}
-	/>
-{:else if $currentView === 'execution'}
-	<ExecutionPadView
-		onaiGenerateInput={() => openAssistantDialog('input')}
-	/>
-{:else if $currentView === 'state'}
-	<StateView />
-{:else if $currentView === 'audit'}
-	<AuditView />
-{:else if $currentView === 'timetravel'}
-	<TimeTravelView />
-{/if}
-
-<!-- LLM 三 Dialog(条件渲染,只一个能开) -->
-{#if $activeAssistantDialog === 'draft'}
-	<DraftRuleDialog />
-{:else if $activeAssistantDialog === 'explain'}
-	<ExplainRuleDialog />
-{:else if $activeAssistantDialog === 'input'}
-	<GenerateInputDialog />
-{/if}
+<HomeRouter />
