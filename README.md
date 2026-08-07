@@ -92,7 +92,19 @@ npm install
 npm run dev    # 访问 http://localhost:5174
 ```
 
-> 规则库视图不需要后端,可离线试用;执行台/状态/审计/时间旅行需要 evorule-server 跑在 `localhost:18080`(联网模式可配远程)。
+> 规则库视图不需要后端，可离线试用；执行台/状态/审计/时间旅行需要 evorule-server 跑在 `localhost:18080`（联网模式可配远程）。
+
+## GitHub Pages 在线 demo 部署
+
+`.github/workflows/deploy-demo.yml` 在 `push` 到 `main` 分支时自动构建并部署到 GitHub Pages。
+
+**首次启用步骤**：
+1. 进入 GitHub 仓 → **Settings** → **Pages**
+2. **Source** 选择 **GitHub Actions**（不是 "Deploy from a branch"）
+3. 推一次 commit 到 main（或手动触发 workflow_dispatch）触发首次构建
+4. 部署完成后，URL 形如 `https://<owner>.github.io/evorule-console-cloud/`
+
+**特性**：adapter-static 全量预渲染 + MockBackend，浏览器内零网络依赖即可体验 4 个引导任务（医疗/财务两套 demo 数据集）。
 
 ---
 

@@ -42,7 +42,7 @@ T5 协作 + 导入导出 + 任务流 + UX 收尾 (P08 + P09 + P10 + P11)
 - `src/lib/stores/toast.ts` — toastStore（队列 ≤ 3，FIFO，自动消失）
 - `src/lib/stores/empty-state-types.ts` — no_data / no_permission / load_failed / not_configured
 
-### 新增组件（9 个）
+### 新增组件（7 个）
 - `src/lib/views/Home/HomeRouter.svelte` — 状态感知路由（force-demo/未登录→A；空库→B；有库→C）+ 层感知
 - `src/lib/views/Home/DemoHome.svelte` — 状态 A 骨架（T5 打磨）
 - `src/lib/views/Home/OnboardingWizard.svelte` — 状态 B 骨架（T2 实现5步）
@@ -53,7 +53,7 @@ T5 协作 + 导入导出 + 任务流 + UX 收尾 (P08 + P09 + P10 + P11)
 
 ### 修改文件
 - `src/routes/+page.svelte` — 改为渲染 HomeRouter（替换原5视图直接渲染）
-- `src/routes/+layout.svelte` — 全局挂载 Toast.svelte + onMount 加 sessionStore/layerStore 恢复
+- `src/routes/+layout.svelte` — 全局挂载 Toast.svelte（sessionStore / layerStore 在 store 模块加载时已自动从 localStorage 恢复，无需 onMount 操作）
 - `src/routes/+layout.ts`（新增）— 路由守卫
 
 ### 核心逻辑
@@ -65,7 +65,7 @@ T5 协作 + 导入导出 + 任务流 + UX 收尾 (P08 + P09 + P10 + P11)
 - [ ] 未登录 → DemoHome 占位；登录+空库 → OnboardingWizard 占位；登录+有规则 → RealWorkbench
 - [ ] Toast 4 类可调用，自动消失，最多 3 条
 - [ ] EmptyState 4 类文案一致
-- [ ] StatusBadge 8 状态正确渲染
+- [ ] StatusBadge 11 状态正确渲染
 
 ---
 
@@ -162,11 +162,11 @@ T5 协作 + 导入导出 + 任务流 + UX 收尾 (P08 + P09 + P10 + P11)
 
 ### 新增 Store（P06: 5 个 + P07: 6 个）
 - P06：`business-audit.ts`（派生自内核 audit store）/ `business-audit-types.ts` / `business-causal.ts` / `decision-support.ts`（LLM 分析）/ `audit-export.ts`
-- P07：`export-types.ts` / `export-store.ts` / `export-renderers.ts`（4 渲染器）/ `export-field-mapping.ts`（业务化字段映射，复用 P02）/ `export-job-store.ts`（后台任务）
+- P07（3 个独立 store + 1 个 types；`export-field-mapping` 字段映射 + `export-job-store` 后台任务已合并到 `export-store.ts`）：`export-types.ts` / `export-store.ts`（内嵌字段映射 + 后台任务逻辑）/ `export-renderers.ts`（4 渲染器）
 
 ### 新增组件
 - P06（`src/lib/views/Audit/` + `TimeTravel/`）：BusinessAuditView（包装内核 AuditView）/ AuditTimeline / AuditEntryCard / CausalGraph / DecisionSupportPanel / RollbackButton / BusinessTimeTravel（包装内核 ttd）/ TermOverlay
-- P07（`src/lib/views/Export/`）：ExportDialog / ExportContentSelector / ExportFilterPanel / ExportFormatSelector / ExportTemplatePanel / ExportIntegrityToggle / ExportPreview / ExportProgressBar / ExportButton + `src/routes/export/+page.svelte`
+- P07（`src/lib/views/Export/`）：ExportDialog（对话框，8 个子组件内嵌：ExportContentSelector / ExportFilterPanel / ExportFormatSelector / ExportTemplatePanel / ExportIntegrityToggle / ExportPreview / ExportProgressBar / ExportButton）+ ExportCenter（独立导出中心页）+ `src/routes/export/+page.svelte`
 
 ### 核心逻辑
 - **包装模式**：`{#if developerMode}<AuditView />{:else}业务化 UI{/if}`
