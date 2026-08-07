@@ -86,10 +86,10 @@
   );
 
   // 订阅 store 快照(供模板使用)
-  let productionState: ProductionState = $derived(get(productionStateStore));
-  let sseConn = $derived(get(sseConnectionStore));
-  let reactor = $derived(get(reactorRuntimeStore));
-  let metrics = $derived(get(performanceMetricsStore) ?? DEFAULT_METRICS);
+  let productionState: ProductionState = $derived($productionStateStore);
+  let sseConn = $derived($sseConnectionStore);
+  let reactor = $derived($reactorRuntimeStore);
+  let metrics = $derived($performanceMetricsStore ?? DEFAULT_METRICS);
 
   // === U7 SSE session_switched 回调(生产态切换) ===
   function handleU7Switched(e: SessionSwitchedEvent) {
