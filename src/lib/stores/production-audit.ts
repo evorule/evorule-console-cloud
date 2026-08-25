@@ -22,11 +22,79 @@ export interface VersionHistoryEntry {
 	rulesetHash: string;
 	publishedAt: string;
 	publishedBy: string;
-	/** 关联的发布请求 ID */
-	publishRequestId: string;
+	/** 关联的发布请求 ID(后端记录无此字段,默认空串) */
+	publishRequestId?: string;
 	/** 若为回滚产生的版本,指向被回滚的版本号 */
 	rollbackOf?: number;
 	notes: string;
+}
+
+/**
+ * evorule-server production_audit 原始记录(snake_case)。
+ * 对齐 core/workspace/src/models.rs::ProductionAuditRecord。
+ */
+export interface ProductionAuditRecordServer {
+	id: number;
+	/** publish_submitted / publish_reviewed / ruleset_published / ruleset_rollback */
+	event_type: string;
+	/** 生命周期事件记录的是"当时的生产版本";发布/回滚事件才是新版本号 */
+	ruleset_version: number;
+	previous_version: number | null;
+	ruleset_hash: string;
+	tcb_session_id: number;
+	source_workspace_ids: string;
+	operated_by: string;
+	operated_at: string;
+	reason: string | null;
+	test_report_paths: string | null;
+	ruleset_snapshot: string | null;
+}
+
+/**
+ * 拉取发布审计并适配为版本历史(GET /api/production/audit)。
+ *
+ * 仅保留**产生新版本**的事件(ruleset_published / ruleset_rollback):
+ * publish_submitted / publish_reviewed 是生命周期节点,不改变版本号,
+ * 若不过滤会得到重复的版本号,污染时间线。
+ *
+ * 语义:
+ *   - 成功 → 返回版本历史数组(空数组 = 确实无版本事件)
+ *   - 失败(网络错误 / 非 2xx / 响应非数组)→ 抛 Error,由调用方展示错误状态
+ *
+ * 为什么抛错而非返回空数组:
+ *   返回空数组无法区分"无版本"与"后端不可达",会掩盖后端故障
+ *   (见 F3 偏差修正)。调用方 catch 后展示明确错误,不静默降级。
+ */
+export async function fetchProductionAudit(
+  baseUrl: string,
+): Promise<VersionHistoryEntry[]> {
+  const url = `${baseUrl.replace(/\/+$/, '')}/api/production/audit?limit=50`;
+  const r = await fetch(url);
+  if (!r.ok) {
+    throw new Error(`获取版本历史失败(${r.status})`);
+  }
+  const raw = (await r.json()) as ProductionAuditRecordServer[];
+  if (!Array.isArray(raw)) {
+    throw new Error('版本历史响应格式异常(期望数组)');
+  }
+  return raw
+    .filter(
+      (rec) =>
+        rec.event_type === 'ruleset_published' ||
+        rec.event_type === 'ruleset_rollback',
+    )
+    .map((rec) => ({
+      version: rec.ruleset_version,
+      rulesetHash: rec.ruleset_hash,
+      publishedAt: rec.operated_at,
+      publishedBy: rec.operated_by,
+      // 仅回滚事件标注 rollbackOf;published 事件的 previous_version 是前序版本,非回滚来源
+      rollbackOf:
+        rec.event_type === 'ruleset_rollback'
+          ? (rec.previous_version ?? undefined)
+          : undefined,
+      notes: rec.reason ?? '',
+    }));
 }
 
 const STORAGE_KEY = 'evorule-console-cloud:production-audit';

@@ -20,9 +20,12 @@
 //   - mock evorule-server API(测试连接)
 //   - localStorage 注入/读取断言
 //
+// 依赖:已登录状态(beforeEach 通过 tests/helpers/login.ts 注入 session + auth + db-meta)
+//
 // 运行: npx playwright test tests/settings-flow.spec.ts
 
 import { test, expect } from '@playwright/test';
+import { loginAsAdmin } from './helpers/login';
 
 // ============ mock LLM API ============
 function mockChatResponse(content: string) {
@@ -57,12 +60,8 @@ test.describe('evorule-console-cloud 设置面板', () => {
 			await route.fulfill({ status: 200, body: 'ok' });
 		});
 
-		await page.goto('/', { waitUntil: 'networkidle' });
-		await page.evaluate(() => localStorage.clear());
-		await page.reload({ waitUntil: 'networkidle' });
-		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, {
-			timeout: 10_000
-		});
+		// 注入已登录 + 库元数据 + LLM 禁用(helper 内置 localStorage.clear + reload)
+		await loginAsAdmin(page);
 	});
 
 	// ============ 1. 设置面板基本可用 ============
@@ -265,10 +264,16 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.nav-tab.settings-tab').click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
-		// 不填 apiKey,直接测试连接
-		await page.locator('button', { hasText: '测试连接' }).click();
+		// 清空 apiKey(helper 注入了 sk-test-mock,需覆盖才能触发"未填完整"分支)
+		await page.locator('#llm-apikey').fill('');
+		// 限定到 .llm-settings section(联网 tab 也有"测试连接"按钮,避免选错)
+		await page
+			.locator('section.llm-settings button', { hasText: '测试连接' })
+			.click();
 		// 应该提示填完整
-		await expect(page.locator('.alert-error', { hasText: '完整配置' })).toBeVisible();
+		await expect(
+			page.locator('section.llm-settings .alert', { hasText: '完整配置' })
+		).toBeVisible({ timeout: 5000 });
 	});
 
 	test('填完配置后测试连接 → mock 返回成功', async ({ page }) => {
@@ -277,10 +282,14 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('input[type="checkbox"]').check();
 		await page.locator('#llm-provider').selectOption('glm');
 		await page.locator('#llm-apikey').fill('sk-test-mock-key');
-		// 点击测试连接
-		await page.locator('button', { hasText: '测试连接' }).click();
+		// 限定到 .llm-settings section
+		await page
+			.locator('section.llm-settings button', { hasText: '测试连接' })
+			.click();
 		// 应该显示成功(mock 返回 200 + "OK")
-		await expect(page.locator('.alert-success')).toBeVisible({ timeout: 10_000 });
+		await expect(
+			page.locator('section.llm-settings .alert-success')
+		).toBeVisible({ timeout: 10_000 });
 	});
 
 	// ============ 7. LLM 配置 tab — 持久化 ============

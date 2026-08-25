@@ -137,7 +137,14 @@
         <h1>规则库</h1>
         <span class="subtitle">业务专家视角 · 表单填写自动生成 JSON</span>
       </div>
-      <DeveloperModeToggle bind:devMode />
+      <div class="header-actions">
+        {#if onaiGenerateDraft}
+          <button class="btn btn-ai" onclick={() => onaiGenerateDraft?.()}>
+            🤖 AI 起草规则
+          </button>
+        {/if}
+        <DeveloperModeToggle bind:devMode />
+      </div>
     </header>
 
     <div class="lib-body">
@@ -231,6 +238,11 @@
     margin: 0;
     font-size: 20px;
     color: var(--color-text-primary, #1e293b);
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   .subtitle {
     font-size: 11px;

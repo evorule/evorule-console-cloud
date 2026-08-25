@@ -28,6 +28,14 @@ import {
 } from '@evorule/console';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
 import { fetchProductionState, type ProductionState } from '../stores/production-state';
+import {
+	fetchPublishQueue,
+	reviewPublishRequest,
+	emergencyRollbackRequest,
+	type PublishQueueItemView,
+	type PublishWriteResult,
+} from '../stores/publish-queue-api';
+import { fetchProductionAudit, type VersionHistoryEntry } from '../stores/production-audit';
 
 export class CloudHttpBackend implements ExecutionBackend {
 	private backend: HttpBackend;
@@ -156,5 +164,57 @@ export class CloudHttpBackend implements ExecutionBackend {
 	 */
 	async getProductionState(): Promise<ProductionState> {
 		return fetchProductionState(this.baseUrl);
+	}
+
+	/**
+	 * 拉取发布队列(消费 evorule-server `GET /api/publish/queue`)。
+	 *
+	 * 失败(网络错误 / 非 2xx / 响应非数组)→ 抛 Error,
+	 * 由调用方 catch 后展示错误状态(不静默返回空数组,见 F3 偏差修正)。
+	 */
+	async getPublishQueue(): Promise<PublishQueueItemView[]> {
+		return fetchPublishQueue(this.baseUrl);
+	}
+
+	/**
+	 * 审批发布(消费 `POST /api/publish/queue/{queue_id}/review`)。
+	 *
+	 * @param decision 'approved' | 'rejected'
+	 * @param comment 审批备注
+	 * @param reviewedBy 审批者 userId
+	 * @param role 前端角色(映射为后端 PublishRole)
+	 */
+	async reviewPublishRequest(
+		queueId: number,
+		decision: 'approved' | 'rejected',
+		comment: string,
+		reviewedBy: string,
+		role: string,
+	): Promise<PublishWriteResult> {
+		return reviewPublishRequest(this.baseUrl, queueId, decision, comment, reviewedBy, role);
+	}
+
+	/**
+	 * 紧急回滚(消费 `POST /api/publish/rollback`)。
+	 * 版本号单调递增:回滚到 targetVersion 的规则集,新版本号 = 当前 + 1。
+	 */
+	async emergencyRollbackRequest(
+		targetVersion: number,
+		reason: string,
+		operatedBy: string,
+		role: string,
+	): Promise<PublishWriteResult> {
+		return emergencyRollbackRequest(this.baseUrl, targetVersion, reason, operatedBy, role);
+	}
+
+	/**
+	 * 拉取发布审计 / 版本历史(消费 `GET /api/production/audit`)。
+	 * 仅保留产生新版本的事件(ruleset_published / ruleset_rollback)。
+	 *
+	 * 失败(网络错误 / 非 2xx / 响应非数组)→ 抛 Error,
+	 * 由调用方 catch 后展示错误状态(不静默返回空数组,见 F3 偏差修正)。
+	 */
+	async getProductionAudit(): Promise<VersionHistoryEntry[]> {
+		return fetchProductionAudit(this.baseUrl);
 	}
 }

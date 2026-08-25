@@ -402,7 +402,7 @@ describe("kernel-rule-adapter — unwrapKernelTransform 反向解析", () => {
 });
 
 describe("kernel-rule-adapter — buildKernelRuleContent", () => {
-  test("产出含 meta(id/version/description)的合法 JSON 字符串", () => {
+  test("产出含 meta(id/description)的合法 JSON 字符串（version 不透传，由内核管理）", () => {
     const content = buildKernelRuleContent(
       {
         condition: { domain: "lt", path: "amount", value: 100 },
@@ -413,7 +413,8 @@ describe("kernel-rule-adapter — buildKernelRuleContent", () => {
 
     const parsed = JSON.parse(content);
     expect(parsed.id).toBe("test.rule");
-    expect(parsed.version).toBe(1);
+    // 设计决策(B4, commit 39e2932):version 由内核在 addRule 时管理,不透传至 Rule.content JSON
+    expect(parsed.version).toBeUndefined();
     expect(parsed.description).toBe("测试规则");
     expect(Array.isArray(parsed.transform)).toBe(true);
 
@@ -426,6 +427,7 @@ describe("kernel-rule-adapter — buildKernelRuleContent", () => {
     const content = buildKernelRuleContent({});
     const parsed = JSON.parse(content);
     expect(parsed.id).toBeUndefined();
+    expect(parsed.version).toBeUndefined();
     expect(parsed.transform).toBeDefined();
   });
 });

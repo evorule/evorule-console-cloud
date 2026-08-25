@@ -14,8 +14,15 @@
 <script lang="ts">
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import RollbackVersionPicker from "./RollbackVersionPicker.svelte";
-  import { can } from "$lib/stores/auth";
-  import type { PermissionAction } from "$lib/stores/permission-matrix";
+  import { getCurrentUser } from "$lib/stores/auth";
+  import {
+    ACTION_TO_CONFIRM,
+    canPerform as logicCanPerform,
+    permissionTooltip as logicPermissionTooltip,
+    type InterventionAction as LogicAction,
+  } from "./intervention-bar-logic";
+
+  export type InterventionAction = LogicAction;
 
   interface Props {
     currentRulesetVersion: number;
@@ -25,55 +32,18 @@
     disabled?: boolean;
   }
 
-  /**
-   * P08 权限守卫:把干预动作映射到 PermissionAction。
-   * 无权限的按钮 disabled + tooltip 提示。
-   * - reactor.* / session.switch / io.* / wal.force_rotate → intervene_runtime
-   * - session.rollback → rollback_ruleset
-   * - publish.approve_mode → approve_publish
-   * - publish.start_session / publish.export_package → submit_to_publish
-   * - audit.export_chain → view_audit_chain
-   */
+  /** 取当前用户角色(未登录 → null),喂给纯函数层 */
+  function currentRole() {
+    return getCurrentUser()?.role ?? null;
+  }
+
   function canPerform(action: InterventionAction): boolean {
-    const map: Partial<Record<InterventionAction, PermissionAction>> = {
-      "reactor.pause": "intervene_runtime",
-      "reactor.resume": "intervene_runtime",
-      "reactor.gc": "intervene_runtime",
-      "reactor.check_invariants": "intervene_runtime",
-      "publish.start_session": "submit_to_publish",
-      "publish.approve_mode": "approve_publish",
-      "publish.export_package": "submit_to_publish",
-      "session.switch": "intervene_runtime",
-      "session.rollback": "rollback_ruleset",
-      "io.cancel_all_pending": "intervene_runtime",
-      "io.inject_heartbeat": "intervene_runtime",
-      "audit.export_chain": "view_audit_chain",
-      "wal.force_rotate": "intervene_runtime",
-    };
-    const perm = map[action];
-    if (!perm) return true; // 未映射的动作默认允许
-    return can(perm);
+    return logicCanPerform(currentRole(), action);
   }
 
-  /** 无权限时的 tooltip 文案 */
   function permissionTooltip(action: InterventionAction): string {
-    return canPerform(action) ? "" : "无权限(角色限制)";
+    return logicPermissionTooltip(currentRole(), action);
   }
-
-  export type InterventionAction =
-    | "reactor.pause"
-    | "reactor.resume"
-    | "reactor.gc"
-    | "reactor.check_invariants"
-    | "publish.start_session"
-    | "publish.approve_mode"
-    | "publish.export_package"
-    | "session.switch"
-    | "session.rollback"
-    | "io.cancel_all_pending"
-    | "io.inject_heartbeat"
-    | "audit.export_chain"
-    | "wal.force_rotate";
 
   let { currentRulesetVersion, onAction, disabled = false }: Props = $props();
 
@@ -88,18 +58,13 @@
   // === Rollback Picker 状态 ===
   let rollbackOpen = $state(false);
 
-  function request(
-    action: InterventionAction,
-    title: string,
-    message: string | undefined,
-    level: "info" | "warning" | "danger",
-    confirmBtn = "确认",
-  ) {
+  function request(action: InterventionAction) {
+    const spec = ACTION_TO_CONFIRM[action];
     pendingAction = action;
-    confirmTitle = title;
-    confirmMessage = message;
-    confirmLevel = level;
-    confirmLabel = confirmBtn;
+    confirmTitle = spec.title;
+    confirmMessage = spec.message;
+    confirmLevel = spec.level;
+    confirmLabel = spec.confirmLabel;
     confirmOpen = true;
   }
 
@@ -139,14 +104,7 @@
         class={`${btnBaseCls} iv-secondary`}
         disabled={disabled || !canPerform("reactor.pause")}
         title={permissionTooltip("reactor.pause")}
-        onclick={() =>
-          request(
-            "reactor.pause",
-            "暂停 Reactor?",
-            "将停止所有规则执行,已开始的 step 会完成。可恢复。",
-            "warning",
-            "暂停",
-          )}
+        onclick={() => request("reactor.pause")}
       >
         ⏸ 暂停
       </button>
@@ -154,14 +112,7 @@
         class={`${btnBaseCls} iv-success`}
         disabled={disabled || !canPerform("reactor.resume")}
         title={permissionTooltip("reactor.resume")}
-        onclick={() =>
-          request(
-            "reactor.resume",
-            "恢复 Reactor?",
-            "继续处理待执行队列。",
-            "info",
-            "恢复",
-          )}
+        onclick={() => request("reactor.resume")}
       >
         ▶ 恢复
       </button>
@@ -169,14 +120,7 @@
         class={`${btnBaseCls} iv-info`}
         disabled={disabled || !canPerform("reactor.gc")}
         title={permissionTooltip("reactor.gc")}
-        onclick={() =>
-          request(
-            "reactor.gc",
-            "手动触发 GC?",
-            "回收死对象和过期缓存(异步)。",
-            "info",
-            "执行 GC",
-          )}
+        onclick={() => request("reactor.gc")}
       >
         🗑 手动 GC
       </button>
@@ -184,14 +128,7 @@
         class={`${btnBaseCls} iv-info`}
         disabled={disabled || !canPerform("reactor.check_invariants")}
         title={permissionTooltip("reactor.check_invariants")}
-        onclick={() =>
-          request(
-            "reactor.check_invariants",
-            "触发不变量检查?",
-            "扫描所有结构不变量,发现违规会追加 Anomaly。",
-            "warning",
-            "开始检查",
-          )}
+        onclick={() => request("reactor.check_invariants")}
       >
         🔍 不变量检查
       </button>
@@ -206,14 +143,7 @@
         class={`${btnBaseCls} iv-primary`}
         disabled={disabled || !canPerform("publish.start_session")}
         title={permissionTooltip("publish.start_session")}
-        onclick={() =>
-          request(
-            "publish.start_session",
-            "创建发布会话?",
-            "创建临时 publish session,当前 ruleset 会作为基线。",
-            "info",
-            "创建",
-          )}
+        onclick={() => request("publish.start_session")}
       >
         🆕 发布会话
       </button>
@@ -221,14 +151,7 @@
         class={`${btnBaseCls} iv-warning`}
         disabled={disabled || !canPerform("publish.approve_mode")}
         title={permissionTooltip("publish.approve_mode")}
-        onclick={() =>
-          request(
-            "publish.approve_mode",
-            "切换为审批模式?",
-            "所有 publish 动作需经过审批队列(Doctor → DepartmentHead → Admin)。",
-            "warning",
-            "开启审批",
-          )}
+        onclick={() => request("publish.approve_mode")}
       >
         🧑‍⚖️ 审批模式
       </button>
@@ -236,14 +159,7 @@
         class={`${btnBaseCls} iv-secondary`}
         disabled={disabled || !canPerform("publish.export_package")}
         title={permissionTooltip("publish.export_package")}
-        onclick={() =>
-          request(
-            "publish.export_package",
-            "导出当前发布包?",
-            "将当前 ruleset + 元数据打包为 JSON 下载。",
-            "info",
-            "导出",
-          )}
+        onclick={() => request("publish.export_package")}
       >
         📦 导出发布包
       </button>
@@ -257,14 +173,7 @@
       <button
         class={`${btnBaseCls} iv-secondary`}
         {disabled}
-        onclick={() =>
-          request(
-            "session.switch",
-            "手动切换 Session?",
-            "主动触发一次滚动 session 切换(不等发布)。",
-            "warning",
-            "切换",
-          )}
+        onclick={() => request("session.switch")}
       >
         🔀 切换 Session
       </button>
@@ -287,14 +196,7 @@
         class={`${btnBaseCls} iv-warning`}
         disabled={disabled || !canPerform("io.cancel_all_pending")}
         title={permissionTooltip("io.cancel_all_pending")}
-        onclick={() =>
-          request(
-            "io.cancel_all_pending",
-            "取消全部待处理 IO?",
-            "所有 awaiting_io 状态的 IO request 将被标记为 canceled。可能产生业务影响。",
-            "danger",
-            "确认取消",
-          )}
+        onclick={() => request("io.cancel_all_pending")}
       >
         ✋ 取消全部 IO
       </button>
@@ -302,14 +204,7 @@
         class={`${btnBaseCls} iv-info`}
         disabled={disabled || !canPerform("io.inject_heartbeat")}
         title={permissionTooltip("io.inject_heartbeat")}
-        onclick={() =>
-          request(
-            "io.inject_heartbeat",
-            "注入心跳 Fact?",
-            "往 reactor 注入一条 type=heartbeat 的 Fact,用于验证链路通畅。",
-            "info",
-            "注入",
-          )}
+        onclick={() => request("io.inject_heartbeat")}
       >
         💓 心跳注入
       </button>
@@ -324,14 +219,7 @@
         class={`${btnBaseCls} iv-secondary`}
         disabled={disabled || !canPerform("audit.export_chain")}
         title={permissionTooltip("audit.export_chain")}
-        onclick={() =>
-          request(
-            "audit.export_chain",
-            "导出审计链?",
-            "将完整 BLAKE3 审计链导出为 JSON 文件(含哈希校验)。",
-            "info",
-            "导出",
-          )}
+        onclick={() => request("audit.export_chain")}
       >
         🔗 导出审计链
       </button>
@@ -339,14 +227,7 @@
         class={`${btnBaseCls} iv-secondary`}
         disabled={disabled || !canPerform("wal.force_rotate")}
         title={permissionTooltip("wal.force_rotate")}
-        onclick={() =>
-          request(
-            "wal.force_rotate",
-            "强制轮换 WAL?",
-            "立即关闭当前 WAL 文件并创建新文件。用于磁盘管理与归档。",
-            "warning",
-            "轮换",
-          )}
+        onclick={() => request("wal.force_rotate")}
       >
         🔄 轮换 WAL
       </button>

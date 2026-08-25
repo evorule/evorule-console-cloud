@@ -271,25 +271,9 @@
     font-size: 12px;
     font-weight: 500;
   }
-  .status-green {
-    background: var(--color-success-bg, #dcfce7);
-    color: var(--color-success-text, #166534);
-  }
-  .status-gray {
-    background: var(--color-gray-100, #f1f5f9);
-    color: var(--color-text-secondary, #64748b);
-  }
   .status-blue {
     background: var(--color-info-bg, #dbeafe);
     color: var(--color-info-text, #1e40af);
-  }
-  .version-badge {
-    padding: 2px 10px;
-    background: var(--color-gray-100, #f1f5f9);
-    border-radius: 12px;
-    font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
-    font-family: monospace;
   }
 
   .layer-content {
@@ -308,7 +292,6 @@
     margin-bottom: 24px;
   }
 
-  .mock-fact-stream,
   .mock-rule-list {
     text-align: left;
     background: var(--color-gray-50, #f8fafc);
@@ -320,12 +303,10 @@
     max-width: 560px;
     margin: 0 auto;
   }
-  .mock-fact,
   .mock-rule {
     padding: 4px 0;
     border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
   }
-  .mock-fact:last-child,
   .mock-rule:last-child {
     border-bottom: none;
   }

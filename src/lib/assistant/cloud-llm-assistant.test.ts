@@ -411,6 +411,63 @@ describe('错误场景', () => {
 
 		await expect(a.generateRuleDraft('描述')).rejects.toThrow(LlmResponseError);
 	});
+
+	test('200 + error 体({error:{message}}) 抛 LlmApiError 并透出真实错误', async () => {
+		const a = makeAssistant();
+		const vendorError = { error: { message: 'model not found: gpt-4o-unknown' } };
+		const response = {
+			ok: true,
+			status: 200,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => vendorError,
+			text: async () => JSON.stringify(vendorError)
+		} as unknown as Response;
+		mockFetch.mockResolvedValue(response);
+
+		try {
+			await a.generateRuleDraft('描述');
+			expect.fail('应该抛错');
+		} catch (e) {
+			const err = e as LlmError;
+			expect(err).toBeInstanceOf(LlmApiError);
+			expect(err.kind).toBe('api');
+			expect(err.message).toContain('model not found');
+			// apiKey 不泄露
+			expect(err.message).not.toContain(TEST_API_KEY);
+		}
+	});
+
+	test('200 + error 体({error:"string"}) 抛 LlmApiError 并透出错误', async () => {
+		const a = makeAssistant();
+		const vendorError = { error: 'balance insufficient' };
+		const response = {
+			ok: true,
+			status: 200,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => vendorError,
+			text: async () => JSON.stringify(vendorError)
+		} as unknown as Response;
+		mockFetch.mockResolvedValue(response);
+
+		await expect(a.generateRuleDraft('描述')).rejects.toThrow(/balance insufficient/);
+	});
+
+	test('非 2xx 错误体含结构化 error.message 时透出(500)', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(
+			mockHttpError(500, JSON.stringify({ error: { message: 'upstream timeout' } }))
+		);
+
+		try {
+			await a.generateRuleDraft('描述');
+			expect.fail('应该抛错');
+		} catch (e) {
+			const err = e as LlmError;
+			expect(err).toBeInstanceOf(LlmApiError);
+			expect(err.message).toContain('upstream timeout');
+			expect(err.message).not.toContain(TEST_API_KEY);
+		}
+	});
 });
 
 // ============ apiKey 不泄露断言(核心安全约束) ============

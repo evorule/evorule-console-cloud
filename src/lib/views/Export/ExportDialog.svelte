@@ -351,8 +351,9 @@
           <div class="ed-section-title">3. 筛选条件</div>
 
           <div class="ed-filter-row">
-            <label class="ed-filter-label">时间范围:</label>
+            <label class="ed-filter-label" for="ed-filter-time-range">时间范围:</label>
             <select
+              id="ed-filter-time-range"
               value={timeRangeKind}
               onchange={(e) =>
                 setTimeRangeKind(e.currentTarget.value as typeof timeRangeKind)}
@@ -450,8 +451,9 @@
           </div>
 
           <div class="ed-filter-row">
-            <label class="ed-filter-label">Fact 类型筛选:</label>
+            <label class="ed-filter-label" for="ed-filter-fact-types">Fact 类型筛选:</label>
             <input
+              id="ed-filter-fact-types"
               type="text"
               placeholder="逗号分隔,如 patient_visit,drug_prescribe(留空=全部)"
               onchange={(e) =>
@@ -469,8 +471,9 @@
           </div>
 
           <div class="ed-filter-row">
-            <label class="ed-filter-label">版本范围:</label>
+            <label class="ed-filter-label" for="ed-filter-version-range">版本范围:</label>
             <input
+              id="ed-filter-version-range"
               type="number"
               min="0"
               placeholder="起始版本"
@@ -605,7 +608,10 @@
         <!-- 进度 -->
         {#if execState.exporting || execState.message}
           <div class="ed-progress" class:err={!!execState.error}>
-            <div class="ed-progress-bar" style="width: {execState.progress}%" />
+            <div
+              class="ed-progress-bar"
+              style="width: {execState.progress}%"
+            ></div>
             <div class="ed-progress-text">
               {execState.message}
               {#if execState.progress > 0 && execState.progress < 100}
@@ -640,8 +646,14 @@
     {#if showSaveTemplate}
       <div
         class="ed-sub-overlay"
+        role="button"
+        tabindex="-1"
+        aria-label="关闭保存模板对话框"
         onclick={(e) => {
           if (e.currentTarget === e.target) showSaveTemplate = false;
+        }}
+        onkeydown={(e) => {
+          if (e.key === "Escape") showSaveTemplate = false;
         }}
       >
         <div class="ed-sub-dialog">

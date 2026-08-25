@@ -52,6 +52,8 @@ import {
 	FINANCE_COMPLIANCE_FACTS,
 } from "$lib/data/demo-finance";
 import type { ProductionState } from "$lib/stores/production-state";
+import type { PublishQueueItemView, PublishWriteResult } from "$lib/stores/publish-queue-api";
+import type { VersionHistoryEntry } from "$lib/stores/production-audit";
 
 /** MockBackend 专属 session 元数据(区分医疗/财务/合规门禁) */
 interface MockSession {
@@ -303,5 +305,38 @@ export class MockBackend implements ExecutionBackend {
 			status: "running",
 			updatedAt: new Date().toISOString(),
 		};
+	}
+
+	// === F3 发布队列/版本历史 mock(离线模式默认值,与 CloudHttpBackend 同名) ===
+
+	/** 拉取发布队列(mock:空队列,由 localStorage store 提供演示数据)。 */
+	async getPublishQueue(): Promise<PublishQueueItemView[]> {
+		return [];
+	}
+
+	/** 审批发布(mock:本地 store 处理,此处仅确认签名)。 */
+	async reviewPublishRequest(
+		_queueId: number,
+		_decision: "approved" | "rejected",
+		_comment: string,
+		_reviewedBy: string,
+		_role: string,
+	): Promise<PublishWriteResult> {
+		return { ok: true };
+	}
+
+	/** 紧急回滚(mock:本地 store 处理)。 */
+	async emergencyRollbackRequest(
+		_targetVersion: number,
+		_reason: string,
+		_operatedBy: string,
+		_role: string,
+	): Promise<PublishWriteResult> {
+		return { ok: true };
+	}
+
+	/** 拉取版本历史(mock:空,由 localStorage store 提供演示数据)。 */
+	async getProductionAudit(): Promise<VersionHistoryEntry[]> {
+		return [];
 	}
 }

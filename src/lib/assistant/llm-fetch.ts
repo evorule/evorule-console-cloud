@@ -167,8 +167,11 @@ export async function callChatApi(params: ChatApiParams): Promise<string> {
 		if (err.name === 'AbortError') {
 			throw new LlmNetworkError(`LLM 请求超时(${timeoutMs}ms)`);
 		}
-		// 其他网络错误(连接拒绝 / DNS / CORS)— 不写入 apiKey
-		throw new LlmNetworkError(`LLM 网络错误: ${err.message}`);
+		// 其他网络错误(连接拒绝 / DNS / CORS)— 不写入 apiKey,面向非程序员给出可行动提示
+		const host = safeHost(apiEndpoint);
+		throw new LlmNetworkError(
+			`无法连接 LLM 服务(网络错误)${host ? `,端点 ${host}` : ''}。请检查网络连接与 apiEndpoint 地址`
+		);
 	}
 	clearTimeout(timer);
 
@@ -176,8 +179,10 @@ export async function callChatApi(params: ChatApiParams): Promise<string> {
 	if (!r.ok) {
 		// 读取错误响应体(可能含厂商错误信息)
 		const text = await r.text().catch(() => '');
+		// 优先提取结构化的厂商错误消息(如 {error:{message}}),提取不到才回退原始文本
+		const vendorMsg = extractVendorMessage(text);
 		// 防御性脱敏:从响应体中清除 apiKey(防止厂商回显 apiKey 进错误消息)
-		const safeText = redactSecret(text, apiKey).slice(0, 300);
+		const safeText = redactSecret(vendorMsg || text, apiKey).slice(0, 300);
 		if (r.status === 401) {
 			throw new LlmAuthError(`LLM 鉴权失败(401): apiKey 无效或已失效`);
 		}
@@ -201,7 +206,19 @@ export async function callChatApi(params: ChatApiParams): Promise<string> {
 	// 提取 content(OpenAI 兼容结构 choices[0].message.content)
 	const data = json as {
 		choices?: Array<{ message?: { content?: string } }>;
+		error?: unknown;
 	};
+
+	// 2xx 但响应体带 error 字段:部分厂商对业务错误(模型不存在/余额不足/内容安全)返回 200 + error 体。
+	// 不静默掩盖:把厂商真实错误透出,避免用户看到误导性的"无 choices"。
+	if (data && data.error !== undefined) {
+		const vendorMsg = vendorErrorToString(data.error);
+		throw new LlmApiError(
+			`LLM 返回错误: ${redactSecret(vendorMsg, apiKey).slice(0, 300)}`,
+			r.status
+		);
+	}
+
 	if (
 		!data ||
 		!Array.isArray(data.choices) ||
@@ -237,4 +254,74 @@ function redactSecret(text: string, secret: string): string {
 	// 用全局替换(escapeRegExp 避免特殊字符问题)
 	const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	return text.replace(new RegExp(escaped, 'g'), '***REDACTED***');
+}
+
+/**
+ * 提取端点的 host(用于错误提示)。端点是连接地址、非密钥,可展示给用户。
+ *
+ * @param endpoint 完整 apiEndpoint
+ * @returns host(如 `api.minimax.chat`);解析失败返回空串
+ */
+function safeHost(endpoint: string): string {
+	try {
+		return new URL(endpoint).host;
+	} catch {
+		return '';
+	}
+}
+
+/**
+ * 从厂商错误响应体文本中提取可读的错误消息(非 2xx 场景)。
+ *
+ * 兼容形态:
+ *   - `{"error":{"message":"..."}}` / `{"error":"..."}` / `{"message":"..."}`
+ *   - 非 JSON(纯文本) → 返回空串,由调用方回退原文
+ *
+ * @param body 响应体文本
+ * @returns 提取出的错误消息(无则空串)
+ */
+function extractVendorMessage(body: string): string {
+	if (!body) return '';
+	try {
+		const parsed = JSON.parse(body) as {
+			error?: unknown;
+			message?: unknown;
+			msg?: unknown;
+		};
+		if (parsed.error !== undefined) return vendorErrorToString(parsed.error);
+		if (typeof parsed.message === 'string') return parsed.message;
+		if (typeof parsed.msg === 'string') return parsed.msg;
+		return '';
+	} catch {
+		// 非 JSON(纯文本错误),交给调用方回退原文
+		return '';
+	}
+}
+
+/**
+ * 把厂商错误值(已解析)转成可读消息。
+ *
+ * 兼容:
+ *   - 字符串(`"balance insufficient"`)
+ *   - `{ message: "..." }` / `{ msg: "..." }`
+ *   - 其他对象 → JSON 序列化
+ *   - 其他原始值 → String()
+ *
+ * @param error 厂商返回的 error 值
+ * @returns 可读错误消息
+ */
+function vendorErrorToString(error: unknown): string {
+	if (typeof error === 'string') return error;
+	if (error && typeof error === 'object') {
+		const e = error as { message?: unknown; msg?: unknown };
+		if (typeof e.message === 'string') return e.message;
+		if (typeof e.msg === 'string') return e.msg;
+		// 无法提取,返回序列化(供用户参考)
+		try {
+			return JSON.stringify(error);
+		} catch {
+			return String(error);
+		}
+	}
+	return String(error);
 }

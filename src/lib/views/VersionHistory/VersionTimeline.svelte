@@ -7,30 +7,70 @@
 -->
 
 <script lang="ts">
-  import { productionAuditStore } from '$lib/stores/production-audit';
-  import { can } from '$lib/stores/auth';
-  import { toastSuccess, toastInfo } from '$lib/stores/toast';
+  import { onMount } from 'svelte';
+  import { useBackend } from '@evorule/console';
+  import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
+  import { type VersionHistoryEntry } from '$lib/stores/production-audit';
+  import { roleToBackend } from '$lib/stores/publish-queue-api';
+  import { can, getCurrentUser } from '$lib/stores/auth';
+  import { toastSuccess, toastError } from '$lib/stores/toast';
 
   const canRollback = $derived(can('rollback_ruleset'));
-  const history = $derived(
-    [...$productionAuditStore].sort((a, b) => b.version - a.version),
-  );
 
-  function handleRollback(version: number): void {
+  let history = $state<VersionHistoryEntry[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
+  let backend: CloudHttpBackend;
+
+  async function reloadHistory(): Promise<void> {
+    try {
+      history = await backend.getProductionAudit();
+      error = null;
+    } catch (e) {
+      history = [];
+      const detail = e instanceof Error && e.message ? e.message : '网络错误';
+      error = `无法连接 evorule-server(${backend.baseUrl}):${detail}`;
+    }
+  }
+
+  onMount(async () => {
+    const b = useBackend();
+    // cloud 版始终注入 CloudHttpBackend(在线/离线统一走 HTTP)
+    backend = b as CloudHttpBackend;
+    await reloadHistory();
+    loading = false;
+  });
+
+  async function handleRollback(version: number): Promise<void> {
     if (!confirm(`确认回滚到 v${version}?此操作将创建新版本(单调递增)。`)) return;
-    // P0 mock:回滚由 publish-queue 紧急回滚 + appendVersion 完成
-    // 此处仅提示(完整回滚流程在 PublishQueueList 触发)
-    toastInfo(`回滚到 v${version} 需通过发布队列紧急回滚触发`, '版本历史');
+    const user = getCurrentUser();
+    if (!user) return;
+    const res = await backend.emergencyRollbackRequest(
+      version,
+      `版本历史回滚到 v${version}`,
+      user.id,
+      roleToBackend(user.role),
+    );
+    if (!res.ok) {
+      toastError(res.error ?? '回滚失败', '版本历史');
+      return;
+    }
+    toastSuccess(`已回滚到 v${version} (新版本号递增)`, '版本历史');
+    await reloadHistory();
   }
 </script>
 
 <section class="version-history">
   <header class="history-header">
     <h2>📜 版本历史</h2>
-    <span class="history-count">{$productionAuditStore.length} 个版本</span>
+    <span class="history-count">{history.length} 个版本</span>
   </header>
 
-  {#if history.length === 0}
+  {#if loading}
+    <div class="history-empty">⏳ 加载版本历史...</div>
+  {:else if error}
+    <div class="history-empty history-error">⚠️ {error}</div>
+  {:else if history.length === 0}
     <div class="history-empty">📭 暂无发布版本</div>
   {:else}
     <div class="timeline">
@@ -95,6 +135,9 @@
     color: var(--color-text-secondary, #64748b);
     background: white;
     border-radius: 8px;
+  }
+  .history-error {
+    color: var(--color-error, #dc2626);
   }
   .timeline {
     position: relative;
