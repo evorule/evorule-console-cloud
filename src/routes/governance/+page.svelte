@@ -1,0 +1,896 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- Copyright (C) 2026 EvoRule Project -->
+<!--
+  /governance 路由 — Phase 2 F1 治理接线(真实后端,非 mock)。
+  通过 GovernanceBackend 直连 evorule-rule(:18081) REST:
+    连接 → 数据集列表/创建 → 条目(规则)灌入 → 5 态生命周期 + 独立审批发布 → 版本链。
+  生命周期:Draft → Candidate → Active → Published → Rejected(权限由 evorule-rule 后端强制,
+  错误不静默,toast 展示后端 error.message)。
+  边界:本页治理数据来自 evorule-rule(资产库),与 evorule-server(执行)解耦。
+-->
+
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
+  import { toastSuccess, toastError, toastInfo } from '$lib/stores/toast';
+  import {
+    governanceStore,
+    connect,
+    disconnect,
+    refreshDatasets,
+    createDataset,
+    selectDataset,
+    addEntry,
+    transition,
+    publish,
+    unpublish,
+    createVersion
+  } from '$lib/governance/governance-store';
+  import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
+  import type { LifecycleStatus } from '$lib/governance/types';
+
+  // ===== 连接面板 =====
+  let connecting = $state(false);
+  let connError = $state<string | null>(null);
+
+  // ===== 创建数据集 =====
+  let showCreate = $state(false);
+  let newDs = $state({
+    dataset_id: '',
+    name: '',
+    description: '',
+    domain: '',
+    tags: '',
+    visibility: 'private' as 'private' | 'public'
+  });
+
+  // ===== 添加条目 =====
+  let showAddEntry = $state(false);
+  let newEntry = $state({
+    entry_id: '',
+    version: 1,
+    domain: '',
+    rule_body: ''
+  });
+  let entryError = $state<string | null>(null);
+
+  // ===== 发布确认 =====
+  let publishConfirm = $state(false);
+  let publishReason = $state('');
+
+  // 文本域占位(Svelte 不解析单引号属性内的花括号表达式,故用变量)
+  const RULE_BODY_PLACEHOLDER = '{ "rule_id": "...", "transform": [ ... ] }';
+
+  onMount(() => {
+    // 已连接(刷新后内存 token 丢失)则不自动重连;仅清空过期状态
+    const s = get(governanceStore);
+    if (!s.connected) {
+      disconnect();
+    }
+  });
+
+  // ===== 连接 =====
+  async function handleConnect(): Promise<void> {
+    const cfg = get(governanceConfig);
+    if (!cfg.baseUrl.trim() || !cfg.username || !cfg.password) {
+      connError = '请填写完整连接信息(baseUrl/用户名/密码)';
+      return;
+    }
+    connecting = true;
+    connError = null;
+    try {
+      await connect(cfg.baseUrl.trim(), cfg.tenantId.trim() || 'default', cfg.username, cfg.password);
+      toastSuccess('已连接 evorule-rule', '治理');
+    } catch (e) {
+      connError = e instanceof Error ? e.message : String(e);
+    } finally {
+      connecting = false;
+    }
+  }
+
+  function handleDisconnect(): void {
+    disconnect();
+    toastInfo('已断开治理服务连接', '治理');
+  }
+
+  // ===== 数据集 =====
+  async function handleCreateDataset(): Promise<void> {
+    if (!newDs.dataset_id.trim() || !newDs.name.trim()) {
+      toastError('dataset_id 与 name 必填', '创建数据集');
+      return;
+    }
+    try {
+      await createDataset({
+        dataset_id: newDs.dataset_id.trim(),
+        name: newDs.name.trim(),
+        description: newDs.description.trim() || undefined,
+        domain: newDs.domain.split(',').map((s) => s.trim()).filter(Boolean),
+        tags: newDs.tags.split(',').map((s) => s.trim()).filter(Boolean),
+        visibility: newDs.visibility
+      });
+      toastSuccess(`数据集 ${newDs.name} 已创建(Draft)`, '治理');
+      showCreate = false;
+      newDs = { dataset_id: '', name: '', description: '', domain: '', tags: '', visibility: 'private' };
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '创建数据集');
+    }
+  }
+
+  async function handleDeleteDataset(id: string, name: string): Promise<void> {
+    if (!confirm(`确认删除数据集「${name}」?仅 Draft/Rejected 可删,且需管理员权限。`)) return;
+    try {
+      const bk = get(governanceStore).backend;
+      if (!bk) throw new Error('未连接');
+      await bk.deleteDataset(id);
+      toastSuccess(`数据集 ${name} 已删除`, '治理');
+      await refreshDatasets();
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '删除数据集');
+    }
+  }
+
+  // ===== 生命周期 =====
+  async function handleTransition(to: 'candidate' | 'active' | 'rejected'): Promise<void> {
+    const label = { candidate: '提交候选', active: '激活(Active)', rejected: '驳回' }[to];
+    try {
+      await transition(to);
+      toastSuccess(`生命周期 → ${label}`, '治理');
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), label);
+    }
+  }
+
+  async function handlePublish(): Promise<void> {
+    if (!publishConfirm) {
+      toastError('独立发布需二次确认:请勾选确认框', '发布审批');
+      return;
+    }
+    try {
+      await publish(publishReason.trim() || undefined);
+      toastSuccess('已发布(Published)', '治理');
+      publishConfirm = false;
+      publishReason = '';
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '发布审批');
+    }
+  }
+
+  async function handleUnpublish(): Promise<void> {
+    if (!confirm('确认撤销发布(Published → Rejected)?仅管理员可操作。')) return;
+    try {
+      await unpublish();
+      toastSuccess('已撤销发布(Rejected)', '治理');
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '撤销发布');
+    }
+  }
+
+  // ===== 版本 =====
+  async function handleCreateVersion(kind: 'major' | 'patch'): Promise<void> {
+    const label = kind === 'major' ? '升版(Major)' : '打补丁(Patch)';
+    try {
+      await createVersion(kind);
+      toastSuccess(`版本 ${label} 已创建`, '治理');
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), label);
+    }
+  }
+
+  // ===== 条目 =====
+  async function handleAddEntry(): Promise<void> {
+    const s = get(governanceStore);
+    if (!s.selectedId) return;
+    entryError = null;
+    if (!newEntry.entry_id.trim()) {
+      entryError = 'entry_id 必填';
+      return;
+    }
+    let ruleBody: unknown;
+    try {
+      ruleBody = JSON.parse(newEntry.rule_body);
+    } catch {
+      entryError = 'rule_body 不是合法 JSON(规则体须为 evorule 原生 JSON)';
+      return;
+    }
+    try {
+      await addEntry(s.selectedId, {
+        entry_id: newEntry.entry_id.trim(),
+        version: Number(newEntry.version) || 1,
+        domain: newEntry.domain.trim() || undefined,
+        rule_body: ruleBody
+      });
+      toastSuccess(`规则 ${newEntry.entry_id} 已入库`, '治理');
+      showAddEntry = false;
+      newEntry = { entry_id: '', version: 1, domain: '', rule_body: '' };
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '添加规则');
+    }
+  }
+
+  // ===== 派生 =====
+  // 注意:必须用 $governanceStore 直接引用(Svelte 5 $derived 不追踪 get(store)),
+  //       否则选中数据集/角色在 store 变化后不会更新。
+  const selected = $derived(
+    $governanceStore.datasets.find((d) => d.dataset_id === $governanceStore.selectedId) ?? null
+  );
+  const selectedStatus = $derived(selected?.lifecycle.status ?? null);
+  const role = $derived($governanceStore.role);
+  const roleHint = $derived(
+    role === 'admin'
+      ? '管理员:全部操作'
+      : role === 'approver'
+        ? '审批者:可 激活/发布(二次确认)/驳回;不可建数据集'
+        : role === 'rule_engineer'
+          ? '规则工程师:可 建数据集/灌规则/提交候选/打版本;激活与发布需审批者'
+          : '查看者:只读'
+  );
+
+  const statusLabel: Record<LifecycleStatus, string> = {
+    Draft: '草稿',
+    Candidate: '候选',
+    Active: '激活',
+    Published: '已发布',
+    Rejected: '已驳回'
+  };
+
+  function statusClass(s: LifecycleStatus): string {
+    return `status-${s.toLowerCase()}`;
+  }
+
+  function fmtTime(iso?: string | null): string {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? iso : d.toLocaleString('zh-CN');
+  }
+
+  function rulePreview(body: unknown): string {
+    const s = JSON.stringify(body);
+    return s && s.length > 160 ? `${s.slice(0, 160)}…` : (s ?? '');
+  }
+</script>
+
+<!-- ==================== 未连接:连接面板 ==================== -->
+{#if !$governanceStore.connected}
+  <div class="conn-wrap">
+    <div class="card conn-card">
+      <h2>治理服务连接(evorule-rule)</h2>
+      <p class="hint">
+        连接规则资产库(:18081)以管理数据集、规则与发布。密码仅存本地(localStorage),不上传。
+      </p>
+      <label class="field">
+        <span>服务地址</span>
+        <input
+          type="text"
+          value={$governanceConfig.baseUrl}
+          oninput={(e) => updateGovernanceConfig({ baseUrl: (e.currentTarget as HTMLInputElement).value })}
+          placeholder="http://127.0.0.1:18081"
+        />
+      </label>
+      <label class="field">
+        <span>租户 ID</span>
+        <input
+          type="text"
+          value={$governanceConfig.tenantId}
+          oninput={(e) => updateGovernanceConfig({ tenantId: (e.currentTarget as HTMLInputElement).value })}
+          placeholder="default"
+        />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>用户名</span>
+          <input
+            type="text"
+            value={$governanceConfig.username}
+            oninput={(e) => updateGovernanceConfig({ username: (e.currentTarget as HTMLInputElement).value })}
+            placeholder="admin"
+          />
+        </label>
+        <label class="field">
+          <span>密码</span>
+          <input
+            type="password"
+            value={$governanceConfig.password}
+            oninput={(e) => updateGovernanceConfig({ password: (e.currentTarget as HTMLInputElement).value })}
+            placeholder="••••••••"
+          />
+        </label>
+      </div>
+      {#if connError}
+        <div class="err-box">{connError}</div>
+      {/if}
+      <button class="btn btn-primary" onclick={handleConnect} disabled={connecting}>
+        {connecting ? '连接中…' : '连接'}
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 已连接:数据集管理 ==================== -->
+{:else}
+  <div class="gov-header">
+    <div>
+      <h2>规则资产库</h2>
+      <p class="hint">
+        {$governanceStore.baseUrl} · 租户「{$governanceStore.tenantId}」· 用户「{$governanceStore.username}」
+        · 角色:{$governanceStore.role ?? '-'}
+      </p>
+    </div>
+    <div class="gov-header-right">
+      <button class="btn" onclick={() => refreshDatasets().catch(() => undefined)} title="刷新数据集列表">
+        ⟳ 刷新
+      </button>
+      <button class="btn btn-ghost" onclick={handleDisconnect}>断开</button>
+    </div>
+  </div>
+
+  <div class="gov-layout">
+    <!-- 左:数据集列表 -->
+    <aside class="card ds-panel">
+      <div class="ds-panel-head">
+        <span>数据集({$governanceStore.datasets.length})</span>
+        <button class="btn btn-sm" onclick={() => (showCreate = !showCreate)}>
+          {showCreate ? '收起' : '+ 新建'}
+        </button>
+      </div>
+
+      {#if showCreate}
+        <div class="create-form">
+          <label class="field">
+            <span>dataset_id *</span>
+            <input bind:value={newDs.dataset_id} placeholder="ds-yuanze-01" />
+          </label>
+          <label class="field">
+            <span>名称 *</span>
+            <input bind:value={newDs.name} placeholder="yuanze 机器人质量管控规则集" />
+          </label>
+          <label class="field">
+            <span>描述</span>
+            <textarea bind:value={newDs.description} rows="2" placeholder="可选"></textarea>
+          </label>
+          <label class="field">
+            <span>领域(逗号分隔)</span>
+            <input bind:value={newDs.domain} placeholder="robot,quality" />
+          </label>
+          <label class="field">
+            <span>标签(逗号分隔)</span>
+            <input bind:value={newDs.tags} placeholder="合规,机器人" />
+          </label>
+          <label class="field">
+            <span>可见性</span>
+            <select bind:value={newDs.visibility}>
+              <option value="private">private</option>
+              <option value="public">public</option>
+            </select>
+          </label>
+          <button class="btn btn-primary btn-sm" onclick={handleCreateDataset}>创建</button>
+        </div>
+      {/if}
+
+      {#if $governanceStore.loadingDatasets}
+        <div class="muted">加载中…</div>
+      {:else if $governanceStore.datasets.length === 0}
+        <div class="muted empty">尚无数据集。点「+ 新建」创建。</div>
+      {:else}
+        <ul class="ds-list">
+          {#each $governanceStore.datasets as ds (ds.dataset_id)}
+            <li>
+              <button
+                class="ds-item"
+                class:active={ds.dataset_id === $governanceStore.selectedId}
+                onclick={() => selectDataset(ds.dataset_id)}
+              >
+                <span class="ds-item-top">
+                  <span class="ds-name">{ds.name || ds.dataset_id}</span>
+                  <span class="badge {statusClass(ds.lifecycle.status)}">{statusLabel[ds.lifecycle.status]}</span>
+                </span>
+                <span class="ds-item-sub">
+                  {ds.dataset_id} · {ds.versioning.current} · {fmtTime(ds.meta.created_at)}
+                </span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </aside>
+
+    <!-- 右:选中数据集详情 -->
+    <section class="card ds-detail">
+      {#if selected}
+        <div class="detail-head">
+          <div>
+            <h3>{selected.name}</h3>
+            <p class="muted">{selected.dataset_id} · 租户 {selected.tenant_id} · {selected.visibility}</p>
+            {#if selected.description}<p class="desc">{selected.description}</p>{/if}
+          </div>
+          <span class="badge badge-lg {statusClass(selected.lifecycle.status)}">
+            {statusLabel[selected.lifecycle.status]}
+          </span>
+        </div>
+
+        <p class="hint">{roleHint}</p>
+
+        <!-- 生命周期动作 -->
+        <div class="lc-actions">
+          {#if selectedStatus === 'Draft'}
+            <button class="btn btn-sm" onclick={() => handleTransition('candidate')}>提交候选(Candidate)</button>
+            <button class="btn btn-sm btn-danger" onclick={() => handleDeleteDataset(selected.dataset_id, selected.name)}>
+              删除(需管理员)
+            </button>
+          {:else if selectedStatus === 'Candidate'}
+            <button class="btn btn-sm btn-primary" onclick={() => handleTransition('active')}>激活(Active)</button>
+            <button class="btn btn-sm btn-danger" onclick={() => handleTransition('rejected')}>驳回(Rejected)</button>
+          {:else if selectedStatus === 'Active'}
+            <div class="publish-box">
+              <label class="check">
+                <input type="checkbox" bind:checked={publishConfirm} />
+                <span>我确认已完成独立发布审批(发布后对外可见可拉取)</span>
+              </label>
+              <input
+                class="reason"
+                type="text"
+                bind:value={publishReason}
+                placeholder="发布原因(可选,进审计 cause)"
+              />
+              <button class="btn btn-sm btn-primary" onclick={handlePublish}>发布(Published)</button>
+            </div>
+          {:else if selectedStatus === 'Published'}
+            <button class="btn btn-sm btn-danger" onclick={handleUnpublish}>撤销发布(Rejected,需管理员)</button>
+          {:else if selectedStatus === 'Rejected'}
+            <button class="btn btn-sm" onclick={() => handleTransition('candidate')}>重新提交候选</button>
+          {/if}
+        </div>
+
+        <!-- 版本链 -->
+        <div class="sec">
+          <div class="sec-head">
+            <span>版本链</span>
+            <span class="muted">当前 {$governanceStore.versioning?.current ?? selected.versioning.current}</span>
+          </div>
+          <div class="chip-row">
+            {#each selected.versioning.chain as v (v)}
+              <span class="chip">{v}</span>
+            {/each}
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-sm" onclick={() => handleCreateVersion('major')} title="法规条款级变化 → 主版本 +1">
+              升版(Major)
+            </button>
+            <button class="btn btn-sm" onclick={() => handleCreateVersion('patch')} title="内部小改 → v2.p1">
+              打补丁(Patch)
+            </button>
+          </div>
+        </div>
+
+        <!-- 状态历史 -->
+        {#if selected.lifecycle.state_history.length > 0}
+          <div class="sec">
+            <div class="sec-head"><span>状态历史(只增不改)</span></div>
+            <ul class="hist">
+              {#each selected.lifecycle.state_history as h, i (i)}
+                <li>
+                  <span class="badge {statusClass(h.to as LifecycleStatus)}">{statusLabel[h.to as LifecycleStatus] ?? h.to}</span>
+                  <span class="muted">{fmtTime(h.at)} · {h.by}</span>
+                  <span class="cause">{h.cause}</span>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+
+        <!-- 条目(规则) -->
+        <div class="sec">
+          <div class="sec-head">
+            <span>规则条目({$governanceStore.entries.length})</span>
+            <button class="btn btn-sm" onclick={() => (showAddEntry = !showAddEntry)}>
+              {showAddEntry ? '收起' : '+ 灌入规则'}
+            </button>
+          </div>
+
+          {#if showAddEntry}
+            <div class="entry-form">
+              <div class="field-row">
+                <label class="field">
+                  <span>entry_id *</span>
+                  <input bind:value={newEntry.entry_id} placeholder="rule-compute-ik" />
+                </label>
+                <label class="field">
+                  <span>版本</span>
+                  <input type="number" min="1" bind:value={newEntry.version} />
+                </label>
+                <label class="field">
+                  <span>领域</span>
+                  <input bind:value={newEntry.domain} placeholder="robot" />
+                </label>
+              </div>
+              <label class="field">
+                <span>rule_body(evorule 原生 JSON,零转译)</span>
+                <textarea bind:value={newEntry.rule_body} rows="6" placeholder={RULE_BODY_PLACEHOLDER}></textarea>
+              </label>
+              {#if entryError}<div class="err-box">{entryError}</div>{/if}
+              <button class="btn btn-sm btn-primary" onclick={handleAddEntry}>入库</button>
+            </div>
+          {/if}
+
+          {#if $governanceStore.loadingEntries}
+            <div class="muted">加载中…</div>
+          {:else if $governanceStore.entries.length === 0}
+            <div class="muted empty">尚无规则条目。点「+ 灌入规则」粘贴 evorule 规则 JSON。</div>
+          {:else}
+            <ul class="entry-list">
+              {#each $governanceStore.entries as e (e.entry_id)}
+                <li>
+                  <div class="entry-top">
+                    <span class="entry-id">{e.entry_id}</span>
+                    <span class="muted">v{e.version}{e.domain ? ` · ${e.domain}` : ''}</span>
+                    {#if e.status && e.status !== 'Active'}
+                      <span class="badge {statusClass(e.status)}">{statusLabel[e.status] ?? e.status}</span>
+                    {/if}
+                  </div>
+                  <pre class="entry-body">{rulePreview(e.rule_body)}</pre>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      {:else}
+        <div class="muted empty">← 从左侧选择数据集,或新建一个开始治理。</div>
+      {/if}
+    </section>
+  </div>
+{/if}
+
+<style>
+  .conn-wrap {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-2xl) var(--spacing-lg);
+  }
+  .conn-card {
+    width: 100%;
+    max-width: 480px;
+  }
+  .conn-card h2 {
+    margin: 0 0 var(--spacing-xs);
+  }
+  .hint {
+    color: var(--color-gray-500);
+    font-size: var(--text-sm);
+    margin: 0 0 var(--spacing-md);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+  }
+  .field > span {
+    font-size: var(--text-sm);
+    color: var(--color-gray-500);
+  }
+  .field input,
+  .field textarea,
+  .field select,
+  .reason {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    background: var(--color-gray-50);
+    font-size: var(--text-sm);
+    color: inherit;
+  }
+  .field textarea {
+    font-family: monospace;
+    resize: vertical;
+  }
+  .field-row {
+    display: flex;
+    gap: var(--spacing-md);
+  }
+  .field-row .field {
+    flex: 1;
+  }
+  .err-box {
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-md);
+    white-space: pre-wrap;
+  }
+  .btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    background: var(--color-gray-100);
+    color: inherit;
+    cursor: pointer;
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast);
+  }
+  .btn:hover {
+    background: var(--color-gray-200);
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--color-primary-hover);
+  }
+  .btn-danger {
+    border-color: var(--color-error);
+    color: var(--color-error);
+    background: transparent;
+  }
+  .btn-danger:hover {
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  }
+  .btn-ghost {
+    background: transparent;
+  }
+  .btn-sm {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--text-xs);
+  }
+  .card {
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  .muted {
+    color: var(--color-gray-500);
+    font-size: var(--text-sm);
+  }
+  .empty {
+    padding: var(--spacing-lg);
+    text-align: center;
+  }
+
+  /* === 治理布局 === */
+  .gov-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: var(--spacing-lg) var(--spacing-xl) 0;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+  }
+  .gov-header h2 {
+    margin: 0 0 var(--spacing-xs);
+  }
+  .gov-header-right {
+    display: flex;
+    gap: var(--spacing-sm);
+  }
+  .gov-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-2xl);
+    align-items: start;
+  }
+
+  /* 数据集面板 */
+  .ds-panel {
+    position: sticky;
+    top: calc(var(--spacing-lg) + 60px);
+    max-height: calc(100vh - 140px);
+    overflow: auto;
+  }
+  .ds-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+  }
+  .create-form {
+    border-top: 1px dashed var(--color-gray-200);
+    padding-top: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+  .ds-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .ds-item {
+    width: 100%;
+    text-align: left;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ds-item:hover {
+    background: var(--color-gray-100);
+  }
+  .ds-item.active {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    border-color: var(--color-primary);
+  }
+  .ds-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+  }
+  .ds-name {
+    font-weight: 500;
+    font-size: var(--text-sm);
+  }
+  .ds-item-sub {
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+  }
+
+  /* 详情 */
+  .ds-detail {
+    min-height: 300px;
+  }
+  .detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+  }
+  .detail-head h3 {
+    margin: 0 0 var(--spacing-xs);
+  }
+  .desc {
+    color: var(--color-gray-500);
+    font-size: var(--text-sm);
+    margin: var(--spacing-xs) 0 0;
+  }
+  .lc-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid var(--color-gray-200);
+    margin-bottom: var(--spacing-md);
+  }
+  .publish-box {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    width: 100%;
+    max-width: 460px;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--text-sm);
+  }
+  .sec {
+    margin-bottom: var(--spacing-lg);
+  }
+  .sec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+  }
+  .chip-row {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-sm);
+  }
+  .chip {
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-gray-200);
+    font-size: var(--text-xs);
+    font-family: monospace;
+  }
+  .btn-row {
+    display: flex;
+    gap: var(--spacing-sm);
+  }
+  .hist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .hist li {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--text-sm);
+    flex-wrap: wrap;
+  }
+  .cause {
+    color: var(--color-gray-500);
+    font-style: italic;
+  }
+  .entry-form {
+    border: 1px dashed var(--color-gray-300);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+  .entry-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .entry-list li {
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  .entry-top {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+  }
+  .entry-id {
+    font-weight: 600;
+    font-family: monospace;
+    font-size: var(--text-sm);
+  }
+  .entry-body {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+    background: var(--color-gray-100);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 状态徽标 */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    background: var(--color-gray-200);
+    color: var(--color-gray-700);
+  }
+  .badge-lg {
+    padding: 4px 12px;
+    font-size: var(--text-sm);
+  }
+  .status-draft { background: var(--color-gray-200); color: var(--color-gray-700); }
+  .status-candidate { background: color-mix(in srgb, var(--color-warning) 18%, transparent); color: #92400e; }
+  .status-active { background: color-mix(in srgb, var(--color-info) 18%, transparent); color: #1e40af; }
+  .status-published { background: color-mix(in srgb, var(--color-success) 18%, transparent); color: #065f46; }
+  .status-rejected { background: color-mix(in srgb, var(--color-error) 15%, transparent); color: #991b1b; }
+
+  @media (max-width: 900px) {
+    .gov-layout {
+      grid-template-columns: 1fr;
+    }
+    .ds-panel {
+      position: static;
+      max-height: none;
+    }
+  }
+</style>
