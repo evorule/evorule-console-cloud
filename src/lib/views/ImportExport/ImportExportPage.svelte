@@ -23,9 +23,11 @@
 
   let { preset }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let activeTab = $state<"import" | "export" | "marketplace">(
     preset?.tab ?? "import",
   );
+  // svelte-ignore state_referenced_locally
   let presetType = $state<ObjectType | undefined>(preset?.type);
 
   const tabs = [

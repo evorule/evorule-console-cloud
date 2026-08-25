@@ -37,6 +37,7 @@
   } = $props();
 
   // 表单值(本地状态)
+  // svelte-ignore state_referenced_locally
   let formValues = $state<Record<string, string | number | boolean>>({
     ...values,
   });
