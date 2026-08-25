@@ -52,9 +52,11 @@
   --bg-primary: #f8f9fa;
   --bg-card: #ffffff;
   --bg-hover: #f1f3f5;
+  --bg-inverse: #1a1d23;  /* 主题切换时不变,topbar 等固定深色元素用 */
   --border: #e5e7eb;
   --text-primary: #1e2229;
   --text-secondary: #8c8f94;
+  --text-inverse: #e8edf2;  /* 深底上的文字色 */
   --brand: #2b6ed9;
   --success: #00875a;
   --warning: #c76a00;
@@ -163,6 +165,8 @@
   --success: #00d4aa;
   --warning: #ffa500;
   --danger: #ff4d4f;
+  /* 深色模式下,topbar 等固定深色元素可保持 --bg-inverse 跟 --text-inverse 不变,
+     已在上方 :root 中定义,无需重复 */
 }
 
 /* ============================================================
