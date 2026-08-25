@@ -25,7 +25,7 @@
         return {
           bg: "var(--color-success-bg, #f0fdf4)",
           fg: "var(--color-success, #16a34a)",
-          border: "#86efac",
+          border: "var(--color-success, #86efac)",
           icon: "✅",
           text: "已连接",
           sub: state.lastConnectedAt

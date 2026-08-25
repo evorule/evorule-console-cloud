@@ -292,10 +292,10 @@
   }
   .dev-mode-hint {
     padding: 10px 16px;
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    color: var(--color-warning, #92400e);
     font-size: 12px;
-    border-bottom: 1px solid #fde68a;
+    border-bottom: 1px solid var(--color-warning, #fde68a);
   }
   .dev-mode-hint p {
     margin: 2px 0;

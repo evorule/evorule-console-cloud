@@ -388,7 +388,7 @@
     background: var(--color-gray-100, #f1f5f9);
   }
   .cat-item.selected {
-    background: #dbeafe;
+    background: var(--color-info-bg, #dbeafe);
     color: var(--color-primary, #2563eb);
     font-weight: 600;
   }
@@ -512,7 +512,7 @@
     background: var(--color-gray-50, #f8fafc);
   }
   .rule-row.checked {
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
   }
   .checkbox {
     display: inline-flex;
@@ -565,8 +565,8 @@
     color: var(--color-gray-700, #334155);
   }
   .badge-user {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg, #d1fae5);
+    color: var(--color-success, #065f46);
   }
   .badge-cat {
     background: var(--color-gray-100, #f1f5f9);
@@ -575,8 +575,8 @@
     background: transparent;
   }
   .badge-schema {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-info-bg, #dbeafe);
+    color: var(--color-info, #1e40af);
   }
   .picker-selected {
     border-left: 1px solid var(--color-gray-200, #e2e8f0);

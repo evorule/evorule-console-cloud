@@ -191,7 +191,7 @@
     color: white;
   }
   .tb-btn.primary:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--brand, #1d4ed8);
   }
   .tb-btn.secondary {
     background: white;
@@ -202,12 +202,12 @@
     background: var(--color-gray-50, #f9fafb);
   }
   .tb-btn.llm {
-    background: #fef3c7;
-    border-color: #fde68a;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    border-color: var(--color-warning, #fde68a);
+    color: var(--color-warning, #92400e);
   }
   .tb-btn.llm:hover:not(:disabled) {
-    background: #fde68a;
+    background: var(--color-warning, #fde68a);
   }
   .tb-btn.mode-btn {
     background: white;

@@ -252,15 +252,15 @@
   }
   .ap-critical {
     border: 1px solid #fecaca;
-    background: #fef2f2;
+    background: var(--color-error-bg, #fef2f2);
   }
   .ap-error {
     border: 1px solid #fed7aa;
     background: #fff7ed;
   }
   .ap-warning {
-    border: 1px solid #fde68a;
-    background: #fffbeb;
+    border: 1px solid var(--color-warning, #fde68a);
+    background: var(--color-warning-bg, #fffbeb);
   }
   .ap-level-head {
     display: flex;
@@ -294,7 +294,7 @@
     color: #c2410c;
   }
   .ap-warning .ap-label {
-    color: #b45309;
+    color: var(--color-warning, #b45309);
   }
   .ap-level-count {
     font-family: var(--font-mono, monospace);
@@ -314,8 +314,8 @@
     color: #7c2d12;
   }
   .ap-warning .ap-level-count {
-    background: #fde68a;
-    color: #78350f;
+    background: var(--color-warning, #fde68a);
+    color: var(--color-warning, #78350f);
   }
   .ap-list {
     list-style: none;

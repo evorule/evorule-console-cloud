@@ -92,7 +92,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 10px 16px;
-    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    background: linear-gradient(135deg, var(--brand, #7c3aed), #2563eb);
     color: white;
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);

@@ -160,9 +160,9 @@
     color: var(--color-text-secondary, #4b5563);
   }
   .btt-mode-btn.active-business {
-    background: #eff6ff;
-    border-color: #93c5fd;
-    color: #1e40af;
+    background: var(--color-info-bg, #eff6ff);
+    border-color: var(--color-info, #93c5fd);
+    color: var(--color-info, #1e40af);
   }
   .btt-mode-btn.active-developer {
     background: #f3f4f6;

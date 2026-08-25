@@ -210,7 +210,7 @@
   .mention-tag {
     padding: 1px 6px;
     background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, #1e40af);
+    color: var(--color-info-text, var(--color-info, #1e40af));
     border-radius: 8px;
     font-size: 10px;
     font-weight: 500;

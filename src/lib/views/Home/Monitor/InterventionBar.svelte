@@ -335,8 +335,8 @@
     color: white;
   }
   .iv-primary:hover:not(:disabled) {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
+    background: var(--brand, #1d4ed8);
+    border-color: var(--brand, #1d4ed8);
   }
   .iv-secondary {
     background: white;
@@ -347,8 +347,8 @@
     background: var(--color-gray-50, #f9fafb);
   }
   .iv-success {
-    background: #10b981;
-    border-color: #10b981;
+    background: var(--success, #10b981);
+    border-color: var(--success, #10b981);
     color: white;
   }
   .iv-success:hover:not(:disabled) {
@@ -356,12 +356,12 @@
     border-color: #059669;
   }
   .iv-info {
-    background: #eff6ff;
-    border-color: #93c5fd;
-    color: #1e40af;
+    background: var(--color-info-bg, #eff6ff);
+    border-color: var(--color-info, #93c5fd);
+    color: var(--color-info, #1e40af);
   }
   .iv-info:hover:not(:disabled) {
-    background: #dbeafe;
+    background: var(--color-info-bg, #dbeafe);
   }
   .iv-warning {
     background: #fff7ed;
@@ -372,9 +372,9 @@
     background: #ffedd5;
   }
   .iv-danger {
-    background: #fee2e2;
-    border-color: #fca5a5;
-    color: #991b1b;
+    background: var(--color-error-bg, #fee2e2);
+    border-color: var(--color-error, #fca5a5);
+    color: var(--color-error, #991b1b);
   }
   .iv-danger:hover:not(:disabled) {
     background: #fecaca;

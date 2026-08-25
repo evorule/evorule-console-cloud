@@ -315,16 +315,16 @@
     border-radius: 3px;
   }
   .op-replace {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-info-bg, #dbeafe);
+    color: var(--color-info, #1e40af);
   }
   .op-add {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg, #d1fae5);
+    color: var(--color-success, #065f46);
   }
   .op-remove {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--color-error-bg, #fee2e2);
+    color: var(--color-error, #991b1b);
   }
   .patch-path {
     font-family: var(--font-mono, monospace);

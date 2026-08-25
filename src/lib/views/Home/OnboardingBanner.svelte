@@ -97,7 +97,7 @@
 
 <style>
 	.ob-banner {
-		background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+		background: linear-gradient(135deg, var(--color-info-bg, #dbeafe) 0%, #ede9fe 100%);
 		border: 1px solid var(--color-info, #3b82f6);
 		border-radius: 8px;
 		padding: 14px 18px;

@@ -155,8 +155,8 @@
   .to-fact-tag {
     font-family: var(--font-mono, monospace);
     font-size: 11px;
-    color: #7c3aed;
-    background: #f5f3ff;
+    color: var(--brand, #7c3aed);
+    background: var(--color-info-bg, #f5f3ff);
     padding: 1px 6px;
     border-radius: 3px;
   }
@@ -225,8 +225,8 @@
   }
   .to-node-type {
     font-family: var(--font-mono, monospace);
-    color: #7c3aed;
-    background: #f5f3ff;
+    color: var(--brand, #7c3aed);
+    background: var(--color-info-bg, #f5f3ff);
     padding: 0 4px;
     border-radius: 2px;
   }
@@ -248,27 +248,27 @@
     margin: 0;
     font-size: 11px;
     line-height: 1.5;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
     background: #fefce8;
     padding: 6px 8px;
     border-radius: 4px;
-    border: 1px solid #fde68a;
+    border: 1px solid var(--color-warning, #fde68a);
   }
 
   .to-rollback-btn {
     width: 100%;
     font-size: 11px;
     padding: 6px 10px;
-    background: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
+    background: var(--color-error-bg, #fef2f2);
+    color: var(--color-error, #991b1b);
+    border: 1px solid var(--color-error, #fca5a5);
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
     font-family: inherit;
   }
   .to-rollback-btn:hover {
-    background: #fee2e2;
+    background: var(--color-error-bg, #fee2e2);
   }
 
   .to-hint {

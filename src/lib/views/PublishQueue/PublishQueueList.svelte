@@ -304,8 +304,8 @@
     font-size: 11px;
     padding: 2px 8px;
     border-radius: 10px;
-    background: #dcfce7;
-    color: #166534;
+    background: var(--color-success-bg, #dcfce7);
+    color: var(--color-success, #166534);
   }
   .source-badge.offline {
     background: var(--color-gray-100, #f1f5f9);
@@ -374,20 +374,20 @@
   }
   .item-status.status-submitted,
   .item-status.status-pending {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    color: var(--color-warning, #92400e);
   }
   .item-status.status-reviewing {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-info-bg, #dbeafe);
+    color: var(--color-info, #1e40af);
   }
   .item-status.status-published {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--color-success-bg, #dcfce7);
+    color: var(--color-success, #166534);
   }
   .item-status.status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--color-error-bg, #fee2e2);
+    color: var(--color-error, #991b1b);
   }
   .item-status.status-rolled_back {
     background: var(--color-gray-100, #f1f5f9);

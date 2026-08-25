@@ -460,12 +460,12 @@
     font-weight: 600;
   }
   .ri-badge.standard {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-info-bg, #dbeafe);
+    color: var(--color-info, #1e40af);
   }
   .ri-badge.level {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    color: var(--color-warning, #92400e);
   }
   .ri-badge.version {
     background: #e0e7ff;
@@ -476,20 +476,20 @@
     color: #4b5563;
   }
   .ri-badge.info {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-info-bg, #dbeafe);
+    color: var(--color-info, #1e40af);
   }
   .ri-badge.risk-low {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg, #d1fae5);
+    color: var(--color-success, #065f46);
   }
   .ri-badge.risk-medium {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    color: var(--color-warning, #92400e);
   }
   .ri-badge.risk-high {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--color-error-bg, #fee2e2);
+    color: var(--color-error, #991b1b);
   }
   .ri-badge.risk-critical {
     background: #fecaca;
@@ -598,7 +598,7 @@
   }
   .ri-conflict-card.selected {
     border-color: var(--color-primary, #2563eb);
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
   }
   .ri-conflict-label {
     font-size: 12px;

@@ -405,7 +405,7 @@
   }
   .preset-icon.active {
     border-color: var(--color-primary, #2563eb);
-    background: #dbeafe;
+    background: var(--color-info-bg, #dbeafe);
   }
   .modal-footer {
     display: flex;

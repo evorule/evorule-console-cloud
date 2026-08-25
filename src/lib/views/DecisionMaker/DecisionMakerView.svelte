@@ -233,7 +233,7 @@
     margin-top: 2px;
   }
   .dm-urgent {
-    color: var(--color-error, #ef4444);
+    color: var(--color-error, var(--danger, #ef4444));
     font-weight: 500;
   }
 
@@ -324,7 +324,7 @@
     background: var(--color-info-bg, #eff6ff);
     border-radius: 6px;
     font-size: 12px;
-    color: var(--color-info-text, #1e40af);
+    color: var(--color-info-text, var(--color-info, #1e40af));
     line-height: 1.5;
   }
 

@@ -31,9 +31,9 @@
   .rollback-button {
     font-size: 11px;
     padding: 4px 10px;
-    background: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
+    background: var(--color-error-bg, #fef2f2);
+    color: var(--color-error, #991b1b);
+    border: 1px solid var(--color-error, #fca5a5);
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
@@ -41,7 +41,7 @@
     white-space: nowrap;
   }
   .rollback-button:hover:not(:disabled) {
-    background: #fee2e2;
+    background: var(--color-error-bg, #fee2e2);
   }
   .rollback-button:disabled {
     opacity: 0.5;

@@ -180,7 +180,7 @@
     background: var(--color-gray-100, #f1f5f9);
   }
   .node-row.selected {
-    background: #dbeafe;
+    background: var(--color-info-bg, #dbeafe);
     color: var(--color-primary, #2563eb);
     font-weight: 600;
   }

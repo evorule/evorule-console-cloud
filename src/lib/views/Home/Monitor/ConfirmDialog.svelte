@@ -152,7 +152,7 @@
     color: var(--color-text-primary, #111827);
   }
   .title-warning {
-    color: #b45309;
+    color: var(--color-warning, #b45309);
   }
   .title-danger {
     color: #b91c1c;
@@ -199,8 +199,8 @@
     color: white;
   }
   .btn-primary:hover {
-    background: var(--color-primary-dark, #1d4ed8);
-    border-color: var(--color-primary-dark, #1d4ed8);
+    background: var(--color-primary-dark, var(--brand, #1d4ed8));
+    border-color: var(--color-primary-dark, var(--brand, #1d4ed8));
   }
   .btn-warning {
     background: #f59e0b;

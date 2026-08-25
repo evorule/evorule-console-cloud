@@ -121,8 +121,8 @@
 
 <style>
   .cr-panel {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
+    background: var(--color-warning-bg, #fffbeb);
+    border: 1px solid var(--color-warning, #fde68a);
     border-radius: 6px;
     padding: 12px;
     margin-top: 12px;
@@ -138,7 +138,7 @@
   .cr-title {
     margin: 0;
     font-size: 14px;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
   }
   .cr-bulk {
     display: flex;
@@ -147,20 +147,20 @@
   }
   .cr-bulk-label {
     font-size: 11px;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
   }
   .cr-bulk-btn {
     padding: 3px 8px;
     background: white;
-    border: 1px solid #fde68a;
+    border: 1px solid var(--color-warning, #fde68a);
     border-radius: 3px;
     cursor: pointer;
     font-family: inherit;
     font-size: 11px;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
   }
   .cr-bulk-btn:hover {
-    background: #fef3c7;
+    background: var(--color-warning-bg, #fef3c7);
   }
   .cr-table {
     width: 100%;

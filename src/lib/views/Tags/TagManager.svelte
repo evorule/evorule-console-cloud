@@ -174,7 +174,7 @@
           </label>
           <div class="preset-colors">
             <span class="preset-label">预设:</span>
-            {#each ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#6b7280"] as c (c)}
+            {#each ["var(--danger, #ef4444)", "#f59e0b", "var(--success, #10b981)", "#3b82f6", "#8b5cf6", "#ec4899", "#6b7280"] as c (c)}
               <button
                 type="button"
                 class="preset-dot"

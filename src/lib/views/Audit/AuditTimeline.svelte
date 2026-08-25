@@ -203,10 +203,10 @@
     gap: 3px;
   }
   .sum-item.ok {
-    color: #10b981;
+    color: var(--success, #10b981);
   }
   .sum-item.fail {
-    color: #ef4444;
+    color: var(--danger, #ef4444);
     font-weight: 600;
   }
   .sum-item strong {
@@ -255,11 +255,11 @@
   .range-hint {
     margin-top: 6px;
     padding: 4px 8px;
-    background: #eff6ff;
-    border: 1px solid #93c5fd;
+    background: var(--color-info-bg, #eff6ff);
+    border: 1px solid var(--color-info, #93c5fd);
     border-radius: 4px;
     font-size: 11px;
-    color: #1e40af;
+    color: var(--color-info, #1e40af);
   }
 
   .timeline-list {

@@ -214,11 +214,11 @@
 	}
 	.tf-mode-tag {
 		background: var(--color-info-bg, #dbeafe);
-		color: var(--color-info-text, #1e40af);
+		color: var(--color-info-text, var(--color-info, #1e40af));
 	}
 	.tf-demo-tag {
 		background: var(--color-warning-bg, #fef3c7);
-		color: var(--color-warning-text, #92400e);
+		color: var(--color-warning-text, var(--color-warning, #92400e));
 	}
 
 	@media (max-width: 768px) {

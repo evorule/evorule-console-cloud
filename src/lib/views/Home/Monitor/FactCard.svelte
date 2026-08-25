@@ -34,19 +34,19 @@
   function typeToColor(type: string): { bg: string; fg: string } {
     const t = type.toLowerCase();
     if (t.includes("rule_triggered") || t.includes("trigger")) {
-      return { bg: "#dcfce7", fg: "#166534" };
+      return { bg: "var(--color-success-bg, #dcfce7)", fg: "var(--color-success, #166534)" };
     }
     if (t.includes("patient") || t.includes("visit")) {
-      return { bg: "#dbeafe", fg: "#1e40af" };
+      return { bg: "var(--color-info-bg, #dbeafe)", fg: "var(--color-info, #1e40af)" };
     }
     if (t.includes("drug") || t.includes("prescribe")) {
       return { bg: "#fce7f3", fg: "#9d174d" };
     }
     if (t.includes("io_request") || t.includes("io")) {
-      return { bg: "#fef3c7", fg: "#92400e" };
+      return { bg: "var(--color-warning-bg, #fef3c7)", fg: "var(--color-warning, #92400e)" };
     }
     if (t.includes("error") || t.includes("violation")) {
-      return { bg: "#fee2e2", fg: "#991b1b" };
+      return { bg: "var(--color-error-bg, #fee2e2)", fg: "var(--color-error, #991b1b)" };
     }
     return { bg: "#f3f4f6", fg: "#374151" };
   }
@@ -147,7 +147,7 @@
     font-family: var(--font-mono, monospace);
     font-size: 10px;
     color: var(--color-primary, #2563eb);
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
     padding: 1px 5px;
     border-radius: 3px;
     font-weight: 600;
