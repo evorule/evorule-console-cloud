@@ -14,9 +14,13 @@
 //   - 用 localStorage 注入 LLM 配置(enabled + endpoint + key + model)
 //   - 不依赖 evorule-server(规则库 + LLM 流程都是前端逻辑)
 //
+// 依赖:已登录状态(beforeEach 通过 tests/helpers/login.ts 注入 session + auth + db-meta)
+//      LLM 状态由各 test 内部按需覆盖(disabled 或 enabled)
+//
 // 运行: npx playwright test tests/assistant-flow.spec.ts
 
 import { test, expect } from '@playwright/test';
+import { loginAsAdmin } from './helpers/login';
 
 // ============ mock LLM API 响应 ============
 
@@ -126,6 +130,9 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 				await route.fulfill(mockChatResponse(''));
 			}
 		});
+
+		// 注入已登录 + 库元数据 + LLM 禁用(test 内部按需 override LLM 状态)
+		await loginAsAdmin(page);
 	});
 
 	// ============ 1. LLM 关闭时按钮不渲染(回归一致) ============
@@ -147,7 +154,8 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 	// ============ 2. LLM 开启时按钮渲染 ============
 
 	test('LLM 启用 + 配置完备时 RuleLibrary 渲染 AI 按钮', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'networkidle' });
+		// 直接进 /view/rules(已登录时 / 走 HomeRouter → RealWorkbench,不渲染 .btn-ai)
+		await page.goto('/view/rules', { waitUntil: 'networkidle' });
 		await page.evaluate((cfg) => {
 			localStorage.setItem('evorule-console-cloud:llm-config', JSON.stringify(cfg));
 		}, LLM_CONFIG);
@@ -162,13 +170,15 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 	// ============ 3. DraftRuleDialog 完整流程 ============
 
 	test('DraftRuleDialog: 输入描述 → 生成草案 → 采用 → 加入规则库', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await page.goto('/view/rules', { waitUntil: 'networkidle' });
 		await page.evaluate((cfg) => {
 			localStorage.setItem('evorule-console-cloud:llm-config', JSON.stringify(cfg));
 		}, LLM_CONFIG);
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
+		// 切到开发者模式(.btn-ai "AI 辅助创建" 只在 RuleLibraryView(dev mode)渲染)
+		await page.locator('.dev-mode-toggle button[role="switch"]').click();
 		// 点击 "AI 辅助创建" 按钮(第一个 .btn-ai)
 		await page.locator('.btn-ai').first().click();
 
@@ -205,7 +215,7 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 	// ============ 4. ExplainRuleDialog 流程 ============
 
 	test('ExplainRuleDialog: 点击解释 → 显示说明文本', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await page.goto('/view/rules', { waitUntil: 'networkidle' });
 		await page.evaluate((cfg) => {
 			localStorage.setItem('evorule-console-cloud:llm-config', JSON.stringify(cfg));
 		}, LLM_CONFIG);
@@ -324,13 +334,15 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 	// ============ 6. Escape 关闭 Dialog ============
 
 	test('Escape 键关闭 Dialog', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'networkidle' });
+		await page.goto('/view/rules', { waitUntil: 'networkidle' });
 		await page.evaluate((cfg) => {
 			localStorage.setItem('evorule-console-cloud:llm-config', JSON.stringify(cfg));
 		}, LLM_CONFIG);
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
+		// 切到开发者模式(.btn-ai "AI 辅助创建" 只在 RuleLibraryView(dev mode)渲染)
+		await page.locator('.dev-mode-toggle button[role="switch"]').click();
 		// 打开 DraftRuleDialog
 		await page.locator('.btn-ai').first().click();
 		await expect(page.locator('#draft-dialog-title')).toBeVisible({ timeout: 5000 });

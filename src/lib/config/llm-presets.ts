@@ -68,6 +68,14 @@ export const LLM_PRESETS: LlmPreset[] = [
 		helpUrl: 'https://platform.deepseek.com/api_keys'
 	},
 	{
+		provider: 'minimax',
+		label: 'MiniMax(海螺AI)',
+		apiEndpoint: 'https://api.minimax.chat/v1/chat/completions',
+		defaultModel: 'MiniMax-Text-01',
+		models: ['MiniMax-Text-01', 'abab6.5s-chat'],
+		helpUrl: 'https://platform.minimaxi.com/user-center/basic-information/interface-key'
+	},
+	{
 		provider: 'openai',
 		label: 'OpenAI(国际标准,需代理)',
 		apiEndpoint: 'https://api.openai.com/v1/chat/completions',

@@ -2,23 +2,38 @@
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:发布队列列表 + 状态徽标 + approve/reject 按钮(权限守卫)
-  依赖:publish-queue.ts / auth.ts / production-audit.ts / activity-log.ts / toast.ts
+  依赖:publish-queue-api.ts / auth.ts / activity-log.ts / notifications.ts / toast.ts / net-config.ts
   关联设计:P08_COLLAB_WORKFLOW_DESIGN.md §7.5(PublishQueueList)
+
+  F3 接线(2026-08-24,偏差修正):
+    - 在线(联网模式):数据来自远程 evorule-server(remoteBaseUrl)GET /api/publish/queue;
+      审批/驳回走 POST /review,回滚走 POST /publish/rollback(单步,pending→published/rejected)。
+    - 离线(本地模式):连本地 evorule-server(localBaseUrl,默认 http://localhost:18080)。
+      本地服务器不可达时展示明确错误状态,不静默显示"暂无发布请求"。
+    - 不再回退 localStorage mock store(mock 两步流 submitted→reviewing→published
+      仅存于 Collab 演示视图 ReviewActions/DecisionMaker,发布队列页已全部走后端)。
+    - 后端状态机 pending/approved/published/rejected/cancelled 统一映射展示。
 -->
 
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { useBackend } from "@evorule/console";
+  import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
+  import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
+  import { netConfig } from "$lib/config/net-config";
   import {
-    publishQueueStore,
-    startReview,
-    approvePublish,
-    rejectPublish,
-    emergencyRollback,
-  } from "$lib/stores/publish-queue";
+    roleToBackend,
+    type PublishQueueItemView,
+  } from "$lib/stores/publish-queue-api";
   import { can, getCurrentUser } from "$lib/stores/auth";
-  import { appendVersion } from "$lib/stores/production-audit";
   import { logActivity } from "$lib/stores/activity-log";
   import { pushNotification } from "$lib/stores/notifications";
   import { toastSuccess, toastError } from "$lib/stores/toast";
+
+  let queue = $state<PublishQueueItemView[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
+  let backend: CloudHttpBackend;
 
   let reviewComment = $state<Record<string, string>>({});
   let rejectingId = $state<string | null>(null);
@@ -32,9 +47,11 @@
       draft: "草稿",
       submitted: "待审核",
       reviewing: "审核中",
+      pending: "待审核",
       approved: "已批准",
       rejected: "已驳回",
       published: "已发布",
+      cancelled: "已取消",
       rolled_back: "已回滚",
     };
     return labels[s] ?? s;
@@ -44,100 +61,142 @@
     return `status-${s}`;
   }
 
-  function handleStartReview(id: string): void {
+  /** 重新加载队列(数据来自当前模式对应的 evorule-server;不可达时展示错误状态)。 */
+  async function reloadQueue(): Promise<void> {
+    try {
+      queue = await backend.getPublishQueue();
+      error = null;
+    } catch (e) {
+      queue = [];
+      const detail = e instanceof Error && e.message ? e.message : "网络错误";
+      error = `无法连接 evorule-server(${backend.baseUrl}):${detail}`;
+    }
+  }
+
+  onMount(async () => {
+    const b = useBackend();
+    // cloud 版始终注入 CloudHttpBackend(在线/离线统一走 HTTP),详见文件头注
+    backend = b as CloudHttpBackend;
+    await reloadQueue();
+    loading = false;
+  });
+
+  async function handleApprove(item: PublishQueueItemView): Promise<void> {
     const user = getCurrentUser();
     if (!user) return;
-    startReview(id, user.id);
+    const comment = reviewComment[item.id] ?? "通过";
+    const res = await backend.reviewPublishRequest(
+      Number(item.id),
+      "approved",
+      comment,
+      user.id,
+      roleToBackend(user.role),
+    );
+    if (!res.ok) {
+      toastError(res.error ?? "审批失败", "发布队列");
+      return;
+    }
     logActivity({
       userId: user.id,
       username: user.displayName,
-      action: "start_review",
-      target: id,
+      action: "approve_publish",
+      target: item.id,
+      detail: `已批准发布`,
     });
-    toastSuccess("已开始审核", "发布队列");
-  }
-
-  function handleApprove(id: string): void {
-    const user = getCurrentUser();
-    if (!user) return;
-    const comment = reviewComment[id] ?? "通过";
-    approvePublish(id, user.id, comment);
-    // 同步 production-audit 历史
-    const req = $publishQueueStore.find((r) => r.id === id);
-    if (req) {
-      const version = appendVersion({
-        rulesetHash: `hash_v${req.rulesetVersion}_${Date.now()}`,
-        publishedAt: new Date().toISOString(),
-        publishedBy: user.id,
-        publishRequestId: id,
-        notes: comment,
-      });
-      logActivity({
-        userId: user.id,
-        username: user.displayName,
-        action: "approve_publish",
-        target: id,
-        detail: `v${version} 已发布`,
-      });
-      pushNotification({
-        type: "publish_status",
-        title: "规则集已发布",
-        body: `版本 v${version} 已批准发布`,
-        link: "/version-history",
-      });
-    }
     toastSuccess("已批准发布", "发布队列");
+    await reloadQueue();
   }
 
-  function handleRejectConfirm(): void {
+  async function handleRejectConfirm(): Promise<void> {
     if (!rejectingId) return;
     const user = getCurrentUser();
     if (!user) return;
-    rejectPublish(rejectingId, user.id, rejectComment || "驳回");
+    const id = rejectingId;
+    const res = await backend.reviewPublishRequest(
+      Number(id),
+      "rejected",
+      rejectComment || "驳回",
+      user.id,
+      roleToBackend(user.role),
+    );
+    if (!res.ok) {
+      toastError(res.error ?? "驳回失败", "发布队列");
+      return;
+    }
     logActivity({
       userId: user.id,
       username: user.displayName,
       action: "reject_publish",
-      target: rejectingId,
+      target: id,
       detail: rejectComment,
     });
     toastSuccess("已驳回发布请求", "发布队列");
     rejectingId = null;
     rejectComment = "";
+    await reloadQueue();
   }
 
-  function handleRollback(id: string): void {
+  async function handleRollback(item: PublishQueueItemView): Promise<void> {
     const user = getCurrentUser();
     if (!user) return;
     if (!confirm("确认紧急回滚?此操作将立即生效。")) return;
-    emergencyRollback(id, user.id);
+    // 后端回滚按"目标版本"操作:回滚到该发布项的发布版本(rulesetVersion = published_version)
+    const targetVersion = item.rulesetVersion;
+    if (targetVersion == null || targetVersion === 0) {
+      toastError("该发布项无发布版本,无法回滚", "发布队列");
+      return;
+    }
+    const res = await backend.emergencyRollbackRequest(
+      targetVersion,
+      "发布队列紧急回滚",
+      user.id,
+      roleToBackend(user.role),
+    );
+    if (!res.ok) {
+      toastError(res.error ?? "回滚失败", "发布队列");
+      return;
+    }
+    pushNotification({
+      type: "publish_status",
+      title: "⚠️ 紧急回滚",
+      body: `已回滚到 v${targetVersion} (新版本号递增)`,
+      link: "/version-history",
+    });
     logActivity({
       userId: user.id,
       username: user.displayName,
       action: "rollback",
-      target: id,
-    });
-    pushNotification({
-      type: "publish_status",
-      title: "⚠️ 紧急回滚",
-      body: `发布请求 ${id} 已紧急回滚`,
-      link: "/version-history",
+      target: item.id,
     });
     toastSuccess("已紧急回滚", "发布队列");
+    await reloadQueue();
   }
 </script>
 
 <section class="publish-queue">
   <header class="queue-header">
     <h2>📤 发布队列</h2>
-    <span class="queue-count">{$publishQueueStore.length} 条请求</span>
+    <span class="queue-count">{queue.length} 条请求</span>
+    <span
+      class="source-badge"
+      class:offline={$netConfig.mode === "offline"}
+      title={$netConfig.mode === "online"
+        ? `数据来自远程 evorule-server(${$netConfig.remoteBaseUrl})`
+        : `数据来自本地 evorule-server(${DEFAULT_LOCAL_BASE_URL})`}
+    >
+      {$netConfig.mode === "online" ? "联网" : "本地"}
+    </span>
   </header>
 
-  {#if $publishQueueStore.length === 0}
+  {#if loading}
+    <div class="queue-empty">⏳ 加载发布队列...</div>
+  {:else if error}
+    <div class="queue-error">⚠️ {error}</div>
+  {:else if queue.length === 0}
     <div class="queue-empty">📭 暂无发布请求</div>
   {:else}
     <div class="queue-list">
-      {#each $publishQueueStore as req (req.id)}
+      {#each queue as req (req.id)}
         <div class="queue-item {statusClass(req.status)}">
           <div class="item-header">
             <span class="item-version">v{req.rulesetVersion}</span>
@@ -161,23 +220,7 @@
             {/if}
           </div>
 
-          {#if req.status === "submitted" && canApprove}
-            <div class="item-actions">
-              <input
-                class="comment-input"
-                placeholder="审核备注..."
-                bind:value={reviewComment[req.id]}
-              />
-              <button
-                class="btn btn-primary"
-                onclick={() => handleStartReview(req.id)}
-              >
-                开始审核
-              </button>
-            </div>
-          {/if}
-
-          {#if req.status === "reviewing" && canApprove}
+          {#if req.status === "pending" && canApprove}
             <div class="item-actions">
               <input
                 class="comment-input"
@@ -186,7 +229,7 @@
               />
               <button
                 class="btn btn-success"
-                onclick={() => handleApprove(req.id)}
+                onclick={() => handleApprove(req)}
               >
                 ✅ 批准
               </button>
@@ -203,7 +246,7 @@
             <div class="item-actions">
               <button
                 class="btn btn-warning"
-                onclick={() => handleRollback(req.id)}
+                onclick={() => handleRollback(req)}
               >
                 ⏮️ 紧急回滚
               </button>
@@ -257,10 +300,28 @@
     font-size: 13px;
     color: var(--color-text-secondary, #64748b);
   }
+  .source-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #dcfce7;
+    color: #166534;
+  }
+  .source-badge.offline {
+    background: var(--color-gray-100, #f1f5f9);
+    color: var(--color-gray-500, #64748b);
+  }
   .queue-empty {
     padding: 48px;
     text-align: center;
     color: var(--color-text-secondary, #64748b);
+    background: white;
+    border-radius: 8px;
+  }
+  .queue-error {
+    padding: 48px;
+    text-align: center;
+    color: var(--color-error, #dc2626);
     background: white;
     border-radius: 8px;
   }
@@ -276,7 +337,8 @@
     border-left: 4px solid var(--color-gray-300, #cbd5e1);
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
   }
-  .queue-item.status-submitted {
+  .queue-item.status-submitted,
+  .queue-item.status-pending {
     border-left-color: var(--color-warning, #f59e0b);
   }
   .queue-item.status-reviewing {
@@ -310,7 +372,8 @@
     background: var(--color-gray-100, #f1f5f9);
     color: var(--color-text-secondary, #64748b);
   }
-  .item-status.status-submitted {
+  .item-status.status-submitted,
+  .item-status.status-pending {
     background: #fef3c7;
     color: #92400e;
   }
@@ -368,10 +431,6 @@
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-  }
-  .btn-primary {
-    background: var(--color-primary, #2563eb);
-    color: white;
   }
   .btn-success {
     background: var(--color-success, #22c55e);

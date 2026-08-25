@@ -49,7 +49,7 @@
     </p>
   </header>
 
-  <nav class="ie-tabs" role="tablist">
+  <div class="ie-tabs" role="tablist">
     {#each tabs as tab (tab.id)}
       <button
         class="ie-tab"
@@ -62,7 +62,7 @@
         <span class="ie-tab-desc">{tab.desc}</span>
       </button>
     {/each}
-  </nav>
+  </div>
 
   <div class="ie-content" role="tabpanel">
     {#if activeTab === "import"}
