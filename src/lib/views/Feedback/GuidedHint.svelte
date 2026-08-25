@@ -41,6 +41,7 @@
 
 	if (browser) {
 		try {
+			// svelte-ignore state_referenced_locally
 			dismissed = localStorage.getItem(`${STORAGE_PREFIX}${hintId}`) === "seen";
 		} catch {
 			dismissed = false;

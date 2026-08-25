@@ -40,6 +40,7 @@
 
   let { presetType }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let selectedType = $state<ObjectType>(presetType ?? "rule");
   let selectedFormat = $state<UniversalFormat>("json");
   let conflictResolution = $state<ConflictResolution>("rename");
