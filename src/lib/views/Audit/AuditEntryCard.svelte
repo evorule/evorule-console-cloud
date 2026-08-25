@@ -121,18 +121,18 @@
   }
   .audit-entry-card.selected {
     border-left-color: var(--color-primary, #2563eb);
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
   }
   .audit-entry-card.in-range {
-    border-left-color: #93c5fd;
-    background: #f0f7ff;
+    border-left-color: var(--color-info, #93c5fd);
+    background: var(--color-info-bg, #f0f7ff);
   }
   .audit-entry-card.verified {
-    border-left-color: #10b981;
+    border-left-color: var(--success, #10b981);
   }
   .audit-entry-card.broken {
-    border-left-color: #ef4444;
-    background: #fef2f2;
+    border-left-color: var(--danger, #ef4444);
+    background: var(--color-error-bg, #fef2f2);
   }
 
   .header {
@@ -160,8 +160,8 @@
   .hash {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: #7c3aed;
-    background: #f5f3ff;
+    color: var(--brand, #7c3aed);
+    background: var(--color-info-bg, #f5f3ff);
     padding: 1px 5px;
     border-radius: 3px;
     flex-shrink: 0;

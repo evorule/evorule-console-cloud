@@ -226,13 +226,13 @@
   }
   .btn-viewmode {
     background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, #1e40af);
+    color: var(--color-info-text, var(--color-info, #1e40af));
     border: 1px solid var(--color-info, #3b82f6);
     font-weight: 600;
   }
   .btn-viewmode.decision-maker {
     background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning-text, #92400e);
+    color: var(--color-warning-text, var(--color-warning, #92400e));
     border-color: var(--color-warning, #f59e0b);
   }
   .btn-viewmode:hover {
@@ -273,7 +273,7 @@
   }
   .status-blue {
     background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, #1e40af);
+    color: var(--color-info-text, var(--color-info, #1e40af));
   }
 
   .layer-content {

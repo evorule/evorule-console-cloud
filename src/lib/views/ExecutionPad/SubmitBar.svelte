@@ -146,12 +146,12 @@
     border: 1px solid;
   }
   .result-card.ok {
-    background: #d1fae5;
+    background: var(--color-success-bg, #d1fae5);
     border-color: #6ee7b7;
   }
   .result-card.fail {
-    background: #fee2e2;
-    border-color: #fca5a5;
+    background: var(--color-error-bg, #fee2e2);
+    border-color: var(--color-error, #fca5a5);
   }
   .result-icon {
     font-size: 16px;
@@ -179,7 +179,7 @@
     gap: 8px;
   }
   .result-card.fail .result-err {
-    color: #991b1b;
+    color: var(--color-error, #991b1b);
     font-weight: 500;
   }
   .result-empty {
@@ -236,8 +236,8 @@
     color: white;
   }
   .btn-primary:hover:not(:disabled) {
-    background: var(--color-primary-dark, #1d4ed8);
-    border-color: var(--color-primary-dark, #1d4ed8);
+    background: var(--color-primary-dark, var(--brand, #1d4ed8));
+    border-color: var(--color-primary-dark, var(--brand, #1d4ed8));
   }
   .btn-submit {
     font-weight: 600;

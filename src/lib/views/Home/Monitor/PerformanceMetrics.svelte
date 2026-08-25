@@ -155,7 +155,7 @@
   }
   .perf-bar-info    { background: #2563eb; }
   .perf-bar-warning { background: #f59e0b; }
-  .perf-bar-success { background: #10b981; }
-  .perf-bar-danger  { background: #ef4444; }
+  .perf-bar-success { background: var(--success, #10b981); }
+  .perf-bar-danger  { background: var(--danger, #ef4444); }
   .perf-bar-primary { background: #6366f1; }
 </style>

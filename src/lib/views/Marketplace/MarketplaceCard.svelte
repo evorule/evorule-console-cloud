@@ -35,9 +35,9 @@
   };
 
   const sourceColors: Record<MarketTemplate["source"], string> = {
-    builtin: "#dbeafe",
+    builtin: "var(--color-info-bg, #dbeafe)",
     user: "#f3e8ff",
-    official: "#dcfce7",
+    official: "var(--color-success-bg, #dcfce7)",
   };
 
   async function handleDownload() {
@@ -199,8 +199,8 @@
   }
   .mc-tag {
     padding: 1px 6px;
-    background: #eff6ff;
-    color: #1e40af;
+    background: var(--color-info-bg, #eff6ff);
+    color: var(--color-info, #1e40af);
     border-radius: 8px;
     font-size: 10px;
   }
@@ -236,7 +236,7 @@
   }
   .mc-btn.danger {
     background: white;
-    border-color: #fca5a5;
-    color: #991b1b;
+    border-color: var(--color-error, #fca5a5);
+    color: var(--color-error, #991b1b);
   }
 </style>

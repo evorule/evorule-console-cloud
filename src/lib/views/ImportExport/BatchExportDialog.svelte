@@ -150,7 +150,7 @@
     font-size: 11px;
   }
   .be-format-btn.active {
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
     border-color: var(--color-primary, #2563eb);
     color: var(--color-primary, #2563eb);
   }
@@ -158,10 +158,10 @@
     margin-top: 12px;
     padding: 8px;
     background: #f0fdf4;
-    border: 1px solid #86efac;
+    border: 1px solid var(--color-success, #86efac);
     border-radius: 4px;
     font-size: 11px;
-    color: #166534;
+    color: var(--color-success, #166534);
   }
   .be-footer {
     display: flex;

@@ -110,8 +110,8 @@
   }
   .no-permission {
     padding: 8px 12px;
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    color: var(--color-warning, #92400e);
     border-radius: 4px;
     font-size: 12px;
   }

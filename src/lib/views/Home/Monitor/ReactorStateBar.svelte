@@ -18,11 +18,11 @@
 
   const phaseMap: Record<ReactorPhase, { label: string; color: string; bg: string; border: string; icon: string }> = {
     idle:      { label: "空闲",    color: "#6b7280", bg: "#f9fafb", border: "#d1d5db", icon: "⏸" },
-    draining:  { label: "排出中",  color: "#1d4ed8", bg: "#eff6ff", border: "#93c5fd", icon: "🔽" },
-    executing: { label: "执行中",  color: "#15803d", bg: "#f0fdf4", border: "#86efac", icon: "▶" },
+    draining:  { label: "排出中",  color: "var(--brand, #1d4ed8)", bg: "var(--color-info-bg, #eff6ff)", border: "var(--color-info, #93c5fd)", icon: "🔽" },
+    executing: { label: "执行中",  color: "#15803d", bg: "#f0fdf4", border: "var(--color-success, #86efac)", icon: "▶" },
     awaiting_io:{label: "等待IO",  color: "#c2410c", bg: "#fff7ed", border: "#fdba74", icon: "⏳" },
     stable:    { label: "稳定",    color: "#0f766e", bg: "#f0fdfa", border: "#5eead4", icon: "✅" },
-    error:     { label: "错误",    color: "#b91c1c", bg: "#fef2f2", border: "#fca5a5", icon: "❌" },
+    error:     { label: "错误",    color: "#b91c1c", bg: "var(--color-error-bg, #fef2f2)", border: "var(--color-error, #fca5a5)", icon: "❌" },
   };
 
   const phase = $derived(state ? phaseMap[state.phase] : phaseMap.idle);

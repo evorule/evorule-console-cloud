@@ -292,7 +292,7 @@
   }
   .et-type-btn.active,
   .et-format-btn.active {
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
     border-color: var(--color-primary, #2563eb);
     color: var(--color-primary, #2563eb);
   }
@@ -346,11 +346,11 @@
   }
   .et-info {
     padding: 12px;
-    background: #eff6ff;
-    border: 1px solid #93c5fd;
+    background: var(--color-info-bg, #eff6ff);
+    border: 1px solid var(--color-info, #93c5fd);
     border-radius: 6px;
     font-size: 12px;
-    color: #1e40af;
+    color: var(--color-info, #1e40af);
   }
   .et-actions {
     display: flex;

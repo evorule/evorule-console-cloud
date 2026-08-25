@@ -376,7 +376,7 @@
     border-color: var(--color-primary, #2563eb);
   }
   .it-type-btn.active {
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
     border-color: var(--color-primary, #2563eb);
     color: var(--color-primary, #2563eb);
   }
@@ -478,16 +478,16 @@
     font-weight: 600;
   }
   .it-badge.success {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--color-success-bg, #dcfce7);
+    color: var(--color-success, #166534);
   }
   .it-badge.error {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--color-error-bg, #fee2e2);
+    color: var(--color-error, #991b1b);
   }
   .it-badge.info {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-info-bg, #dbeafe);
+    color: var(--color-info, #1e40af);
   }
   .it-result-details summary {
     cursor: pointer;
@@ -503,14 +503,14 @@
     margin-bottom: 4px;
   }
   .it-action-success {
-    color: #166534;
+    color: var(--color-success, #166534);
     font-weight: 600;
   }
   .it-action-error {
-    color: #991b1b;
+    color: var(--color-error, #991b1b);
     font-weight: 600;
   }
   .it-error-msg {
-    color: #991b1b;
+    color: var(--color-error, #991b1b);
   }
 </style>

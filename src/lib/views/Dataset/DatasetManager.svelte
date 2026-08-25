@@ -231,7 +231,7 @@
     color: #ffffff;
   }
   .btn-primary:hover {
-    background: var(--color-primary-dark, #1d4ed8);
+    background: var(--color-primary-dark, var(--brand, #1d4ed8));
   }
   .dataset-list {
     display: flex;

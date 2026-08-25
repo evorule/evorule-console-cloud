@@ -256,9 +256,9 @@
 		gap: 8px;
 		padding: 6px 20px;
 		background: #fef9c3;
-		border-bottom: 1px solid #fde68a;
+		border-bottom: 1px solid var(--color-warning, #fde68a);
 		font-size: 12px;
-		color: #92400e;
+		color: var(--color-warning, #92400e);
 		flex-wrap: wrap;
 	}
 	.tfw-hint-icon {
@@ -268,7 +268,7 @@
 		flex: 1;
 	}
 	.tfw-hint-goal {
-		color: #78350f;
+		color: var(--color-warning, #78350f);
 		font-size: 11px;
 	}
 

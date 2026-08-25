@@ -107,22 +107,22 @@
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border-bottom: 1px solid #fde68a;
+    background: linear-gradient(135deg, var(--color-warning-bg, #fef3c7) 0%, var(--color-warning, #fde68a) 100%);
+    border-bottom: 1px solid var(--color-warning, #fde68a);
     flex-wrap: wrap;
   }
   .title {
     margin: 0;
     font-size: 13px;
     font-weight: 700;
-    color: #78350f;
+    color: var(--color-warning, #78350f);
     flex-shrink: 0;
   }
   .meta {
     display: flex;
     gap: 10px;
     font-size: 10px;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
     flex: 1;
     min-width: 0;
   }
@@ -134,11 +134,11 @@
     border: none;
     cursor: pointer;
     font-size: 14px;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
     padding: 0 4px;
   }
   .close-btn:hover {
-    color: #78350f;
+    color: var(--color-warning, #78350f);
   }
 
   .dsp-body {
@@ -172,10 +172,10 @@
   }
 
   .risks .section-title {
-    color: #b45309;
+    color: var(--color-warning, #b45309);
   }
   .risks .section-list {
-    color: #92400e;
+    color: var(--color-warning, #92400e);
   }
 
   .action-list {
@@ -202,16 +202,16 @@
   .rollback-btn {
     font-size: 11px;
     padding: 4px 10px;
-    background: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fca5a5;
+    background: var(--color-error-bg, #fef2f2);
+    color: var(--color-error, #991b1b);
+    border: 1px solid var(--color-error, #fca5a5);
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
     white-space: nowrap;
   }
   .rollback-btn:hover {
-    background: #fee2e2;
+    background: var(--color-error-bg, #fee2e2);
   }
 
   .dsp-empty {

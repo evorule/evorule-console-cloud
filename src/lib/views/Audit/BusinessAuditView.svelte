@@ -409,19 +409,19 @@ ${causalChain.nodes
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    background: #fef3c7;
-    border-bottom: 1px solid #fde68a;
+    background: var(--color-warning-bg, #fef3c7);
+    border-bottom: 1px solid var(--color-warning, #fde68a);
     font-size: 12px;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
   }
   .dev-back-btn {
     background: white;
-    border: 1px solid #fde68a;
+    border: 1px solid var(--color-warning, #fde68a);
     border-radius: 4px;
     padding: 4px 10px;
     font-size: 11px;
     cursor: pointer;
-    color: #92400e;
+    color: var(--color-warning, #92400e);
     font-weight: 600;
   }
 
@@ -462,18 +462,18 @@ ${causalChain.nodes
   .audit-error,
   .decision-error {
     padding: 8px 12px;
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
+    background: var(--color-error-bg, #fef2f2);
+    border: 1px solid var(--color-error, #fca5a5);
     border-radius: 6px;
-    color: #991b1b;
+    color: var(--color-error, #991b1b);
     font-size: 12px;
   }
   .export-toast {
     padding: 8px 12px;
-    background: #dcfce7;
-    border: 1px solid #86efac;
+    background: var(--color-success-bg, #dcfce7);
+    border: 1px solid var(--color-success, #86efac);
     border-radius: 6px;
-    color: #166534;
+    color: var(--color-success, #166534);
     font-size: 12px;
   }
 

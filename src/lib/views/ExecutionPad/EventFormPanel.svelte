@@ -151,11 +151,11 @@
   }
   .template-card:hover {
     border-color: var(--color-primary, #2563eb);
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
   }
   .template-card.selected {
     border-color: var(--color-primary, #2563eb);
-    background: #dbeafe;
+    background: var(--color-info-bg, #dbeafe);
     box-shadow: 0 0 0 1px var(--color-primary, #2563eb);
   }
   .template-card:disabled {
@@ -191,12 +191,12 @@
     font-weight: 600;
   }
   .industry-medical {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg, #d1fae5);
+    color: var(--color-success, #065f46);
   }
   .industry-finance {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    color: var(--color-warning, #92400e);
   }
   .event-name-row {
     margin-bottom: 12px;

@@ -144,10 +144,10 @@
     line-height: 1.5;
     color: var(--color-text-secondary, #4b5563);
     background: var(--color-warning-bg, #fffbeb);
-    border-bottom: 1px solid #fde68a;
+    border-bottom: 1px solid var(--color-warning, #fde68a);
   }
   .rb-hint strong {
-    color: #b45309;
+    color: var(--color-warning, #b45309);
   }
   .rb-list {
     display: flex;
@@ -174,7 +174,7 @@
     font-family: inherit;
   }
   .rb-item:hover:not(.current) {
-    background: #eff6ff;
+    background: var(--color-info-bg, #eff6ff);
   }
   .rb-item.current {
     background: var(--color-gray-100, #f3f4f6);

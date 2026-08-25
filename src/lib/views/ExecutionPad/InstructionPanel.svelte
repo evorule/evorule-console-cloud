@@ -196,19 +196,19 @@
     color: var(--color-gray-600, #475569);
   }
   .status-translating {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-info-bg, #dbeafe);
+    color: var(--color-info, #1e40af);
   }
   .status-translated {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg, #d1fae5);
+    color: var(--color-success, #065f46);
   }
   .status-error {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--color-error-bg, #fee2e2);
+    color: var(--color-error, #991b1b);
   }
   .dev-badge {
-    background: #7c3aed;
+    background: var(--brand, #7c3aed);
     color: white;
     font-size: 10px;
     font-weight: 700;

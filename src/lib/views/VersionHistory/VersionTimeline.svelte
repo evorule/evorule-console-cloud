@@ -191,8 +191,8 @@
   }
   .rollback-badge {
     padding: 2px 8px;
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg, #fef3c7);
+    color: var(--color-warning, #92400e);
     border-radius: 10px;
     font-size: 11px;
     font-weight: 500;
@@ -231,6 +231,6 @@
     font-size: 12px;
   }
   .rollback-btn:hover {
-    background: #fef3c7;
+    background: var(--color-warning-bg, #fef3c7);
   }
 </style>

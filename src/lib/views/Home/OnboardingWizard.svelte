@@ -256,7 +256,7 @@
     padding: 4px 8px;
   }
   .cancel-link:hover {
-    color: var(--color-error-text, #991b1b);
+    color: var(--color-error-text, var(--color-error, #991b1b));
   }
 
   /* 步骤进度指示器 */
@@ -281,7 +281,7 @@
     transition: background 0.15s ease;
   }
   .progress-step.active {
-    background: var(--color-primary-bg, #eff6ff);
+    background: var(--color-primary-bg, var(--color-info-bg, #eff6ff));
   }
   .progress-num {
     display: inline-flex;
@@ -297,7 +297,7 @@
   }
   .progress-step.active .progress-num {
     background: var(--color-primary, #2563eb);
-    box-shadow: 0 0 0 3px var(--color-primary-bg, #eff6ff);
+    box-shadow: 0 0 0 3px var(--color-primary-bg, var(--color-info-bg, #eff6ff));
   }
   .progress-step.done .progress-num {
     background: var(--color-success, #16a34a);
@@ -344,7 +344,7 @@
     background: var(--color-info-bg, #dbeafe);
     border-radius: 6px;
     font-size: 12px;
-    color: var(--color-info-text, #1e40af);
+    color: var(--color-info-text, var(--color-info, #1e40af));
   }
   .skip-hint {
     flex: 1;
@@ -352,8 +352,8 @@
   .btn-skip {
     padding: 6px 14px;
     background: white;
-    border: 1px solid var(--color-info-text, #1e40af);
-    color: var(--color-info-text, #1e40af);
+    border: 1px solid var(--color-info-text, var(--color-info, #1e40af));
+    color: var(--color-info-text, var(--color-info, #1e40af));
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
