@@ -65,6 +65,9 @@
   const cloudBackend = new CloudHttpBackend({
     mode: initialNet.mode,
     remoteBaseUrl: initialNet.remoteBaseUrl,
+    // 演示配置:offline 模式走同源 /api,vite proxy 转发到 127.0.0.1:18080
+    // (本地 evorule-server 默认端口,loopback 无 token)。避免跨端口 CORS。
+    localBaseUrl: "",
   });
   // provideBackend 注入(返回 ExecutionBackend 接口类型,视图用)
   // cloudBackend 变量保留用于 reconfigure(reconfigure 是 CloudHttpBackend 特有方法)
@@ -223,6 +226,19 @@
         >
           <span class="tab-icon">🔍</span>
           <span class="tab-label">审计</span>
+        </button>
+        <button
+          class="nav-tab collab-tab"
+          class:active={$page.url.pathname === "/governance" && !showSettings}
+          onclick={() => {
+            showSettings = false;
+            goto("/governance");
+          }}
+          title="治理(evorule-rule)— 数据集/规则/5 态生命周期/审批发布/版本链"
+          aria-pressed={$page.url.pathname === "/governance" && !showSettings}
+        >
+          <span class="tab-icon">🗂️</span>
+          <span class="tab-label">治理</span>
         </button>
       {/if}
       <!-- 设置入口(Phase 6: 大众版独有,不修改内核 VIEW_LIST) -->
