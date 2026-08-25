@@ -13,9 +13,10 @@ export default defineConfig({
 		// 修复：npm run clean && npm run dev
 		strictPort: true,
 		// D4-C 修复(2026-08-03):offline 模式本地开发零配置 CORS。
-		// 把 /api 请求代理到 evorule-server,避免跨端口 CORS 问题。
+		// 把 /api 请求代理到 evorule-server(默认 18080),避免跨端口 CORS 问题。
 		// 用法:net-config 的 localBaseUrl 留空(同源),请求自动走 proxy。
 		// 注意:仅 dev/preview 生效;静态部署需配置反向代理(如 nginx)或用 online 模式。
+		// 治理视图(GovernanceBackend)直连 evorule-rule :18081,不走此 proxy。
 		proxy: {
 			'/api': {
 				target: 'http://127.0.0.1:18080',
