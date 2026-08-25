@@ -263,9 +263,9 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: var(--color-gray-50, #f8fafc);
-    padding: 10px 12px 12px;
-    gap: 10px;
+    background: var(--bg-primary, #f8fafc);
+    padding: 12px 16px;
+    gap: 12px;
     box-sizing: border-box;
     overflow: auto;
   }
@@ -274,10 +274,10 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 14px;
-    background: white;
-    border: 1px solid var(--color-gray-200, #e5e7eb);
-    border-radius: 8px;
+    padding: 12px 16px;
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: var(--radius-lg, 8px);  /* Docker 卡片 8px */
     flex-wrap: wrap;
     flex-shrink: 0;
   }
@@ -302,9 +302,12 @@
   }
   .md-prod-status {
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 3px 10px;
+    border-radius: var(--radius-full, 9999px);  /* Docker 风格: 胶囊徽标 */
     font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
   .status-running {
     background: var(--color-success-bg, #dcfce7);
@@ -335,18 +338,18 @@
   }
   .md-prod-sid {
     font-family: var(--font-mono, monospace);
-    color: var(--color-gray-600, #4b5563);
-    background: var(--color-gray-100, #f3f4f6);
-    padding: 0 6px;
-    border-radius: 4px;
+    color: var(--text-secondary, #4b5563);
+    background: var(--bg-hover, #f3f4f6);
+    padding: 1px 8px;
+    border-radius: var(--radius-sm, 4px);
   }
   .md-prod-hash {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
-    padding: 0 5px;
-    border-radius: 3px;
+    color: var(--brand, #0db7ed);
+    background: var(--color-info-bg, #ecfeff);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm, 4px);
   }
   .md-prod-updated {
     color: var(--color-gray-500, #6b7280);
