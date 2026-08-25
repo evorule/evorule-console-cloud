@@ -345,9 +345,8 @@
     align-items: center;
     gap: var(--spacing-lg);
     padding: 0 var(--spacing-xl);
-    background: var(--color-gray-900);
-    color: #fff;
-    box-shadow: var(--shadow-md);
+    background: var(--bg-inverse, #1a1d23);  /* 永远深色,跟主题解耦 */
+    color: var(--text-inverse, #e8edf2);
     position: sticky;
     top: 0;
     z-index: 10;

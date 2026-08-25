@@ -316,9 +316,9 @@
     font-size: 13px;
   }
   .btn-ai {
-    background: #f5f3ff;
-    border-color: #c4b5fd;
-    color: #6d28d9;
+    background: var(--color-info-bg, #f5f3ff);
+    border-color: var(--brand, #c4b5fd);
+    color: var(--brand, #6d28d9);
   }
   .no-schema {
     padding: 32px;

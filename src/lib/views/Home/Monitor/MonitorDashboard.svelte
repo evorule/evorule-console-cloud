@@ -307,17 +307,17 @@
     font-size: 11px;
   }
   .status-running {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--color-success-bg, #dcfce7);
+    color: var(--color-success, #166534);
   }
   .status-switching {
-    background: #fef9c3;
-    color: #854d0e;
+    background: var(--color-warning-bg, #fef9c3);
+    color: var(--color-warning, #854d0e);
     animation: pulse 1.2s ease-in-out infinite;
   }
   .status-offline {
-    background: #f3f4f6;
-    color: #4b5563;
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
   }
   @keyframes pulse {
     0%,
@@ -343,8 +343,8 @@
   .md-prod-hash {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: #7c3aed;
-    background: #f5f3ff;
+    color: var(--brand, #7c3aed);
+    background: var(--color-info-bg, #f5f3ff);
     padding: 0 5px;
     border-radius: 3px;
   }

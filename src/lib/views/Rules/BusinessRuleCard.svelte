@@ -76,8 +76,8 @@
     background: var(--color-gray-50, #f8fafc);
   }
   .rule-card.selected {
-    background: #eef2ff;
-    border-left: 3px solid var(--color-primary, #2563eb);
+    background: var(--color-info-bg, #eef2ff);
+    border-left: 3px solid var(--brand, #2563eb);
     padding-left: 9px;
   }
   .card-desc {
@@ -130,8 +130,8 @@
     color: var(--color-gray-700, #334155);
   }
   .badge-user {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg, #d1fae5);
+    color: var(--color-success, #065f46);
   }
   .version {
     font-size: 10px;
