@@ -19,7 +19,7 @@
 
 # evorule-console-cloud — 声明
 
-**版权所有 (c) 2026 EvoRule Project**
+**版权所有 (c）2026 EvoRule Project**
 
 本仓库包含由 EvoRule Project 开发的 evorule-console-cloud 软件（evorule 规则引擎面板 · 联网大众版）。
 
@@ -35,15 +35,15 @@ evorule-console-cloud 全部代码资产统一采用 AGPL-3.0-or-later，可通�
 
 evorule-console-cloud 是 [evorule-console](https://gitee.com/evo-rule-lab/evorule-console) 的**衍生产品**，二者关系：
 
-| 维度 | evorule-console（内核） | evorule-console-cloud（大众版） |
+| 维度 | evorule-console（内核）| evorule-console-cloud（大众版）|
 | --- | --- | --- |
-| 定位 | 规则引擎面板内核（无 LLM、不绑定网络栈） | 二次开发者专业起点（联网 + 云 LLM） |
-| 依赖 | 无外部 evorule 仓依赖 | `@evorule/console` v0.1.1（npm 依赖） |
-| 联网 | ❌ 仅开发期 loopback | ✅ 联网/离线双模式（CloudHttpBackend） |
-| LLM | ❌ 无 LLM 扩展槽实现 | ✅ 云 LLM（OpenAI 兼容协议，多厂商预设） |
+| 定位 | 规则引擎面板内核（无 LLM、不绑定网络栈）| 二次开发者专业起点（联网 + 云 LLM）|
+| 依赖 | 无外部 evorule 仓依赖 | `@evorule/console` v0.1.1（npm 依赖）|
+| 联网 | ❌ 仅开发期 loopback | ✅ 联网/离线双模式（CloudHttpBackend）|
+| LLM | ❌ 无 LLM 扩展槽实现 | ✅ 云 LLM（OpenAI 兼容协议，多厂商预设）|
 | 代码修改 | — | **不修改内核**，通过 `provideBackend()` / `provideAssistant()` 扩展槽注入 |
 | 版本 | 独立 semver | 独立 semver |
-| 许可 | 独立 | 独立（沿用双许可架构） |
+| 许可 | 独立 | 独立（沿用双许可架构）|
 
 **关键边界**：evorule-console-cloud 不复用 evorule-console 的代码，而是通过 npm 依赖 `@evorule/console` 包，在运行时通过扩展槽注入联网后端与云 LLM 助手。二者各自独立建仓、独立许可、独立版本。
 
@@ -61,8 +61,8 @@ evorule-console-cloud 遵循 EvoRule 项目的核心设计原则：
 
 ## 联系信息
 
-- **项目**: evorule-console-cloud — evorule 规则引擎面板 · 联网大众版
-- **作者**: EvoRule Project
-- **邮箱**: <evorulelab@gmail.com>
-- **组织**: [EvoRule Lab](https://gitee.com/evo-rule-lab)
-- **Gitee**: <https://gitee.com/evo-rule-lab/evorule-console-cloud>
+- **项目**：evorule-console-cloud — evorule 规则引擎面板 · 联网大众版
+- **作者**：EvoRule Project
+- **邮箱**：<evorulelab@gmail.com>
+- **组织**：[EvoRule Lab](https://gitee.com/evo-rule-lab)
+- **Gitee**：<https://gitee.com/evorule/evorule-console-cloud>

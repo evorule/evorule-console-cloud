@@ -20,7 +20,7 @@ import {
 	type UniversalExportPackage,
 	type PackageOperator,
 } from "./import-export-types";
-import { sha256Hex } from "./ruleset-import";
+import { blake3Hex } from "./ruleset-import";
 import { getDataset, createDataset } from "./dataset";
 import { getCurrentUser } from "./auth";
 
@@ -70,7 +70,7 @@ export async function exportDataset(
 			object_type: "dataset",
 			object_count: 1,
 			format,
-			content_hash: await sha256Hex(JSON.stringify(dataset)),
+			content_hash: await blake3Hex(JSON.stringify(dataset)),
 		},
 		objectType: "dataset",
 		data: dataset,

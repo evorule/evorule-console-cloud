@@ -236,14 +236,14 @@
     padding: 5px 10px;
     border: 1px solid var(--color-gray-300, #d1d5db);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
   }
   .btn {
     font-size: 13px;
     padding: 5px 12px;
     border: 1px solid var(--color-gray-300, #d1d5db);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
   }
   .btn-primary {
@@ -280,7 +280,7 @@
     border-left-width: 4px;
     border-radius: 6px;
     padding: 10px 12px;
-    background: white;
+    background: var(--bg-card);
   }
   .card-head {
     display: flex;
@@ -320,7 +320,7 @@
     z-index: 200;
   }
   .modal-card {
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     width: 90%;
     max-width: 420px;
@@ -363,7 +363,7 @@
     padding: 6px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     margin-top: 4px;
     box-sizing: border-box;
   }

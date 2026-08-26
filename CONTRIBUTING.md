@@ -19,15 +19,15 @@
 
 # 贡献指南 — evorule-console-cloud
 
-**项目**: evorule-console-cloud — evorule 规则引擎面板 · 联网大众版
-**版本**: 0.1.0
-**最后更新**: 2026-08-03
+**项目**：evorule-console-cloud — evorule 规则引擎面板 · 联网大众版
+**版本**：0.1.0
+**最后更新**：2026-08-03
 
 > evorule-console-cloud 是 [evorule-console](https://gitee.com/evo-rule-lab/evorule-console) 内核的衍生产品，定位为**二次开发者专业起点**（联网 + 云 LLM）。本文档仅约束本仓；EvoRule 项目级原则见各仓自身的贡献指南。
 
 ---
 
-## 🎯 核心原则
+## 核心原则
 
 ### 原则 1：内核零修改，扩展槽注入
 
@@ -47,8 +47,8 @@
 
 **为什么**：
 
-- evorule 的核心是"确定性执行"，LLM 是非确定性的，混入会破坏这一基调
-- LLM 调用失败时降级为"用户手动编辑 JSON"，不阻塞规则引擎工作
+- evorule 的核心是“确定性执行”，LLM 是非确定性的，混入会破坏这一基调
+- LLM 调用失败时降级为“用户手动编辑 JSON”，不阻塞规则引擎工作
 - 这是大众版与 AI agent 编排产品的本质区别
 
 ### 原则 3：JSON 是唯一表达
@@ -81,14 +81,14 @@
 **为什么**：
 
 - 大众版用户可能无网络或 evorule-server 未启动
-- 规则库、主题、视图切换等基础功能必须离线可用
+- 规则库、视图切换等基础功能必须离线可用
 - 联网模式只影响执行台 / 状态 / 审计等依赖 backend 的视图
 
 ---
 
 ## 🐛 报告 Bug
 
-使用 [Gitee Issues](https://gitee.com/evo-rule-lab/evorule-console-cloud/issues)。
+使用 [Gitee Issues](https://gitee.com/evorule/evorule-console-cloud/issues)。
 
 **报告模板**：
 
@@ -121,7 +121,7 @@
 
 ---
 
-## 💡 功能建议
+## 功能建议
 
 同样用 Issues，加 `enhancement` 标签。
 
@@ -137,12 +137,12 @@
 
 ---
 
-## 🔧 提交 PR
+## 提交 PR
 
 ### 工作流
 
 1. **Fork 本仓** → 在你的 Gitee 账号下创建 fork
-2. **建分支**: `git checkout -b feature/your-feature-name`
+2. **建分支**：`git checkout -b feature/your-feature-name`
 3. **写代码 + 写测试** — 覆盖率不得下降
 4. **本地验证**（必须全部通过）：
 
@@ -154,7 +154,7 @@
    npm run build          # adapter-static 构建必须成功
    ```
 
-5. **推送**: `git push origin feature/your-feature-name`
+5. **推送**：`git push origin feature/your-feature-name`
 6. **提 PR** 到 Gitee，填写 PR 模板
 7. **签 CLA**（见下文）
 8. **等 review** — 维护者 7 天内回复
@@ -182,12 +182,12 @@ test(e2e): add apiKey security verification case
 
 ---
 
-## 📜 CLA（贡献者许可协议）
+## CLA（贡献者许可协议）
 
 **所有贡献必须包含 CLA**。PR 时机器人自动检查。
 
-- 个人贡献者: [CLA-individual.md](CLA-individual.md)
-- 企业贡献者: 联系 <evorulelab@gmail.com>
+- 个人贡献者：[CLA-individual.md](CLA-individual.md)
+- 企业贡献者：联系 <evorulelab@gmail.com>
 
 **为什么需要 CLA**：
 
@@ -197,9 +197,9 @@ test(e2e): add apiKey security verification case
 
 ---
 
-## 🧪 测试要求
+## 测试要求
 
-> **完整测试指南**（环境准备 → 4 种测试 → 联调 → 排查）见 [docs/TESTING.md](./docs/TESTING.md)。本节仅列贡献者的额外要求。
+> **完整测试指南**（环境准备 → 4 种测试 → 联调 → 排查）见 [README §测试](./README.md#测试)。本节仅列贡献者的额外要求。
 
 ### 单元测试（vitest）
 
@@ -210,9 +210,9 @@ test(e2e): add apiKey security verification case
 
 ### e2e 测试（playwright）
 
-验证 6 tab 导航 + LLM 流程 + 设置面板（见 `tests/`）：
+验证侧栏导航 + LLM 流程 + 设置面板（见 `tests/`）：
 
-1. 首屏加载 + 品牌 + 6 tab 导航
+1. 首屏加载 + 品牌 + 侧栏导航
 2. 5 视图切换 + 设置面板打开/关闭
 3. 联网模式切换 + 持久化
 4. LLM 配置流程（启用 + 厂商预设 + apiKey + 测试连接 + 重置）
@@ -220,7 +220,7 @@ test(e2e): add apiKey security verification case
 6. LLM 关闭回归（禁用后 AI 按钮不渲染）
 7. apiKey 安全（不进 URL / 密码框 / 持久化）
 
-**e2e 并发说明**: 本仓 `playwright.config.ts` 强制 `workers: 1` + `fullyParallel: false`，这是配置约束（vite dev 冷启动竞态），不是代码缺陷。
+**e2e 并发说明**：本仓 `playwright.config.ts` 强制 `workers: 1` + `fullyParallel: false`，这是配置约束（vite dev 冷启动竞态），不是代码缺陷。
 
 ### L_console 预校验
 
@@ -228,11 +228,11 @@ test(e2e): add apiKey security verification case
 
 ---
 
-## 🛠 编码规范
+## 编码规范
 
 ### 风格
 
-- `npm run check` (svelte-check) 必须 0 error
+- `npm run check` （svelte-check）必须 0 error
 - 公共 API 必须有 JSDoc / TSDoc 注释
 - 导出的 store / 类型 / 组件签名必须稳定（语义化版本）
 
@@ -260,7 +260,7 @@ test(e2e): add apiKey security verification case
 - `src/lib/stores/` — 跨视图共享状态（`assistant-ui` dialog 状态）
 - `src/lib/views/Assistant/` — LLM 三用途 Dialog 组件
 - `src/lib/views/Settings/` — 设置面板（联网 + LLM 两 tab）
-- `src/routes/` — 根布局（6 tab 导航 + backend + assistant 注入）
+- `src/routes/` — 根布局（侧栏导航 + backend + assistant 注入）
 
 ### 不可变优先
 
@@ -270,7 +270,7 @@ test(e2e): add apiKey security verification case
 
 ---
 
-## 🚫 禁止事项
+## 禁止事项
 
 - ❌ **不要修改 `@evorule/console` 内核包代码**（破坏多产品线演化）
 - ❌ **不要让 LLM 自动执行规则 / 自动提交命令**（破坏确定性执行）
@@ -283,15 +283,15 @@ test(e2e): add apiKey security verification case
 
 ---
 
-## 📞 联系
+## 联系
 
-- **Gitee Issues**: <https://gitee.com/evo-rule-lab/evorule-console-cloud/issues>
-- **邮箱**: <evorulelab@gmail.com>
-- **组织**: [EvoRule Lab](https://gitee.com/evo-rule-lab)
+- **Gitee Issues**：<https://gitee.com/evorule/evorule-console-cloud/issues>
+- **邮箱**：<evorulelab@gmail.com>
+- **组织**：[EvoRule Lab](https://gitee.com/evo-rule-lab)
 
 ---
 
-## 🙏 致谢
+## 致谢
 
 感谢所有贡献者！你的名字将出现在 [AUTHORS.md](AUTHORS.md)。
 

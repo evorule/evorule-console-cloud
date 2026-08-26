@@ -117,7 +117,7 @@
     align-items: center;
     gap: 12px;
     padding: 16px;
-    background: white;
+    background: var(--bg-card);
     border: 2px solid var(--color-gray-200, #e2e8f0);
     border-radius: 8px;
     cursor: pointer;

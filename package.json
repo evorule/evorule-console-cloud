@@ -1,6 +1,6 @@
 {
   "name": "@evorule/console-cloud",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "evorule-console-cloud — evorule 大众版(内核 + 联网 + 云 LLM),面向大众/中小企业,开箱即用",
   "license": "AGPL-3.0-or-later",
   "type": "module",
@@ -16,18 +16,19 @@
     "verify": "vitest run src/verify.test.ts"
   },
   "dependencies": {
-    "@evorule/console": "file:../evorule-console"
+    "@evorule/console": "git+https://gitee.com/evo-rule-lab/evorule-console.git#v0.1.1",
+    "@noble/hashes": "^2.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "@sveltejs/adapter-static": "^3.0.0",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@types/node": "^20.0.0",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0",
-    "vitest": "^2.0.0",
-    "@playwright/test": "^1.40.0",
-    "@types/node": "^20.0.0"
+    "vitest": "^2.0.0"
   }
 }

@@ -6,13 +6,15 @@
 //
 // 设计:
 //   - 实现 ExecutionBackend 接口的 15 方法
-//   - 所有方法返回预填数据(医疗/财务两套)
+//   - 所有方法返回预填数据(医疗/财务/agent 三套)
 //   - SSE 用 setTimeout 模拟(每 2s 推一条 Fact)
 //   - 不调用真实 HTTP(零网络依赖)
 //   - 用于 GitHub Pages 在线 demo + 本地 demo 模式
 //
-// 数据切换:根据 demoDatasetStore(medical/finance)返回对应数据集。
-// session 管理:固定 2 个 session(1=医疗, 2=财务),简化演示。
+// 数据切换:根据 demoDatasetStore(medical/finance/agent)返回对应数据集。
+// session 管理:固定 4 个基础 session(1-4)+ agent 杀手场景 session(5)。
+//
+// P2-mock(2026-08-25):新增 agent 数据集(零依赖杀手演示,对应 evorule-agent-demo)。
 
 import type {
 	ExecutionBackend,
@@ -51,11 +53,22 @@ import {
 	FINANCE_FACT_RECORDS,
 	FINANCE_COMPLIANCE_FACTS,
 } from "$lib/data/demo-finance";
+import {
+	AGENT_FACTS,
+	AGENT_AUDIT,
+	AGENT_VERIFY,
+	AGENT_CAUSAL_CHAIN,
+	AGENT_SESSION_STATE,
+	AGENT_HISTORICAL_STATE,
+	AGENT_DIFF,
+	AGENT_FACT_RECORDS,
+	AGENT_COMPLIANCE_FACTS,
+} from "$lib/data/demo-killer-agent";
 import type { ProductionState } from "$lib/stores/production-state";
 import type { PublishQueueItemView, PublishWriteResult } from "$lib/stores/publish-queue-api";
 import type { VersionHistoryEntry } from "$lib/stores/production-audit";
 
-/** MockBackend 专属 session 元数据(区分医疗/财务/合规门禁) */
+/** MockBackend 专属 session 元数据(区分医疗/财务/agent/合规门禁) */
 interface MockSession {
 	id: SessionId;
 	dataset: DemoDataset;
@@ -66,7 +79,7 @@ interface MockSession {
 /**
  * MockBackend — 浏览器内执行后端,零网络依赖。
  *
- * 用法(在线 demo / force-demo 模式):
+ * 用法(在线 demo / force-demo 模式 / ?mock=1):
  *   const backend = new MockBackend();
  *   provideBackend(backend);
  *
@@ -75,14 +88,15 @@ interface MockSession {
  *   - session 2:财务主场景(6 条 Fact 因果链)
  *   - session 3:医疗合规门禁(2 条 Fact)
  *   - session 4:财务合规门禁(2 条 Fact)
+ *   - session 5:agent 杀手场景(代码审查 agent 误放行 → 回退/修复/护栏)
  *   - forkSession 创建的新 session 继承父 session 的数据集
  */
 export class MockBackend implements ExecutionBackend {
 	private sessions: Map<SessionId, MockSession> = new Map();
-	private nextSessionId: SessionId = 5; // 1-4 预填,5+ 动态创建
+	private nextSessionId: SessionId = 6; // 1-5 预填,6+ 动态创建
 
 	constructor() {
-		// 预填 4 个 session
+		// 预填 5 个 session
 		const now = new Date().toISOString();
 		this.sessions.set(1, {
 			id: 1,
@@ -108,6 +122,12 @@ export class MockBackend implements ExecutionBackend {
 			isCompliance: true,
 			createdAt: now,
 		});
+		this.sessions.set(5, {
+			id: 5,
+			dataset: "agent",
+			isCompliance: false,
+			createdAt: now,
+		});
 	}
 
 	// === 内部工具 ===
@@ -117,16 +137,23 @@ export class MockBackend implements ExecutionBackend {
 		return get(demoDatasetStore);
 	}
 
+	/** 按数据集解析主场景 Facts */
+	private factsForDataset(dataset: DemoDataset, isCompliance: boolean): Fact[] {
+		if (isCompliance) {
+			if (dataset === "medical") return MEDICAL_COMPLIANCE_FACTS;
+			if (dataset === "finance") return FINANCE_COMPLIANCE_FACTS;
+			return AGENT_COMPLIANCE_FACTS;
+		}
+		if (dataset === "medical") return MEDICAL_FACTS;
+		if (dataset === "finance") return FINANCE_FACTS;
+		return AGENT_FACTS;
+	}
+
 	/** 根据 session id 获取对应数据集的 Facts */
 	private getFactsForSession(id: SessionId): Fact[] {
 		const session = this.sessions.get(id);
 		if (!session) return [];
-		if (session.isCompliance) {
-			return session.dataset === "medical"
-				? MEDICAL_COMPLIANCE_FACTS
-				: FINANCE_COMPLIANCE_FACTS;
-		}
-		return session.dataset === "medical" ? MEDICAL_FACTS : FINANCE_FACTS;
+		return this.factsForDataset(session.dataset, session.isCompliance);
 	}
 
 	/** 根据 session id 获取审计链 */
@@ -135,10 +162,51 @@ export class MockBackend implements ExecutionBackend {
 		if (!session) {
 			return { entries: [], fact_count: 0, verified: false };
 		}
-		// 合规门禁 session 用主场景审计(简化:门禁 Fact 也算审计链一部分)
-		return session.dataset === "medical"
-			? MEDICAL_AUDIT
-			: FINANCE_AUDIT;
+		if (session.dataset === "medical") return MEDICAL_AUDIT;
+		if (session.dataset === "finance") return FINANCE_AUDIT;
+		return AGENT_AUDIT;
+	}
+
+	/** 按数据集解析 SessionState */
+	private sessionStateForDataset(dataset: DemoDataset): SessionState {
+		if (dataset === "medical") return MEDICAL_SESSION_STATE;
+		if (dataset === "finance") return FINANCE_SESSION_STATE;
+		return AGENT_SESSION_STATE;
+	}
+
+	/** 按数据集解析 HistoricalState(rewind 目标快照) */
+	private historicalStateForDataset(dataset: DemoDataset): HistoricalState {
+		if (dataset === "medical") return MEDICAL_HISTORICAL_STATE;
+		if (dataset === "finance") return FINANCE_HISTORICAL_STATE;
+		return AGENT_HISTORICAL_STATE;
+	}
+
+	/** 按数据集解析 FactRecord 索引 */
+	private factRecordsForDataset(dataset: DemoDataset): FactRecord[] {
+		if (dataset === "medical") return MEDICAL_FACT_RECORDS;
+		if (dataset === "finance") return FINANCE_FACT_RECORDS;
+		return AGENT_FACT_RECORDS;
+	}
+
+	/** 按数据集解析 VerifyResult */
+	private verifyForDataset(dataset: DemoDataset): VerifyResult {
+		if (dataset === "medical") return MEDICAL_VERIFY;
+		if (dataset === "finance") return FINANCE_VERIFY;
+		return AGENT_VERIFY;
+	}
+
+	/** 按数据集解析 CausalChain */
+	private causalChainForDataset(dataset: DemoDataset): CausalChain {
+		if (dataset === "medical") return MEDICAL_CAUSAL_CHAIN;
+		if (dataset === "finance") return FINANCE_CAUSAL_CHAIN;
+		return AGENT_CAUSAL_CHAIN;
+	}
+
+	/** 按数据集解析 DiffResult */
+	private diffForDataset(dataset: DemoDataset): DiffResult {
+		if (dataset === "medical") return MEDICAL_DIFF;
+		if (dataset === "finance") return FINANCE_DIFF;
+		return AGENT_DIFF;
 	}
 
 	// === ExecutionBackend 15 方法 ===
@@ -173,9 +241,7 @@ export class MockBackend implements ExecutionBackend {
 		if (!session) {
 			throw new Error(`MockBackend: session ${id} 不存在`);
 		}
-		return session.dataset === "medical"
-			? MEDICAL_SESSION_STATE
-			: FINANCE_SESSION_STATE;
+		return this.sessionStateForDataset(session.dataset);
 	}
 
 	async submitCommand(
@@ -213,10 +279,7 @@ export class MockBackend implements ExecutionBackend {
 	async getFacts(id: SessionId, prefix?: string): Promise<FactRecord[]> {
 		const session = this.sessions.get(id);
 		if (!session) return [];
-		let records =
-			session.dataset === "medical"
-				? MEDICAL_FACT_RECORDS
-				: FINANCE_FACT_RECORDS;
+		let records = this.factRecordsForDataset(session.dataset);
 		if (prefix) {
 			records = records.filter((r) => r.path.startsWith(prefix));
 		}
@@ -232,19 +295,16 @@ export class MockBackend implements ExecutionBackend {
 		if (!session) {
 			return { verified: false, detail: "session 不存在" };
 		}
-		return session.dataset === "medical" ? MEDICAL_VERIFY : FINANCE_VERIFY;
+		return this.verifyForDataset(session.dataset);
 	}
 
 	async getCausalChain(
 		id: SessionId,
-		factId: number,
+		_factId: number,
 	): Promise<CausalChain> {
 		const session = this.sessions.get(id);
 		if (!session) return { chain: [] };
-		const chain =
-			session.dataset === "medical"
-				? MEDICAL_CAUSAL_CHAIN
-				: FINANCE_CAUSAL_CHAIN;
+		const chain = this.causalChainForDataset(session.dataset);
 		// 简化:返回完整链(真实环境按 factId 过滤)
 		return chain;
 	}
@@ -257,9 +317,7 @@ export class MockBackend implements ExecutionBackend {
 		if (!session) {
 			throw new Error(`MockBackend: session ${id} 不存在`);
 		}
-		return session.dataset === "medical"
-			? MEDICAL_HISTORICAL_STATE
-			: FINANCE_HISTORICAL_STATE;
+		return this.historicalStateForDataset(session.dataset);
 	}
 
 	async getDiff(
@@ -269,7 +327,7 @@ export class MockBackend implements ExecutionBackend {
 	): Promise<DiffResult> {
 		const session = this.sessions.get(id);
 		if (!session) return { items: [], removed: [] };
-		return session.dataset === "medical" ? MEDICAL_DIFF : FINANCE_DIFF;
+		return this.diffForDataset(session.dataset);
 	}
 
 	async forkSession(
@@ -295,13 +353,17 @@ export class MockBackend implements ExecutionBackend {
 	 */
 	async getProductionState(): Promise<ProductionState> {
 		const dataset = this.currentDataset();
+		const currentSessionId = dataset === "medical" ? 1 : dataset === "finance" ? 2 : 5;
+		const rulesetHash =
+			dataset === "medical"
+				? "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1"
+				: dataset === "finance"
+					? "6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a"
+					: "k6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7";
 		return {
-			currentSessionId: dataset === "medical" ? 1 : 2,
+			currentSessionId,
 			rulesetVersion: 6,
-			rulesetHash:
-				dataset === "medical"
-					? "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1"
-					: "6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a",
+			rulesetHash,
 			status: "running",
 			updatedAt: new Date().toISOString(),
 		};

@@ -364,7 +364,7 @@
     align-items: center;
     gap: 4px;
     padding: 12px 8px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 6px;
     cursor: pointer;
@@ -455,7 +455,7 @@
     color: white;
   }
   .it-btn.secondary {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }

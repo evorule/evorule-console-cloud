@@ -10,7 +10,7 @@
 - 构建命令、CI/CD 配置说明
 - 测试策略、test runner 使用
 - 发版流程、release checklist
-- 监控、告警、备份、灾难恢复(runbook)
+- 监控、告警、备份、灾难恢复（runbook）
 
 ## 不要写在这里
 
@@ -19,5 +19,5 @@
 
 ## 命名规范
 
-`主题.md`(如 `testing.md`、`build-and-deploy.md`、`release-process.md`),
-**不**带日期 —— 流程变了改文件,不改文件名。
+`主题.md`（如 `testing.md`、`build-and-deploy.md`、`release-process.md`），
+**不**带日期 —— 流程变了改文件，不改文件名。

@@ -162,7 +162,7 @@
     display: flex;
     gap: 12px;
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 6px;
     border: 1px solid var(--color-gray-200, #e2e8f0);
   }

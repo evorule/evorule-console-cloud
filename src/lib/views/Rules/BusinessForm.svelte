@@ -333,7 +333,7 @@
     border-radius: 8px;
   }
   .business-form {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 8px;
     padding: 16px;
@@ -395,7 +395,7 @@
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
     font-size: 13px;
-    background: white;
+    background: var(--bg-card);
   }
   input:disabled,
   select:disabled {
@@ -442,7 +442,7 @@
   .kernel-errors {
     margin-top: 8px;
     padding: 8px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 4px;
     font-size: 12px;
   }
@@ -481,7 +481,7 @@
     padding: 6px 16px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     font-size: 13px;
   }

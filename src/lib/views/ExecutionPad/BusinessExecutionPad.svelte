@@ -257,7 +257,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    background: white;
+    background: var(--bg-card);
     border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
     flex-wrap: wrap;
     gap: 10px;
@@ -287,7 +287,7 @@
     padding: 5px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-primary, #1e293b);
   }
   .dev-mode-hint {

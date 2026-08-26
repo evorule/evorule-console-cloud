@@ -66,7 +66,7 @@
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 6px;
     font-size: 14px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
   }
   select:disabled {

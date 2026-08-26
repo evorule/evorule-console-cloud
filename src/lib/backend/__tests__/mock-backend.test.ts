@@ -20,17 +20,17 @@ describe("P10 MockBackend - 基础方法", () => {
 		expect(await backend.health()).toBe(true);
 	});
 
-	test("listSessions() 返回 4 个预填 session", async () => {
-		const sessions = await backend.listSessions();
-		expect(sessions).toHaveLength(4);
-		expect(sessions).toEqual([1, 2, 3, 4]);
-	});
-
-	test("createSession() 创建新 session(id 从 5 开始)", async () => {
-		const id = await backend.createSession();
-		expect(id).toBe(5);
+	test("listSessions() 返回 5 个预填 session(含 agent 杀手场景)", async () => {
 		const sessions = await backend.listSessions();
 		expect(sessions).toHaveLength(5);
+		expect(sessions).toEqual([1, 2, 3, 4, 5]);
+	});
+
+	test("createSession() 创建新 session(id 从 6 开始)", async () => {
+		const id = await backend.createSession();
+		expect(id).toBe(6);
+		const sessions = await backend.listSessions();
+		expect(sessions).toHaveLength(6);
 	});
 
 	test("closeSession() 删除 session", async () => {
@@ -156,10 +156,55 @@ describe("P10 MockBackend - 合规门禁 session", () => {
 	});
 });
 
+describe("P2-mock MockBackend - agent 杀手数据集(session 5)", () => {
+	beforeEach(() => {
+		setDemoDataset("agent");
+	});
+
+	test("getReplay(5) 返回 6 条 agent Fact,含 step3_BAD 自动放行", async () => {
+		const facts = await backend.getReplay(5);
+		expect(facts).toHaveLength(6);
+		expect(facts[0].type).toBe("task_received");
+		expect(facts[2].type).toBe("rule_triggered");
+		// step3_BAD:agent 自动放行 rm -rf(无人工),result 在 Fact 顶层(与 demo-medical 一致)
+		const bad = facts[2] as { result?: string };
+		expect(bad.result).toBe("allowed");
+	});
+
+	test("getAudit(5) 返回 agent 审计链且 verified", async () => {
+		const audit = await backend.getAudit(5);
+		expect(audit.fact_count).toBe(6);
+		expect(audit.verified).toBe(true);
+	});
+
+	test("getDiff(5, 3, 6) 返回决策模式变更(diff)", async () => {
+		const diff = await backend.getDiff(5, 3, 6);
+		expect(diff.items.length).toBeGreaterThan(0);
+	});
+
+	test("getStateAtVersion(5, 3) 返回危险步骤历史快照", async () => {
+		const state = await backend.getStateAtVersion(5, 3);
+		expect(state.version).toBe(3);
+		expect((state.payload as { risk?: string }).risk).toBe("high");
+	});
+
+	test("getCausalChain(5) 返回因果链", async () => {
+		const chain = await backend.getCausalChain(5, 3);
+		expect(chain.chain.length).toBeGreaterThan(0);
+		expect(chain.chain[0].fact_type).toBe("guardrail_activated");
+	});
+
+	test("getProductionState agent 数据集 currentSessionId=5", async () => {
+		const state = await backend.getProductionState();
+		expect(state.currentSessionId).toBe(5);
+		expect(state.status).toBe("running");
+	});
+});
+
 describe("P10 MockBackend - forkSession", () => {
 	test("forkSession 继承父 session 数据集", async () => {
 		const newId = await backend.forkSession(1, 3);
-		expect(newId).toBe(5);
+		expect(newId).toBe(6);
 		const facts = await backend.getReplay(newId);
 		// fork 后继承医疗数据
 		expect(facts[0].type).toBe("patient_visit");
@@ -167,7 +212,7 @@ describe("P10 MockBackend - forkSession", () => {
 
 	test("forkSession 不存在的 parent 用当前数据集", async () => {
 		const newId = await backend.forkSession(999, 1);
-		expect(newId).toBeGreaterThanOrEqual(5);
+		expect(newId).toBeGreaterThanOrEqual(6);
 	});
 });
 

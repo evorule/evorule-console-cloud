@@ -86,6 +86,12 @@ export class LlmResponseError extends LlmError {
 	}
 }
 
+/** 对话历史中的一条消息（仅 role + content，不含 system） */
+export interface ChatHistoryMessage {
+	role: 'user' | 'assistant';
+	content: string;
+}
+
 /** Chat API 请求参数 */
 export interface ChatApiParams {
 	apiEndpoint: string;
@@ -95,6 +101,11 @@ export interface ChatApiParams {
 	userMessage: string;
 	/** 可选系统消息(默认空,统一由 userMessage 承载) */
 	systemMessage?: string;
+	/**
+	 * 可选对话历史(多轮):按时间顺序，会拼在 system 之后、当前 userMessage 之前。
+	 * 用于右侧 LLM 交互侧栏的连续对话。三个定向任务(draft/explain/input)不传此字段。
+	 */
+	history?: ChatHistoryMessage[];
 	/** 温度(默认 0.2,偏确定性,适合规则草案生成) */
 	temperature?: number;
 	/** 超时(默认 30 秒) */

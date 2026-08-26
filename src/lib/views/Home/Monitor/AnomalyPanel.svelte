@@ -149,7 +149,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
@@ -202,7 +202,7 @@
     padding: 3px 10px;
     border: 1px solid var(--color-gray-300, #d1d5db);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-secondary, #4b5563);
     cursor: pointer;
     font-family: inherit;
@@ -327,7 +327,7 @@
   }
   .ap-item {
     padding: 5px 8px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 4px;
     border-left: 3px solid;
   }

@@ -104,11 +104,11 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 			timeout: 10_000
 		});
 
-		await expect(page.locator('.brand-name')).toHaveText('evorule-console-cloud');
-		await expect(page.locator('.brand-tag')).toContainText('大众版');
+		await expect(page.locator('.brand-text')).toHaveText('evorule');
+		await expect(page.locator('.brand-cloud')).toContainText('console-cloud');
 	});
 
-	test('common/未登录:主题切换按钮可点击 → data-theme 翻转', async ({ page }) => {
+	test('common/未登录:固定深色 — html[data-theme] 恒为 dark', async ({ page }) => {
 		await page.goto('/', { waitUntil: 'networkidle' });
 		await page.evaluate(() => localStorage.clear());
 		await page.reload({ waitUntil: 'networkidle' });
@@ -116,16 +116,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 			timeout: 10_000
 		});
 
-		const html = page.locator('html');
-		const toggle = page.locator('.theme-toggle');
-		await expect(toggle).toBeVisible();
-
-		const initial = await html.getAttribute('data-theme');
-		await toggle.click();
-		await expect(html).toHaveAttribute(
-			'data-theme',
-			initial === 'dark' ? 'light' : 'dark'
-		);
+		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 	});
 
 	test('common/未登录:联网切换按钮可点击 → offline ↔ online', async ({ page }) => {
@@ -136,17 +127,16 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 			timeout: 10_000
 		});
 
-		const toggle = page.locator('.net-toggle');
+		const toggle = page.getByRole('button', { name: /切换联网/ });
 		await expect(toggle).toBeVisible();
-		await expect(toggle).toHaveClass(/offline/);
+		// 默认离线模式 → 🖥️
+		await expect(toggle).toContainText('🖥️');
 
 		await toggle.click();
-		await expect(toggle).toHaveClass(/online/);
-		await expect(toggle.locator('.net-text')).toHaveText('联网');
+		await expect(toggle).toContainText('☁️');
 
 		await toggle.click();
-		await expect(toggle).toHaveClass(/offline/);
-		await expect(toggle.locator('.net-text')).toHaveText('本地');
+		await expect(toggle).toContainText('🖥️');
 	});
 
 	// ============ step 1 建库:未登录 → DemoHome;已登录空库 → OnboardingWizard ============
@@ -196,32 +186,32 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 
 	// ============ 已登录公共:nav-tabs 可见 ============
 
-	test('common/[已登录] 5 视图 tab 全部可点击 → URL 跟随 + tab active', async ({
+	test('common/[已登录] 5 视图 item 全部可点击 → URL 跟随 + item active', async ({
 		page
 	}) => {
 		await loginAsAdmin(page);
 
 		for (const tab of VIEW_TABS) {
-			// 排除 collab tab(导出/审计/版本/发布队列),只点内核 5 视图
-			const tabBtn = page
-				.locator('.nav-tab:not(.collab-tab)', { hasText: tab })
+			// 只点内核 5 视图(工作台 section 内)
+			const itemBtn = page
+				.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: tab })
 				.first();
-			await tabBtn.click();
-			// 1) tab 高亮
-			await expect(tabBtn).toHaveAttribute('aria-pressed', 'true');
+			await itemBtn.click();
+			// 1) item 高亮
+			await expect(itemBtn).toHaveAttribute('aria-pressed', 'true');
 			// 2) URL 切到 /view/{id}(id 来自 tab 文案的 lowercase pinyin,这里只验包含 view/)
 			await expect(page).toHaveURL(/\/view\//);
 			// 3) 主区不为空(任一视图都会渲染内容)
-			await expect(page.locator('main.main-content')).not.toBeEmpty();
+			await expect(page.locator('main.content')).not.toBeEmpty();
 		}
 	});
 
-	test('common/[已登录] 设置 tab 可点击 → 打开设置面板', async ({ page }) => {
+	test('common/[已登录] 设置 item 可点击 → 打开设置面板', async ({ page }) => {
 		await loginAsAdmin(page);
 
-		const settingsTab = page.locator('.nav-tab.settings-tab');
-		await settingsTab.click();
-		await expect(settingsTab).toHaveAttribute('aria-pressed', 'true');
+		const settingsItem = page.locator('.sidebar-item', { hasText: '设置' });
+		await settingsItem.click();
+		await expect(settingsItem).toHaveAttribute('aria-pressed', 'true');
 		await expect(page.locator('h1')).toHaveText('⚙️ 设置');
 		await expect(
 			page.locator('.settings-tab', { hasText: '联网配置' })
@@ -231,13 +221,13 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		).toBeVisible();
 	});
 
-	test('common/[已登录] 导出/审计/版本/发布队列 tab 可见', async ({ page }) => {
+	test('common/[已登录] 导出/审计/版本/发布队列 item 可见', async ({ page }) => {
 		await loginAsAdmin(page);
 
-		await expect(page.locator('.nav-tab.export-tab')).toBeVisible();
-		await expect(page.locator('.nav-tab.collab-tab', { hasText: '发布队列' })).toBeVisible();
-		await expect(page.locator('.nav-tab.collab-tab', { hasText: '版本' })).toBeVisible();
-		await expect(page.locator('.nav-tab.collab-tab', { hasText: '审计' })).toBeVisible();
+		await expect(page.locator('.sidebar-item', { hasText: '导出' })).toBeVisible();
+		await expect(page.locator('.sidebar-item', { hasText: '发布队列' })).toBeVisible();
+		await expect(page.locator('.sidebar-item', { hasText: '版本历史' })).toBeVisible();
+		await expect(page.locator('.sidebar-item', { hasText: '审计记录' })).toBeVisible();
 	});
 
 	// ============ step 2 加规则:BusinessRuleLibrary ============
@@ -247,8 +237,11 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 	}) => {
 		await loginAsAdmin(page);
 
-		// 切到规则库 tab
-		await page.locator('.nav-tab', { hasText: '规则库' }).click();
+		// 切到规则库 item
+		await page
+			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '规则库' })
+			.first()
+			.click();
 		await expect(page.locator('h1').first()).toHaveText('规则库');
 		// 内核 set_basic builtin 规则,BusinessRuleCard 渲染
 		await expect(
@@ -261,33 +254,44 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 	}) => {
 		await loginAsAdmin(page);
 
-		await page.locator('.nav-tab', { hasText: '规则库' }).click();
+		await page
+			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '规则库' })
+			.first()
+			.click();
 		await expect(page.locator('.business-lib')).toBeVisible();
 		await expect(page.locator('.rule-list')).toBeVisible();
 	});
 
 	// ============ step 4 组合数据集:DatasetManager(需登录 + 在执行台内) ============
 
-	test('step 4/[已登录] 执行台 tab 可见 + 可点击', async ({ page }) => {
+	test('step 4/[已登录] 执行台 item 可见 + 可点击', async ({ page }) => {
 		await loginAsAdmin(page);
 
-		const tab = page.locator('.nav-tab', { hasText: '执行台' });
-		await expect(tab).toBeVisible();
-		await tab.click();
-		await expect(tab).toHaveAttribute('aria-pressed', 'true');
+		const item = page
+			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.first();
+		await expect(item).toBeVisible();
+		await item.click();
+		await expect(item).toHaveAttribute('aria-pressed', 'true');
 	});
 
 	test('step 4/[已登录] 执行台视图 h1 = "执行台"', async ({ page }) => {
 		await loginAsAdmin(page);
 
-		await page.locator('.nav-tab', { hasText: '执行台' }).click();
+		await page
+			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.first()
+			.click();
 		await expect(page.locator('h1').first()).toHaveText('执行台');
 	});
 
 	test('step 4/[已登录] 执行台不崩溃(无 Uncaught/TypeError)', async ({ page }) => {
 		await loginAsAdmin(page);
 
-		await page.locator('.nav-tab', { hasText: '执行台' }).click();
+		await page
+			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.first()
+			.click();
 		await expect(page.locator('h1').first()).toHaveText('执行台');
 
 		const bodyText = await page.locator('body').textContent();
@@ -300,7 +304,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 	test('step 10/[已登录] /export 路由可访问', async ({ page }) => {
 		await loginAsAdmin(page);
 
-		await page.locator('.nav-tab.export-tab').click();
+		await page.locator('.sidebar-item', { hasText: '导出' }).click();
 		await expect(page).toHaveURL(/\/export$/);
 		// ExportCenter 渲染 h2.ec-title
 		await expect(page.locator('.ec-title').first()).toBeVisible();
@@ -323,7 +327,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 
 	// ============ 回归 sanity ============
 
-	test('回归/刷新页面后主题/联网按钮仍可见可点', async ({ page }) => {
+	test('回归/刷新页面后联网按钮仍可见可点', async ({ page }) => {
 		await page.goto('/', { waitUntil: 'networkidle' });
 		await page.evaluate(() => localStorage.clear());
 		await page.reload({ waitUntil: 'networkidle' });
@@ -332,8 +336,8 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		});
 
 		// 先点一次
-		await page.locator('.net-toggle').click();
-		await expect(page.locator('.net-toggle')).toHaveClass(/online/);
+		await page.getByRole('button', { name: /切换联网/ }).click();
+		await expect(page.getByRole('button', { name: /切换联网/ })).toContainText('☁️');
 
 		// 刷新
 		await page.reload({ waitUntil: 'networkidle' });
@@ -342,7 +346,6 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		});
 
 		// 按钮仍在
-		await expect(page.locator('.net-toggle')).toBeVisible();
-		await expect(page.locator('.theme-toggle')).toBeVisible();
+		await expect(page.getByRole('button', { name: /切换联网/ })).toBeVisible();
 	});
 });

@@ -296,7 +296,10 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
 		// 切到执行台
-		await page.locator('.nav-tab:has-text("执行台")').click();
+		await page
+			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.first()
+			.click();
 		await expect(page.locator('h1')).toHaveText('执行台', { timeout: 5000 });
 
 		// 等 session 自动选中(refreshSessions 会拉 [1] 并自动选中)

@@ -108,7 +108,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 6px;
     border-left: 3px solid var(--color-primary, #2563eb);
   }

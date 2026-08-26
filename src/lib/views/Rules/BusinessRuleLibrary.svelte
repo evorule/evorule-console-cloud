@@ -259,7 +259,7 @@
   .lib-sidebar {
     border-right: 1px solid var(--color-gray-200, #e2e8f0);
     overflow-y: auto;
-    background: white;
+    background: var(--bg-card);
     display: flex;
     flex-direction: column;
   }
@@ -292,7 +292,7 @@
   .lib-detail {
     overflow-y: auto;
     padding: 20px;
-    background: white;
+    background: var(--bg-card);
     min-width: 0;
   }
   .detail-header {
@@ -311,7 +311,7 @@
     padding: 6px 12px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     font-size: 13px;
   }

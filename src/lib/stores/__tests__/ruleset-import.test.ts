@@ -10,7 +10,7 @@ import { describe, test, expect, beforeEach } from "vitest";
 import {
 	importRuleset,
 	buildDjbhRulesetPackage,
-	sha256Hex,
+	blake3Hex,
 } from "../ruleset-import";
 import type { RulesetPackage } from "../ruleset-types";
 import { rules as kernelRulesStore, getAllRules, deleteRule } from "@evorule/console";
@@ -67,24 +67,24 @@ describe("P09 buildDjbhRulesetPackage 内置规则集", () => {
 });
 
 // ============================================================================
-// 2. sha256Hex 辅助函数
+// 2. blake3Hex 辅助函数
 // ============================================================================
 
-describe("P09 sha256Hex", () => {
-	test("返回十六进制字符串", async () => {
-		const hash = await sha256Hex("test");
-		expect(hash).toMatch(/^[a-f0-9]+$/);
+describe("P09 blake3Hex", () => {
+	test("返回 blake3: 前缀的十六进制字符串", async () => {
+		const hash = await blake3Hex("test");
+		expect(hash).toMatch(/^blake3:[a-f0-9]+$/);
 	});
 
 	test("相同输入产生相同哈希", async () => {
-		const h1 = await sha256Hex("hello");
-		const h2 = await sha256Hex("hello");
+		const h1 = await blake3Hex("hello");
+		const h2 = await blake3Hex("hello");
 		expect(h1).toBe(h2);
 	});
 
 	test("不同输入产生不同哈希", async () => {
-		const h1 = await sha256Hex("hello");
-		const h2 = await sha256Hex("world");
+		const h1 = await blake3Hex("hello");
+		const h2 = await blake3Hex("world");
 		expect(h1).not.toBe(h2);
 	});
 });

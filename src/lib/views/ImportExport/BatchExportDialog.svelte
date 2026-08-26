@@ -92,7 +92,7 @@
     z-index: 1000;
   }
   .be-dialog {
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     width: 480px;
     max-width: 90vw;
@@ -142,7 +142,7 @@
   }
   .be-format-btn {
     padding: 8px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 4px;
     cursor: pointer;
@@ -180,7 +180,7 @@
     font-weight: 600;
   }
   .be-btn.cancel {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }

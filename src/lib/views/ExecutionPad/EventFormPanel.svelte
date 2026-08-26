@@ -112,7 +112,7 @@
   }
   .section {
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 8px;
   }
@@ -142,7 +142,7 @@
     padding: 10px;
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 6px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     text-align: left;
     transition: all 0.15s ease;
@@ -214,7 +214,7 @@
     padding: 6px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-primary, #1e293b);
   }
   .name-input:disabled {

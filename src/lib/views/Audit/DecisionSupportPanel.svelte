@@ -96,7 +96,7 @@
 
 <style>
   .decision-support-panel {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;

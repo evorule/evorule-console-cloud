@@ -330,7 +330,7 @@
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 6px;
     overflow: hidden;
-    background: white;
+    background: var(--bg-card);
   }
   .picker-sidebar {
     border-right: 1px solid var(--color-gray-200, #e2e8f0);
@@ -361,7 +361,7 @@
     font-size: 10px;
     padding: 1px 6px;
     border: none;
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-secondary, #64748b);
     cursor: pointer;
   }
@@ -432,7 +432,7 @@
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 10px;
     cursor: pointer;
-    background: white;
+    background: var(--bg-card);
   }
   .tag-chip .dot {
     width: 8px;
@@ -466,7 +466,7 @@
     padding: 4px 8px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 3px;
-    background: white;
+    background: var(--bg-card);
   }
   .search-input {
     flex: 1;
@@ -476,7 +476,7 @@
     font-size: 11px;
     padding: 4px 8px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
-    background: white;
+    background: var(--bg-card);
     border-radius: 3px;
     cursor: pointer;
     color: var(--color-text-secondary, #64748b);
@@ -524,7 +524,7 @@
     border-radius: 3px;
     font-size: 11px;
     color: white;
-    background: white;
+    background: var(--bg-card);
     flex-shrink: 0;
     margin-top: 1px;
   }
@@ -591,7 +591,7 @@
     color: var(--color-text-secondary, #64748b);
     text-transform: uppercase;
     border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
-    background: white;
+    background: var(--bg-card);
   }
   .selected-list {
     flex: 1;
@@ -614,7 +614,7 @@
     gap: 4px;
     padding: 4px 6px;
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e2e8f0);
     margin-bottom: 4px;
   }

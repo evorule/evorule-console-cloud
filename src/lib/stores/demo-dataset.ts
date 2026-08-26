@@ -8,7 +8,7 @@
 import { writable } from "svelte/store";
 import { browser } from "$app/environment";
 
-export type DemoDataset = "medical" | "finance";
+export type DemoDataset = "medical" | "finance" | "agent";
 
 const STORAGE_KEY = "evorule-console-cloud:demo-dataset";
 const DEFAULT_DATASET: DemoDataset = "medical";
@@ -16,7 +16,7 @@ const DEFAULT_DATASET: DemoDataset = "medical";
 function loadDataset(): DemoDataset {
   if (!browser) return DEFAULT_DATASET;
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw === "medical" || raw === "finance") return raw;
+  if (raw === "medical" || raw === "finance" || raw === "agent") return raw;
   return DEFAULT_DATASET;
 }
 
@@ -32,5 +32,7 @@ export function setDemoDataset(d: DemoDataset): void {
 }
 
 export function toggleDemoDataset(): void {
-  demoDatasetStore.update((d) => (d === "medical" ? "finance" : "medical"));
+  demoDatasetStore.update((d) =>
+    d === "agent" ? "medical" : d === "medical" ? "finance" : "agent",
+  );
 }

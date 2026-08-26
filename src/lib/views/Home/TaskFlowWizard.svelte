@@ -180,7 +180,7 @@
 		color: white;
 	}
 	.tfw-step.active {
-		background: white;
+		background: var(--bg-card);
 		color: #2563eb;
 		font-weight: 600;
 		border-color: white;
@@ -229,12 +229,12 @@
 		background: rgba(255, 255, 255, 0.25);
 	}
 	.tfw-btn.primary {
-		background: rgba(255, 255, 255, 0.9);
-		color: #2563eb;
+		background: var(--brand);
+		color: #fff;
 		font-weight: 600;
 	}
 	.tfw-btn.primary:hover:not(:disabled) {
-		background: white;
+		background: var(--brand-hover);
 	}
 	.tfw-btn.success {
 		background: #22c55e;

@@ -196,7 +196,7 @@
     align-items: center;
     gap: 14px;
     padding: 18px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border-left: 4px solid var(--color-primary, #3b82f6);
@@ -239,7 +239,7 @@
 
   /* 区块 */
   .dm-section {
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     padding: 18px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);

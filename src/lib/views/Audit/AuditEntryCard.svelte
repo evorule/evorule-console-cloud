@@ -107,7 +107,7 @@
 
 <style>
   .audit-entry-card {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 6px;
     padding: 8px 10px;

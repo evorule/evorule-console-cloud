@@ -80,7 +80,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;

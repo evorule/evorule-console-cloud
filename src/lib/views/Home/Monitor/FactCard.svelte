@@ -104,7 +104,7 @@
 <style>
   .fact-card {
     padding: 8px 10px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 6px;
     transition: box-shadow 0.15s ease;

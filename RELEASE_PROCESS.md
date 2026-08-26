@@ -19,21 +19,21 @@
 
 # 发布流程 — evorule-console-cloud
 
-**版本**: 1.0
-**生效日期**: 2026-08-03
-**适用范围**: evorule-console-cloud 仓
+**版本**：1.0
+**生效日期**：2026-08-03
+**适用范围**：evorule-console-cloud 仓
 
 ---
 
-## 📋 发版治理原则
+## 发版治理原则
 
-> **核心原则**：开发完成后**不立即发版**，必须经过反复人工测试，用户明确确认"可以发布"后才 tag v0.1.0 + push 到 Gitee 公开仓。
+> **核心原则**：开发完成后**不立即发版**，必须经过反复人工测试，用户明确确认“可以发布”后才 tag v0.1.0 + push 到 Gitee 公开仓。
 
 | 阶段 | 版本号 | Gitee 状态 | 说明 |
 | --- | --- | --- | --- |
-| 开发期（Phase 1-7） | `0.0.x` | 本地 commit，**不 push** | 功能开发 + 自动化测试 |
+| 开发期（Phase 1-7）| `0.0.x` | 本地 commit，**不 push** | 功能开发 + 自动化测试 |
 | 人工测试期 | `0.0.x` | 本地 commit，**不 push** | 用户人工验收 + 修复回归 |
-| **发版** | `0.1.0` | **tag + push** | 用户明确确认"可以发布"后执行 |
+| **发版** | `0.1.0` | **tag + push** | 用户明确确认“可以发布”后执行 |
 
 **push 时机由用户决定**，开发者不得擅自 push。
 
@@ -43,8 +43,9 @@
 
 ### 1. 自动化测试全绿
 
+在本仓目录下执行：
+
 ```bash
-cd D:\evorule-console-cloud
 npm run check          # svelte-check: 0 errors / 0 warnings
 npm run test:unit      # vitest: 全部 PASS
 npm run test           # playwright: 全部 PASS
@@ -59,7 +60,7 @@ npm run build          # adapter-static: 产出 build/ 成功
 - [ ] 设置面板：联网配置 + LLM 配置全流程
 - [ ] LLM 三用途：AI 辅助创建规则 / 解释规则 / 生成测试输入
 - [ ] LLM 关闭回归：禁用后行为与内核一致
-- [ ] 持久化：主题 / 视图 / 联网模式 / LLM 配置
+- [ ] 持久化：视图 / 联网模式 / LLM 配置
 - [ ] 真实 LLM 调用：至少一个厂商（智谱/通义/DeepSeek/OpenAI）真实 API 调用成功
 - [ ] 真实 evorule-server 连接 + 真实命令提交到 reactor
 - [ ] apiKey 安全：URL / 控制台 / 错误信息中不泄露
@@ -83,16 +84,17 @@ npm run build          # adapter-static: 产出 build/ 成功
 
 ### 4. 用户明确确认
 
-> **用户明确说"可以发布"后，才能进入下一步。**
+> **用户明确说“可以发布”后，才能进入下一步。**
 
 ---
 
-## 🚀 发版执行步骤
+## 发版执行步骤
 
 ### 步骤 1：最终全测试回归
 
+在本仓目录下执行：
+
 ```bash
-cd D:\evorule-console-cloud
 npm run check && npm run test:unit && npm run test && npm run build
 ```
 
@@ -131,14 +133,14 @@ npm run check     # 确认 git URL 依赖可用
 
 ### 步骤 4：更新 README 版本徽章
 
-将 README.md 顶部的版本徽章从 `0.0.1--dev` 改为 `0.1.0`。
+确认 README.md 顶部版本徽章为 `0.1.0`（bump 版本号步骤已执行）。
 
 ### 步骤 5：更新 CHANGELOG
 
 在 CHANGELOG.md 中：
 
 - 将 `[Unreleased]` 改为 `[0.1.0] - 2026-08-03`（或实际发版日期）
-- 添加"## [Unreleased]"空节在顶部，供下个版本使用
+- 添加“## [Unreleased]”空节在顶部，供下个版本使用
 
 ### 步骤 6：提交 + tag
 
@@ -147,7 +149,7 @@ git add -A
 git commit -m "release(cloud): v0.1.0 联网大众版首发
 
 - Phase 1-7 全部完成
-- 自动化测试全绿(svelte-check 0/0 + vitest 82/82 + playwright 47/47)
+- 自动化测试全绿(svelte-check 0/0 + vitest 904/904 + playwright 64/64)
 - 真实环境验证通过(deepseek API + evorule-server 全流程跑通)
 - 发版治理文件齐全(11 项)
 - 切换内核依赖为 git URL"
@@ -157,10 +159,10 @@ git tag -a v0.1.0 -m "evorule-console-cloud v0.1.0 联网大众版首发"
 
 ### 步骤 7：push 到 Gitee 公开仓
 
-**前提**：用户已在 Gitee 创建 `evo-rule-lab/evorule-console-cloud` 空仓（不初始化 README/.gitignore/LICENSE）。
+**前提**：用户已在 Gitee 创建 `evorule/evorule-console-cloud` 空仓（不初始化 README/.gitignore/LICENSE）。
 
 ```bash
-git remote add origin https://gitee.com/evo-rule-lab/evorule-console-cloud.git
+git remote add origin https://gitee.com/evorule/evorule-console-cloud.git
 git push -u origin main
 git push origin v0.1.0
 ```
@@ -177,7 +179,7 @@ git push origin v0.1.0
 
 - 在 Gitee 创建 v0.1.0 Release（附 CHANGELOG 摘要）
 - 通知用户发版完成
-- 更新本仓的"下个版本规划"（v0.2.0 L2 本地 LLM 等）
+- 更新本仓的“下个版本规划”（v0.2.0 L2 本地 LLM 等）
 
 ---
 
@@ -201,16 +203,16 @@ git push origin v0.1.0
 
 ### 3. L2 付费扩展规划
 
-v0.1.0 不含 L2 本地 LLM。L2 作为付费扩展，规划在 v0.2.0+ 实施，详见 [docs/L2_LOCAL_LLM_PLAN.md](docs/L2_LOCAL_LLM_PLAN.md)。
+v0.1.0 不含 L2 本地 LLM。L2 作为付费扩展，规划在 v0.2.0+ 实施。
 
 ---
 
-## 📞 联系
+## 联系
 
-- **发版决策**: 用户（Mr. DAMU ZHENG）
-- **技术执行**: 维护者
-- **Gitee Issues**: <https://gitee.com/evo-rule-lab/evorule-console-cloud/issues>
-- **邮箱**: <evorulelab@gmail.com>
+- **发版决策**：用户（Mr. DAMU ZHENG）
+- **技术执行**：维护者
+- **Gitee Issues**：<https://gitee.com/evorule/evorule-console-cloud/issues>
+- **邮箱**：<evorulelab@gmail.com>
 
 ---
 

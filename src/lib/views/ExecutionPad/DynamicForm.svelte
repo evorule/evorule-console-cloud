@@ -217,7 +217,7 @@
     padding: 6px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-primary, #1e293b);
     font-family: inherit;
     width: 100%;
@@ -236,7 +236,7 @@
     padding: 6px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-primary, #1e293b);
     width: 100%;
     box-sizing: border-box;

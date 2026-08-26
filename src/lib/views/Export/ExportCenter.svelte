@@ -211,7 +211,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     padding: 10px 12px;
@@ -248,7 +248,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 14px 16px;
-    background: white;
+    background: var(--bg-card);
     border: 1px dashed var(--color-gray-300, #d1d5db);
     border-radius: 8px;
     margin-bottom: 12px;
@@ -274,7 +274,7 @@
   .ec-history,
   .ec-templates {
     padding: 12px 18px;
-    background: white;
+    background: var(--bg-card);
     border-top: 1px solid var(--color-gray-200, #e5e7eb);
   }
   .ec-history-title,

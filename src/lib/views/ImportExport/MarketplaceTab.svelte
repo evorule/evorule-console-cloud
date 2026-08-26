@@ -284,7 +284,7 @@
   .mt-btn {
     padding: 6px 12px;
     border: 1px solid var(--color-gray-300, #d1d5db);
-    background: white;
+    background: var(--bg-card);
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
@@ -320,7 +320,7 @@
     z-index: 1000;
   }
   .mt-dialog {
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     width: 520px;
     max-width: 90vw;

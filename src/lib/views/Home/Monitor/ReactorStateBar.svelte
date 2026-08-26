@@ -86,7 +86,7 @@
     justify-content: space-between;
     gap: 14px;
     padding: 8px 14px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     flex-wrap: wrap;

@@ -5,53 +5,53 @@
 
 > evorule 规则引擎面板 · **联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM）
 
-[![version](https://img.shields.io/badge/version-0.0.1--dev-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.1.0-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
 [![kernel](https://img.shields.io/badge/kernel-@evorule/console%20v0.1.1-blueviolet)](https://gitee.com/evo-rule-lab/evorule-console)
 
-`evorule-console-cloud` 在 [`@evorule/console`](https://gitee.com/evo-rule-lab/evorule-console) 内核基础上扩展:
+`evorule-console-cloud` 在 [`@evorule/console`](https://gitee.com/evo-rule-lab/evorule-console) 内核基础上扩展：
 
-- ☁️ **联网**:可连接远程 evorule-server(非仅本地 loopback)
-- ✨ **云 LLM 辅助**:OpenAI 兼容协议,多厂商预设(智谱/通义/DeepSeek/OpenAI),辅助生成规则草案/解释规则/生成测试输入
-- 🎯 **用户审核确认**:LLM 只生成草案,最终规则是用户审核的 JSON,不破坏 evorule「确定性执行」基调
-- 🖥️ **本地 LLM(L2)**:规划中,付费扩展,详见 [L2 规划文档](./docs/L2_LOCAL_LLM_PLAN.md)
+- **联网**：可连接远程 evorule-server（非仅本地 loopback）
+- **云 LLM 辅助**：OpenAI 兼容协议，多厂商预设（智谱/通义/DeepSeek/OpenAI），辅助生成规则草案/解释规则/生成测试输入
+- **用户审核确认**：LLM 只生成草案，最终规则是用户审核的 JSON，不破坏 evorule「确定性执行」基调
+- **本地 LLM（L2）**：规划中，付费扩展（v0.2.0+）
 
-> **LLM 是辅助层,不参与确定性执行** — 执行链路完全不经过 LLM,规则即数据,用户审核才生效。
+> **LLM 是辅助层，不参与确定性执行** — 执行链路完全不经过 LLM，规则即数据，用户审核才生效。
 
 ---
 
-## 给决策者(30 秒看懂)
+## 给决策者（30 秒看懂）
 
 > evorule 是 AI Agent 的「合规审计层」— 让 AI Agent 的每个决策可审计、可回放、可回滚。
 
-### 为什么需要 evorule?
+### 为什么需要 evorule？
 
 | 痛点 | evorule 解法 |
 | --- | --- |
-| AI Agent 决策不透明 | BLAKE3 哈希链,每个决策不可篡改可追溯 |
-| 出问题无法定位根因 | 时间旅行回放 + 因果链分析,秒级定位 |
+| AI Agent 决策不透明 | BLAKE3 哈希链，每个决策不可篡改可追溯 |
+| 出问题无法定位根因 | 时间旅行回放 + 因果链分析，秒级定位 |
 | 合规审计难通过 | 审计导出满足 EU AI Act Article 12 + 等保 2.0 三级 |
 | 规则发布无管控 | 三级权限审批 + 滚动 session 热更新零停机 |
 
 ### 在线体验
 
-👉 **[在线 demo](https://evo-rule-lab.github.io/evorule-console-cloud/)**(无需注册,医疗 + 财务两套场景,浏览器内 MockBackend 零网络依赖)
+**[在线 demo](https://evo-rule-lab.github.io/evorule-console-cloud/)**（无需注册，医疗 + 财务两套场景，浏览器内 MockBackend 零网络依赖）
 
-### 4 个引导任务(2-3 分钟体验完整链路)
+### 4 个引导任务（2-3 分钟体验完整链路）
 
-1. **加规则**(2 分钟):给医院加一条「65 岁以上发烧必须先 CT」规则
-2. **查问题**(1 分钟):定位病人 P-1283 为何触发异常告警
-3. **改规则**(3 分钟):把发烧阈值从 38°C 改为 37.5°C
-4. **合规门禁**(2 分钟):AI Agent 调用转账但未 MFA → 门禁阻断 + BLAKE3 留痕
+1. **加规则**（2 分钟）：给医院加一条「65 岁以上发烧必须先 CT」规则
+2. **查问题**（1 分钟）：定位病人 P-1283 为何触发异常告警
+3. **改规则**（3 分钟）：把发烧阈值从 38°C 改为 37.5°C
+4. **合规门禁**（2 分钟）：AI Agent 调用转账但未 MFA → 门禁阻断 + BLAKE3 留痕
 
 ### 核心能力
 
-- 🔗 **BLAKE3 不可篡改审计链**:每个 Fact 哈希链接,篡改即被发现
-- ⏪ **时间旅行回放**:回溯任意版本,diff 对比 + 因果链追溯
-- 🛡️ **等保 2.0 三级门禁**:AI Agent 工具调用前合规检查(§8.1.4.1.d MFA / §8.1.4.7.b 加密)
-- 📤 **合规报告导出**:6 种内容 × 4 种格式(JSON/CSV/XML/PDF),满足 EU AI Act
-- 🔄 **滚动 session 热更新**:规则集发布零停机,版本单调递增
-- ✅ **协作审批工作流**:三级权限(admin/lead/auditor),规则发布需审批
+- **BLAKE3 不可篡改审计链**：每个 Fact 哈希链接，篡改即被发现
+- **时间旅行回放**：回溯任意版本，diff 对比 + 因果链追溯
+- **等保 2.0 三级门禁**：AI Agent 工具调用前合规检查（§8.1.4.1.d MFA / §8.1.4.7.b 加密）
+- **合规报告导出**：6 种内容 × 4 种格式（JSON/CSV/XML/PDF），满足 EU AI Act
+- **滚动 session 热更新**：规则集发布零停机，版本单调递增
+- ✅ **协作审批工作流**：三级权限（admin/lead/auditor），规则发布需审批
 
 ---
 
@@ -61,17 +61,38 @@ evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发
 
 | 层级 | 仓 | 定位 | LLM | 网络 | 依赖 |
 | --- | --- | --- | --- | --- | --- |
-| evorule-console（内核） | 独立 | 规则引擎面板内核，无智能只有执行 | ❌ 无 | ❌ 无（仅本地 HTTP） | 0（消费 evorule 核心） |
-| **evorule-console-cloud（本仓）** | 独立 | 二次开发者专业起点 | ☁️ 云 LLM | ✅ 联网 | `npm i @evorule/console` |
-| 高级版 | 独立 | 保密行业定制 | 🖥️ 本地 GPU LLM | ✅ 联网/Tauri | `npm i @evorule/console` |
+| evorule-console（内核）| 独立 | 规则引擎面板内核，无智能只有执行 | ❌ 无 | ❌ 无（仅本地 HTTP）| 0（消费 evorule 核心）|
+| **evorule-console-cloud（本仓）** | 独立 | 二次开发者专业起点 | 云 LLM | ✅ 联网 | `npm i @evorule/console` |
+| 高级版 | 独立 | 保密行业定制 | 本地 GPU LLM | ✅ 联网/Tauri | `npm i @evorule/console` |
 
-三仓各自独立 semver,通过 npm 依赖松绑。**起点必须一致，功能各不相同。**
+三仓各自独立 semver，通过 npm 依赖松绑。**起点必须一致，功能各不相同。**
+
+---
+
+## 当前版本边界与 Roadmap
+
+### v0.1.0 已支持
+
+- 规则库视图离线可用（内置 demo 数据集 + 4 个引导任务）
+- 执行台 / 状态 / 审计 / 时间旅行：连接 evorule-server 运行（支持本地 / 远程地址）
+- 云 LLM 辅助三用途：创建规则草案 / 解释规则 / 生成测试输入（智谱 / 通义 / DeepSeek / OpenAI 预设）
+- 联网模式切换（offline ↔ online）、视图选择、联网与 LLM 配置持久化
+- apiKey 安全：仅存浏览器 localStorage，不进 URL / 日志 / 错误信息
+
+### Roadmap（规划中，非承诺）
+
+| 目标 | 版本 | 说明 |
+| --- | --- | --- |
+| 本地 LLM（L2）| v0.2.0+ | 付费扩展，本地 GPU LLM |
+| 后续优化迭代 | 持续 | 依社区反馈完善 UI / 功能 / 文档 |
+
+> 版本语义：`0.x` 为预发布系列，`v1.0.0` 对应功能完整。欢迎通过 [Issues](https://gitee.com/evorule/evorule-console-cloud/issues) 反馈需求与缺陷。
 
 ---
 
 ## 依赖内核
 
-大众版经 git URL 依赖内核(发版 tag 时强制提交 `dist/`,无需本地 prepack):
+大众版经 git URL 依赖内核（发版 tag 时强制提交 `dist/`，无需本地 prepack）：
 
 ```json
 {
@@ -86,7 +107,7 @@ evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发
 ## 安装与使用
 
 ```bash
-git clone https://gitee.com/evo-rule-lab/evorule-console-cloud.git
+git clone https://gitee.com/evorule/evorule-console-cloud.git
 cd evorule-console-cloud
 npm install
 npm run dev    # 访问 http://localhost:5174
@@ -100,7 +121,7 @@ npm run dev    # 访问 http://localhost:5174
 
 **首次启用步骤**：
 1. 进入 GitHub 仓 → **Settings** → **Pages**
-2. **Source** 选择 **GitHub Actions**（不是 "Deploy from a branch"）
+2. **Source** 选择 **GitHub Actions**（不是 “Deploy from a branch”）
 3. 推一次 commit 到 main（或手动触发 workflow_dispatch）触发首次构建
 4. 部署完成后，URL 形如 `https://<owner>.github.io/evorule-console-cloud/`
 
@@ -110,36 +131,34 @@ npm run dev    # 访问 http://localhost:5174
 
 ## 本地开发（含 evorule-server 联调）
 
-完整跑通执行台/状态/审计等视图需启动 evorule-server。**注意 CORS 配置**（关键踩坑,二选一）：
+完整跑通执行台/状态/审计等视图需启动 evorule-server。**注意 CORS 配置**（关键踩坑，二选一）：
 
 - **方案 A**（直连 + `--allowed-origins`）：evorule-server 启动时显式允许大众版 dev/preview 源（见下文启动顺序）。适用于 online 模式或生产部署。
-- **方案 C**（vite proxy,零配置）：net-config 的 localBaseUrl 留空（同源），vite dev/preview 自动把 `/api` 代理到 `127.0.0.1:18080`（见 `vite.config.ts` 的 `server.proxy`）。仅适用于 offline 本地开发,无需配 server。
+- **方案 C**（vite proxy，零配置）：net-config 的 localBaseUrl 留空（同源），vite dev/preview 自动把 `/api` 代理到 `127.0.0.1:18080`（见 `vite.config.ts` 的 `server.proxy`）。仅适用于 offline 本地开发，无需配 server。
 
 ### 启动顺序
 
-1. **启动 evorule-server**（带 CORS 允许大众版 dev/preview 源）:
+1. **启动 evorule-server**（带 CORS 允许大众版 dev/preview 源）——在 evorule-server 仓目录下（已构建 release 二进制）：
 
    ```bash
-   cd D:\evorule-server
    target\release\evorule-server.exe --addr 127.0.0.1:18080 \
      --allowed-origins "http://localhost:5174,http://localhost:4173,http://127.0.0.1:5174,http://127.0.0.1:4173"
    ```
 
-2. **启动大众版 dev server**:
+2. **启动大众版 dev server**——在本仓目录下：
 
    ```bash
-   cd D:\evorule-console-cloud
    npm run dev    # http://localhost:5174
    ```
 
-3. **创建初始 session**（让执行台 UI 显示提交区）:
+3. **创建初始 session**（让执行台 UI 显示提交区）：
 
    ```bash
    curl -X POST http://127.0.0.1:18080/api/sessions
    # → {"message":"Session created","session_id":1}
    ```
 
-4. **浏览器打开**: `http://localhost:5174/`
+4. **浏览器打开**：`http://localhost:5174/`
 
 ### 生产预览模式
 
@@ -152,9 +171,9 @@ npm run preview -- --host 127.0.0.1 --port 4173
 
 | 坑 | 现象 | 解决 |
 | --- | --- | --- |
-| **CORS 跨域** | evorule-server 默认严格同源，跨端口被拒 | 方案 A：启动时加 `--allowed-origins`；方案 C：net-config 的 localBaseUrl 留空（同源），vite proxy 自动代理 `/api` → `127.0.0.1:18080`（仅 dev/preview） |
+| **CORS 跨域** | evorule-server 默认严格同源，跨端口被拒 | 方案 A：启动时加 `--allowed-origins`；方案 C：net-config 的 localBaseUrl 留空（同源），vite proxy 自动代理 `/api` → `127.0.0.1:18080`（仅 dev/preview）|
 | **host 对齐** | `localhost` 与 `127.0.0.1` 是不同 origin | 大众版 `net-config` 默认 `localhost:18080`（与 vite dev 对齐）；preview 用 `--host 127.0.0.1` 时需对应改 net-config |
-| **端口占用** | e2e 测试后 `npm run dev` 报 `Port 5174 is in use` 或浏览器显示 "This site can't be reached" | `npm run clean && npm run dev`（清理僵尸进程） |
+| **端口占用** | e2e 测试后 `npm run dev` 报 `Port 5174 is in use` 或浏览器显示 “This site can't be reached” | `npm run clean && npm run dev`（清理僵尸进程）|
 | **空 sessions** | evorule-server 启动后 sessions 为空，执行台 UI 不显示提交区 | 手动 `POST /api/sessions` 创建初始 session |
 
 ### LLM 配置
@@ -167,7 +186,7 @@ npm run preview -- --host 127.0.0.1 --port 4173
 
 ## 测试
 
-完整的测试指南（环境准备 → 4 种自动化测试 → evorule-server 联调 → LLM 联调 → 排查常见问题）见 **[docs/TESTING.md](./docs/TESTING.md)**。
+完整测试说明（环境准备 → 4 种自动化测试 → evorule-server 联调 → LLM 联调 → 排查常见问题）见 **[CONTRIBUTING.md §测试要求](./CONTRIBUTING.md)**。
 
 **快速跑全测试**（提 PR 前必须全绿）：
 
@@ -178,12 +197,12 @@ npm run check && npx vitest run && npm run test && npm run build
 | 测试 | 命令 | 当前通过数 |
 | --- | --- | --- |
 | 类型检查 | `npm run check` | 0 errors / 0 warnings |
-| 单元测试 | `npx vitest run` | 82/82 |
-| e2e 测试 | `npm run test` | 47/47 |
-| 生产构建 | `npm run build` | ✔ build/ |
+| 单元测试 | `npx vitest run` | 904/904 |
+| e2e 测试 | `npm run test` | 64/64 |
+| 生产构建 | `npm run build` | ✅ build/ |
 
 > **e2e 首次跑需先装浏览器**：`npx playwright install chromium`
-> **e2e 为什么 `workers: 1`？** 见 [TESTING.md §4.3](./docs/TESTING.md#43-为什么-workers-1)
+> **e2e 为什么 `workers: 1`？** 见 [CONTRIBUTING.md §e2e 测试](./CONTRIBUTING.md)
 
 ---
 
@@ -201,11 +220,11 @@ npm run build      # adapter-static:产出静态文件到 build/
 
 ## 技术栈
 
-- SvelteKit 5 + Svelte 5(runes 模式)— 与内核对齐
-- TypeScript(strict)
+- SvelteKit 5 + Svelte 5（runes 模式）— 与内核对齐
+- TypeScript（strict）
 - Vite + adapter-static
-- vitest(单元测试 + 导入验证)+ playwright(e2e)
-- 内核 `@evorule/console` v0.1.1(git URL 安装)
+- vitest（单元测试 + 导入验证）+ playwright（e2e）
+- 内核 `@evorule/console` v0.1.1（git URL 安装）
 
 ---
 
@@ -215,22 +234,21 @@ npm run build      # adapter-static:产出静态文件到 build/
 evorule-console-cloud/
 ├── src/
 │   ├── routes/
-│   │   ├── +layout.svelte     # 根布局:导航 6 tab + backend + assistant + 主题 + 设置入口
-│   │   └── +page.svelte       # 视图容器:根据 currentView 渲染 5 视图
+│   │   ├── +layout.svelte     # 根布局:三栏(Docker 风格左侧栏 + 主内容 + 右 LLM 侧栏)+ 路由守卫
+│   │   └── +page.svelte       # 视图容器:根据 currentView 渲染各视图
 │   ├── lib/
 │   │   ├── backend/           # CloudHttpBackend(联网/离线双模式)
 │   │   ├── assistant/         # CloudLlmAssistant + llm-fetch + prompts + types
 │   │   ├── config/            # net-config + llm-config + llm-presets(厂商预设)
-│   │   ├── stores/            # assistant-ui(dialog 状态)
-│   │   └── views/
-│   │       ├── Assistant/    # DraftRuleDialog / ExplainRuleDialog / GenerateInputDialog
-│   │       └── Settings/      # Settings(联网+LLM 两 tab)/ LlmSettings
-│   ├── app.css                # 设计令牌(与内核对齐)
+│   │   ├── data/              # demo 数据集 + 模板 + 引导任务
+│   │   ├── governance/        # 治理后端 + store(发布/审批/审计)
+│   │   ├── stores/            # 跨视图共享状态(会话/数据集/导出/规则库/设置等)
+│   │   └── views/             # 20+ 视图组件(规则库/执行台/审计/设置/…)
+│   ├── app.css                # 设计令牌(与内核对齐,深色主题)
 │   └── verify.test.ts         # 导入验证(vitest)
-├── tests/                     # playwright e2e(navigation + assistant-flow + settings-flow)
-├── docs/
-│   └── L2_LOCAL_LLM_PLAN.md   # L2 本地 LLM 规划(v0.2.0+ 付费扩展)
-├── package.json               # @evorule/console 依赖(开发期 file:,发版 git URL)
+├── tests/                     # playwright e2e(navigation + assistant-flow + settings-flow + 回归)
+├── docs/                      # 公开文档(Diátaxis 四类 + ADR)
+├── package.json               # @evorule/console 依赖(git URL 安装)
 ├── svelte.config.js           # adapter-static
 ├── vite.config.ts             # port 5174
 └── README.md(本文件)
@@ -244,10 +262,10 @@ evorule-console-cloud/
 
 | 文件 | 说明 |
 | --- | --- |
-| [NOTICE.md](./NOTICE.md) | 声明（与 evorule-console 内核的关系） |
+| [NOTICE.md](./NOTICE.md) | 声明（与 evorule-console 内核的关系）|
 | [CHANGELOG.md](./CHANGELOG.md) | 变更记录 |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南（含核心原则 + 禁止事项） |
-| [SECURITY.md](./SECURITY.md) | 安全政策（含 LLM apiKey 安全设计） |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南（含核心原则 + 禁止事项）|
+| [SECURITY.md](./SECURITY.md) | 安全政策（含 LLM apiKey 安全设计）|
 | [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) | 发布流程 |
 | [AUTHORS.md](./AUTHORS.md) | 作者 |
 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | 贡献者公约 |

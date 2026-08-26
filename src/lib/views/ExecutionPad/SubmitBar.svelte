@@ -202,7 +202,7 @@
     padding: 7px 14px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     font-family: inherit;
     font-weight: 500;
@@ -224,7 +224,7 @@
     background: var(--color-gray-100, #f1f5f9);
   }
   .btn-secondary {
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-primary, #1e293b);
   }
   .btn-secondary:hover:not(:disabled) {

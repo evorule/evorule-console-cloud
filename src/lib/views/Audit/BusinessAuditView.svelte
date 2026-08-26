@@ -415,7 +415,7 @@ ${causalChain.nodes
     color: var(--color-warning, #92400e);
   }
   .dev-back-btn {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-warning, #fde68a);
     border-radius: 4px;
     padding: 4px 10px;
@@ -449,7 +449,7 @@ ${causalChain.nodes
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 6px;
     flex-wrap: wrap;

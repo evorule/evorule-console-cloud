@@ -233,7 +233,7 @@
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 6px;
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
   }
   .editor-header {
     display: flex;
@@ -260,7 +260,7 @@
     font-size: 12px;
     padding: 4px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
-    background: white;
+    background: var(--bg-card);
     border-radius: 3px;
     cursor: pointer;
   }
@@ -386,7 +386,7 @@
     padding: 4px 8px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 3px;
-    background: white;
+    background: var(--bg-card);
   }
   .path-input {
     font-family: var(--font-mono, monospace);

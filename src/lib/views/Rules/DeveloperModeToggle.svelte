@@ -81,7 +81,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: white;
+    background: var(--bg-card);
     transition: transform 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
