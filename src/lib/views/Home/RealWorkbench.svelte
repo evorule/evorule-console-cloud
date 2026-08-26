@@ -154,7 +154,7 @@
     align-items: center;
     gap: 16px;
     padding: 12px 16px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
     flex-wrap: wrap;
@@ -197,7 +197,7 @@
     cursor: not-allowed;
   }
   .layer-btn.active {
-    background: white;
+    background: var(--bg-card);
     color: var(--color-primary, #2563eb);
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -240,7 +240,7 @@
   }
 
   .layer-panel {
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     padding: 24px;
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));

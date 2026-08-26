@@ -126,13 +126,13 @@
     padding: 48px 24px;
     text-align: center;
     color: var(--color-text-secondary, #64748b);
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
   }
   .log-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
@@ -195,7 +195,7 @@
   }
   .page-btn {
     padding: 6px 14px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 6px;
     cursor: pointer;

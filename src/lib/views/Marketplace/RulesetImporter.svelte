@@ -222,7 +222,7 @@
                 <span>规则数:{packageData.rules.length}</span>
               </div>
               <div class="ri-hash">
-                contentHash(SHA-256):{packageData.contentHash.slice(0, 24)}...
+                contentHash(BLAKE3):{packageData.contentHash.slice(0, 24)}...
               </div>
             </div>
           </section>
@@ -361,7 +361,7 @@
     z-index: 1000;
   }
   .ri-dialog {
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     width: 720px;
     max-width: 92vw;
@@ -402,7 +402,7 @@
   .ri-source-btn {
     padding: 6px 12px;
     border: 1px solid var(--color-gray-300, #d1d5db);
-    background: white;
+    background: var(--bg-card);
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
@@ -657,7 +657,7 @@
   .ri-btn {
     padding: 8px 16px;
     border: 1px solid var(--color-gray-300, #d1d5db);
-    background: white;
+    background: var(--bg-card);
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;

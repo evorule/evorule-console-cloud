@@ -136,7 +136,7 @@
 	}
 	.ob-btn {
 		padding: 6px 14px;
-		background: white;
+		background: var(--bg-card);
 		border: 1px solid var(--color-gray-300, #d1d5db);
 		border-radius: 4px;
 		cursor: pointer;
@@ -187,7 +187,7 @@
 		align-items: center;
 		gap: 4px;
 		padding: 3px 10px;
-		background: white;
+		background: var(--bg-card);
 		border: 1px solid var(--color-gray-200, #e5e7eb);
 		border-radius: 12px;
 		cursor: pointer;

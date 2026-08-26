@@ -222,7 +222,7 @@
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 6px;
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
   }
   .dataset-preview[data-status="error"] {
     border-color: var(--color-error, #dc2626);

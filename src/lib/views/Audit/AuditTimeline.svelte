@@ -167,7 +167,7 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
@@ -225,7 +225,7 @@
     padding: 3px 6px;
     border: 1px solid var(--color-gray-300, #d1d5db);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     font-family: inherit;
   }
   .filter-check {
@@ -242,7 +242,7 @@
   .clear-btn {
     font-size: 11px;
     padding: 3px 8px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-300, #d1d5db);
     border-radius: 4px;
     cursor: pointer;

@@ -128,7 +128,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     transition: all 0.15s;
@@ -235,7 +235,7 @@
     color: white;
   }
   .mc-btn.danger {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-error, #fca5a5);
     color: var(--color-error, #991b1b);
   }

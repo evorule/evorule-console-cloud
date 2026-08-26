@@ -315,14 +315,14 @@
     padding: 48px;
     text-align: center;
     color: var(--color-text-secondary, #64748b);
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
   }
   .queue-error {
     padding: 48px;
     text-align: center;
     color: var(--color-error, #dc2626);
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
   }
   .queue-list {
@@ -332,7 +332,7 @@
   }
   .queue-item {
     padding: 16px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     border-left: 4px solid var(--color-gray-300, #cbd5e1);
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
@@ -459,7 +459,7 @@
     z-index: 200;
   }
   .modal-content {
-    background: white;
+    background: var(--bg-card);
     padding: 24px;
     border-radius: 8px;
     width: 90%;

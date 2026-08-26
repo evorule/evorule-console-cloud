@@ -106,7 +106,7 @@
 
 <style>
   .rb-picker {
-    background: white;
+    background: var(--bg-card);
     border-radius: 10px;
     min-width: 420px;
     max-width: 560px;
@@ -249,7 +249,7 @@
     font-weight: 500;
   }
   .btn-cancel {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }

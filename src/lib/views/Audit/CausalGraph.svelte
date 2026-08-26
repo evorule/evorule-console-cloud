@@ -91,7 +91,7 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
@@ -169,7 +169,7 @@
     min-height: 0;
   }
   .causal-node {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 6px;
     padding: 8px 10px;

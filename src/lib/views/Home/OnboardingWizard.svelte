@@ -323,7 +323,7 @@
 
   /* 步骤主体容器 */
   .step-container {
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 8px;
     padding: 20px;
@@ -351,7 +351,7 @@
   }
   .btn-skip {
     padding: 6px 14px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-info-text, var(--color-info, #1e40af));
     color: var(--color-info-text, var(--color-info, #1e40af));
     border-radius: 4px;

@@ -67,7 +67,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 1. 设置面板基本可用 ============
 
 	test('点击设置 tab → 设置面板出现,默认联网 tab', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await expect(page.locator('h1')).toHaveText('⚙️ 设置');
 		// 默认应该是联网 tab active
 		await expect(page.locator('.settings-tab', { hasText: '联网配置' })).toHaveAttribute(
@@ -79,7 +79,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('切换到 LLM 配置 tab', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// LLM tab 应 active
 		await expect(page.locator('.settings-tab', { hasText: 'LLM 配置' })).toHaveAttribute(
@@ -93,7 +93,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 2. 联网配置 tab ============
 
 	test('联网模式切换:本地 → 联网', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		// 默认本地模式
 		await expect(page.locator('.mode-btn', { hasText: '本地模式' })).toHaveClass(/active/);
 		// 切到联网
@@ -104,7 +104,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('联网模式切换:联网 → 本地(远程 URL 输入框隐藏)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		// 切到联网
 		await page.locator('.mode-btn', { hasText: '联网模式' }).click();
 		await expect(page.locator('#remote-url')).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('联网测试连接(本地模式 mock 健康检查)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		// 默认本地模式,点击测试连接
 		await page.locator('button', { hasText: '测试连接' }).click();
 		// 应该显示成功(mock 返回 200)
@@ -122,28 +122,30 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('联网配置持久化 — 切到联网 + 改 URL 后刷新仍保留', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.mode-btn', { hasText: '联网模式' }).click();
 		// 改 URL
 		const urlInput = page.locator('#remote-url');
 		await urlInput.fill('https://my-test-server.example.com');
 		await urlInput.blur(); // 失焦保存
-		// 刷新
-		await page.reload();
+		// 刷新(用 networkidle:等待 SPA 模块图加载完成。
+		// 注意 data-theme 是 app.html 里的静态属性,不能作为 hydration 完成信号;
+		// 否则刷新后首次点击会被吞,设置面板打不开。)
+		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, {
 			timeout: 10_000
 		});
 		// 重新打开设置面板,验证状态
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await expect(page.locator('.mode-btn', { hasText: '联网模式' })).toHaveClass(/active/);
-		// 注:顶部 net-toggle 也应反映联网模式
-		await expect(page.locator('.net-toggle')).toHaveClass(/online/);
+		// 注:顶部联网切换按钮也应反映联网模式(☁️)
+		await expect(page.getByRole('button', { name: /切换联网/ })).toContainText('☁️');
 	});
 
 	// ============ 3. LLM 配置 tab — 启用开关 ============
 
 	test('LLM 默认禁用 — 显示禁用提示', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// 应显示禁用提示
 		await expect(page.locator('.alert-info', { hasText: 'LLM 已禁用' })).toBeVisible();
@@ -152,7 +154,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('启用 LLM → 显示完整配置区域', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// 勾选启用
 		await page.locator('input[type="checkbox"]').check();
@@ -164,7 +166,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('禁用 LLM → 配置区域隐藏', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// 启用
 		await page.locator('input[type="checkbox"]').check();
@@ -177,7 +179,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 4. LLM 配置 tab — 厂商预设 ============
 
 	test('切换厂商预设 → 自动填 endpoint + model', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 
@@ -197,7 +199,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('厂商预设帮助链接可见(智谱)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		await page.locator('#llm-provider').selectOption('glm');
@@ -206,7 +208,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('文心一言预设标记为不兼容(needsAdapter)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		// 选项 disabled
@@ -218,7 +220,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 5. LLM 配置 tab — apiKey 安全 ============
 
 	test('apiKey 默认是密码框(type=password)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		const apiKeyInput = page.locator('#llm-apikey');
@@ -226,7 +228,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('点击眼睛图标 → apiKey 变为明文', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		await page.locator('#llm-apikey').fill('sk-test-key-123');
@@ -239,7 +241,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('apiKey 不进 URL(刷新后 URL 中无 apiKey)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		await page.locator('#llm-apikey').fill('sk-super-secret-key');
@@ -251,7 +253,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('apiKey 安全提示可见(本地存储)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		// 应显示安全提示
@@ -261,7 +263,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 6. LLM 配置 tab — 测试连接 ============
 
 	test('未填完配置时点击测试连接 → 提示填完整', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		// 清空 apiKey(helper 注入了 sk-test-mock,需覆盖才能触发"未填完整"分支)
@@ -277,7 +279,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	});
 
 	test('填完配置后测试连接 → mock 返回成功', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		await page.locator('#llm-provider').selectOption('glm');
@@ -295,19 +297,20 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 7. LLM 配置 tab — 持久化 ============
 
 	test('LLM 配置持久化 — 启用 + 填配置后刷新仍保留', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		await page.locator('#llm-provider').selectOption('glm');
 		await page.locator('#llm-apikey').fill('sk-persistent-test-key');
 
 		// 刷新页面(注:刷新后可能因 confirm 弹窗而停留,我们直接 reload 不点保存)
-		await page.reload();
+		// 用 networkidle:等待 SPA 模块图加载完成,避免刷新后首次点击被吞(data-theme 是静态属性,非 hydration 信号)
+		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, {
 			timeout: 10_000
 		});
 		// 重新打开设置面板,切到 LLM tab
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// 应该仍然启用
 		await expect(page.locator('input[type="checkbox"]')).toBeChecked();
@@ -320,7 +323,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 8. LLM 配置 tab — 重置 ============
 
 	test('重置按钮 → 清空配置回到默认', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
 		await page.locator('#llm-provider').selectOption('glm');
@@ -338,7 +341,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 	// ============ 9. L2 占位 ============
 
 	test('L2 占位可见(规划功能提示)', async ({ page }) => {
-		await page.locator('.nav-tab.settings-tab').click();
+		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// 应该显示 L2 占位(无论 LLM 是否启用)
 		await expect(page.locator('.l2-placeholder')).toBeVisible();

@@ -156,7 +156,7 @@
     flex-direction: column;
     gap: 10px;
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 8px;
     height: 100%;
@@ -226,7 +226,7 @@
     padding: 6px 12px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     font-family: inherit;
   }

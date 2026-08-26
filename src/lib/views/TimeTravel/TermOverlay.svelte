@@ -131,7 +131,7 @@
     flex-direction: column;
     width: 280px;
     min-width: 280px;
-    background: white;
+    background: var(--bg-card);
     border-left: 1px solid var(--color-gray-200, #e5e7eb);
     overflow: auto;
     height: 100%;
@@ -306,7 +306,7 @@
     font-family: var(--font-mono, monospace);
     font-size: 10px;
     color: var(--color-gray-500, #6b7280);
-    background: white;
+    background: var(--bg-card);
     padding: 1px 4px;
     border-radius: 2px;
     border: 1px solid var(--color-gray-200, #e5e7eb);

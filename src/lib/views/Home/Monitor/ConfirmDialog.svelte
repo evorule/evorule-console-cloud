@@ -117,7 +117,7 @@
     }
   }
   .confirm-card {
-    background: white;
+    background: var(--bg-card);
     border-radius: 10px;
     min-width: 320px;
     max-width: 480px;
@@ -186,7 +186,7 @@
     transition: all 0.15s ease;
   }
   .btn-cancel {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }

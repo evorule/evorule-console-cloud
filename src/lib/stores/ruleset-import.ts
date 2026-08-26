@@ -10,13 +10,14 @@
 //   - 首个官方规则集:等保 2.0 三级门禁规则集(DJBH 2.0 Level 3)
 //
 // P0 简化:
-//   - contentHash 验证用简单 SHA-256(浏览器 crypto.subtle),非 BLAKE3
-//     (BLAKE3 在 P07 审计链用内核实现,这里用 Web Crypto SHA-256 兜底)
+//   - contentHash 用 BLAKE3(全生态统一 SSOT,与 evorule 核心仓/reactor 一致)
+//     (浏览器端用 @noble/hashes 纯 JS BLAKE3,带 blake3: 前缀,无需 Wasm)
 //   - 规则 content 直接复用内核 importRule(jsonContent)
 //
 // 关联设计:P09_IMPORT_EXPORT_INFRA_DESIGN.md §3.8 + §4.6 + §6.4
 
 import { importRule, getAllRules } from "@evorule/console";
+import { blake3 } from "@noble/hashes/blake3.js";
 import type {
 	RulesetPackage,
 	RulesetImportResult,
@@ -172,13 +173,13 @@ function buildDjbhRules(): RulesetRule[] {
 /**
  * 内置官方规则集包(DJBH 2.0 Level 3)。
  *
- * contentHash 用 SHA-256(浏览器 crypto.subtle)在运行时计算,
+ * contentHash 用 BLAKE3(浏览器 @noble/hashes)在运行时计算,
  * 避免硬编码哈希与内容不一致。
  */
 export async function buildDjbhRulesetPackage(): Promise<RulesetPackage> {
 	const rules = buildDjbhRules();
 	const now = new Date().toISOString();
-	const contentHash = await sha256Hex(
+	const contentHash = await blake3Hex(
 		rules.map((r) => r.content).join("\n"),
 	);
 	return {
@@ -281,7 +282,7 @@ export async function importRuleset(
 	}
 
 	// 3. 验证 contentHash(可选,失败仅警告)
-	const recomputedHash = await sha256Hex(
+	const recomputedHash = await blake3Hex(
 		pkg.rules.map((r) => r.content).join("\n"),
 	);
 	if (pkg.contentHash && pkg.contentHash !== recomputedHash) {
@@ -395,25 +396,21 @@ function rewriteRuleId(content: string, newId: string): string {
 }
 
 // ============================================================================
-// 3. 辅助:SHA-256(Web Crypto)
+// 3. 辅助:BLAKE3(纯 JS,@noble/hashes)
 // ============================================================================
 
 /**
- * 用 Web Crypto 计算 SHA-256 十六进制。
- * P0 兜底:BLAKE3 需要内核 Wasm,这里用浏览器原生 SHA-256。
+ * 用 BLAKE3 计算十六进制哈希,带 `blake3:` 前缀,与 evorule 全栈约定一致。
+ * 替代原 Web Crypto SHA-256 兜底,统一到全生态 BLAKE3 SSOT。
+ *
+ * 注:importRuleset 的 contentHash 校验为自洽校验(浏览器算 + 浏览器验),
+ *     不依赖服务端字节序,故纯 JS BLAKE3 即可保证一致。
  */
-export async function sha256Hex(text: string): Promise<string> {
-	if (typeof crypto === "undefined" || !crypto.subtle) {
-		// SSR/非浏览器环境,降级简单哈希(仅占位)
-		let h = 0;
-		for (let i = 0; i < text.length; i++) {
-			h = (h * 31 + text.charCodeAt(i)) | 0;
-		}
-		return `fallback-${(h >>> 0).toString(16).padStart(8, "0")}`;
-	}
+export async function blake3Hex(text: string): Promise<string> {
 	const data = new TextEncoder().encode(text);
-	const hashBuf = await crypto.subtle.digest("SHA-256", data);
-	return Array.from(new Uint8Array(hashBuf))
+	const digest = blake3(data);
+	const hex = Array.from(digest)
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("");
+	return `blake3:${hex}`;
 }

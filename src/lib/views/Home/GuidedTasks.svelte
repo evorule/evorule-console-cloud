@@ -17,7 +17,9 @@
 		const task = GUIDED_TASKS.find((t) => t.id === taskId);
 		if (!task) return;
 		const dataset = $demoDatasetStore;
-		const presetContext = task.presetContext[dataset];
+		// agent 数据集无引导任务预置上下文,用 undefined 兜底(medical/finance 仍按原逻辑)
+		const presetContext =
+			dataset === "agent" ? undefined : task.presetContext[dataset];
 		startTaskFlow(task.flowId, true, presetContext);
 		toastInfo(`已启动引导任务: ${task.name}`, "demo 任务流");
 	}
@@ -95,7 +97,7 @@
 		flex-direction: column;
 		gap: 8px;
 		padding: 16px;
-		background: white;
+		background: var(--bg-card);
 		border: 2px solid var(--color-gray-200, #e5e7eb);
 		border-radius: 8px;
 		cursor: pointer;

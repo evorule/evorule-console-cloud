@@ -31,7 +31,7 @@ import {
 	type ImportResult,
 	type PackageOperator,
 } from "./import-export-types";
-import { sha256Hex } from "./ruleset-import";
+import { blake3Hex } from "./ruleset-import";
 import { getCurrentUser } from "./auth";
 
 // ============================================================================
@@ -66,7 +66,7 @@ export async function exportRuleUniversal(
 			object_type: "rule",
 			object_count: 1,
 			format,
-			content_hash: await sha256Hex(ruleJson),
+			content_hash: await blake3Hex(ruleJson),
 		},
 		objectType: "rule",
 		data: ruleData,
@@ -118,7 +118,7 @@ export async function exportRulesBatch(
 		});
 	}
 
-	const contentHash = await sha256Hex(
+	const contentHash = await blake3Hex(
 		files.map((f) => f.content_base64).join(""),
 	);
 

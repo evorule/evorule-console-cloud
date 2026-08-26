@@ -133,7 +133,7 @@
     padding: 48px;
     text-align: center;
     color: var(--color-text-secondary, #64748b);
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
   }
   .history-error {
@@ -172,7 +172,7 @@
     box-shadow: 0 0 0 2px var(--color-warning, #f59e0b);
   }
   .timeline-content {
-    background: white;
+    background: var(--bg-card);
     padding: 16px;
     border-radius: 8px;
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));

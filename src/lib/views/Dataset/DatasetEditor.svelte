@@ -358,7 +358,7 @@
   .dataset-editor {
     position: fixed;
     inset: 0;
-    background: white;
+    background: var(--bg-card);
     z-index: 100;
     display: flex;
     flex-direction: column;
@@ -386,7 +386,7 @@
     font-size: 13px;
     padding: 6px 14px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
-    background: white;
+    background: var(--bg-card);
     border-radius: 4px;
     cursor: pointer;
   }
@@ -446,7 +446,7 @@
     padding: 6px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
     color: var(--color-text-primary, #1e293b);
     margin-top: 4px;
     font-family: inherit;
@@ -471,7 +471,7 @@
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 12px;
     cursor: pointer;
-    background: white;
+    background: var(--bg-card);
   }
   .tag-chip.selected {
     background: var(--color-gray-100, #f1f5f9);

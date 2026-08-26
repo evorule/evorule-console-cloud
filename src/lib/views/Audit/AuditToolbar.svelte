@@ -152,7 +152,7 @@
     align-items: center;
     gap: 16px;
     padding: 8px 12px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     flex-wrap: wrap;
@@ -194,7 +194,7 @@
     background: var(--brand, #1d4ed8);
   }
   .tb-btn.secondary {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }
@@ -210,7 +210,7 @@
     background: var(--color-warning, #fde68a);
   }
   .tb-btn.mode-btn {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-gray-600, #4b5563);
     padding: 5px 8px;

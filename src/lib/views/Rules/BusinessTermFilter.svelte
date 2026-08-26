@@ -109,7 +109,7 @@
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 6px;
     font-size: 13px;
-    background: white;
+    background: var(--bg-card);
   }
   .search-input:focus {
     outline: none;
@@ -127,7 +127,7 @@
     padding: 3px 10px;
     border: 1px solid var(--color-gray-300, #cbd5e1);
     border-radius: 12px;
-    background: white;
+    background: var(--bg-card);
     font-size: 12px;
     color: var(--color-text-secondary, #64748b);
     cursor: pointer;

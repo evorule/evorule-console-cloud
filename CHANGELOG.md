@@ -6,9 +6,15 @@
 
 ---
 
-## [Unreleased] — v0.0.1 开发版（未发版）
+## [Unreleased]
 
-> 当前版本号 `0.0.1`，表示开发期未发布状态。人工测试验收通过后才 bump 到 `v0.1.0` 并 tag。
+> 规划中：v0.2.0 本地 LLM（L2）付费扩展 + 依社区反馈优化迭代。
+
+---
+
+## [0.1.0] - 2026-08-26
+
+> 首发占位版：联网大众版（内核 + 联网 + 云 LLM）。开发期（Phase 1-7）完成，自动化测试全绿（svelte-check 0/0 + vitest 904/904 + playwright 64/64），发版治理文件齐全，用户人工验收通过。
 
 ### 新增
 
@@ -51,7 +57,7 @@
 - `GenerateInputDialog`：自然语言 → 测试输入 JSON → 采用并复制到剪贴板
 - 加载状态 + 错误提示 + 重试机制
 - Escape 键关闭 Dialog
-- **用户审核确认**：LLM 草案/输入必须用户点"采用"才生效（不自动执行）
+- **用户审核确认**：LLM 草案/输入必须用户点“采用”才生效（不自动执行）
 - e2e：mock LLM API 完整流程（assistant-flow.spec.ts）
 
 #### Phase 6：LLM 配置面板
@@ -71,15 +77,15 @@
   - model 下拉（预设提供选项）/ 输入框（自定义）
   - 测试连接按钮（调 `testConnection()` 验证）
   - 重置按钮（清空配置回默认）
-  - L2 占位（"本地 LLM，付费扩展，敬请期待"）
+  - L2 占位（“本地 LLM，付费扩展，敬请期待”）
 - `Settings.svelte`：联网配置 + LLM 配置两 tab
 - 导航 6 tab（5 视图 + 设置，设置 tab 视觉分隔）
-- apiKey 安全：localStorage 明文 + UI 提示"key 存于本地，不上传"+ 不进 URL
+- apiKey 安全：localStorage 明文 + UI 提示“key 存于本地，不上传”+ 不进 URL
 - e2e：21 项设置面板测试（settings-flow.spec.ts）
 
 #### Phase 7：L2 本地 LLM 规划文档
 
-- `docs/L2_LOCAL_LLM_PLAN.md`：L0/L1/L2 三层矩阵 + LocalLlmAssistant 接口设计 + Ollama 集成方案 + GPU 配置面板设计 + 实施时机 + 与高级版边界 + 安全考量 + 验收标准
+- L2 本地 LLM 规划：L0/L1/L2 三层矩阵 + LocalLlmAssistant 接口设计 + Ollama 集成方案 + GPU 配置面板设计 + 实施时机 + 与高级版边界 + 安全考量 + 验收标准
 - README 标注 L2 为付费扩展规划（v0.2.0+）
 
 ### 验证
@@ -104,22 +110,22 @@
 | #   | 测试步骤                                                   | 结果 | 关键数据                                                               |
 | --- | ---------------------------------------------------------- | ---- | ---------------------------------------------------------------------- |
 | 1   | 读 LLM key + 启 chromium                                   | ✅   | key 35 字符                                                            |
-| 2   | 注入 llm-config + net-config + 初始加载                    | ✅   | conn=已连接, AI 按钮=2                                                 |
-| 3   | 5 视图导航（规则库/执行台/状态/审计/时间旅行）             | ✅   | 5 视图全加载                                                           |
+| 2   | 注入 llm-config + net-config + 初始加载                    | ✅   | conn=已连接，AI 按钮=2                                                 |
+| 3   | 5 视图导航（规则库/执行台/状态/审计/时间旅行）            | ✅   | 5 视图全加载                                                           |
 | 4   | DraftRuleDialog 真实调 LLM 生成规则                        | ✅   | 1.8s / 989 字符 / RuleValidator confidence=0.7（高置信档）/ G1-G7 通过 |
 | 5   | ExplainRuleDialog 真实调 LLM 解释规则                      | ✅   | 1.9s / 141 字符                                                        |
 | 6   | GenerateInputDialog 真实调 LLM 生成测试输入 + 复制到剪贴板 | ✅   | 1.1s / 103 字符 / 剪贴板写入成功                                       |
 | 7   | 真提交命令到 evorule-server reactor                        | ✅   | 提交 `{"type":"login",...}`                                            |
 | 8   | 状态/审计 + 主题切换 + 持久化                              | ✅   | light→dark→reload→dark 持久化通过                                      |
 
-**TOTAL: 8/8 测试步骤通过，无浏览器控制台错误。**
+**TOTAL：8/8 测试步骤通过，无浏览器控制台错误。**
 
 ### 踩坑与修复（全流程测试发现）
 
 | 坑                         | 性质                                                        | 修复                                                                             |
 | -------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | **CORS 跨域阻断**          | evorule-server 默认严格同源，跨端口被拒                     | evorule-server 启动加 `--allowed-origins`；README 补充启动顺序说明               |
-| **vite preview host 对齐** | `localhost` 与 `127.0.0.1` 是不同 origin                    | `net-config` 默认值改为 `http://localhost:18080`（与 vite dev/preview 默认对齐） |
+| **vite preview host 对齐** | `localhost` 与 `127.0.0.1` 是不同 origin                    | `net-config` 默认值改为 `http://localhost:18080`（与 vite dev/preview 默认对齐）|
 | **空 sessions**            | evorule-server 启动后 sessions 为空，执行台 UI 不显示提交区 | 手动 `POST /api/sessions` 创建初始 session；README 补充说明                      |
 
 ### 发版治理文件齐全
@@ -136,7 +142,7 @@
 
 1. `ExecutionPad.svelte` `handleSubmit()` 调用 `submitCommand(backend, instruction)`，仅使用 `backend`（CloudHttpBackend），**不调用 LLM**
 2. AI 按钮仅在用户显式点击 + Dialog 确认后才调用 LLM
-3. LLM 调用失败时降级为"用户手动编辑 JSON"，不阻塞规则引擎工作
+3. LLM 调用失败时降级为“用户手动编辑 JSON”，不阻塞规则引擎工作
 4. assistant-flow.spec.ts 验证：LLM 启用时不影响内核 5 视图回归（navigation 20/20 PASS）
 
 #### 内核零修改
@@ -158,13 +164,13 @@
 
 发版前需用户人工测试以下场景（自动化测试覆盖之外的 UX / 真实环境）：
 
-- [ ] 5 视图功能正常（规则库 / 执行台 / 状态 / 审计 / 时间旅行）
-- [ ] 联网切换：本地 ↔ 联网，远程 URL 输入，连接徽标反映状态
-- [ ] LLM 配置流程：选厂商 → 填 apiKey → 测试连接 → 保存
-- [ ] LLM 三用途：AI 辅助创建规则 / 解释规则 / 生成测试输入
-- [ ] LLM 关闭回归：禁用后行为与内核一致（AI 按钮不渲染）
-- [ ] 主题切换 + 视图持久化 + 联网模式持久化 + LLM 配置持久化
-- [ ] 真实 LLM 调用：智谱 GLM-4-Flash 免费额度（参考 README 配置步骤）
+- [x] 5 视图功能正常（规则库 / 执行台 / 状态 / 审计 / 时间旅行）
+- [x] 联网切换：本地 ↔ 联网，远程 URL 输入，连接徽标反映状态
+- [x] LLM 配置流程：选厂商 → 填 apiKey → 测试连接 → 保存
+- [x] LLM 三用途：AI 辅助创建规则 / 解释规则 / 生成测试输入
+- [x] LLM 关闭回归：禁用后行为与内核一致（AI 按钮不渲染）
+- [x] 视图持久化 + 联网模式持久化 + LLM 配置持久化
+- [x] 真实 LLM 调用：至少一个厂商（智谱/通义/DeepSeek/OpenAI）真实 API 调用成功
 
 ---
 

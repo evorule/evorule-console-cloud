@@ -79,7 +79,7 @@
     right: 0;
     margin-top: 4px;
     min-width: 240px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 8px;
     box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));

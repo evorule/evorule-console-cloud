@@ -125,7 +125,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 8px 12px;
-    background: white;
+    background: var(--bg-card);
     border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
     flex-shrink: 0;
     flex-wrap: wrap;
@@ -155,7 +155,7 @@
     cursor: pointer;
     font-family: inherit;
     font-weight: 600;
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }

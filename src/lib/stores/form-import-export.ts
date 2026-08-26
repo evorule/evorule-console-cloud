@@ -19,7 +19,7 @@ import {
 	type UniversalExportPackage,
 	type PackageOperator,
 } from "./import-export-types";
-import { sha256Hex } from "./ruleset-import";
+import { blake3Hex } from "./ruleset-import";
 import {
 	businessFormSchemaStore,
 	addBusinessFormSchema,
@@ -75,7 +75,7 @@ export async function exportFormSchema(
 			object_type: "form",
 			object_count: 1,
 			format,
-			content_hash: await sha256Hex(JSON.stringify(form)),
+			content_hash: await blake3Hex(JSON.stringify(form)),
 		},
 		objectType: "form",
 		data: form,

@@ -166,7 +166,7 @@
     flex-direction: column;
     gap: 10px;
     padding: 12px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 8px;
     height: 100%;
@@ -320,7 +320,7 @@
     padding: 6px 8px;
     border: 1px solid var(--color-gray-200, #e2e8f0);
     border-radius: 4px;
-    background: white;
+    background: var(--bg-card);
   }
   .rule-item.matched {
     border-color: #6ee7b7;

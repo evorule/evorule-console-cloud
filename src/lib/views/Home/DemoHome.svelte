@@ -270,7 +270,7 @@
     align-items: flex-start;
     gap: 4px;
     padding: 16px;
-    background: white;
+    background: var(--bg-card);
     border: 2px solid var(--color-gray-200, #e2e8f0);
     border-radius: 6px;
     cursor: pointer;
@@ -324,7 +324,7 @@
     flex-direction: column;
     gap: 4px;
     padding: 14px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 6px;
     border: 1px solid var(--color-gray-200, #e2e8f0);
   }

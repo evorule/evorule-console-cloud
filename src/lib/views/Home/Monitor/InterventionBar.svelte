@@ -269,7 +269,7 @@
     flex-direction: column;
     gap: 10px;
     padding: 10px 12px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-gray-200, #e5e7eb);
     border-radius: 8px;
     overflow-y: auto;
@@ -339,7 +339,7 @@
     border-color: var(--brand, #1d4ed8);
   }
   .iv-secondary {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }

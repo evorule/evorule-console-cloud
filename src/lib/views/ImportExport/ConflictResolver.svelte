@@ -151,7 +151,7 @@
   }
   .cr-bulk-btn {
     padding: 3px 8px;
-    background: white;
+    background: var(--bg-card);
     border: 1px solid var(--color-warning, #fde68a);
     border-radius: 3px;
     cursor: pointer;
@@ -166,7 +166,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
-    background: white;
+    background: var(--bg-card);
   }
   .cr-table th,
   .cr-table td {

@@ -704,7 +704,7 @@
     padding: 16px;
   }
   .export-dialog {
-    background: white;
+    background: var(--bg-card);
     border-radius: 10px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
     width: 100%;
@@ -796,7 +796,7 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 12px;
-    background: white;
+    background: var(--bg-card);
   }
   .ed-content-card.selected,
   .ed-format-card.selected {
@@ -916,7 +916,7 @@
   .ed-save-template-btn {
     font-size: 11px;
     padding: 5px 10px;
-    background: white;
+    background: var(--bg-card);
     border: 1px dashed var(--color-gray-400, #9ca3af);
     border-radius: 4px;
     cursor: pointer;
@@ -986,7 +986,7 @@
     cursor: not-allowed;
   }
   .ed-cancel {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--color-gray-300, #d1d5db);
     color: var(--color-text-secondary, #4b5563);
   }
@@ -1009,7 +1009,7 @@
     z-index: 1300;
   }
   .ed-sub-dialog {
-    background: white;
+    background: var(--bg-card);
     border-radius: 8px;
     padding: 18px;
     width: 100%;

@@ -1,17 +1,29 @@
+# --- 构建产物 ---
 node_modules/
 build/
 .svelte-kit/
 dist/
 *.tgz
+
+# --- Playwright / 测试 ---
 test-results/
+test-output/
 e2e-runs.log
+
+# --- 临时/调试输出 ---
 *.log
 *.txt
-.env
-.env.*
-!.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# L2/L3 内部工作文档(不入版本,公开文档走 docs/)
+# --- 环境变量 ---
+.env
+.env.*
+!.env.example
+
+# --- Mavis / runtime 中间产物 ---
+.workbuddy/
+/data/
+
+# --- 内部工作文档(不入版本,公开文档走 docs/) ---
 文档/
