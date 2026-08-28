@@ -67,7 +67,9 @@ export class CloudHttpBackend implements ExecutionBackend {
 			authToken: config.authToken
 		};
 		this.workspace = workspace;
-		this.backend = new HttpBackend(this.resolveBaseUrl());
+		// authToken 传给内核 HttpBackend(2026-08-28 快照同步上游 0073a0c):
+		// 执行侧会话 API 请求统一携带 Authorization: Bearer
+		this.backend = new HttpBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
 	}
 
 	// === 配置访问器(只读) ===
@@ -99,7 +101,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	 */
 	reconfigure(config: Partial<CloudBackendConfig>): void {
 		this._config = { ...this._config, ...config };
-		this.backend = new HttpBackend(this.resolveBaseUrl());
+		this.backend = new HttpBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
 	}
 
 	// === 内部工具 ===

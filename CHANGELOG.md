@@ -39,8 +39,8 @@
 
 **登记上游债务**
 
-- 内核 `HttpBackend`（执行侧会话 API）无 token 概念，会话/审计/时间旅行端点不校验凭据（A3）：属内核快照级缺口，按项目规则对照上游（gitee evo-rule-lab/evorule-console）另立专项处理，本仓不改快照
-- 内核 `WorkspaceBackend.reviewPublish` / `emergencyRollback` 硬编码操作者身份，会丢失 UI 传入的审批者与角色：cloud 暂以自建 fetch（带凭据）承接，待内核开放身份参数后收敛
+- 内核 `HttpBackend`（执行侧会话 API）无 token 概念，会话/审计/时间旅行端点不校验凭据（A3）：**已于同日闭合**——上游 evorule-console `0073a0c` 增可选 authToken（对齐 `HttpWorkspaceBackend` 既有模式），本仓随 `0073a0c` 同步内核快照并接线（`CloudHttpBackend` 构造/reconfigure 传入 authToken），执行侧 15 方法请求统一携带 Bearer 头
+- 内核 `WorkspaceBackend.reviewPublish` / `emergencyRollback` 硬编码操作者身份，会丢失 UI 传入的审批者与角色：cloud 暂以自建 fetch（带凭据）承接，待内核开放身份参数后收敛（**维持挂账**，登记于 `planning/上游债务登记.md` D2）
 
 #### 一键启动脚本：清偿"已知限制"（README-STARTUP.md）
 

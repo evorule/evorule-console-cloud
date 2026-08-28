@@ -54,19 +54,31 @@ export class HttpBackendError extends Error {
  * 用法:
  *   const backend = new HttpBackend();           // 默认 127.0.0.1:18080
  *   const backend = new HttpBackend('http://localhost:9000');
+ *   const backend = new HttpBackend('http://localhost:9000', 'token'); // Bearer 认证
  *   const ok = await backend.health();
  */
 export class HttpBackend implements ExecutionBackend {
   private readonly baseUrl: string;
+  private readonly authToken: string | null;
 
-  constructor(baseUrl: string = DEFAULT_BASE_URL) {
+  constructor(baseUrl: string = DEFAULT_BASE_URL, authToken: string | null = null) {
     // 去掉末尾斜杠,避免 path 拼接出现 //
     this.baseUrl = baseUrl.replace(/\/+$/, '');
+    this.authToken = authToken;
   }
 
   // ------------------------------------------------------------------------
   // 内部工具
   // ------------------------------------------------------------------------
+
+  /** 构造请求头(含可选 Bearer token;模式对齐 HttpWorkspaceBackend.headers) */
+  private headers(extra?: Record<string, string>): Record<string, string> {
+    const h: Record<string, string> = { ...extra };
+    if (this.authToken) {
+      h['Authorization'] = `Bearer ${this.authToken}`;
+    }
+    return h;
+  }
 
   /**
    * 统一 fetch + JSON 解析 + 错误处理。
@@ -79,7 +91,10 @@ export class HttpBackend implements ExecutionBackend {
     const url = this.baseUrl + path;
     let r: Response;
     try {
-      r = await fetch(url, opts);
+      r = await fetch(url, {
+        ...opts,
+        headers: this.headers(opts.headers as Record<string, string> | undefined)
+      });
     } catch (e) {
       // fetch 抛出 TypeError 通常是网络问题(连接拒绝 / DNS 失败 / CORS)
       throw new HttpBackendError(
@@ -123,7 +138,7 @@ export class HttpBackend implements ExecutionBackend {
   /** GET /api/health — 只检查 HTTP 状态,不解析 body(兼容纯文本响应) */
   async health(): Promise<boolean> {
     try {
-      const r = await fetch(`${this.baseUrl}/api/health`);
+      const r = await fetch(`${this.baseUrl}/api/health`, { headers: this.headers() });
       return r.ok;
     } catch {
       return false;
@@ -138,7 +153,10 @@ export class HttpBackend implements ExecutionBackend {
    *   保留对裸数字 / {id} 的兜底以兼容其他实现。
    */
   async createSession(): Promise<SessionId> {
-    const r = await fetch(`${this.baseUrl}/api/sessions`, { method: 'POST' });
+    const r = await fetch(`${this.baseUrl}/api/sessions`, {
+      method: 'POST',
+      headers: this.headers()
+    });
     if (!r.ok) {
       throw new HttpBackendError(`createSession failed: ${r.status}`, r.status, '/api/sessions');
     }
@@ -345,7 +363,7 @@ export class HttpBackend implements ExecutionBackend {
   async forkSession(parentId: SessionId, version: number): Promise<SessionId> {
     const r = await fetch(
       `${this.baseUrl}/api/sessions/fork/${parentId}?version=${version}`,
-      { method: 'POST' }
+      { method: 'POST', headers: this.headers() }
     );
     if (!r.ok) {
       throw new HttpBackendError(
