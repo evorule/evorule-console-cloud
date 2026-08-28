@@ -351,7 +351,7 @@
     margin: 0;
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .it-type-grid {
     display: grid;
@@ -365,7 +365,7 @@
     gap: 4px;
     padding: 12px 8px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     cursor: pointer;
     font-family: inherit;
@@ -373,19 +373,19 @@
     transition: all 0.15s;
   }
   .it-type-btn:hover {
-    border-color: var(--color-primary, #2563eb);
+    border-color: var(--brand, #2563eb);
   }
   .it-type-btn.active {
-    background: var(--color-info-bg, #eff6ff);
-    border-color: var(--color-primary, #2563eb);
-    color: var(--color-primary, #2563eb);
+    background: var(--info-bg, #eff6ff);
+    border-color: var(--brand, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .it-type-icon {
     font-size: 20px;
   }
   .it-select {
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     font-family: inherit;
     font-size: 13px;
@@ -402,25 +402,25 @@
   }
   .it-file-button {
     padding: 6px 12px;
-    background: var(--color-gray-100, #f3f4f6);
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    background: var(--bg-hover, #f3f4f6);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     font-size: 12px;
   }
   .it-file-name {
     font-size: 12px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .it-file-hint {
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .it-clear-btn {
     align-self: flex-start;
     padding: 4px 10px;
     background: transparent;
     border: none;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     cursor: pointer;
     font-size: 11px;
   }
@@ -429,7 +429,7 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .it-actions {
     display: flex;
@@ -450,18 +450,18 @@
     cursor: not-allowed;
   }
   .it-btn.primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .it-btn.secondary {
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .it-result {
     background: #f9fafb;
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     padding: 12px;
   }
@@ -478,21 +478,21 @@
     font-weight: 600;
   }
   .it-badge.success {
-    background: var(--color-success-bg, #dcfce7);
-    color: var(--color-success, #166534);
+    background: var(--success-bg, #dcfce7);
+    color: var(--success, #166534);
   }
   .it-badge.error {
-    background: var(--color-error-bg, #fee2e2);
-    color: var(--color-error, #991b1b);
+    background: var(--danger-bg, #fee2e2);
+    color: var(--danger, #991b1b);
   }
   .it-badge.info {
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info, #1e40af);
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, #1e40af);
   }
   .it-result-details summary {
     cursor: pointer;
     font-size: 12px;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .it-result-list {
     margin: 8px 0 0;
@@ -503,14 +503,14 @@
     margin-bottom: 4px;
   }
   .it-action-success {
-    color: var(--color-success, #166534);
+    color: var(--success, #166534);
     font-weight: 600;
   }
   .it-action-error {
-    color: var(--color-error, #991b1b);
+    color: var(--danger, #991b1b);
     font-weight: 600;
   }
   .it-error-msg {
-    color: var(--color-error, #991b1b);
+    color: var(--danger, #991b1b);
   }
 </style>

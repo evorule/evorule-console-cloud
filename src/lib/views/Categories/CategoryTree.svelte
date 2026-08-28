@@ -161,7 +161,7 @@
   .empty-tree {
     padding: 16px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 12px;
   }
   .tree-node {
@@ -177,11 +177,11 @@
     cursor: pointer;
   }
   .node-row:hover {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
   }
   .node-row.selected {
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-primary, #2563eb);
+    background: var(--info-bg, #dbeafe);
+    color: var(--brand, #2563eb);
     font-weight: 600;
   }
   .toggle-btn {
@@ -190,7 +190,7 @@
     cursor: pointer;
     font-size: 10px;
     width: 14px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 0;
   }
   .toggle-placeholder {
@@ -209,8 +209,8 @@
   }
   .node-count {
     font-size: 10px;
-    color: var(--color-text-secondary, #64748b);
-    background: var(--color-gray-100, #f1f5f9);
+    color: var(--text-secondary, #64748b);
+    background: var(--bg-hover, #f1f5f9);
     padding: 1px 6px;
     border-radius: 8px;
     min-width: 18px;
@@ -218,7 +218,7 @@
   }
   .node-row.selected .node-count {
     background: rgba(37, 99, 235, 0.15);
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .node-actions {
     display: none;
@@ -236,10 +236,10 @@
     border-radius: 3px;
   }
   .action-btn:hover {
-    background: var(--color-gray-200, #e2e8f0);
+    background: var(--border, #e2e8f0);
   }
   .action-danger:hover {
-    background: var(--color-error-bg, #fef2f2);
+    background: var(--danger-bg, #fef2f2);
   }
   .node-children {
     display: flex;

@@ -103,10 +103,10 @@
     position: relative;
     padding: 6px 10px;
     background: transparent;
-    border: 1px solid var(--color-gray-700, #334155);
+    border: 1px solid var(--text-primary, #334155);
     border-radius: 6px;
     cursor: pointer;
-    color: var(--color-gray-200, #e2e8f0);
+    color: var(--border, #e2e8f0);
     font-size: 16px;
     line-height: 1;
   }
@@ -120,7 +120,7 @@
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
-    background: var(--color-error, #dc2626);
+    background: var(--danger, #dc2626);
     color: white;
     border-radius: 8px;
     font-size: 10px;
@@ -137,7 +137,7 @@
     width: 360px;
     max-height: 480px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 8px;
     box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
     z-index: 100;
@@ -150,17 +150,17 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
   }
   .bell-title {
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .mark-all-btn {
     background: transparent;
     border: none;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
     cursor: pointer;
     font-size: 12px;
   }
@@ -174,7 +174,7 @@
   .bell-empty {
     padding: 32px 16px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 13px;
   }
   .bell-item {
@@ -185,19 +185,19 @@
     padding: 12px 16px;
     background: transparent;
     border: none;
-    border-bottom: 1px solid var(--color-gray-100, #f1f5f9);
+    border-bottom: 1px solid var(--bg-hover, #f1f5f9);
     text-align: left;
     cursor: pointer;
     transition: background 0.1s ease;
   }
   .bell-item:hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .bell-item.unread {
-    background: var(--color-info-bg, #eff6ff);
+    background: var(--info-bg, #eff6ff);
   }
   .bell-item.unread:hover {
-    background: var(--color-info-bg, #dbeafe);
+    background: var(--info-bg, #dbeafe);
   }
   .item-icon {
     font-size: 18px;
@@ -210,12 +210,12 @@
   .item-title {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     margin-bottom: 2px;
   }
   .item-body {
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     line-height: 1.4;
     margin-bottom: 4px;
     overflow: hidden;
@@ -224,13 +224,13 @@
   }
   .item-time {
     font-size: 11px;
-    color: var(--color-gray-400, #94a3b8);
+    color: var(--text-secondary, #94a3b8);
   }
   .unread-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     flex-shrink: 0;
     margin-top: 6px;
   }

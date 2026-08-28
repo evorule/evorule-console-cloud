@@ -199,7 +199,7 @@
     background: var(--bg-card);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-left: 4px solid var(--color-primary, #3b82f6);
+    border-left: 4px solid var(--brand, #3b82f6);
   }
   .dm-metric-icon {
     font-size: 28px;
@@ -211,13 +211,13 @@
   }
   .dm-metric-label {
     font-size: 12px;
-    color: var(--color-text-secondary, #6b7280);
+    color: var(--text-secondary, #6b7280);
     margin-bottom: 4px;
   }
   .dm-metric-value {
     font-size: 22px;
     font-weight: 700;
-    color: var(--color-text-primary, #1f2937);
+    color: var(--text-primary, #1f2937);
     line-height: 1.2;
   }
   .dm-metric-diff {
@@ -225,15 +225,15 @@
     margin-top: 2px;
   }
   .dm-metric-diff.up {
-    color: var(--color-success, #22c55e);
+    color: var(--success, #22c55e);
   }
   .dm-metric-detail {
     font-size: 11px;
-    color: var(--color-text-secondary, #6b7280);
+    color: var(--text-secondary, #6b7280);
     margin-top: 2px;
   }
   .dm-urgent {
-    color: var(--color-error, var(--danger, #ef4444));
+    color: var(--danger, var(--danger, #ef4444));
     font-weight: 500;
   }
 
@@ -248,7 +248,7 @@
     font-size: 15px;
     font-weight: 600;
     margin: 0 0 14px 0;
-    color: var(--color-text-primary, #1f2937);
+    color: var(--text-primary, #1f2937);
   }
 
   /* 今日要事 */
@@ -262,27 +262,27 @@
     align-items: flex-start;
     gap: 12px;
     padding: 10px 12px;
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
     border-radius: 6px;
-    border-left: 3px solid var(--color-gray-300, #d1d5db);
+    border-left: 3px solid var(--border, #d1d5db);
   }
   .dm-event-info {
-    border-left-color: var(--color-info, #3b82f6);
+    border-left-color: var(--info, #3b82f6);
   }
   .dm-event-warning {
-    border-left-color: var(--color-warning, #f59e0b);
-    background: var(--color-warning-bg, #fef3c7);
+    border-left-color: var(--warning, #f59e0b);
+    background: var(--warning-bg, #fef3c7);
   }
   .dm-event-time {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-secondary, #6b7280);
+    color: var(--text-secondary, #6b7280);
     flex-shrink: 0;
     font-family: monospace;
   }
   .dm-event-text {
     font-size: 13px;
-    color: var(--color-text-primary, #1f2937);
+    color: var(--text-primary, #1f2937);
     line-height: 1.5;
   }
 
@@ -297,7 +297,7 @@
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
     border-radius: 6px;
   }
   .dm-compliance-icon {
@@ -310,21 +310,21 @@
   .dm-compliance-label {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1f2937);
+    color: var(--text-primary, #1f2937);
   }
   .dm-compliance-value {
     font-size: 12px;
-    color: var(--color-text-secondary, #6b7280);
+    color: var(--text-secondary, #6b7280);
     margin-top: 2px;
   }
 
   /* 提示 */
   .dm-hint {
     padding: 10px 14px;
-    background: var(--color-info-bg, #eff6ff);
+    background: var(--info-bg, #eff6ff);
     border-radius: 6px;
     font-size: 12px;
-    color: var(--color-info-text, var(--color-info, #1e40af));
+    color: var(--info, var(--info, #1e40af));
     line-height: 1.5;
   }
 

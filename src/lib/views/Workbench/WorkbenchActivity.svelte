@@ -51,7 +51,7 @@
     </div>
   {/if}
   <div class="footer-link">
-    <a onclick={onOpenFull}>→ 完整审计链</a>
+    <button type="button" class="footer-link-btn" onclick={onOpenFull}>→ 完整审计链</button>
   </div>
 </div>
 
@@ -122,13 +122,17 @@
     text-align: right;
     margin-top: 8px;
   }
-  .footer-link a {
+  .footer-link button.footer-link-btn {
     color: var(--primary, #2563eb);
     text-decoration: none;
     font-size: 12px;
     cursor: pointer;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
   }
-  .footer-link a:hover {
+  .footer-link button.footer-link-btn:hover {
     text-decoration: underline;
   }
 </style>

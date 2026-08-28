@@ -60,19 +60,19 @@
     transition: background 0.15s ease;
   }
   .toggle-btn:hover {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
   }
   .toggle-track {
     display: inline-block;
     width: 36px;
     height: 20px;
     border-radius: 10px;
-    background: var(--color-gray-300, #cbd5e1);
+    background: var(--border, #cbd5e1);
     position: relative;
     transition: background 0.2s ease;
   }
   .toggle-btn.active .toggle-track {
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
   }
   .toggle-thumb {
     position: absolute;
@@ -91,11 +91,11 @@
   .toggle-label {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     min-width: 96px;
   }
   .toggle-hint {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
 </style>

@@ -95,10 +95,10 @@
     gap: 8px;
     padding: 4px 10px;
     background: transparent;
-    border: 1px solid var(--color-gray-700, #334155);
+    border: 1px solid var(--text-primary, #334155);
     border-radius: var(--radius-md, 6px);
     cursor: pointer;
-    color: var(--color-gray-200, #e2e8f0);
+    color: var(--border, #e2e8f0);
     transition: background 0.15s ease;
   }
   .user-trigger:hover {
@@ -108,7 +108,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
     display: flex;
     align-items: center;
@@ -128,7 +128,7 @@
   }
   .user-role {
     font-size: 11px;
-    color: var(--color-gray-400, #94a3b8);
+    color: var(--text-secondary, #94a3b8);
   }
   .caret {
     font-size: 10px;
@@ -144,7 +144,7 @@
     margin-top: 4px;
     min-width: 180px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 6px;
     box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
     z-index: 100;
@@ -159,23 +159,23 @@
     text-align: left;
     cursor: pointer;
     font-size: 13px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     transition: background 0.1s ease;
   }
   .menu-item:hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .menu-danger {
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
   }
   .menu-divider {
     height: 1px;
-    background: var(--color-gray-200, #e2e8f0);
+    background: var(--border, #e2e8f0);
     margin: 4px 0;
   }
   .login-btn {
     padding: 6px 14px;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
     border: none;
     border-radius: 6px;

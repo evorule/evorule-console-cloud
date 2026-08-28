@@ -98,8 +98,8 @@
 		align-items: center;
 		gap: 4px;
 		background: transparent;
-		color: var(--color-gray-300, #d1d5db);
-		border: 1px solid var(--color-gray-700, #374151);
+		color: var(--border, #d1d5db);
+		border: 1px solid var(--text-primary, #374151);
 		border-radius: var(--radius-md, 6px);
 		padding: 6px 12px;
 		cursor: pointer;
@@ -128,7 +128,7 @@
 		right: 0;
 		min-width: 360px;
 		background: var(--bg-card);
-		border: 1px solid var(--color-gray-200, #e5e7eb);
+		border: 1px solid var(--border, #e5e7eb);
 		border-radius: 8px;
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 		z-index: 100;
@@ -140,16 +140,16 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 10px 16px;
-		background: var(--color-gray-50, #f9fafb);
-		border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+		background: var(--bg-page, #f9fafb);
+		border-bottom: 1px solid var(--border, #e5e7eb);
 		font-size: 13px;
 		font-weight: 600;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary, #1f2937);
 	}
 	.tf-hint {
 		font-size: 11px;
 		font-weight: 400;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary, #6b7280);
 	}
 
 	.tf-item {
@@ -160,7 +160,7 @@
 		padding: 12px 16px;
 		background: transparent;
 		border: none;
-		border-bottom: 1px solid var(--color-gray-100, #f3f4f6);
+		border-bottom: 1px solid var(--bg-hover, #f3f4f6);
 		cursor: pointer;
 		text-align: left;
 		transition: background 0.15s ease;
@@ -169,7 +169,7 @@
 		border-bottom: none;
 	}
 	.tf-item:hover {
-		background: var(--color-info-bg, #eff6ff);
+		background: var(--info-bg, #eff6ff);
 	}
 	.tf-item-icon {
 		font-size: 20px;
@@ -183,25 +183,25 @@
 	.tf-item-name {
 		font-size: 14px;
 		font-weight: 600;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary, #1f2937);
 		margin-bottom: 2px;
 	}
 	.tf-item-desc {
 		font-size: 12px;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary, #6b7280);
 		line-height: 1.4;
 	}
 	.tf-item-time {
 		font-size: 11px;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary, #6b7280);
 		flex-shrink: 0;
 		margin-top: 2px;
 	}
 
 	.tf-menu-footer {
 		padding: 8px 16px;
-		background: var(--color-gray-50, #f9fafb);
-		border-top: 1px solid var(--color-gray-200, #e5e7eb);
+		background: var(--bg-page, #f9fafb);
+		border-top: 1px solid var(--border, #e5e7eb);
 		display: flex;
 		gap: 8px;
 		flex-wrap: wrap;
@@ -213,12 +213,12 @@
 		border-radius: 10px;
 	}
 	.tf-mode-tag {
-		background: var(--color-info-bg, #dbeafe);
-		color: var(--color-info-text, var(--color-info, #1e40af));
+		background: var(--info-bg, #dbeafe);
+		color: var(--info, var(--info, #1e40af));
 	}
 	.tf-demo-tag {
-		background: var(--color-warning-bg, #fef3c7);
-		color: var(--color-warning-text, var(--color-warning, #92400e));
+		background: var(--warning-bg, #fef3c7);
+		color: var(--warning, var(--warning, #92400e));
 	}
 
 	@media (max-width: 768px) {

@@ -258,7 +258,7 @@
     margin: 0;
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .et-type-grid,
   .et-format-grid {
@@ -273,7 +273,7 @@
   .et-format-btn {
     padding: 10px 8px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     cursor: pointer;
     font-family: inherit;
@@ -288,13 +288,13 @@
   }
   .et-type-btn:hover,
   .et-format-btn:hover {
-    border-color: var(--color-primary, #2563eb);
+    border-color: var(--brand, #2563eb);
   }
   .et-type-btn.active,
   .et-format-btn.active {
-    background: var(--color-info-bg, #eff6ff);
-    border-color: var(--color-primary, #2563eb);
-    color: var(--color-primary, #2563eb);
+    background: var(--info-bg, #eff6ff);
+    border-color: var(--brand, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .et-type-icon {
     font-size: 18px;
@@ -306,7 +306,7 @@
   .et-link-btn {
     background: none;
     border: none;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
     cursor: pointer;
     font-size: 12px;
     padding: 0;
@@ -314,7 +314,7 @@
   .et-empty {
     padding: 20px;
     text-align: center;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-size: 13px;
     background: #f9fafb;
     border-radius: 6px;
@@ -322,7 +322,7 @@
   .et-object-list {
     max-height: 280px;
     overflow-y: auto;
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     padding: 6px;
   }
@@ -339,18 +339,18 @@
   }
   .et-object-id {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     background: #f3f4f6;
     padding: 1px 4px;
     border-radius: 3px;
   }
   .et-info {
     padding: 12px;
-    background: var(--color-info-bg, #eff6ff);
-    border: 1px solid var(--color-info, #93c5fd);
+    background: var(--info-bg, #eff6ff);
+    border: 1px solid var(--info, #93c5fd);
     border-radius: 6px;
     font-size: 12px;
-    color: var(--color-info, #1e40af);
+    color: var(--info, #1e40af);
   }
   .et-actions {
     display: flex;
@@ -371,13 +371,13 @@
     cursor: not-allowed;
   }
   .et-btn.primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .et-btn.secondary {
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
 </style>

@@ -14,6 +14,7 @@ e2e-runs.log
 *.log
 *.err
 *.txt
+logs/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
@@ -28,3 +29,9 @@ vite.config.ts.timestamp-*
 
 # --- 内部工作文档(不入版本,公开文档走 docs/) ---
 文档/
+
+# --- 设计文档(本地,不入版本) ---
+.design-archive/
+
+# --- 安全删除 shim 中转目录 ---
+.genie-trash/

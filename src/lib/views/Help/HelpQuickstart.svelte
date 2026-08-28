@@ -23,7 +23,7 @@
         <li>启 evorule-server(默认 18090)</li>
         <li>启 evorule-rule-serve(默认 18081)</li>
         <li>启 dev server(默认 5174)</li>
-        <li>等就绪,自动开浏览器到 <code>/workbench</code></li>
+        <li>等就绪,自动开浏览器到 <code>/</code>(evorule 首页)</li>
       </ol>
       <p class="hint">
         第一次跑建议双击 <code>install-shortcut.bat</code>,生成桌面 <code>evorule-start.lnk</code>。
@@ -35,7 +35,7 @@
     <div class="step-num">1</div>
     <div class="step-body">
       <h3>看工作台(30 秒)</h3>
-      <p>浏览器开 <code>http://127.0.0.1:5174/workbench</code>。看到 5 个 region:</p>
+      <p>启动后浏览器自动打开 evorule 首页(<code>http://127.0.0.1:5174/</code>)。点侧栏顶部 <code>🚀 工作台</code> 进入 dashboard,看到 5 个 region:</p>
       <ul>
         <li>顶部状态条(server/rule 连接 + workspace)</li>
         <li>4 统计卡(规则/Sessions/待审/最近 fact)</li>

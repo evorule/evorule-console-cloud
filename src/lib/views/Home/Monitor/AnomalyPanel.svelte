@@ -150,7 +150,7 @@
     min-width: 0;
     min-height: 0;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -159,8 +159,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-    background: var(--color-gray-50, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
     flex-shrink: 0;
   }
   .ap-left {
@@ -172,19 +172,19 @@
     margin: 0;
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .ap-count {
     font-family: var(--font-mono, monospace);
     font-size: 12px;
     font-weight: 700;
     padding: 1px 8px;
-    background: var(--color-gray-200, #e5e7eb);
-    color: var(--color-text-secondary, #4b5563);
+    background: var(--border, #e5e7eb);
+    color: var(--text-secondary, #4b5563);
     border-radius: 10px;
   }
   .ap-count.hot {
-    background: var(--color-error, #dc2626);
+    background: var(--danger, #dc2626);
     color: white;
     animation: flash 1s ease-in-out infinite;
   }
@@ -200,15 +200,15 @@
   .btn-clear {
     font-size: 11px;
     padding: 3px 10px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     background: var(--bg-card);
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
     cursor: pointer;
     font-family: inherit;
   }
   .btn-clear:hover:not(:disabled) {
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-hover, #f3f4f6);
   }
   .btn-clear:disabled {
     opacity: 0.5;
@@ -217,7 +217,7 @@
   .ap-empty {
     padding: 28px 12px;
     text-align: center;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -252,15 +252,15 @@
   }
   .ap-critical {
     border: 1px solid #fecaca;
-    background: var(--color-error-bg, #fef2f2);
+    background: var(--danger-bg, #fef2f2);
   }
   .ap-error {
     border: 1px solid #fed7aa;
     background: #fff7ed;
   }
   .ap-warning {
-    border: 1px solid var(--color-warning, #fde68a);
-    background: var(--color-warning-bg, #fffbeb);
+    border: 1px solid var(--warning, #fde68a);
+    background: var(--warning-bg, #fffbeb);
   }
   .ap-level-head {
     display: flex;
@@ -276,7 +276,7 @@
   }
   .ap-toggle {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     width: 12px;
   }
   .ap-icon {
@@ -294,7 +294,7 @@
     color: #c2410c;
   }
   .ap-warning .ap-label {
-    color: var(--color-warning, #b45309);
+    color: var(--warning, #b45309);
   }
   .ap-level-count {
     font-family: var(--font-mono, monospace);
@@ -314,8 +314,8 @@
     color: #7c2d12;
   }
   .ap-warning .ap-level-count {
-    background: var(--color-warning, #fde68a);
-    color: var(--color-warning, #78350f);
+    background: var(--warning, #fde68a);
+    color: var(--warning, #78350f);
   }
   .ap-list {
     list-style: none;
@@ -349,29 +349,29 @@
   }
   .ap-rule {
     font-size: 10px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .ap-rule code {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-hover, #f3f4f6);
     padding: 0 3px;
     border-radius: 3px;
   }
   .ap-time {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .ap-message {
     font-size: 12px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     line-height: 1.4;
   }
   .ap-fact {
     margin-top: 2px;
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .ap-fact code {
     font-family: var(--font-mono, monospace);

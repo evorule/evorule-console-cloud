@@ -25,7 +25,7 @@
 1. 启动 evorule-server(默认 18090 端口)
 2. 启动 evorule-rule-serve(默认 18081 端口)
 3. 启动 dev server(默认 5174 端口)
-4. 等 3 端口就绪,自动开浏览器到 `http://127.0.0.1:5174/workbench`
+4. 等 3 端口就绪,自动开浏览器到 `http://127.0.0.1:5174/`(evorule 首页)
 
 **期望输出**(节选):
 ```
@@ -35,7 +35,7 @@
   [OK] evorule-rule-serve already running (PID 21424, port 18081)
 === [3/3] console-cloud dev @ 5174 ===
   [OK] console-cloud @ 5174 ready
-  Opening browser: http://127.0.0.1:5174/workbench
+  Opening browser: http://127.0.0.1:5174/
 ```
 
 如果某步失败,看仓根目录的 `.dev-stdout.log` / `.dev-stderr.log`。
@@ -44,9 +44,7 @@
 
 ## Step 1 · 看工作台(30 秒)
 
-打开 `http://127.0.0.1:5174/workbench`(脚本会自动开)。
-
-你会看到 5 个 region(从上到下):
+启动后浏览器自动打开 evorule 首页(`/`)。点侧栏最顶部的 `🚀 工作台` 进入 dashboard(`/workbench`),你会看到 5 个 region(从上到下):
 
 1. **顶部状态条** — server/rule 连接 + workspace + 模式 + 版本
    - 期望:server ● 已连接、rule ● 已连接、workspace: 默认工作空间

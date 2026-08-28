@@ -83,7 +83,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 8px;
   }
   .filter-header {
@@ -94,27 +94,27 @@
   .filter-title {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .clear-btn {
     background: none;
     border: none;
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
     font-size: 11px;
     cursor: pointer;
     padding: 2px 6px;
   }
   .search-input {
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 6px;
     font-size: 13px;
     background: var(--bg-card);
   }
   .search-input:focus {
     outline: none;
-    border-color: var(--color-primary, #2563eb);
-    box-shadow: 0 0 0 2px var(--color-primary-bg, #dbeafe);
+    border-color: var(--brand, #2563eb);
+    box-shadow: 0 0 0 2px var(--brand-bg, #dbeafe);
   }
   .term-chips {
     display: flex;
@@ -125,26 +125,26 @@
   }
   .term-chip {
     padding: 3px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 12px;
     background: var(--bg-card);
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     cursor: pointer;
     transition: all 0.15s ease;
   }
   .term-chip:hover {
-    border-color: var(--color-primary, #2563eb);
-    color: var(--color-primary, #2563eb);
+    border-color: var(--brand, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .term-chip.selected {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .empty-hint {
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-style: italic;
   }
 </style>

@@ -3,15 +3,20 @@
 <!--
   P11 缺口 3:视图首次访问提示 GuidedHint。
   P11_UX_GAPS_FIX_DESIGN.md §4.4 定义。
-  职责:首次进入某视图时显示引导提示,关闭后 localStorage 记录,不再重复显示。
+  职责:首次进入某视图时显示引导提示,关闭后记忆,不再重复显示。
+
+  PR7 改造:记忆从各自 localStorage 键统一收归 onboardingStore.viewHints,
+  使「设置 → 新手引导 → 重置提示」能真正让这些提示重新出现
+  (onboardingStore.resetViewHints + sweepLegacyViewHints)。
+  记忆读取改为对 store 的派生($derived),重置时即时重新出现。
 -->
 
 <script lang="ts">
-	import { browser } from "$app/environment";
+	import { onboardingStore, markViewHintSeen } from "$lib/stores/onboarding";
 	import { toastInfo } from "$lib/stores/toast";
 
 	interface Props {
-		/** 提示 ID(唯一标识,localStorage key 的一部分) */
+		/** 提示 ID(唯一标识,作为 onboardingStore.hints 的键) */
 		hintId: string;
 		/** 提示标题 */
 		title: string;
@@ -34,29 +39,11 @@
 		variant = "tip",
 	}: Props = $props();
 
-	const STORAGE_PREFIX = "evorule-console-cloud:guided-hint:";
-
-	// 检查是否已看过(localStorage 记录)
-	let dismissed = $state(false);
-
-	if (browser) {
-		try {
-			// svelte-ignore state_referenced_locally
-			dismissed = localStorage.getItem(`${STORAGE_PREFIX}${hintId}`) === "seen";
-		} catch {
-			dismissed = false;
-		}
-	}
+	// 是否已看过(派生自 onboardingStore,重置后即时重新出现)
+	const dismissed = $derived(Boolean($onboardingStore.hints[hintId]));
 
 	function handleDismiss() {
-		dismissed = true;
-		if (browser) {
-			try {
-				localStorage.setItem(`${STORAGE_PREFIX}${hintId}`, "seen");
-			} catch {
-				// localStorage 不可用时静默失败(隐私模式等)
-			}
-		}
+		markViewHintSeen(hintId);
 	}
 
 	function handleCta() {
@@ -68,7 +55,7 @@
 
 	function handleRemindLater() {
 		handleDismiss();
-		toastInfo("稍后可从「设置」重新显示引导提示", "已关闭引导");
+		toastInfo("稍后可从「设置 → 新手引导」重新显示引导提示", "已关闭引导");
 	}
 
 	const icon = $derived(
@@ -108,16 +95,16 @@
 		border: 1px solid;
 	}
 	.hint-tip {
-		background: var(--color-info-bg, #eff6ff);
-		border-color: var(--color-info, #3b82f6);
+		background: var(--info-bg, #eff6ff);
+		border-color: var(--info, #3b82f6);
 	}
 	.hint-info {
-		background: var(--color-gray-50, #f9fafb);
-		border-color: var(--color-gray-300, #d1d5db);
+		background: var(--bg-page, #f9fafb);
+		border-color: var(--border, #d1d5db);
 	}
 	.hint-warning {
-		background: var(--color-warning-bg, #fef3c7);
-		border-color: var(--color-warning, #f59e0b);
+		background: var(--warning-bg, #fef3c7);
+		border-color: var(--warning, #f59e0b);
 	}
 
 	.gh-icon {
@@ -132,18 +119,18 @@
 	.gh-title {
 		font-size: 14px;
 		font-weight: 600;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary, #1f2937);
 		margin-bottom: 4px;
 	}
 	.gh-text {
 		font-size: 13px;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary, #6b7280);
 		line-height: 1.5;
 	}
 	.gh-cta {
 		margin-top: 8px;
 		padding: 4px 14px;
-		background: var(--color-primary, #3b82f6);
+		background: var(--brand, #3b82f6);
 		color: white;
 		border: none;
 		border-radius: 4px;
@@ -158,12 +145,12 @@
 		border: none;
 		font-size: 14px;
 		cursor: pointer;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary, #6b7280);
 		padding: 2px 4px;
 		flex-shrink: 0;
 		line-height: 1;
 	}
 	.gh-close:hover {
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary, #1f2937);
 	}
 </style>

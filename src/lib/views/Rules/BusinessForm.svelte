@@ -328,13 +328,13 @@
   .no-schema {
     padding: 24px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
-    background: var(--color-gray-50, #f8fafc);
+    color: var(--text-secondary, #64748b);
+    background: var(--bg-page, #f8fafc);
     border-radius: 8px;
   }
   .business-form {
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 8px;
     padding: 16px;
   }
@@ -344,7 +344,7 @@
     gap: 8px;
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
   }
   .form-header h3 {
     font-size: 15px;
@@ -354,15 +354,15 @@
   }
   .industry-badge {
     padding: 2px 8px;
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, #1e40af);
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, #1e40af);
     border-radius: 10px;
     font-size: 11px;
     font-weight: 600;
   }
 
   .field-group {
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 6px;
     padding: 12px;
     margin-bottom: 12px;
@@ -370,7 +370,7 @@
   .field-group legend {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 0 6px;
   }
 
@@ -383,23 +383,23 @@
   .field label {
     font-size: 13px;
     font-weight: 500;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .required {
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
     margin-left: 2px;
   }
   input,
   select {
     padding: 6px 8px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     font-size: 13px;
     background: var(--bg-card);
   }
   input:disabled,
   select:disabled {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
     cursor: not-allowed;
   }
   input[type="checkbox"] {
@@ -407,7 +407,7 @@
   }
   .field-desc {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .field-errors {
     display: flex;
@@ -416,12 +416,12 @@
   }
   .error {
     font-size: 11px;
-    color: var(--color-error-text, #991b1b);
+    color: var(--danger, #991b1b);
   }
 
   .validation-panel {
     padding: 12px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 6px;
     margin-top: 12px;
   }
@@ -434,10 +434,10 @@
     font-weight: 500;
   }
   .validation-status[data-status="valid"] {
-    color: var(--color-success-text, #166534);
+    color: var(--success, #166534);
   }
   .validation-status[data-status="invalid"] {
-    color: var(--color-error-text, #991b1b);
+    color: var(--danger, #991b1b);
   }
   .kernel-errors {
     margin-top: 8px;
@@ -457,12 +457,12 @@
   .json-preview summary {
     cursor: pointer;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 6px 0;
   }
   .json-preview pre {
-    background: var(--color-gray-900, #0f172a);
-    color: var(--color-gray-100, #f1f5f9);
+    background: var(--text-primary, #0f172a);
+    color: var(--bg-hover, #f1f5f9);
     padding: 12px;
     border-radius: 6px;
     font-size: 11px;
@@ -479,7 +479,7 @@
   }
   .form-actions button {
     padding: 6px 16px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
     cursor: pointer;
@@ -490,8 +490,8 @@
     cursor: not-allowed;
   }
   .form-actions button:last-child {
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
-    border-color: var(--color-primary, #2563eb);
+    border-color: var(--brand, #2563eb);
   }
 </style>

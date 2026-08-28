@@ -13,7 +13,8 @@
     "test": "playwright test",
     "pretest": "npm run clean",
     "test:unit": "vitest",
-    "verify": "vitest run src/verify.test.ts"
+    "verify": "vitest run src/verify.test.ts",
+    "lint:tokens": "node scripts/lint-legacy-tokens.mjs"
   },
   "dependencies": {
     "@noble/hashes": "^2.3.0"

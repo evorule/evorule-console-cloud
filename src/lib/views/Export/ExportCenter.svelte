@@ -158,14 +158,14 @@
     flex-direction: column;
     height: 100%;
     overflow: auto;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .ec-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 14px 18px;
-    background: linear-gradient(135deg, var(--color-info, #1e40af) 0%, #2563eb 100%);
+    background: linear-gradient(135deg, var(--info, #1e40af) 0%, #2563eb 100%);
     color: white;
     flex-shrink: 0;
   }
@@ -212,7 +212,7 @@
     align-items: center;
     gap: 10px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     padding: 10px 12px;
   }
@@ -222,22 +222,22 @@
   }
   .ec-feature-text strong {
     font-size: 12px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     display: block;
   }
   .ec-feature-text p {
     margin: 2px 0 0;
     font-size: 10px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
     line-height: 1.4;
   }
 
   .ec-warning {
     padding: 10px 14px;
-    background: var(--color-warning-bg, #fef3c7);
-    border: 1px solid var(--color-warning, #fde68a);
+    background: var(--warning-bg, #fef3c7);
+    border: 1px solid var(--warning, #fde68a);
     border-radius: 6px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
     font-size: 12px;
     margin-bottom: 12px;
   }
@@ -249,15 +249,15 @@
     gap: 12px;
     padding: 14px 16px;
     background: var(--bg-card);
-    border: 1px dashed var(--color-gray-300, #d1d5db);
+    border: 1px dashed var(--border, #d1d5db);
     border-radius: 8px;
     margin-bottom: 12px;
     font-size: 12px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .ec-reopen-btn {
-    background: var(--color-primary, #2563eb);
-    border: 1px solid var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border: 1px solid var(--brand, #2563eb);
     color: white;
     border-radius: 5px;
     padding: 7px 16px;
@@ -275,14 +275,14 @@
   .ec-templates {
     padding: 12px 18px;
     background: var(--bg-card);
-    border-top: 1px solid var(--color-gray-200, #e5e7eb);
+    border-top: 1px solid var(--border, #e5e7eb);
   }
   .ec-history-title,
   .ec-templates-title {
     margin: 0 0 8px;
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .ec-history-table {
     width: 100%;
@@ -291,18 +291,18 @@
   }
   .ec-history-table th,
   .ec-history-table td {
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     padding: 4px 8px;
     text-align: left;
   }
   .ec-history-table th {
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
     font-weight: 600;
   }
   .ec-history-table td code {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .ec-history-table td.ok {
     color: var(--success, #10b981);
@@ -323,17 +323,17 @@
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    background: var(--color-gray-50, #f9fafb);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 12px;
     font-size: 11px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .ec-chip-format {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
     color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     padding: 0 5px;
     border-radius: 3px;
   }

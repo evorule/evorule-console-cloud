@@ -14,6 +14,7 @@
   import { roleToBackend } from '$lib/stores/publish-queue-api';
   import { can, getCurrentUser } from '$lib/stores/auth';
   import { toastSuccess, toastError } from '$lib/stores/toast';
+  import EmptyState from '$lib/views/Feedback/EmptyState.svelte';
 
   const canRollback = $derived(can('rollback_ruleset'));
 
@@ -69,9 +70,9 @@
   {#if loading}
     <div class="history-empty">⏳ 加载版本历史...</div>
   {:else if error}
-    <div class="history-empty history-error">⚠️ {error}</div>
+    <EmptyState type="load_failed" noun="版本历史" description={error} />
   {:else if history.length === 0}
-    <div class="history-empty">📭 暂无发布版本</div>
+    <EmptyState type="no_data" noun="发布版本" />
   {:else}
     <div class="timeline">
       {#each history as entry, i (entry.version)}
@@ -127,17 +128,14 @@
   }
   .history-count {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .history-empty {
     padding: 48px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     background: var(--bg-card);
     border-radius: 8px;
-  }
-  .history-error {
-    color: var(--color-error, #dc2626);
   }
   .timeline {
     position: relative;
@@ -150,7 +148,7 @@
     top: 8px;
     bottom: 8px;
     width: 2px;
-    background: var(--color-gray-200, #e2e8f0);
+    background: var(--border, #e2e8f0);
   }
   .timeline-item {
     position: relative;
@@ -163,13 +161,13 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     border: 3px solid white;
-    box-shadow: 0 0 0 2px var(--color-primary, #2563eb);
+    box-shadow: 0 0 0 2px var(--brand, #2563eb);
   }
   .timeline-dot.rollback {
-    background: var(--color-warning, #f59e0b);
-    box-shadow: 0 0 0 2px var(--color-warning, #f59e0b);
+    background: var(--warning, #f59e0b);
+    box-shadow: 0 0 0 2px var(--warning, #f59e0b);
   }
   .timeline-content {
     background: var(--bg-card);
@@ -187,26 +185,26 @@
   .version-num {
     font-size: 18px;
     font-weight: 700;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .rollback-badge {
     padding: 2px 8px;
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, #92400e);
     border-radius: 10px;
     font-size: 11px;
     font-weight: 500;
   }
   .version-time {
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-left: auto;
   }
   .version-meta {
     display: flex;
     gap: 16px;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-bottom: 8px;
     flex-wrap: wrap;
   }
@@ -215,22 +213,22 @@
   }
   .version-notes {
     font-size: 13px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     padding: 8px 12px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 4px;
     margin-bottom: 8px;
   }
   .rollback-btn {
     padding: 4px 12px;
     background: transparent;
-    border: 1px solid var(--color-warning, #f59e0b);
-    color: var(--color-warning, #f59e0b);
+    border: 1px solid var(--warning, #f59e0b);
+    color: var(--warning, #f59e0b);
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
   }
   .rollback-btn:hover {
-    background: var(--color-warning-bg, #fef3c7);
+    background: var(--warning-bg, #fef3c7);
   }
 </style>

@@ -201,7 +201,7 @@
   }
   .count {
     font-size: 12px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .toolbar-right {
     display: flex;
@@ -213,25 +213,25 @@
   .status-select {
     font-size: 13px;
     padding: 5px 10px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
-    background: var(--color-bg-primary, #ffffff);
+    background: var(--bg-page, #ffffff);
   }
   .btn {
     font-size: 13px;
     padding: 5px 12px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
-    background: var(--color-bg-primary, #ffffff);
+    background: var(--bg-page, #ffffff);
     cursor: pointer;
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: #ffffff;
   }
   .btn-primary:hover {
-    background: var(--color-primary-dark, var(--brand, #1d4ed8));
+    background: var(--brand-hover, var(--brand, #1d4ed8));
   }
   .dataset-list {
     display: flex;
@@ -241,7 +241,7 @@
   .no-match {
     text-align: center;
     padding: 32px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .no-match p {
     margin-bottom: 8px;

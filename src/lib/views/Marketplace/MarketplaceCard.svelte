@@ -35,9 +35,9 @@
   };
 
   const sourceColors: Record<MarketTemplate["source"], string> = {
-    builtin: "var(--color-info-bg, #dbeafe)",
+    builtin: "var(--info-bg, #dbeafe)",
     user: "#f3e8ff",
-    official: "var(--color-success-bg, #dcfce7)",
+    official: "var(--success-bg, #dcfce7)",
   };
 
   async function handleDownload() {
@@ -129,13 +129,13 @@
     gap: 8px;
     padding: 12px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     transition: all 0.15s;
   }
   .mc-card:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border-color: var(--color-gray-300, #d1d5db);
+    border-color: var(--border, #d1d5db);
   }
   .mc-header {
     display: flex;
@@ -157,7 +157,7 @@
     margin: 0;
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -175,13 +175,13 @@
     font-weight: 600;
   }
   .mc-type-badge {
-    background: var(--color-gray-100, #f3f4f6);
-    color: var(--color-text-secondary, #4b5563);
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
   }
   .mc-desc {
     margin: 0;
     font-size: 11px;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
     line-height: 1.4;
     min-height: 30px;
   }
@@ -190,7 +190,7 @@
     flex-wrap: wrap;
     gap: 8px;
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .mc-tags {
     display: flex;
@@ -199,8 +199,8 @@
   }
   .mc-tag {
     padding: 1px 6px;
-    background: var(--color-info-bg, #eff6ff);
-    color: var(--color-info, #1e40af);
+    background: var(--info-bg, #eff6ff);
+    color: var(--info, #1e40af);
     border-radius: 8px;
     font-size: 10px;
   }
@@ -210,11 +210,11 @@
     align-items: center;
     margin-top: 4px;
     padding-top: 8px;
-    border-top: 1px dashed var(--color-gray-200, #e5e7eb);
+    border-top: 1px dashed var(--border, #e5e7eb);
   }
   .mc-category {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .mc-actions {
     display: flex;
@@ -230,13 +230,13 @@
     font-weight: 600;
   }
   .mc-btn.primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .mc-btn.danger {
     background: var(--bg-card);
-    border-color: var(--color-error, #fca5a5);
-    color: var(--color-error, #991b1b);
+    border-color: var(--danger, #fca5a5);
+    color: var(--danger, #991b1b);
   }
 </style>

@@ -79,11 +79,11 @@
 		font-size: 16px;
 		font-weight: 600;
 		margin: 0;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary, #1f2937);
 	}
 	.gt-progress {
 		font-size: 13px;
-		color: var(--color-success, #22c55e);
+		color: var(--success, #22c55e);
 		font-weight: 500;
 	}
 
@@ -98,20 +98,20 @@
 		gap: 8px;
 		padding: 16px;
 		background: var(--bg-card);
-		border: 2px solid var(--color-gray-200, #e5e7eb);
+		border: 2px solid var(--border, #e5e7eb);
 		border-radius: 8px;
 		cursor: pointer;
 		text-align: left;
 		transition: all 0.15s ease;
 	}
 	.gt-card:hover {
-		border-color: var(--color-primary, #2563eb);
+		border-color: var(--brand, #2563eb);
 		box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 		transform: translateY(-1px);
 	}
 	.gt-card.completed {
-		border-color: var(--color-success, #22c55e);
-		background: var(--color-success-bg, #f0fdf4);
+		border-color: var(--success, #22c55e);
+		background: var(--success-bg, #f0fdf4);
 	}
 
 	.gt-card-header {
@@ -125,26 +125,26 @@
 	.gt-card-name {
 		font-size: 15px;
 		font-weight: 600;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary, #1f2937);
 		flex: 1;
 	}
 	.gt-done-badge {
 		font-size: 11px;
 		padding: 2px 8px;
-		background: var(--color-success, #22c55e);
+		background: var(--success, #22c55e);
 		color: white;
 		border-radius: 10px;
 	}
 	.gt-card-pitch {
 		font-size: 13px;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary, #6b7280);
 		line-height: 1.5;
 	}
 	.gt-card-meta {
 		display: flex;
 		gap: 12px;
 		font-size: 11px;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary, #6b7280);
 	}
 
 	@media (max-width: 768px) {

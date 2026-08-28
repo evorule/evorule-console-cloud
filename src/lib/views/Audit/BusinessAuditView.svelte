@@ -394,7 +394,7 @@ ${causalChain.nodes
     min-height: 0;
     padding: 10px 12px;
     gap: 10px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     overflow: auto;
   }
 
@@ -409,19 +409,19 @@ ${causalChain.nodes
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    background: var(--color-warning-bg, #fef3c7);
-    border-bottom: 1px solid var(--color-warning, #fde68a);
+    background: var(--warning-bg, #fef3c7);
+    border-bottom: 1px solid var(--warning, #fde68a);
     font-size: 12px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
   }
   .dev-back-btn {
     background: var(--bg-card);
-    border: 1px solid var(--color-warning, #fde68a);
+    border: 1px solid var(--warning, #fde68a);
     border-radius: 4px;
     padding: 4px 10px;
     font-size: 11px;
     cursor: pointer;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
     font-weight: 600;
   }
 
@@ -450,30 +450,30 @@ ${causalChain.nodes
     gap: 8px;
     padding: 6px 8px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     flex-wrap: wrap;
   }
   .quick-rollback .hint {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
 
   .audit-error,
   .decision-error {
     padding: 8px 12px;
-    background: var(--color-error-bg, #fef2f2);
-    border: 1px solid var(--color-error, #fca5a5);
+    background: var(--danger-bg, #fef2f2);
+    border: 1px solid var(--danger, #fca5a5);
     border-radius: 6px;
-    color: var(--color-error, #991b1b);
+    color: var(--danger, #991b1b);
     font-size: 12px;
   }
   .export-toast {
     padding: 8px 12px;
-    background: var(--color-success-bg, #dcfce7);
-    border: 1px solid var(--color-success, #86efac);
+    background: var(--success-bg, #dcfce7);
+    border: 1px solid var(--success, #86efac);
     border-radius: 6px;
-    color: var(--color-success, #166534);
+    color: var(--success, #166534);
     font-size: 12px;
   }
 

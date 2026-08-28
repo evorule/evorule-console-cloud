@@ -92,7 +92,7 @@
     height: 100%;
     min-height: 0;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -101,22 +101,22 @@
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-    background: var(--color-gray-50, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
     flex-shrink: 0;
   }
   .title {
     margin: 0;
     font-size: 14px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     flex: 1;
   }
   .fact-tag {
     font-family: var(--font-mono, monospace);
     font-size: 11px;
     color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     padding: 1px 6px;
     border-radius: 3px;
   }
@@ -125,17 +125,17 @@
     border: none;
     cursor: pointer;
     font-size: 14px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     padding: 0 4px;
   }
   .close-btn:hover {
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
   }
 
   .cg-loading {
     padding: 24px;
     text-align: center;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-size: 12px;
   }
 
@@ -143,19 +143,19 @@
     margin: 8px;
     padding: 8px 10px;
     background: #fefce8;
-    border: 1px solid var(--color-warning, #fde68a);
+    border: 1px solid var(--warning, #fde68a);
     border-radius: 6px;
     flex-shrink: 0;
   }
   .summary-label {
     font-size: 11px;
     font-weight: 700;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
     margin-bottom: 4px;
   }
   .summary-text {
     font-size: 12px;
-    color: var(--color-warning, #78350f);
+    color: var(--warning, #78350f);
     line-height: 1.5;
   }
 
@@ -170,11 +170,11 @@
   }
   .causal-node {
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     padding: 8px 10px;
     position: relative;
-    border-left: 3px solid var(--color-primary, #2563eb);
+    border-left: 3px solid var(--brand, #2563eb);
   }
   .causal-node.root {
     border-left-color: var(--success, #10b981);
@@ -184,7 +184,7 @@
     position: absolute;
     left: 14px;
     top: -14px;
-    color: var(--color-gray-400, #9ca3af);
+    color: var(--text-secondary, #9ca3af);
     font-size: 14px;
     line-height: 1;
   }
@@ -198,44 +198,44 @@
   }
   .node-index {
     font-weight: 700;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .node-type {
     font-family: var(--font-mono, monospace);
     color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     padding: 0 5px;
     border-radius: 3px;
   }
   .node-time {
     font-family: var(--font-mono, monospace);
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .node-hash {
     font-family: var(--font-mono, monospace);
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     margin-left: auto;
   }
 
   .node-description {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     margin-bottom: 4px;
   }
   .node-explanation {
     display: flex;
     gap: 4px;
     font-size: 11px;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
   }
   .node-explanation .arrow {
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
     font-weight: 700;
   }
   .node-confidence {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     margin-top: 4px;
   }
 </style>

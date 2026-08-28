@@ -20,6 +20,7 @@
   import { toastSuccess, toastInfo } from "$lib/stores/toast";
   import GuidedTasks from "./GuidedTasks.svelte";
   import TaskHistoryView from "./TaskHistoryView.svelte";
+  import GettingStartedChecklist from "./GettingStartedChecklist.svelte";
 
   // mock 登录(P0 阶段,真实认证由 evorule-server 提供)
   function handleLogin() {
@@ -47,6 +48,9 @@
   // 已登录用户在 force-demo 模式下可切回工作台
   const isLoggedIn = $derived($sessionStore.loggedIn);
   const isForceDemo = $derived($homeModeStore === "force-demo");
+
+  // 「这是什么」可折叠说明(首屏价值叙事补充)
+  let showWhatIs = $state(false);
 </script>
 
 <section class="demo-home">
@@ -76,6 +80,27 @@
         </button>
       {/if}
     </div>
+
+    <button
+      class="whatis-toggle"
+      onclick={() => (showWhatIs = !showWhatIs)}
+      aria-expanded={showWhatIs}
+    >
+      ❓ 这是什么？30 秒看懂 evorule {showWhatIs ? "▲" : "▼"}
+    </button>
+    {#if showWhatIs}
+      <div class="whatis-panel" role="region" aria-label="evorule 是什么">
+        <p class="whatis-lead">
+          <strong>evorule 是给 AI Agent 装上的「行车记录仪 + 红绿灯」。</strong>
+        </p>
+        <ul class="whatis-list">
+          <li>📹 <strong>行车记录仪</strong>：AI 的每一次决策、每一条规则命中，都被 BLAKE3 哈希链记录——不可篡改、可回放、可追溯。</li>
+          <li>🚦 <strong>红绿灯</strong>：AI 想调用工具、改数据前，先过合规门禁；不合规就拦下，守住安全边界。</li>
+          <li>🧭 <strong>给谁用</strong>：想把 AI 用起来、又怕它"乱来"的团队——金融、医疗、政务等高合规场景。</li>
+        </ul>
+        <p class="whatis-foot">下面用 6 步带你跑通第一条规则 👇</p>
+      </div>
+    {/if}
   </div>
 
   <div class="demo-dataset-picker">
@@ -105,8 +130,12 @@
     </button>
   </div>
 
-  <div class="demo-guided-section">
+  <div class="demo-guided-section" data-tour="library">
     <GuidedTasks />
+  </div>
+
+  <div class="demo-checklist-section">
+    <GettingStartedChecklist />
   </div>
 
   <div class="demo-capabilities">
@@ -166,8 +195,8 @@
     align-items: center;
     gap: 12px;
     padding: 8px 16px;
-    background: var(--color-info-bg, #e0f2fe);
-    border: 1px solid var(--color-info, #0284c7);
+    background: var(--info-bg, #e0f2fe);
+    border: 1px solid var(--info, #0284c7);
     border-radius: 6px;
     font-size: 14px;
   }
@@ -176,19 +205,19 @@
   }
   .banner-text {
     flex: 1;
-    color: var(--color-info-text, #0c4a6e);
+    color: var(--info, #0c4a6e);
   }
   .banner-cta {
     background: transparent;
-    border: 1px solid var(--color-info, #0284c7);
-    color: var(--color-info, #0284c7);
+    border: 1px solid var(--info, #0284c7);
+    color: var(--info, #0284c7);
     padding: 4px 12px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
   }
   .banner-cta:hover {
-    background: var(--color-info-bg, #e0f2fe);
+    background: var(--info-bg, #e0f2fe);
   }
 
   /* hero */
@@ -201,16 +230,16 @@
     font-weight: 700;
     margin: 0 0 8px 0;
     letter-spacing: 0.02em;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .hero-subtitle {
     font-size: 20px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin: 0 0 24px 0;
   }
   .hero-desc {
     font-size: 15px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     line-height: 1.6;
     margin: 0 0 32px 0;
   }
@@ -231,7 +260,7 @@
     transition: all 0.15s ease;
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
   }
   .btn-primary:hover {
@@ -239,24 +268,74 @@
   }
   .btn-ghost {
     background: transparent;
-    color: var(--color-text-secondary, #64748b);
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    color: var(--text-secondary, #64748b);
+    border: 1px solid var(--border, #cbd5e1);
   }
   .btn-ghost:hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
+  }
+
+  /* 这是什么? 可折叠说明 */
+  .whatis-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px auto 0;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px dashed var(--border, #cbd5e1);
+    border-radius: 999px;
+    color: var(--text-secondary, #64748b);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s ease;
+  }
+  .whatis-toggle:hover {
+    border-color: var(--brand, #2563eb);
+    color: var(--brand, #2563eb);
+  }
+  .whatis-panel {
+    margin: 16px auto 0;
+    max-width: 680px;
+    text-align: left;
+    padding: 16px 20px;
+    background: var(--bg-page, #f8fafc);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+  }
+  .whatis-lead {
+    margin: 0 0 10px;
+    font-size: 14px;
+    color: var(--text-primary, #1e293b);
+  }
+  .whatis-list {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary, #64748b);
+    line-height: 1.6;
+  }
+  .whatis-foot {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--brand, #2563eb);
+    font-weight: 600;
   }
 
   /* dataset picker */
   .demo-dataset-picker {
     padding: 24px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 8px;
   }
   .picker-label {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 12px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .picker-options {
     display: grid;
@@ -271,18 +350,18 @@
     gap: 4px;
     padding: 16px;
     background: var(--bg-card);
-    border: 2px solid var(--color-gray-200, #e2e8f0);
+    border: 2px solid var(--border, #e2e8f0);
     border-radius: 6px;
     cursor: pointer;
     text-align: left;
     transition: all 0.15s ease;
   }
   .dataset-card:hover {
-    border-color: var(--color-primary, #2563eb);
+    border-color: var(--brand, #2563eb);
   }
   .dataset-card.active {
-    border-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #eff6ff);
+    border-color: var(--brand, #2563eb);
+    background: var(--info-bg, #eff6ff);
   }
   .card-icon {
     font-size: 24px;
@@ -290,11 +369,11 @@
   .card-title {
     font-size: 15px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .card-desc {
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
 
   /* guided tasks section */
@@ -305,14 +384,14 @@
   /* capabilities section */
   .demo-capabilities {
     padding: 24px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 8px;
   }
   .capabilities-title {
     font-size: 16px;
     font-weight: 600;
     margin: 0 0 16px 0;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .capabilities-grid {
     display: grid;
@@ -326,7 +405,7 @@
     padding: 14px;
     background: var(--bg-card);
     border-radius: 6px;
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
   }
   .cap-icon {
     font-size: 22px;
@@ -334,11 +413,11 @@
   .cap-name {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .cap-desc {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     line-height: 1.4;
   }
 

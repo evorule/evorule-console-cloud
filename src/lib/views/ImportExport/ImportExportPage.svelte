@@ -89,17 +89,17 @@
   .ie-title {
     margin: 0 0 4px;
     font-size: 22px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .ie-subtitle {
     margin: 0;
     font-size: 13px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .ie-tabs {
     display: flex;
     gap: 8px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
     margin-bottom: 20px;
   }
   .ie-tab {
@@ -116,22 +116,22 @@
     transition: all 0.15s;
   }
   .ie-tab:hover {
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
   }
   .ie-tab.active {
-    border-bottom-color: var(--color-primary, #2563eb);
+    border-bottom-color: var(--brand, #2563eb);
   }
   .ie-tab-label {
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .ie-tab.active .ie-tab-label {
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .ie-tab-desc {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .ie-content {
     min-height: 400px;

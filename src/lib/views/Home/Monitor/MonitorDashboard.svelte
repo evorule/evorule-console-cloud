@@ -50,6 +50,8 @@
 
   // === Sub Components ===
   import ConnectionBanner from "./ConnectionBanner.svelte";
+  import ConnectionDiagnosticDrawer from "./ConnectionDiagnosticDrawer.svelte";
+  import EmptyState from "$lib/views/Feedback/EmptyState.svelte";
   import ReactorStateBar from "./ReactorStateBar.svelte";
   import FactStreamView from "./FactStreamView.svelte";
   import AnomalyPanel from "./AnomalyPanel.svelte";
@@ -90,6 +92,20 @@
   let sseConn = $derived($sseConnectionStore);
   let reactor = $derived($reactorRuntimeStore);
   let metrics = $derived($performanceMetricsStore ?? DEFAULT_METRICS);
+
+  // === PR6: 连接诊断抽屉 ===
+  let diagOpen = $state(false);
+
+  /** 重新连接:刷新生产态 + 在可用时重建 SSE 订阅 */
+  function handleRetry() {
+    refreshProductionState(async () => fetchProductionState(baseUrl)).then(() => {
+      const ps = get(productionStateStore);
+      if (ps.currentSessionId !== null && ps.status !== "offline") {
+        stopSSE();
+        startSSE(ps.currentSessionId, baseUrl, handleU7Switched);
+      }
+    });
+  }
 
   // === U7 SSE session_switched 回调(生产态切换) ===
   function handleU7Switched(e: SessionSwitchedEvent) {
@@ -218,9 +234,23 @@
       </div>
     </div>
     <div class="md-topbar-right">
-      <ConnectionBanner state={sseConn} />
+      <ConnectionBanner state={sseConn} onDiagnose={() => (diagOpen = true)} />
     </div>
   </header>
+
+  <!-- PR6: 后端未起 / 未发布规则集 → 统一空态 + 诊断入口 -->
+  {#if productionState.status === "offline"}
+    <EmptyState
+      type="not_configured"
+      noun="生产环境"
+      description="evorule-server 未运行或未发布规则集,监控大屏暂无实时数据。"
+      detail="确认本地服务已启动(默认 127.0.0.1:18080),或在「设置 → 联网」切换远程地址后重试。"
+      ctaLabel="打开连接诊断"
+      ctaAction={() => (diagOpen = true)}
+      secondaryLabel="重试连接"
+      secondaryAction={handleRetry}
+    />
+  {/if}
 
   <!-- Reactor State Bar -->
   <div class="md-reactor-row">
@@ -255,6 +285,17 @@
       exportPreset = undefined;
     }}
   />
+
+  <!-- PR6: 连接诊断抽屉 -->
+  {#if diagOpen}
+    <ConnectionDiagnosticDrawer
+      connection={sseConn}
+      baseUrl={baseUrl}
+      productionState={productionState}
+      onClose={() => (diagOpen = false)}
+      onRetry={handleRetry}
+    />
+  {/if}
 </div>
 
 <style>
@@ -291,7 +332,7 @@
     margin: 0;
     font-size: 16px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .md-production-tag {
     display: flex;
@@ -310,12 +351,12 @@
     gap: 4px;
   }
   .status-running {
-    background: var(--color-success-bg, #dcfce7);
-    color: var(--color-success, #166534);
+    background: var(--success-bg, #dcfce7);
+    color: var(--success, #166534);
   }
   .status-switching {
-    background: var(--color-warning-bg, #fef9c3);
-    color: var(--color-warning, #854d0e);
+    background: var(--warning-bg, #fef9c3);
+    color: var(--warning, #854d0e);
     animation: pulse 1.2s ease-in-out infinite;
   }
   .status-offline {
@@ -334,7 +375,7 @@
   .md-prod-version {
     font-family: var(--font-mono, monospace);
     font-weight: 700;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .md-prod-sid {
     font-family: var(--font-mono, monospace);
@@ -347,12 +388,12 @@
     font-family: var(--font-mono, monospace);
     font-size: 10px;
     color: var(--brand, #0db7ed);
-    background: var(--color-info-bg, #ecfeff);
+    background: var(--info-bg, #ecfeff);
     padding: 1px 6px;
     border-radius: var(--radius-sm, 4px);
   }
   .md-prod-updated {
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .md-topbar-right {
     flex-shrink: 0;

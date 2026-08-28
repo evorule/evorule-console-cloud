@@ -105,19 +105,19 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
   }
   .be-title {
     margin: 0;
     font-size: 15px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .be-close {
     background: none;
     border: none;
     font-size: 20px;
     cursor: pointer;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .be-body {
     padding: 16px;
@@ -126,12 +126,12 @@
   .be-info {
     margin: 0 0 12px;
     font-size: 13px;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .be-label {
     display: block;
     font-size: 12px;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
     margin-bottom: 12px;
   }
   .be-format-grid {
@@ -143,32 +143,32 @@
   .be-format-btn {
     padding: 8px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
     font-size: 11px;
   }
   .be-format-btn.active {
-    background: var(--color-info-bg, #eff6ff);
-    border-color: var(--color-primary, #2563eb);
-    color: var(--color-primary, #2563eb);
+    background: var(--info-bg, #eff6ff);
+    border-color: var(--brand, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .be-notice {
     margin-top: 12px;
     padding: 8px;
     background: #f0fdf4;
-    border: 1px solid var(--color-success, #86efac);
+    border: 1px solid var(--success, #86efac);
     border-radius: 4px;
     font-size: 11px;
-    color: var(--color-success, #166534);
+    color: var(--success, #166534);
   }
   .be-footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid var(--color-gray-200, #e5e7eb);
+    border-top: 1px solid var(--border, #e5e7eb);
   }
   .be-btn {
     padding: 6px 14px;
@@ -181,12 +181,12 @@
   }
   .be-btn.cancel {
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .be-btn.primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
 </style>

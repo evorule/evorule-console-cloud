@@ -143,14 +143,14 @@
     font-size: 15px;
     font-weight: 600;
     margin: 0;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .empty-comments {
     padding: 24px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 13px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 6px;
   }
   .comment-list {
@@ -164,17 +164,17 @@
     padding: 12px;
     background: var(--bg-card);
     border-radius: 6px;
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
   }
   .comment-item.resolved {
     opacity: 0.6;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .comment-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
     display: flex;
     align-items: center;
@@ -197,11 +197,11 @@
   .comment-author {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .comment-time {
     font-size: 11px;
-    color: var(--color-gray-400, #94a3b8);
+    color: var(--text-secondary, #94a3b8);
   }
   .mention-tags {
     display: flex;
@@ -209,22 +209,22 @@
   }
   .mention-tag {
     padding: 1px 6px;
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, var(--color-info, #1e40af));
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, var(--info, #1e40af));
     border-radius: 8px;
     font-size: 10px;
     font-weight: 500;
   }
   .comment-content {
     font-size: 13px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     line-height: 1.5;
     margin-bottom: 8px;
   }
   .comment-content :global(.mention) {
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
     font-weight: 600;
-    background: var(--color-info-bg, #eff6ff);
+    background: var(--info-bg, #eff6ff);
     padding: 0 4px;
     border-radius: 3px;
   }
@@ -235,27 +235,27 @@
   .action-btn {
     padding: 2px 8px;
     background: transparent;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     cursor: pointer;
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .action-btn:hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .comment-input-area {
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding: 12px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 6px;
   }
   .comment-input-area textarea {
     width: 100%;
     padding: 8px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     font-size: 13px;
     resize: vertical;
@@ -264,7 +264,7 @@
   .submit-btn {
     align-self: flex-end;
     padding: 6px 16px;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
     border: none;
     border-radius: 4px;
@@ -273,7 +273,7 @@
     font-weight: 500;
   }
   .submit-btn:disabled {
-    background: var(--color-gray-300, #cbd5e1);
+    background: var(--border, #cbd5e1);
     cursor: not-allowed;
   }
 </style>

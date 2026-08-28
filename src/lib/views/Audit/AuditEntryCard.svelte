@@ -108,31 +108,31 @@
 <style>
   .audit-entry-card {
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     padding: 8px 10px;
     cursor: pointer;
     transition: all 0.12s ease;
-    border-left: 3px solid var(--color-gray-300, #d1d5db);
+    border-left: 3px solid var(--border, #d1d5db);
   }
   .audit-entry-card:hover {
-    border-color: var(--color-gray-300, #d1d5db);
+    border-color: var(--border, #d1d5db);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
   .audit-entry-card.selected {
-    border-left-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #eff6ff);
+    border-left-color: var(--brand, #2563eb);
+    background: var(--info-bg, #eff6ff);
   }
   .audit-entry-card.in-range {
-    border-left-color: var(--color-info, #93c5fd);
-    background: var(--color-info-bg, #f0f7ff);
+    border-left-color: var(--info, #93c5fd);
+    background: var(--info-bg, #f0f7ff);
   }
   .audit-entry-card.verified {
     border-left-color: var(--success, #10b981);
   }
   .audit-entry-card.broken {
     border-left-color: var(--danger, #ef4444);
-    background: var(--color-error-bg, #fef2f2);
+    background: var(--danger-bg, #fef2f2);
   }
 
   .header {
@@ -144,13 +144,13 @@
   .time {
     font-family: var(--font-mono, monospace);
     font-size: 11px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
     flex-shrink: 0;
   }
   .action {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -161,7 +161,7 @@
     font-family: var(--font-mono, monospace);
     font-size: 10px;
     color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     padding: 1px 5px;
     border-radius: 3px;
     flex-shrink: 0;
@@ -177,14 +177,14 @@
     gap: 4px;
     margin-top: 4px;
     font-size: 11px;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
   }
   .triggered .arrow {
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
     font-weight: 700;
   }
   .triggered .label {
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .triggered .rule {
     font-weight: 500;
@@ -193,7 +193,7 @@
   .result {
     margin-top: 3px;
     font-size: 11px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
 
   .payload {
@@ -202,21 +202,21 @@
   }
   .payload summary {
     cursor: pointer;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     user-select: none;
   }
   .payload summary:hover {
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
   }
   .payload pre {
     margin: 4px 0 0;
     padding: 6px;
-    background: var(--color-gray-50, #f9fafb);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 4px;
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
     max-height: 200px;
     overflow: auto;
     white-space: pre-wrap;

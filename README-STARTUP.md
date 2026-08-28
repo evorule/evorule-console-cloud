@@ -1,4 +1,4 @@
-# evorule 一键启动指南
+﻿# evorule 一键启动指南
 
 > 双击就启动全栈,关掉就全部停止 — 解决"多 cd / 多后端分散 / 后台进程管理"的产品级 UX 痛点。
 
@@ -14,7 +14,7 @@
 
 ### 方式 2:仓根目录双击
 
-- `start-all.bat` — 启全栈 + 自动开浏览器到 `/workbench`
+- `start-all.bat` — 启全栈 + 自动开浏览器到 `/`(evorule 首页,带新手引导)
 - `stop-all.bat` — 停全栈
 
 ### 方式 3:命令行
@@ -30,11 +30,11 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1
 
 `start-all.ps1` 按以下顺序启动(每步等端口就绪):
 
-1. **evorule-server @ 18090** — `<evorule-server 仓根>\target\debug\evorule-server.exe`
+1. **evorule-server @ 18080** — `<evorule-server 仓根>\target\debug\evorule-server.exe`
 2. **evorule-rule-serve @ 18081** — `<evorule-rule 仓根>\target\debug\evorule-rule-serve.exe`
-3. **console-cloud dev @ 5174** — `node scripts/dev.mjs`
+3. **console-cloud dev @ 5174** — `node scripts/dev.mjs --yes`
 
-全部就绪后,自动打开浏览器 `http://127.0.0.1:5174/workbench`。
+全部就绪后,自动打开浏览器 `http://localhost:5174/`(evorule 首页)。
 
 ## 端口被占用怎么办?
 
@@ -46,31 +46,67 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1
 
 ## binary 路径配置
 
-如果 binary 路径不在默认位置,改 `start-all.ps1` 顶部的常量:
+binary 路径默认按"兄弟目录约定"自动推导
+(`<parent>\evorule-server\target\debug\evorule-server.exe` 等),
+也可用环境变量覆盖(见下文"后端启动参数"):
 
 ```powershell
-$SERVER_EXE = '<evorule-server 仓根>\target\debug\evorule-server.exe'
-$RULE_EXE   = '<evorule-rule 仓根>\target\debug\evorule-rule-serve.exe'
-$DEV_DIR    = '<evorule-console-cloud 仓根>'
-```
-
-也可以改成 release 路径(更快启动,但需要 `cargo build --release`):
-```powershell
-$SERVER_EXE = '<evorule-server 仓根>\target\release\evorule-server.exe'
-$RULE_EXE   = '<evorule-rule 仓根>\target\release\evorule-rule-serve.exe'
+$env:EVORULE_SERVER_BIN = '<evorule-server 仓根>\target\release\evorule-server.exe'
+$env:EVORULE_RULE_BIN   = '<evorule-rule 仓根>\target\release\evorule-rule-serve.exe'
 ```
 
 ## 日志位置
 
-- `<evorule-console-cloud 仓根>\.dev-stdout.log` — vite dev 输出
-- `<evorule-console-cloud 仓根>\.dev-stderr.log` — vite dev 错误
-- evorule-server / evorule-rule 的日志:各自 stdout(本脚本用 `WindowStyle=Hidden` 隐藏,如需调试可改为 `Normal`)
+所有日志统一落在仓根 `logs\` 目录(已 gitignore,不污染根目录):
 
-## 已知限制
+- `logs\dev-stdout.log` / `logs\dev-stderr.log` — vite dev 输出/错误
+- `logs\evorule-server.out.log` / `logs\evorule-server.err.log` — evorule-server 输出/错误
+- `logs\evorule-rule-serve.out.log` / `logs\evorule-rule-serve.err.log` — evorule-rule 输出/错误
 
-- 后台 dev server 在某些自动化运行环境下可能受 30 分钟最大运行时长限制
-  - 解决:用 nssm 把 `node scripts/dev.mjs` 装成 Windows 服务(后续 todo)
-  - 或:用 `start-all.bat` 频繁重启(临时方案)
-- `WindowStyle=Hidden` 隐藏后,服务异常时看不到输出 → 看 `.dev-*.log`
-- 未做"启动失败时回滚"逻辑(已启动的后端不会自动停)
-- 没有"健康检查 + 自动重启"循环(异常退出后需手动 `start-all.bat` 再启)
+**轮转策略**:每次拉起服务前,当前日志自动转存为 `*.prev`(旧 `.prev` 删除)。
+任意时刻只保留"本轮 + 上一轮"两份,容量有界,无需手动清理或后台清理任务。
+
+## 健康检查与自动重启
+
+```powershell
+# 查看三服务健康状态
+powershell -ExecutionPolicy Bypass -File status-all.ps1
+
+# 只拉起死掉的服务(正在运行的不动)
+powershell -ExecutionPolicy Bypass -File status-all.ps1 -AutoRestart
+```
+
+可选:注册**看门狗**(Windows 计划任务,每 5 分钟自动拉起死掉的服务):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File register-watchdog.ps1    # 注册
+powershell -ExecutionPolicy Bypass -File unregister-watchdog.ps1  # 注销
+```
+
+看门狗进程由任务计划程序启动,完全脱离终端生命周期——异常退出最迟 5 分钟内自动恢复,也不受自动化环境的会话时长限制。
+
+## 后端启动参数
+
+`start-all.ps1` 默认按兄弟目录结构推导参数(evorule-server 必须带
+`--rules-dir`/`--core-eval`/`--service-registry` 等资源路径,裸起不会监听 18080)。
+
+目录结构不同或需要自定义参数(如 evorule-rule 首次引导管理员)时,用环境变量整体覆盖:
+
+```powershell
+$env:EVORULE_SERVER_BIN = 'C:\path\to\evorule-server.exe'
+$env:EVORULE_SERVER_ARGS = '--addr 127.0.0.1:18080 --rules-dir C:\path\to\rules ...'
+
+$env:EVORULE_RULE_BIN = 'C:\path\to\evorule-rule-serve.exe'
+# 首次引导管理员(公开仓不硬编码凭据,密码自行提供):
+$env:EVORULE_RULE_ARGS = '--host 127.0.0.1 --port 18081 --db C:\path\to\rule.db --admin-user admin --admin-password <your-password>'
+```
+
+也可改成 release 路径(更快启动,但需要 `cargo build --release`)。
+
+## 已知限制(已全部解决)
+
+- ~~启动失败无回滚~~ → **部分保活续启**:失败时已就绪的服务保持运行,只停止"本次拉起但未就绪"的进程树(含子进程;不碰既有实例);修复后重跑 start-all.bat 续启(幂等跳过已运行的)
+- ~~隐藏窗口看不到输出~~ → 三个服务的 stdout/stderr 全部重定向到 `logs\`
+- ~~无健康检查/自动重启~~ → `status-all.ps1` 检查 + `-AutoRestart` 单独拉起死服务;`register-watchdog.ps1` 注册 5 分钟轮询看门狗,异常退出自动恢复
+- ~~自动化环境 dev server 会话时长受限~~ → `dev.mjs --yes` 无人值守(不再卡交互确认);看门狗由任务计划程序启动,进程脱离终端生命周期,无会话时长限制
+- ~~日志无轮转策略~~ → 启动时轮转(当前日志 → `*.prev`),只保留两轮,容量有界

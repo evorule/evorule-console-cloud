@@ -233,7 +233,7 @@
 
 <style>
   .param-override-editor {
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 6px;
     padding: 12px;
     background: var(--bg-card);
@@ -257,12 +257,12 @@
   .rule-id {
     font-family: var(--font-mono, monospace);
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .btn {
     font-size: 12px;
     padding: 4px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     background: var(--bg-card);
     border-radius: 3px;
     cursor: pointer;
@@ -270,12 +270,12 @@
   .btn-text {
     border: none;
     background: transparent;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 2px 6px;
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .btn-primary:disabled {
@@ -284,8 +284,8 @@
   }
   .warn-box {
     padding: 12px;
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, #92400e);
     border-radius: 4px;
     font-size: 13px;
   }
@@ -301,14 +301,14 @@
     gap: 6px;
     align-items: center;
     padding: 6px 8px;
-    background: var(--color-gray-50, #f8fafc);
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    background: var(--bg-page, #f8fafc);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 4px;
     font-size: 12px;
   }
   .patch-row.error {
-    border-color: var(--color-error, #dc2626);
-    background: var(--color-error-bg, #fef2f2);
+    border-color: var(--danger, #dc2626);
+    background: var(--danger-bg, #fef2f2);
   }
   .patch-op {
     font-family: var(--font-mono, monospace);
@@ -318,24 +318,24 @@
     border-radius: 3px;
   }
   .op-replace {
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info, #1e40af);
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, #1e40af);
   }
   .op-add {
-    background: var(--color-success-bg, #d1fae5);
-    color: var(--color-success, #065f46);
+    background: var(--success-bg, #d1fae5);
+    color: var(--success, #065f46);
   }
   .op-remove {
-    background: var(--color-error-bg, #fee2e2);
-    color: var(--color-error, #991b1b);
+    background: var(--danger-bg, #fee2e2);
+    color: var(--danger, #991b1b);
   }
   .patch-path {
     font-family: var(--font-mono, monospace);
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .patch-value {
     font-family: var(--font-mono, monospace);
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 11px;
   }
   .patch-actions {
@@ -349,30 +349,30 @@
     font-size: 12px;
     padding: 2px 6px;
     border-radius: 3px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .btn-icon:hover:not(:disabled) {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
   }
   .btn-icon:disabled {
     opacity: 0.3;
     cursor: not-allowed;
   }
   .btn-danger:hover {
-    background: var(--color-error-bg, #fef2f2);
-    color: var(--color-error, #dc2626);
+    background: var(--danger-bg, #fef2f2);
+    color: var(--danger, #dc2626);
   }
   .patch-error {
     grid-column: 1 / -1;
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
     font-size: 11px;
   }
   .empty-patch {
     padding: 16px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 12px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 4px;
     margin-bottom: 12px;
   }
@@ -387,7 +387,7 @@
   .value-input {
     font-size: 12px;
     padding: 4px 8px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 3px;
     background: var(--bg-card);
   }
@@ -404,22 +404,22 @@
   .error-banner {
     margin-top: 8px;
     padding: 6px 10px;
-    background: var(--color-error-bg, #fef2f2);
-    color: var(--color-error, #dc2626);
+    background: var(--danger-bg, #fef2f2);
+    color: var(--danger, #dc2626);
     border-radius: 4px;
     font-size: 12px;
   }
   .preview-details {
     margin-top: 12px;
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 4px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .preview-details summary {
     padding: 6px 10px;
     cursor: pointer;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-weight: 500;
   }
   .json-preview {
@@ -428,8 +428,8 @@
     font-family: var(--font-mono, monospace);
     font-size: 11px;
     line-height: 1.4;
-    color: var(--color-text-primary, #1e293b);
-    background: var(--color-gray-900, #0f172a);
+    color: var(--text-primary, #1e293b);
+    background: var(--text-primary, #0f172a);
     color: #e2e8f0;
     overflow-x: auto;
     max-height: 240px;

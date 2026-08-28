@@ -74,8 +74,26 @@ function killOccupant(port) {
 	}
 }
 
-/** 命令行交互式确认（stdin 非 TTY 时自动通过） */
+/** 命令行交互式确认
+ * 跳过确认的条件(任一满足):
+ *   - 传了 --yes 参数(start-all.ps1 无人值守模式)
+ *   - 环境变量 EVORULE_DEV_YES=1
+ *   - stdin 非 TTY(IDE、CI 无法交互)
+ * 注意: 经 Start-Process 隐藏窗口启动时 stdin 可能仍是 TTY,
+ *       所以 --yes 参数是自动化场景的确定性开关。
+ */
+function hasYesFlag() {
+	return (
+		process.argv.includes('--yes') ||
+		process.env.EVORULE_DEV_YES === '1'
+	);
+}
+
 function confirm(question) {
+	if (hasYesFlag()) {
+		console.log(`${question} [--yes，自动确认]`);
+		return Promise.resolve(true);
+	}
 	// 非 TTY 环境（IDE、CI）无法交互 → 自动确认
 	if (!process.stdin.isTTY) {
 		console.log(`${question} [非交互环境，自动确认]`);
@@ -135,7 +153,9 @@ async function main() {
 	const viteEntry = resolve(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
 
 	// 透传用户参数(如 --host 127.0.0.1 --port 5174)
-	const vite = spawn(process.execPath, [viteEntry, 'dev', ...process.argv.slice(2)], {
+	// --yes 是本脚本的开关,不透传给 vite(会报未知参数)
+	const passthrough = process.argv.slice(2).filter((a) => a !== '--yes');
+	const vite = spawn(process.execPath, [viteEntry, 'dev', ...passthrough], {
 		cwd: projectRoot,
 		stdio: 'inherit'
 	});

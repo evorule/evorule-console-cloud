@@ -34,19 +34,19 @@
   function typeToColor(type: string): { bg: string; fg: string } {
     const t = type.toLowerCase();
     if (t.includes("rule_triggered") || t.includes("trigger")) {
-      return { bg: "var(--color-success-bg, #dcfce7)", fg: "var(--color-success, #166534)" };
+      return { bg: "var(--success-bg, #dcfce7)", fg: "var(--success, #166534)" };
     }
     if (t.includes("patient") || t.includes("visit")) {
-      return { bg: "var(--color-info-bg, #dbeafe)", fg: "var(--color-info, #1e40af)" };
+      return { bg: "var(--info-bg, #dbeafe)", fg: "var(--info, #1e40af)" };
     }
     if (t.includes("drug") || t.includes("prescribe")) {
       return { bg: "#fce7f3", fg: "#9d174d" };
     }
     if (t.includes("io_request") || t.includes("io")) {
-      return { bg: "var(--color-warning-bg, #fef3c7)", fg: "var(--color-warning, #92400e)" };
+      return { bg: "var(--warning-bg, #fef3c7)", fg: "var(--warning, #92400e)" };
     }
     if (t.includes("error") || t.includes("violation")) {
-      return { bg: "var(--color-error-bg, #fee2e2)", fg: "var(--color-error, #991b1b)" };
+      return { bg: "var(--danger-bg, #fee2e2)", fg: "var(--danger, #991b1b)" };
     }
     return { bg: "#f3f4f6", fg: "#374151" };
   }
@@ -105,13 +105,13 @@
   .fact-card {
     padding: 8px 10px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     transition: box-shadow 0.15s ease;
   }
   .fact-card:hover {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    border-color: var(--color-gray-300, #d1d5db);
+    border-color: var(--border, #d1d5db);
   }
   .fact-head {
     display: flex;
@@ -129,7 +129,7 @@
   .seq-no {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-gray-400, #9ca3af);
+    color: var(--text-secondary, #9ca3af);
     font-weight: 600;
   }
   .type-chip {
@@ -146,8 +146,8 @@
   .logical-time {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #eff6ff);
+    color: var(--brand, #2563eb);
+    background: var(--info-bg, #eff6ff);
     padding: 1px 5px;
     border-radius: 3px;
     font-weight: 600;
@@ -160,34 +160,34 @@
   }
   .fact-time {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-family: var(--font-mono, monospace);
   }
   .expand-icon {
     font-size: 8px;
-    color: var(--color-gray-400, #9ca3af);
+    color: var(--text-secondary, #9ca3af);
   }
   .fact-id {
     margin-top: 4px;
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .fact-id code {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .fact-content {
     margin-top: 6px;
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 4px;
     overflow: hidden;
   }
   .fact-content summary {
     padding: 3px 8px;
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     cursor: pointer;
     font-weight: 500;
   }
@@ -206,7 +206,7 @@
   .fact-preview {
     margin-top: 4px;
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-family: var(--font-mono, monospace);
     overflow: hidden;
     text-overflow: ellipsis;

@@ -61,34 +61,34 @@
     flex-wrap: wrap;
     gap: 6px;
     padding-top: 8px;
-    border-top: 1px solid var(--color-gray-100, #f1f5f9);
+    border-top: 1px solid var(--bg-hover, #f1f5f9);
   }
   .btn {
     font-size: 12px;
     padding: 4px 10px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
-    background: var(--color-bg-primary, #ffffff);
-    color: var(--color-text-primary, #1e293b);
+    background: var(--bg-page, #ffffff);
+    color: var(--text-primary, #1e293b);
     cursor: pointer;
     transition: all 0.15s ease;
   }
   .btn:hover {
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: #ffffff;
   }
   .btn-primary:hover {
-    background: var(--color-primary-dark, var(--brand, #1d4ed8));
+    background: var(--brand-hover, var(--brand, #1d4ed8));
   }
   .btn-danger {
-    color: var(--color-error, #dc2626);
-    border-color: var(--color-error-bg, #fecaca);
+    color: var(--danger, #dc2626);
+    border-color: var(--danger-bg, #fecaca);
   }
   .btn-danger:hover {
-    background: var(--color-error-bg, #fef2f2);
+    background: var(--danger-bg, #fef2f2);
   }
 </style>

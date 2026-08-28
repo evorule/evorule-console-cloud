@@ -68,28 +68,28 @@
     padding: 10px 12px;
     background: transparent;
     border: none;
-    border-bottom: 1px solid var(--color-gray-100, #f1f5f9);
+    border-bottom: 1px solid var(--bg-hover, #f1f5f9);
     cursor: pointer;
     transition: background 0.15s ease;
   }
   .rule-card:hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .rule-card.selected {
-    background: var(--color-info-bg, #eef2ff);
+    background: var(--info-bg, #eef2ff);
     border-left: 3px solid var(--brand, #2563eb);
     padding-left: 9px;
   }
   .card-desc {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     margin-bottom: 4px;
     line-height: 1.4;
   }
   .card-scenario {
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-bottom: 6px;
     line-height: 1.3;
   }
@@ -101,7 +101,7 @@
   }
   .card-hint {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-style: italic;
     margin-bottom: 4px;
   }
@@ -118,23 +118,23 @@
     font-weight: 600;
   }
   .badge-schema {
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, #1e40af);
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, #1e40af);
   }
   .badge-term {
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning-text, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, #92400e);
   }
   .badge-builtin {
-    background: var(--color-gray-200, #e2e8f0);
-    color: var(--color-gray-700, #334155);
+    background: var(--border, #e2e8f0);
+    color: var(--text-primary, #334155);
   }
   .badge-user {
-    background: var(--color-success-bg, #d1fae5);
-    color: var(--color-success, #065f46);
+    background: var(--success-bg, #d1fae5);
+    color: var(--success, #065f46);
   }
   .version {
     font-size: 10px;
-    color: var(--color-gray-500, #64748b);
+    color: var(--text-secondary, #64748b);
   }
 </style>
