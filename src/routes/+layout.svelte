@@ -144,6 +144,12 @@
     goto(path);
   }
 
+  // 极简工作台(新)— 纯 dashboard,无需登录/无需库,任何时候都能跳
+  function navWorkbenchRoute() {
+    showSettings = false;
+    goto("/workbench");
+  }
+
   // === 注入 backend(CloudHttpBackend 双模式 + ?mock=1 零依赖模式) ===
   const initialNet = get(netConfig);
   const useMock =
@@ -368,7 +374,23 @@
     <!-- 左导航侧栏 -->
     <aside class="sidebar" style:width={`${leftWidth}px`}>
       <div class="sidebar-section">
-        <div class="sidebar-label">工作台</div>
+        <!-- 极简工作台(新)— Dashboard 风格,任何时候可访问 -->
+        <button
+          class="sidebar-item workbench-item"
+          class:active={isActive("/workbench")}
+          onclick={navWorkbenchRoute}
+          title="极简首页 — 一键看到所有状态 + 高频操作 + 单页跳"
+          aria-pressed={isActive("/workbench")}
+        >
+          <span class="nav-icon">🚀</span>
+          <span class="nav-label">工作台</span>
+        </button>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">分析视图</div>
         {#each VIEW_LIST as view (view.id)}
           <button
             class="sidebar-item"
