@@ -22,15 +22,15 @@
 **第一次跑建议创建桌面快捷**:双击 `install-shortcut.bat`,之后双击桌面 `evorule-start.lnk`。
 
 脚本会自动:
-1. 启动 evorule-server(默认 18090 端口)
+1. 启动 evorule-server(默认 18080 端口)
 2. 启动 evorule-rule-serve(默认 18081 端口)
 3. 启动 dev server(默认 5174 端口)
 4. 等 3 端口就绪,自动开浏览器到 `http://127.0.0.1:5174/`(evorule 首页)
 
 **期望输出**(节选):
 ```
-=== [1/3] evorule-server @ 18090 ===
-  [OK] evorule-server already running (PID 7272, port 18090)
+=== [1/3] evorule-server @ 18080 ===
+  [OK] evorule-server already running (PID 7272, port 18080)
 === [2/3] evorule-rule-serve @ 18081 ===
   [OK] evorule-rule-serve already running (PID 21424, port 18081)
 === [3/3] console-cloud dev @ 5174 ===
@@ -81,7 +81,7 @@
 
 或用 curl:
 ```powershell
-curl -X POST http://127.0.0.1:18090/api/sessions
+curl -X POST http://127.0.0.1:18080/api/sessions
 # → {"message":"Session created","session_id":1}
 ```
 

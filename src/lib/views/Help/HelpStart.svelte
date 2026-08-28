@@ -40,7 +40,7 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1</code></pre>
   <h3>启动顺序</h3>
   <p><code>start-all.ps1</code> 按以下顺序启动(每步等端口就绪):</p>
   <ol>
-    <li><strong>evorule-server @ 18090</strong> — <code>&lt;evorule-server 仓根&gt;\target\debug\evorule-server.exe</code></li>
+    <li><strong>evorule-server @ 18080</strong> — <code>&lt;evorule-server 仓根&gt;\target\debug\evorule-server.exe</code></li>
     <li><strong>evorule-rule-serve @ 18081</strong> — <code>&lt;evorule-rule 仓根&gt;\target\debug\evorule-rule-serve.exe</code></li>
     <li><strong>console-cloud dev @ 5174</strong> — <code>node scripts/dev.mjs</code></li>
   </ol>
@@ -56,7 +56,7 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1</code></pre>
       <tr><th>端口</th><th>服务</th><th>进程</th></tr>
     </thead>
     <tbody>
-      <tr><td>18090</td><td>evorule-server(执行引擎)</td><td>evorule-server.exe</td></tr>
+      <tr><td>18080</td><td>evorule-server(执行引擎)</td><td>evorule-server.exe</td></tr>
       <tr><td>18081</td><td>evorule-rule(规则库/沙盒/治理)</td><td>evorule-rule-serve.exe</td></tr>
       <tr><td>5174</td><td>console-cloud dev(Vite)</td><td>node.exe</td></tr>
     </tbody>

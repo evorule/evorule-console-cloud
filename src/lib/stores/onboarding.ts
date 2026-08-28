@@ -149,7 +149,7 @@ function defaultChecklist(): ChecklistItem[] {
 		{
 			id: "connect",
 			title: "连接 evorule-server",
-			description: "确保顶部状态条显示「已连接」(本地 127.0.0.1:18090 或你的远程服务)。",
+			description: "确保顶部状态条显示「已连接」(本地 127.0.0.1:18080 或你的远程服务)。",
 			route: "/",
 			autoCompletable: true,
 			done: false,

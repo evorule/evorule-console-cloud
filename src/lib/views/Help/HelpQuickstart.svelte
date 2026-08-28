@@ -20,7 +20,7 @@
       <h3>一键启动全栈(30 秒)</h3>
       <p>在 <code>evorule-console-cloud</code> 仓根目录双击 <code>start-all.bat</code>。脚本会自动:</p>
       <ol>
-        <li>启 evorule-server(默认 18090)</li>
+        <li>启 evorule-server(默认 18080)</li>
         <li>启 evorule-rule-serve(默认 18081)</li>
         <li>启 dev server(默认 5174)</li>
         <li>等就绪,自动开浏览器到 <code>/</code>(evorule 首页)</li>
@@ -62,7 +62,7 @@
       <p>点侧栏"分析视图 → ▶ 执行台",或访问:</p>
       <button class="link-btn" onclick={() => jumpTo("/view/execution")}>/view/execution →</button>
       <p>首次点"创建 session"。或 curl:</p>
-      <pre><code>curl -X POST http://127.0.0.1:18090/api/sessions
+      <pre><code>curl -X POST http://127.0.0.1:18080/api/sessions
 # → {`{"message":"Session created","session_id":1}`}</code></pre>
     </div>
   </div>

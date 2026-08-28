@@ -66,7 +66,7 @@
 
   <div class="status-item">
     <span class="label">server:</span>
-    <span class="value">evorule-server v{consoleVersion} (18090)</span>
+    <span class="value">evorule-server v{consoleVersion} (18080)</span>
   </div>
   <div class="status-item">
     <span class="label">rule:</span>
