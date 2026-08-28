@@ -186,6 +186,23 @@ npm run preview -- --host 127.0.0.1 --port 4173
 
 推荐使用**智谱 GLM-4-Flash**（有免费额度）：在 [智谱开放平台](https://open.bigmodel.cn/usercenter/apikeys) 获取 apiKey。
 
+### 认证配置（EVORULE_AUTH_TOKEN）
+
+evorule-server 开启认证后，工作台需要在**设置面板 → 联网配置 → 认证 Token** 中填入与 server 一致的 token（失焦自动保存，留空 = 请求不带凭据，仅免认证 server 可用）。全链路（执行侧会话 API、workspace 规则库、发布审批/回滚、生产状态/版本历史）统一携带 `Authorization: Bearer` 头。
+
+server 侧两个 token 环境变量（详见 evorule-server README「环境变量 / CLI 参数」）：
+
+| 环境变量 | 语义 |
+| --- | --- |
+| `EVORULE_AUTH_TOKEN` | 普通 Bearer token（浏览器用户身份）；**生产部署必须配置**——未配置时认证整体关闭，受保护域写入准入失效（dev 放行语义，见 dispositions AC-B5-S1） |
+| `EVORULE_SERVICE_TOKEN` | service 身份 token（供服务间调用，如 evo-agent sidecar）；受保护域 `stable.llm.*` / `stable.system.*` 仅此身份可写，浏览器端**不应**使用 |
+
+注意事项：
+
+- token 保存在本机浏览器 localStorage（与 LLM apiKey 同级取舍），请勿在共享设备填写；如需更高保证，将大众版部署在与 server 同源的反代后面并限制访问
+- 连接测试（设置面板「测试连接」）会带上当前输入的 token，可直接验证凭据是否有效
+- server 开启认证而本端未填 token 时，接口返回 401——先检查两侧 token 是否一致
+
 ---
 
 ## 测试
