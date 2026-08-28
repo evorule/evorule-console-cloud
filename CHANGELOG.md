@@ -10,6 +10,16 @@
 
 ### 变更
 
+#### 内核身份注入（ActorIdentity，D2 闭合）
+
+清偿上游债务登记 D2：内核 `HttpWorkspaceBackend` 硬编码 `submitted_by/reviewed_by/operated_by = "console"` 及发布角色，server 发布链路与沙盒编排的审计归属失真。上游 evorule-console v0.3.0（`274b1e3`）新增构造级 `actor` 参数后，本仓同步快照并接入登录身份。
+
+- 内核快照同步（`workspace-types.ts` / `http-workspace-backend.ts`，`git diff --no-index` 零漂移复核）：`ActorIdentity`（`{ name, role? }`）+ 构造第三参；`actor` 已配置但缺 `role` 时发布侧方法如实抛错（fail-fast），未配置时回落 `"console"` 并 warn 一次
+- `CloudWorkspaceBackend`：配置新增 `actor`，构造/`reconfigure` 透传内核
+- `+layout.svelte`：`actor` 跟随 `$currentUser`（`{ name: user.id, role: roleToBackend(user.role) }`），登录/登出自动重建内部实现（实例引用不变）
+- `CloudHttpBackend`：审批/回滚两个自建 fetch 旁路**删除**，回归 `workspace.reviewPublish/emergencyRollback` 单通道（身份来自 backend actor，不再逐调用传入）；`roleToBackend` 返回类型收紧为 `PublishRole`
+- 测试：新增 `cloud-workspace-backend.test.ts`（actor 透传/切换/置空回落）；`cloud-http-backend.test.ts` 写方法用例重写为委托语义；全量回归 svelte-check 0 errors / vitest 883/883 / build ✓
+
 #### 旁路 store 收敛（凭据闭环 + 审批单通道化）
 
 清偿规则写入链路适配专项登记的第三项债务：三条旁路 store（publish-queue-api / production-state / production-audit）直连 server 端点、不带凭据、与 WorkspaceBackend 职责重叠，且发布审批存在"server 通道 + localStorage 本地状态机"双通道并存（规划文档：`planning/脱离console.txt` §2.3）。

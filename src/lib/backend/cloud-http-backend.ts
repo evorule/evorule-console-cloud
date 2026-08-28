@@ -13,12 +13,10 @@
 //   - 组合优于继承:reconfigure 时替换整个内部实例,干净利落
 //
 // Cloud 专属方法的数据通道(旁路 store 收敛专项 2026-08-28):
-//   - 读方法(getProductionState/getPublishQueue/getProductionAudit)委托内核
-//     WorkspaceBackend(带 Bearer token),本类只做视图模型映射
-//   - 写方法(reviewPublishRequest/emergencyRollbackRequest)保留自建 fetch +
-//     token:内核 WorkspaceBackend.reviewPublish/emergencyRollback 硬编码
-//     DEFAULT_REQUESTER/role,会丢失 UI 传入的操作者身份与角色(上游内核局限,
-//     登记为上游债务),待内核开放身份参数后收敛
+//   - 全部读写方法委托内核 WorkspaceBackend(带 Bearer token + actor 身份),
+//     本类只做视图模型映射或结果包装;自建 fetch 旁路已删除
+//   - D2 闭合(2026-08-28):内核 reviewPublish/emergencyRollback 支持
+//     ActorIdentity 注入后,写方法回归单通道,审计归属 = 真实登录用户
 //   - 原三条旁路 store(publish-queue-api/production-state/production-audit)
 //     的直连 fetch 已删除;localStorage 本地发布状态机(stores/publish-queue.ts)
 //     已废弃,审批链路单通道走 server
@@ -111,13 +109,6 @@ export class CloudHttpBackend implements ExecutionBackend {
 			this._config.mode === 'online' ? this._config.remoteBaseUrl : this._config.localBaseUrl;
 		// 去掉末尾斜杠(与内核 HttpBackend 构造行为一致,避免 path 拼接出现 //)
 		return url.replace(/\/+$/, '');
-	}
-
-	/** Bearer 认证头(未配置 token 时空对象,仅 dev/免认证 server 可用) */
-	private authHeaders(): Record<string, string> {
-		return this._config.authToken
-			? { Authorization: `Bearer ${this._config.authToken}` }
-			: {};
 	}
 
 	// === 代理所有 15 方法到内部 HttpBackend ===
@@ -215,75 +206,49 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * 审批发布(消费 `POST /api/publish/queue/{queue_id}/review`)。
+	 * 审批发布(委托内核 WorkspaceBackend.reviewPublish,
+	 * 消费 `POST /api/publish/queue/{queue_id}/review`)。
 	 *
-	 * 自建 fetch(带 Bearer token):内核 reviewPublish 硬编码操作者身份,
-	 * 会丢失 UI 传入的审批者与角色,故暂不委托(见文件头"数据通道"说明)。
+	 * 操作者身份/角色来自 backend actor(+layout 按登录用户注入),
+	 * 本方法不再逐调用传入(D2 闭合:内核已支持身份注入)。
 	 *
 	 * @param decision 'approved' | 'rejected'
 	 * @param comment 审批备注
-	 * @param reviewedBy 审批者 userId
-	 * @param role 前端角色(映射为后端 PublishRole)
 	 */
 	async reviewPublishRequest(
 		queueId: number,
 		decision: 'approved' | 'rejected',
 		comment: string,
-		reviewedBy: string,
-		role: string,
 	): Promise<PublishWriteResult> {
-		const url = `${this.baseUrl}/api/publish/queue/${queueId}/review`;
+		if (!this.workspace) {
+			return { ok: false, error: '发布审批不可用:未注入 WorkspaceBackend' };
+		}
 		try {
-			const r = await fetch(url, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
-				body: JSON.stringify({
-					decision,
-					comment,
-					reviewed_by: reviewedBy,
-					role,
-				}),
-			});
-			if (!r.ok) {
-				const text = await r.text().catch(() => '');
-				return { ok: false, error: `审批失败(${r.status}): ${text.slice(0, 200)}` };
-			}
+			await this.workspace.reviewPublish(queueId, { decision, comment });
 			return { ok: true };
-		} catch {
-			return { ok: false, error: '审批失败:网络错误' };
+		} catch (e) {
+			return { ok: false, error: `审批失败:${(e as Error).message}` };
 		}
 	}
 
 	/**
-	 * 紧急回滚(消费 `POST /api/publish/rollback`)。
+	 * 紧急回滚(委托内核 WorkspaceBackend.emergencyRollback,
+	 * 消费 `POST /api/publish/rollback`)。
 	 * 版本号单调递增:回滚到 targetVersion 的规则集,新版本号 = 当前 + 1。
-	 * 自建 fetch 理由同 reviewPublishRequest。
+	 * 操作者身份/角色来源同 reviewPublishRequest。
 	 */
 	async emergencyRollbackRequest(
 		targetVersion: number,
 		reason: string,
-		operatedBy: string,
-		role: string,
 	): Promise<PublishWriteResult> {
-		const url = `${this.baseUrl}/api/publish/rollback`;
+		if (!this.workspace) {
+			return { ok: false, error: '紧急回滚不可用:未注入 WorkspaceBackend' };
+		}
 		try {
-			const r = await fetch(url, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
-				body: JSON.stringify({
-					target_version: targetVersion,
-					reason,
-					operated_by: operatedBy,
-					role,
-				}),
-			});
-			if (!r.ok) {
-				const text = await r.text().catch(() => '');
-				return { ok: false, error: `回滚失败(${r.status}): ${text.slice(0, 200)}` };
-			}
+			await this.workspace.emergencyRollback({ target_version: targetVersion, reason });
 			return { ok: true };
-		} catch {
-			return { ok: false, error: '回滚失败:网络错误' };
+		} catch (e) {
+			return { ok: false, error: `回滚失败:${(e as Error).message}` };
 		}
 	}
 

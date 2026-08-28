@@ -43,6 +43,7 @@ import {
 	type SubmitPublishRequest,
 	type ReviewPublishRequest,
 	type RollbackRequest,
+	type ActorIdentity,
 	type TranslateToTransformRequest,
 	type TranslateToTransformResponse,
 	type TranslateToConditionalRequest,
@@ -67,6 +68,13 @@ export interface CloudWorkspaceBackendConfig extends CloudBackendConfig {
 	 * 全部端点随认证 server 闭环。留空 = 不带头(仅 dev)。
 	 */
 	authToken?: string;
+	/**
+	 * 操作者身份(D2 闭合 2026-08-28):透传给内核 HttpWorkspaceBackend,
+	 * 发布链路审计字段(submitted_by/reviewed_by/operated_by + role)与
+	 * 沙盒编排字段记录真实登录用户,不再硬编码 "console"。
+	 * 未配置时内核回落 "console" 并 warn 一次。
+	 */
+	actor?: ActorIdentity | null;
 }
 
 // ============================================================================
@@ -109,11 +117,17 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 			remoteBaseUrl: config.remoteBaseUrl ?? DEFAULT_LOCAL_BASE_URL,
 			localBaseUrl: config.localBaseUrl ?? DEFAULT_LOCAL_BASE_URL,
 			noServer: config.noServer ?? false,
-			authToken: config.authToken
+			authToken: config.authToken,
+			actor: config.actor
 		};
 		// A1 接线(旁路 store 收敛 2026-08-28):token 传入内核实现,
 		// workspace 全部端点(含发布队列/生产状态/审计)凭据闭环
-		this.http = new HttpWorkspaceBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
+		// D2(2026-08-28):actor 传入内核实现,审计归属 = 真实登录用户
+		this.http = new HttpWorkspaceBackend(
+			this.resolveBaseUrl(),
+			this._config.authToken ?? null,
+			this._config.actor ?? null
+		);
 		this.mock = new MockWorkspaceBackend();
 	}
 
@@ -139,7 +153,11 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 	 */
 	reconfigure(config: Partial<CloudWorkspaceBackendConfig>): void {
 		this._config = { ...this._config, ...config };
-		this.http = new HttpWorkspaceBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
+		this.http = new HttpWorkspaceBackend(
+			this.resolveBaseUrl(),
+			this._config.authToken ?? null,
+			this._config.actor ?? null
+		);
 	}
 
 	private resolveBaseUrl(): string {

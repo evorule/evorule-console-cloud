@@ -10,7 +10,7 @@
   import { onMount } from 'svelte';
   import { useBackend } from '$lib/kernel';
   import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
-  import { type VersionHistoryEntry, roleToBackend } from '$lib/backend/production-views';
+  import { type VersionHistoryEntry } from '$lib/backend/production-views';
   import { can, getCurrentUser } from '$lib/stores/auth';
   import { toastSuccess, toastError } from '$lib/stores/toast';
   import EmptyState from '$lib/views/Feedback/EmptyState.svelte';
@@ -45,12 +45,7 @@
     if (!confirm(`确认回滚到 v${version}?此操作将创建新版本(单调递增)。`)) return;
     const user = getCurrentUser();
     if (!user) return;
-    const res = await backend.emergencyRollbackRequest(
-      version,
-      `版本历史回滚到 v${version}`,
-      user.id,
-      roleToBackend(user.role),
-    );
+    const res = await backend.emergencyRollbackRequest(version, `版本历史回滚到 v${version}`);
     if (!res.ok) {
       toastError(res.error ?? '回滚失败', '版本历史');
       return;

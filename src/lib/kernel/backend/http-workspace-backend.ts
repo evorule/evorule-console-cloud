@@ -37,6 +37,7 @@ import type {
   ReviewPublishRequest,
   RollbackRequest,
   PublishRole,
+  ActorIdentity,
   TranslateToTransformRequest,
   TranslateToTransformResponse,
   TranslateToConditionalRequest,
@@ -51,10 +52,13 @@ import type {
 const DEFAULT_BASE_URL = 'http://127.0.0.1:18080';
 
 /**
- * 默认请求者身份 (dev/loopback)。
+ * 默认请求者身份 (dev/loopback 兜底)。
  * server 沙盒 GET 端点要求 `?requester=` 做 workspace 成员权限校验;
  * POST start/close 要求 body 携带 `started_by` / `closed_by`。
- * 生产环境应由 auth token 派生;开发期统一用 "console"。
+ *
+ * 生产环境调用方必须通过构造参数传入 ActorIdentity (真实登录用户),
+ * 未传入时回落到 "console" 并 warn 一次 — server 审计链归属将失真,
+ * 该回落仅为保持 dev/演示与既有测试路径可用,不是生产可用语义。
  */
 const DEFAULT_REQUESTER = 'console';
 
@@ -80,14 +84,24 @@ export class HttpWorkspaceBackendError extends Error {
  * 用法:
  *   const wb = new HttpWorkspaceBackend();                        // loopback 免认证
  *   const wb = new HttpWorkspaceBackend('http://x:18080', token); // 生产带 token
+ *   const wb = new HttpWorkspaceBackend('http://x:18080', token,
+ *     { name: 'zhang.san', role: 'admin' });                      // 审计归属:真实操作者
  */
 export class HttpWorkspaceBackend implements WorkspaceBackend {
   private readonly baseUrl: string;
   private readonly authToken: string | null;
+  private readonly actor: ActorIdentity | null;
+  /** actor 缺失回落 "console" 时只 warn 一次,避免刷屏 */
+  private actorWarned = false;
 
-  constructor(baseUrl: string = DEFAULT_BASE_URL, authToken: string | null = null) {
+  constructor(
+    baseUrl: string = DEFAULT_BASE_URL,
+    authToken: string | null = null,
+    actor?: ActorIdentity | null
+  ) {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
     this.authToken = authToken;
+    this.actor = actor ?? null;
   }
 
   // ------------------------------------------------------------------------
@@ -101,6 +115,44 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
       h['Authorization'] = `Bearer ${this.authToken}`;
     }
     return h;
+  }
+
+  /**
+   * 操作者名 — actor.name,未配置 actor 时回落 "console" 并 warn 一次。
+   * 回落只应出现在 dev/演示路径;生产传入真实用户,否则 server 审计归属失真。
+   */
+  private requesterName(): string {
+    if (this.actor) return this.actor.name;
+    if (!this.actorWarned) {
+      this.actorWarned = true;
+      console.warn(
+        '[HttpWorkspaceBackend] 未配置 actor,审计归属回落为 "console"(失真)。' +
+          '生产请传入 { name, role }:new HttpWorkspaceBackend(url, token, actor)'
+      );
+    }
+    return DEFAULT_REQUESTER;
+  }
+
+  /**
+   * 发布角色 — actor.role;actor 已配置但缺 role 时如实抛错(fail-fast)。
+   * 静默回落会再次制造审计失真,此处不做。
+   * 未配置 actor 时回落到各方法的历史内置值(warn 同上,仅一次)。
+   */
+  private publishRole(fallback: PublishRole): PublishRole {
+    if (this.actor) {
+      if (!this.actor.role) {
+        throw new HttpWorkspaceBackendError(
+          '发布操作需要 actor.role:当前 actor 仅含 name。' +
+            '请在构造/reconfigure 时传入完整身份 { name, role } ' +
+            "(role ∈ 'doctor' | 'department_head' | 'admin')",
+          0,
+          'actor-config'
+        );
+      }
+      return this.actor.role;
+    }
+    this.requesterName(); // 触发 warn 一次
+    return fallback;
   }
 
   /** 统一 fetch + JSON 解析 + 错误处理 (与 http-backend.ts fetchJson 同构) */
@@ -350,14 +402,14 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
     // server StartSandboxHttpRequest = StartSandboxRequest (flatten) + started_by
     return this.fetchJson<StartSandboxResponse>(
       `/api/workspaces/${encodeURIComponent(workspaceId)}/sandboxes`,
-      this.postJson({ ...req, started_by: DEFAULT_REQUESTER })
+      this.postJson({ ...req, started_by: this.requesterName() })
     );
   }
 
   /** GET /api/workspaces/{id}/sandboxes?requester= */
   async listSandboxes(workspaceId: string): Promise<SandboxSession[]> {
     const j = await this.fetchJson<SandboxSession[] | { sandboxes: SandboxSession[] }>(
-      `/api/workspaces/${encodeURIComponent(workspaceId)}/sandboxes?requester=${encodeURIComponent(DEFAULT_REQUESTER)}`,
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/sandboxes?requester=${encodeURIComponent(this.requesterName())}`,
       { headers: this.headers() }
     );
     return Array.isArray(j) ? j : j?.sandboxes ?? [];
@@ -366,7 +418,7 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
   /** GET /api/workspaces/{id}/sandboxes/{sandbox_id}?requester= */
   async getSandbox(workspaceId: string, sandboxId: number): Promise<SandboxSession> {
     return this.fetchJson<SandboxSession>(
-      `/api/workspaces/${encodeURIComponent(workspaceId)}/sandboxes/${sandboxId}?requester=${encodeURIComponent(DEFAULT_REQUESTER)}`,
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/sandboxes/${sandboxId}?requester=${encodeURIComponent(this.requesterName())}`,
       { headers: this.headers() }
     );
   }
@@ -375,7 +427,7 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
   async closeSandbox(workspaceId: string, sandboxId: number): Promise<void> {
     await this.fetchJson<void>(
       `/api/workspaces/${encodeURIComponent(workspaceId)}/sandboxes/${sandboxId}/close`,
-      this.postJson({ closed_by: DEFAULT_REQUESTER })
+      this.postJson({ closed_by: this.requesterName() })
     );
   }
 
@@ -410,10 +462,10 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
   /** POST /api/publish/queue (body = SubmitPublishRequest + submitted_by + role) */
   async submitPublish(req: SubmitPublishRequest): Promise<PublishQueueItem> {
     // server SubmitPublishHttpRequest = SubmitPublishRequest (flatten) + submitted_by + role
-    // 角色权限: doctor 不可提交 → 用 department_head
+    // actor 未配置时回落历史内置 department_head (warn 一次)
     return this.fetchJson<PublishQueueItem>(
       '/api/publish/queue',
-      this.postJson({ ...req, submitted_by: DEFAULT_REQUESTER, role: 'department_head' as PublishRole })
+      this.postJson({ ...req, submitted_by: this.requesterName(), role: this.publishRole('department_head') })
     );
   }
 
@@ -423,19 +475,20 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
     req: ReviewPublishRequest
   ): Promise<PublishQueueItem> {
     // server ReviewPublishHttpRequest = ReviewPublishRequest (flatten) + reviewed_by + role
-    // 角色权限: department_head 不可审批 → 用 admin
+    // actor 未配置时回落历史内置 admin (warn 一次)
     return this.fetchJson<PublishQueueItem>(
       `/api/publish/queue/${queueId}/review`,
-      this.postJson({ ...req, reviewed_by: DEFAULT_REQUESTER, role: 'admin' as PublishRole })
+      this.postJson({ ...req, reviewed_by: this.requesterName(), role: this.publishRole('admin') })
     );
   }
 
   /** POST /api/publish/rollback (body = RollbackRequest + operated_by + role, 紧急回滚) */
   async emergencyRollback(req: RollbackRequest): Promise<void> {
     // server RollbackHttpRequest = RollbackRequest (flatten) + operated_by + role (必须 admin)
+    // actor 未配置时回落历史内置 admin (warn 一次)
     await this.fetchJson<void>(
       '/api/publish/rollback',
-      this.postJson({ ...req, operated_by: DEFAULT_REQUESTER, role: 'admin' as PublishRole })
+      this.postJson({ ...req, operated_by: this.requesterName(), role: this.publishRole('admin') })
     );
   }
 
