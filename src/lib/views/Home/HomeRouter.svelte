@@ -23,7 +23,6 @@
 -->
 
 <script lang="ts">
-  import { get } from "svelte/store";
   import { onMount } from "svelte";
   import { sessionStore } from "$lib/stores/session";
   import { isEmptyDb } from "$lib/stores/db";
@@ -38,28 +37,29 @@
   type HomeMode = "A" | "B" | "C";
 
   // 状态决策(A/B/C)— 基于派生 isEmptyDb(内核 rules store)
-  function resolveMode(): HomeMode {
-    const mode = get(homeModeStore);
-    if (mode === "force-demo") return "A";
+  //
+  // 响应式关键:必须用 $ 前缀自动订阅读取 store。
+  // 原实现 resolveMode() 内部用 get(store) 快照读 — Svelte 5 中 get()
+  // 不被 $derived 依赖追踪,mode 在组件挂载时求值一次后永久冻结,
+  // 导致登录/取消向导/完成建库等状态迁移全部失效(建库向导无法退出 bug)。
+  const mode = $derived.by<HomeMode>(() => {
+    if ($homeModeStore === "force-demo") return "A";
 
-    const session = get(sessionStore);
-    if (!session.loggedIn) return "A";
+    if (!$sessionStore.loggedIn) return "A";
 
     // T2:向导进行中时强制保持在 B(模板已加载规则导致 isEmptyDb=false 也不切到 C)
-    if (get(wizardInProgress)) return "B";
+    if ($wizardInProgress) return "B";
 
-    if (get(isEmptyDb)) return "B";
+    if ($isEmptyDb) return "B";
 
     return "C";
-  }
-
-  const mode = $derived(resolveMode());
+  });
 
   // 进入状态 C 时,若 layerStore 未初始化,按 production 状态选默认层
   // (有已发布规则 → L1 监控大屏;无 → L2 编辑台)
   $effect(() => {
-    if (mode === "C" && get(layerStore) === null) {
-      layerStore.set(resolveDefaultLayer(get(productionStateStore)));
+    if (mode === "C" && $layerStore === null) {
+      layerStore.set(resolveDefaultLayer($productionStateStore));
     }
   });
 

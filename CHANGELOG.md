@@ -8,6 +8,16 @@
 
 ## [Unreleased]
 
+### 修复
+
+#### 建库向导无法退出（HomeRouter 状态决策冻结）
+
+- **根因**：`HomeRouter` 的 `mode = $derived(resolveMode())` 内部经 `get(store)` 快照读取 — Svelte 5 中 `get()` 不被 `$derived` 依赖追踪，`mode` 在组件挂载时求值一次后永久冻结。登录/取消向导/完成建库等 store 变更均无法触发 A/B/C 重判：点「取消，回 demo」handler 已执行（logout + force-demo 落库），但页面停留在向导；完成建库同样无法切到工作台。此前能进入向导纯粹依赖登录页跳转引发的组件重挂载。
+- **修复**：`HomeRouter` 改用 `$` 前缀自动订阅读取（`$derived.by` + `$homeModeStore/$sessionStore/$wizardInProgress/$isEmptyDb`），状态迁移恢复响应式。
+- **同类反模式清理**（同一 bug 家族：`$derived(get(x))` → `$derived($x)`，7 处）：`BusinessExecutionPad`（当前事件/影响预览）、`AnomalyPanel`（异常计数 ×3）、`FactStreamView`（事实流 ×2）。修后监控面板/执行垫能随 store 更新实时刷新（原先为挂载时快照，永不更新）。
+- **保留不动**：事件处理器内的一次性 `get()` 读取（如 `BusinessRuleLibrary.handleSelect/handleSave`）为正确用法，不在此列。
+- 回归：svelte-check 0 errors / vitest 883/883 / build ✓；浏览器实测：向导步骤 1/2 取消均正常退回 Demo 首页、刷新无卡死、console 零报错。
+
 ### 变更
 
 #### 内核身份注入（ActorIdentity，D2 闭合）
