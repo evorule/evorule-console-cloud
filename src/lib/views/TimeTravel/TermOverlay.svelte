@@ -132,7 +132,7 @@
     width: 280px;
     min-width: 280px;
     background: var(--bg-card);
-    border-left: 1px solid var(--color-gray-200, #e5e7eb);
+    border-left: 1px solid var(--border, #e5e7eb);
     overflow: auto;
     height: 100%;
   }
@@ -141,22 +141,22 @@
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-    background: var(--color-gray-50, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
     flex-shrink: 0;
   }
   .to-title {
     margin: 0;
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     flex: 1;
   }
   .to-fact-tag {
     font-family: var(--font-mono, monospace);
     font-size: 11px;
     color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     padding: 1px 6px;
     border-radius: 3px;
   }
@@ -172,7 +172,7 @@
   }
   .to-empty-text {
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     line-height: 1.5;
     margin: 0;
   }
@@ -181,17 +181,17 @@
     padding: 16px;
     text-align: center;
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
 
   .to-section {
     padding: 10px 12px;
-    border-bottom: 1px solid var(--color-gray-100, #f3f4f6);
+    border-bottom: 1px solid var(--bg-hover, #f3f4f6);
   }
   .to-section-title {
     font-size: 11px;
     font-weight: 700;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     margin-bottom: 6px;
@@ -202,7 +202,7 @@
   .to-count {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-weight: 400;
     text-transform: none;
   }
@@ -221,12 +221,12 @@
     align-items: center;
     gap: 5px;
     font-size: 10px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .to-node-type {
     font-family: var(--font-mono, monospace);
     color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     padding: 0 4px;
     border-radius: 2px;
   }
@@ -236,44 +236,44 @@
   .to-node-desc {
     font-size: 11px;
     font-weight: 600;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     margin: 2px 0;
   }
   .to-node-explain {
     font-size: 10px;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
 
   .to-summary-text {
     margin: 0;
     font-size: 11px;
     line-height: 1.5;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
     background: #fefce8;
     padding: 6px 8px;
     border-radius: 4px;
-    border: 1px solid var(--color-warning, #fde68a);
+    border: 1px solid var(--warning, #fde68a);
   }
 
   .to-rollback-btn {
     width: 100%;
     font-size: 11px;
     padding: 6px 10px;
-    background: var(--color-error-bg, #fef2f2);
-    color: var(--color-error, #991b1b);
-    border: 1px solid var(--color-error, #fca5a5);
+    background: var(--danger-bg, #fef2f2);
+    color: var(--danger, #991b1b);
+    border: 1px solid var(--danger, #fca5a5);
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
     font-family: inherit;
   }
   .to-rollback-btn:hover {
-    background: var(--color-error-bg, #fee2e2);
+    background: var(--danger-bg, #fee2e2);
   }
 
   .to-hint {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     margin: 0;
     font-style: italic;
   }
@@ -292,12 +292,12 @@
     gap: 6px;
     font-size: 11px;
     padding: 3px 6px;
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
     border-radius: 3px;
     cursor: help;
   }
   .to-term-label {
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     font-weight: 500;
     flex: 1;
     min-width: 0;
@@ -305,10 +305,10 @@
   .to-term-key {
     font-family: var(--font-mono, monospace);
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     background: var(--bg-card);
     padding: 1px 4px;
     border-radius: 2px;
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
   }
 </style>

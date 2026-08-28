@@ -42,7 +42,7 @@
     <div class="stat-value">{stats.ruleCount}<span class="unit">条</span></div>
     <div class="stat-meta">
       内置 {stats.builtInCount} + 自建 {stats.customCount}
-      <a class="link" onclick={(e) => { e.stopPropagation(); onOpenRules(); }}>打开规则库 →</a>
+      <span class="link">打开规则库 →</span>
     </div>
   </button>
 
@@ -54,7 +54,7 @@
       {#if stats.sessionCount === 0}暂无执行
       {:else}最近活跃中
       {/if}
-      <a class="link" onclick={(e) => { e.stopPropagation(); onOpenExecution(); }}>打开执行台 →</a>
+      <span class="link">打开执行台 →</span>
     </div>
   </button>
 
@@ -69,7 +69,7 @@
       {#if stats.pendingCount === 0}无待审 · 全部已发布
       {:else}需要审批 / 回滚
       {/if}
-      <a class="link" onclick={(e) => { e.stopPropagation(); onOpenPublishQueue(); }}>去审批 →</a>
+      <span class="link">去审批 →</span>
     </div>
   </button>
 
@@ -81,7 +81,7 @@
     </div>
     <div class="stat-meta">
       type: {stats.lastFactType ?? "—"}
-      <a class="link" onclick={(e) => { e.stopPropagation(); onOpenAudit(); }}>打开审计 →</a>
+      <span class="link">打开审计 →</span>
     </div>
   </button>
 </div>

@@ -113,14 +113,14 @@
   .section {
     padding: 12px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 8px;
   }
   .section-title {
     margin: 0 0 10px 0;
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -128,7 +128,7 @@
   .section-sub {
     font-size: 11px;
     font-weight: 400;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .template-grid {
     display: grid;
@@ -140,7 +140,7 @@
     align-items: flex-start;
     gap: 8px;
     padding: 10px;
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 6px;
     background: var(--bg-card);
     cursor: pointer;
@@ -150,13 +150,13 @@
     position: relative;
   }
   .template-card:hover {
-    border-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #eff6ff);
+    border-color: var(--brand, #2563eb);
+    background: var(--info-bg, #eff6ff);
   }
   .template-card.selected {
-    border-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #dbeafe);
-    box-shadow: 0 0 0 1px var(--color-primary, #2563eb);
+    border-color: var(--brand, #2563eb);
+    background: var(--info-bg, #dbeafe);
+    box-shadow: 0 0 0 1px var(--brand, #2563eb);
   }
   .template-card:disabled {
     opacity: 0.6;
@@ -173,12 +173,12 @@
   .template-name {
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     margin-bottom: 2px;
   }
   .template-desc {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     line-height: 1.4;
   }
   .template-industry {
@@ -191,12 +191,12 @@
     font-weight: 600;
   }
   .industry-medical {
-    background: var(--color-success-bg, #d1fae5);
-    color: var(--color-success, #065f46);
+    background: var(--success-bg, #d1fae5);
+    color: var(--success, #065f46);
   }
   .industry-finance {
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, #92400e);
   }
   .event-name-row {
     margin-bottom: 12px;
@@ -207,17 +207,17 @@
     gap: 4px;
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .name-input {
     font-size: 13px;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .name-input:disabled {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
 </style>

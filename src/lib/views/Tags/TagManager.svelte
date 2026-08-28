@@ -223,7 +223,7 @@
   }
   .count {
     font-size: 12px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .toolbar-right {
     display: flex;
@@ -234,21 +234,21 @@
   .search-input {
     font-size: 13px;
     padding: 5px 10px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     background: var(--bg-card);
   }
   .btn {
     font-size: 13px;
     padding: 5px 12px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     background: var(--bg-card);
     cursor: pointer;
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .btn-sm {
@@ -256,16 +256,16 @@
     padding: 3px 8px;
   }
   .btn-danger {
-    color: var(--color-error, #dc2626);
-    border-color: var(--color-error-bg, #fecaca);
+    color: var(--danger, #dc2626);
+    border-color: var(--danger-bg, #fecaca);
   }
   .btn-danger:hover {
-    background: var(--color-error-bg, #fef2f2);
+    background: var(--danger-bg, #fef2f2);
   }
   .no-match {
     text-align: center;
     padding: 32px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .no-match p {
     margin-bottom: 8px;
@@ -276,7 +276,7 @@
     gap: 10px;
   }
   .tag-card {
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-left-width: 4px;
     border-radius: 6px;
     padding: 10px 12px;
@@ -297,14 +297,14 @@
   .name {
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .card-meta {
     margin-bottom: 8px;
   }
   .meta-item {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .card-actions {
     display: flex;
@@ -331,7 +331,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
   }
   .modal-header h3 {
     margin: 0;
@@ -343,7 +343,7 @@
     border: none;
     cursor: pointer;
     font-size: 16px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 0 4px;
   }
   .modal-body {
@@ -353,7 +353,7 @@
     display: block;
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-bottom: 12px;
   }
   .form-input {
@@ -361,7 +361,7 @@
     width: 100%;
     font-size: 13px;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
     margin-top: 4px;
@@ -377,7 +377,7 @@
     width: 32px;
     height: 32px;
     padding: 0;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     cursor: pointer;
     background: transparent;
@@ -387,14 +387,14 @@
     font-family: var(--font-mono, monospace);
     font-size: 12px;
     padding: 6px 8px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
   }
   .color-preview {
     width: 32px;
     height: 32px;
     border-radius: 4px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
   }
   .preset-colors {
     display: flex;
@@ -405,7 +405,7 @@
   }
   .preset-label {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .preset-dot {
     width: 20px;
@@ -416,13 +416,13 @@
     padding: 0;
   }
   .preset-dot.active {
-    border-color: var(--color-text-primary, #1e293b);
+    border-color: var(--text-primary, #1e293b);
   }
   .modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid var(--color-gray-200, #e2e8f0);
+    border-top: 1px solid var(--border, #e2e8f0);
   }
 </style>

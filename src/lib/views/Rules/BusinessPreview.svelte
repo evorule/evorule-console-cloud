@@ -82,8 +82,8 @@
 
 <style>
   .business-preview {
-    background: var(--color-gray-50, #f8fafc);
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    background: var(--bg-page, #f8fafc);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 8px;
     padding: 16px;
     margin-top: 12px;
@@ -95,11 +95,11 @@
     font-size: 14px;
     font-weight: 600;
     margin: 0 0 12px 0;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .placeholder {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin: 0;
   }
 
@@ -110,7 +110,7 @@
     padding: 12px;
     background: var(--bg-card);
     border-radius: 6px;
-    border-left: 3px solid var(--color-primary, #2563eb);
+    border-left: 3px solid var(--brand, #2563eb);
   }
   .structured-line {
     display: flex;
@@ -125,20 +125,20 @@
     border-radius: 3px;
   }
   .keyword.if {
-    color: var(--color-info-text, #1e40af);
-    background: var(--color-info-bg, #dbeafe);
+    color: var(--info, #1e40af);
+    background: var(--info-bg, #dbeafe);
   }
   .keyword.then {
-    color: var(--color-success-text, #166534);
-    background: var(--color-success-bg, #dcfce7);
+    color: var(--success, #166534);
+    background: var(--success-bg, #dcfce7);
   }
   .keyword.else {
-    color: var(--color-text-secondary, #64748b);
-    background: var(--color-gray-100, #f1f5f9);
+    color: var(--text-secondary, #64748b);
+    background: var(--bg-hover, #f1f5f9);
   }
   .content {
     font-size: 14px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
 
   .term-highlights {
@@ -150,13 +150,13 @@
     font-size: 12px;
   }
   .term-label {
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .term-chip {
     display: inline-block;
     padding: 1px 8px;
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning-text, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, #92400e);
     border-radius: 10px;
     font-size: 11px;
     cursor: help;
@@ -165,34 +165,34 @@
   .llm-layer {
     margin-top: 12px;
     padding-top: 10px;
-    border-top: 1px dashed var(--color-gray-300, #cbd5e1);
+    border-top: 1px dashed var(--border, #cbd5e1);
   }
   .llm-loading {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-style: italic;
   }
   .llm-text {
     font-size: 13px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     line-height: 1.5;
   }
   .llm-badge {
     display: inline-block;
     padding: 1px 6px;
-    background: var(--color-primary-bg, #dbeafe);
-    color: var(--color-primary, #2563eb);
+    background: var(--brand-bg, #dbeafe);
+    color: var(--brand, #2563eb);
     border-radius: 3px;
     font-size: 11px;
     font-weight: 600;
     margin-right: 6px;
   }
   .llm-badge.cached {
-    background: var(--color-gray-100, #f1f5f9);
-    color: var(--color-text-secondary, #64748b);
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-secondary, #64748b);
   }
   .llm-error {
     font-size: 12px;
-    color: var(--color-error-text, #991b1b);
+    color: var(--danger, #991b1b);
   }
 </style>

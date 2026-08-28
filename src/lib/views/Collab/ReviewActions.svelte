@@ -82,13 +82,13 @@
     gap: 8px;
     align-items: center;
     padding: 12px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 6px;
   }
   .review-input {
     flex: 1;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     font-size: 13px;
   }
@@ -101,17 +101,17 @@
     font-weight: 500;
   }
   .btn-success {
-    background: var(--color-success, #22c55e);
+    background: var(--success, #22c55e);
     color: white;
   }
   .btn-danger {
-    background: var(--color-error, #dc2626);
+    background: var(--danger, #dc2626);
     color: white;
   }
   .no-permission {
     padding: 8px 12px;
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, #92400e);
     border-radius: 4px;
     font-size: 12px;
   }

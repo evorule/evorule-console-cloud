@@ -121,8 +121,8 @@
 
 <style>
   .cr-panel {
-    background: var(--color-warning-bg, #fffbeb);
-    border: 1px solid var(--color-warning, #fde68a);
+    background: var(--warning-bg, #fffbeb);
+    border: 1px solid var(--warning, #fde68a);
     border-radius: 6px;
     padding: 12px;
     margin-top: 12px;
@@ -138,7 +138,7 @@
   .cr-title {
     margin: 0;
     font-size: 14px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
   }
   .cr-bulk {
     display: flex;
@@ -147,20 +147,20 @@
   }
   .cr-bulk-label {
     font-size: 11px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
   }
   .cr-bulk-btn {
     padding: 3px 8px;
     background: var(--bg-card);
-    border: 1px solid var(--color-warning, #fde68a);
+    border: 1px solid var(--warning, #fde68a);
     border-radius: 3px;
     cursor: pointer;
     font-family: inherit;
     font-size: 11px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
   }
   .cr-bulk-btn:hover {
-    background: var(--color-warning-bg, #fef3c7);
+    background: var(--warning-bg, #fef3c7);
   }
   .cr-table {
     width: 100%;
@@ -170,7 +170,7 @@
   }
   .cr-table th,
   .cr-table td {
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     padding: 6px 8px;
     text-align: left;
   }
@@ -180,7 +180,7 @@
   }
   .cr-select {
     padding: 3px 6px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 3px;
     font-family: inherit;
     font-size: 11px;
@@ -199,8 +199,8 @@
     font-weight: 600;
   }
   .cr-btn.primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
 </style>

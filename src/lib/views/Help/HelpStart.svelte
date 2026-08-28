@@ -24,7 +24,7 @@
   <div class="way">
     <h4>方式 2 · 仓根目录双击</h4>
     <ul>
-      <li><code>start-all.bat</code> — 启全栈 + 自动开浏览器到 <code>/workbench</code></li>
+      <li><code>start-all.bat</code> — 启全栈 + 自动开浏览器到 <code>/</code>(evorule 首页)</li>
       <li><code>stop-all.bat</code> — 停全栈</li>
     </ul>
   </div>
@@ -44,7 +44,7 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1</code></pre>
     <li><strong>evorule-rule-serve @ 18081</strong> — <code>&lt;evorule-rule 仓根&gt;\target\debug\evorule-rule-serve.exe</code></li>
     <li><strong>console-cloud dev @ 5174</strong> — <code>node scripts/dev.mjs</code></li>
   </ol>
-  <p>全部就绪后,自动打开浏览器 <code>http://127.0.0.1:5174/workbench</code>。</p>
+  <p>全部就绪后,自动打开浏览器 <code>http://127.0.0.1:5174/</code>(evorule 首页)。</p>
   <p class="hint">
     路径自动检测:默认假设 <code>evorule-server</code> / <code>evorule-rule</code> 是本仓的兄弟目录。如不在默认位置,可通过环境变量覆盖:
     <code>$env:EVORULE_SERVER_BIN</code> / <code>$env:EVORULE_RULE_BIN</code>。

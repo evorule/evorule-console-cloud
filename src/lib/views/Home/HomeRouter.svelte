@@ -24,11 +24,13 @@
 
 <script lang="ts">
   import { get } from "svelte/store";
+  import { onMount } from "svelte";
   import { sessionStore } from "$lib/stores/session";
   import { isEmptyDb } from "$lib/stores/db";
   import { homeModeStore, wizardInProgress } from "$lib/stores/home-mode";
   import { layerStore, resolveDefaultLayer } from "$lib/stores/layer";
   import { productionStateStore } from "$lib/stores/production-state";
+  import { shouldAutoStartTour, startTour } from "$lib/stores/onboarding";
   import DemoHome from "./DemoHome.svelte";
   import OnboardingWizard from "./OnboardingWizard.svelte";
   import RealWorkbench from "./RealWorkbench.svelte";
@@ -58,6 +60,13 @@
   $effect(() => {
     if (mode === "C" && get(layerStore) === null) {
       layerStore.set(resolveDefaultLayer(get(productionStateStore)));
+    }
+  });
+
+  // PR3:首次进入首页且未看过/未跳过引导时,自动播放 Tour
+  onMount(() => {
+    if (shouldAutoStartTour()) {
+      startTour();
     }
   });
 </script>

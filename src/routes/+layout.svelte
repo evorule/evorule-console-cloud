@@ -46,16 +46,65 @@
   import TaskFlowDropdown from "$lib/views/Home/TaskFlowDropdown.svelte";
   import TaskFlowWizard from "$lib/views/Home/TaskFlowWizard.svelte";
   import LlmChatSidebar from "$lib/views/Assistant/LlmChatSidebar.svelte";
+  import Glossary from "$lib/views/Help/Glossary.svelte";
+  import TourOverlay from "$lib/views/Home/TourOverlay.svelte";
+  import CommandPalette from "$lib/views/Home/CommandPalette.svelte";
 
   let { children } = $props();
+
+  // === 术语表弹窗(顶栏 ? 打开,全局一次) ===
+  let showGlossary = $state(false);
+  function openGlossary() {
+    showGlossary = true;
+  }
+  function closeGlossary() {
+    showGlossary = false;
+  }
+
+  // === 命令面板(PR5:顶栏搜索框 / Ctrl+K 唤起,全局一次) ===
+  let showPalette = $state(false);
+  function openPalette() {
+    showPalette = true;
+  }
+  function closePalette() {
+    showPalette = false;
+  }
+
+  // === 窄屏抽屉(PR10-重1):左导航抽屉 + 右 LLM 抽屉,均含遮罩 ===
+  let leftDrawerOpen = $state(false);
+  let rightDrawerOpen = $state(false);
+  function closeDrawers() {
+    leftDrawerOpen = false;
+    rightDrawerOpen = false;
+  }
+  function toggleLeftDrawer() {
+    leftDrawerOpen = !leftDrawerOpen;
+    if (leftDrawerOpen) rightDrawerOpen = false;
+  }
+  function toggleRightDrawer() {
+    rightDrawerOpen = !rightDrawerOpen;
+    if (rightDrawerOpen) leftDrawerOpen = false;
+  }
+
+  // 全局快捷键:Ctrl/⌘ + K 切换命令面板
+  function handleGlobalKey(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      showPalette = !showPalette;
+    }
+  }
 
   // === 三栏宽度(可拖动 + 持久化) ===
   const LAYOUT_KEY = "evorule-console-cloud:layout";
   const MIN_SIDE = 160;
   const MAX_SIDE = 480;
+  const LLM_COLLAPSED_W = 56;
   let leftWidth = $state(220);
   let rightWidth = $state(320);
   let draggingSide = $state<"left" | "right" | null>(null);
+
+  // PR5:右栏 LLM 未配置时折叠为窄条,释放 20% 宽
+  let llmConfigured = $derived(isLlmConfigured($llmConfig));
 
   function clampWidth(v: number): number {
     return Math.min(MAX_SIDE, Math.max(MIN_SIDE, v));
@@ -93,8 +142,11 @@
 
   // === 设置入口(大众版独立管理,不修改内核 VIEW_LIST) ===
   let showSettings = $state(false);
+  let settingsInitialTab = $state<"network" | "llm" | "onboarding">("network");
 
-  function openSettings() {
+  function openSettings(tab: "network" | "llm" | "onboarding" = "network") {
+    closeDrawers();
+    settingsInitialTab = tab;
     showSettings = true;
   }
 
@@ -106,6 +158,7 @@
   // 工作台视图 /view/* 受路由守卫约束(需 已登录 && 库非空),否则会被守卫 307 弹回首页。
   // 这里在跳转前先判断,未授权时给出明确引导(登录 / 建库),避免"点了无反应"。
   function navWorkbench(viewId: ViewId) {
+    closeDrawers();
     showSettings = false;
     const loggedIn = get(sessionStore).loggedIn;
     if (loggedIn && !get(isEmptyDb)) {
@@ -123,6 +176,7 @@
 
   // /export 也受守卫约束(需 已登录 && 库非空)
   function navExport() {
+    closeDrawers();
     showSettings = false;
     const loggedIn = get(sessionStore).loggedIn;
     if (loggedIn && !get(isEmptyDb)) {
@@ -140,18 +194,21 @@
 
   // 其余导航(治理/发布队列/版本历史/审计)直接跳转,由各自 +page 自守卫
   function go(path: string) {
+    closeDrawers();
     showSettings = false;
     goto(path);
   }
 
   // 极简工作台(新)— 纯 dashboard,无需登录/无需库,任何时候都能跳
   function navWorkbenchRoute() {
+    closeDrawers();
     showSettings = false;
     goto("/workbench");
   }
 
   // 帮助页(/help)— 公开文档,任何时候可访问
   function navHelpRoute() {
+    closeDrawers();
     showSettings = false;
     goto("/help");
   }
@@ -316,9 +373,22 @@
   </style>
 </svelte:head>
 
+<svelte:window onkeydown={handleGlobalKey} />
+
 <div class="app">
   <!-- ===== 顶栏 ===== -->
   <header class="header">
+    <!-- 窄屏抽屉开关:左导航(仅窄屏可见) -->
+    <button
+      class="icon-btn hamburger"
+      onclick={toggleLeftDrawer}
+      aria-label={leftDrawerOpen ? "关闭导航" : "打开导航"}
+      aria-expanded={leftDrawerOpen}
+      title="导航"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
     <a class="header-brand" href="/view/rules" onclick={(e) => { e.preventDefault(); navWorkbench("rules"); }}>
       <span class="logo">
         <img src="/evo_logo_96.png" alt="EvoRule logo" draggable="false" />
@@ -327,16 +397,23 @@
       <span class="brand-cloud">console-cloud</span>
     </a>
 
-    <div class="search-box">
+    <button
+      class="search-box"
+      type="button"
+      onclick={openPalette}
+      title="搜索或跳转(Ctrl+K)"
+      aria-label="打开命令面板"
+    >
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" placeholder="搜索规则集、数据集、发布记录..." />
+      <span class="search-placeholder">搜索或跳转…</span>
       <span class="kbd">Ctrl+K</span>
-    </div>
+    </button>
 
     <div
       class="conn-status"
       class:offline={connected === false}
       class:checking={connected === null}
+      data-tour="connection"
       title={connected === false
         ? "evorule-server 未响应(检查地址或启动服务器)"
         : "evorule-server 连接状态"}
@@ -358,13 +435,36 @@
         {$netConfig.mode === "online" ? "☁️" : "🖥️"}
       </button>
 
+      <!-- 帮助 / 术语表(顶栏随处可达,PR4) -->
+      <button
+        class="icon-btn"
+        onclick={openGlossary}
+        title="帮助与术语表"
+        aria-label="帮助与术语表"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </button>
+
       <TaskFlowDropdown />
 
       {#if $sessionStore.loggedIn}
         <NotificationBell />
       {/if}
 
-      <button class="icon-btn" onclick={openSettings} title="设置" aria-label="设置">
+      <!-- 窄屏抽屉开关:右 LLM 侧栏(仅窄屏 + LLM 已配置时可见) -->
+      {#if llmConfigured}
+        <button
+          class="icon-btn header-chat-btn"
+          onclick={toggleRightDrawer}
+          aria-label={rightDrawerOpen ? "关闭 AI 助手" : "打开 AI 助手"}
+          aria-expanded={rightDrawerOpen}
+          title="AI 助手"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+      {/if}
+
+      <button class="icon-btn" onclick={() => openSettings()} title="设置" aria-label="设置">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
 
@@ -378,12 +478,13 @@
   <!-- ===== 主区(三栏) ===== -->
   <div class="main">
     <!-- 左导航侧栏 -->
-    <aside class="sidebar" style:width={`${leftWidth}px`}>
+    <aside class="sidebar sidebar-left {leftDrawerOpen ? 'drawer-open' : ''}" style:width={`${leftWidth}px`}>
       <div class="sidebar-section">
         <!-- 极简工作台(新)— Dashboard 风格,任何时候可访问 -->
         <button
           class="sidebar-item workbench-item"
           class:active={isActive("/workbench")}
+          aria-current={isActive("/workbench") ? "page" : undefined}
           onclick={navWorkbenchRoute}
           title="极简首页 — 一键看到所有状态 + 高频操作 + 单页跳"
           aria-pressed={isActive("/workbench")}
@@ -401,6 +502,7 @@
           <button
             class="sidebar-item"
             class:active={isActive(`/view/${view.id}`)}
+            aria-current={isActive(`/view/${view.id}`) ? "page" : undefined}
             onclick={() => navWorkbench(view.id)}
             title={view.essence}
             aria-pressed={isActive(`/view/${view.id}`)}
@@ -418,6 +520,7 @@
         <button
           class="sidebar-item help-item"
           class:active={isActive("/help")}
+          aria-current={isActive("/help") ? "page" : undefined}
           onclick={navHelpRoute}
           title="帮助 — 5 分钟上手 + 详细使用指南"
           aria-pressed={isActive("/help")}
@@ -434,6 +537,7 @@
         <button
           class="sidebar-item"
           class:active={isActive("/export")}
+          aria-current={isActive("/export") ? "page" : undefined}
           onclick={() => navExport()}
           title="通用结果导出中心 — 6 种内容 × 4 种格式,BLAKE3 完整性自证"
           aria-pressed={isActive("/export")}
@@ -446,6 +550,7 @@
           <button
             class="sidebar-item"
             class:active={isActive("/publish-queue")}
+            aria-current={isActive("/publish-queue") ? "page" : undefined}
             onclick={() => go("/publish-queue")}
             title="发布队列 — 规则集发布审批与紧急回滚"
             aria-pressed={isActive("/publish-queue")}
@@ -456,6 +561,7 @@
           <button
             class="sidebar-item"
             class:active={isActive("/version-history")}
+            aria-current={isActive("/version-history") ? "page" : undefined}
             onclick={() => go("/version-history")}
             title="版本历史 — 生产规则集版本时间线"
             aria-pressed={isActive("/version-history")}
@@ -466,6 +572,7 @@
           <button
             class="sidebar-item"
             class:active={isActive("/audit")}
+            aria-current={isActive("/audit") ? "page" : undefined}
             onclick={() => go("/audit")}
             title="审计员工作台 — BLAKE3 审计链 + 因果链回溯"
             aria-pressed={isActive("/audit")}
@@ -476,6 +583,7 @@
           <button
             class="sidebar-item"
             class:active={isActive("/governance")}
+            aria-current={isActive("/governance") ? "page" : undefined}
             onclick={() => go("/governance")}
             title="治理(evorule-rule)— 数据集/规则/5 态生命周期/审批发布/版本链"
             aria-pressed={isActive("/governance")}
@@ -492,7 +600,8 @@
         <button
           class="sidebar-item"
           class:active={showSettings}
-          onclick={openSettings}
+          aria-current={showSettings ? "page" : undefined}
+          onclick={() => openSettings()}
           title="设置(联网 + LLM 配置)"
           aria-pressed={showSettings}
         >
@@ -520,7 +629,7 @@
     <!-- 居中主内容 -->
     <main class="content">
       {#if showSettings}
-        <Settings onclose={closeSettings} />
+        <Settings onclose={closeSettings} initialTab={settingsInitialTab} />
       {:else}
         {@render children()}
       {/if}
@@ -536,14 +645,53 @@
       aria-label="调整右侧栏宽度"
     ></div>
 
-    <!-- 右 LLM 交互侧栏 -->
-    <aside class="sidebar llm-rail" style:width={`${rightWidth}px`}>
-      <LlmChatSidebar />
+    <!-- 右 LLM 交互侧栏(PR5:未配置时折叠窄条;PR10-重1:窄屏变抽屉) -->
+    <aside
+      class="sidebar llm-rail {rightDrawerOpen ? 'drawer-open' : ''}"
+      style:width={`${llmConfigured ? rightWidth : LLM_COLLAPSED_W}px`}
+    >
+      {#if llmConfigured}
+        <LlmChatSidebar />
+      {:else}
+        <div class="llm-collapsed" title="配置 LLM 助理以启用右侧对话">
+          <button
+            class="llm-collapse-btn"
+            onclick={() => openSettings("llm")}
+            aria-label="配置 LLM 助理"
+            title="配置 LLM 助理"
+          >
+            <span class="llm-collapse-emoji">💬</span>
+            <span class="llm-collapse-text">配置 LLM</span>
+          </button>
+        </div>
+      {/if}
     </aside>
   </div>
 
+  <!-- 窄屏抽屉遮罩(PR10-重1):任一抽屉开时显示,点击关闭 -->
+  {#if leftDrawerOpen || rightDrawerOpen}
+    <div class="drawer-mask" onclick={closeDrawers} role="presentation"></div>
+  {/if}
+
   <!-- 全局 Toast 通知 -->
   <Toast />
+
+  <!-- PR4:术语表弹窗(顶栏 ? 打开,全局) -->
+  {#if showGlossary}
+    <Glossary onclose={closeGlossary} />
+  {/if}
+
+  <!-- PR5:命令面板(顶栏搜索框 / Ctrl+K 唤起,全局) -->
+  {#if showPalette}
+    <CommandPalette
+      onclose={closePalette}
+      onOpenGlossary={openGlossary}
+      onOpenSettings={() => openSettings("onboarding")}
+    />
+  {/if}
+
+  <!-- PR4:首启交互式引导(零依赖 spotlight),全局挂载,确保任意页面/设置里重播都能显示 -->
+  <TourOverlay />
 </div>
 
 <style>
@@ -602,5 +750,111 @@
   .conn-status.checking {
     background: var(--warning-bg);
     color: var(--warning);
+  }
+
+  /* 右栏 LLM 未配置时的折叠窄条(PR5) */
+  .llm-collapsed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--sp-sm) 0;
+    background: var(--sidebar-bg);
+  }
+  .llm-collapse-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    height: 100%;
+    padding: var(--sp-md) 2px;
+    background: transparent;
+    border: none;
+    color: var(--sidebar-text);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: background var(--tr-fast), color var(--tr-fast);
+  }
+  .llm-collapse-btn:hover {
+    background: var(--sidebar-hover);
+    color: var(--sidebar-text-active);
+  }
+  .llm-collapse-emoji {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .llm-collapse-text {
+    font-size: 11px;
+    writing-mode: vertical-rl;
+    letter-spacing: 1px;
+  }
+
+  /* 抽屉开关按钮:默认隐藏,仅窄屏显示 */
+  .hamburger,
+  .header-chat-btn {
+    display: none;
+  }
+
+  /* 顶栏置于最高层:抽屉遮罩下仍可点汉堡/聊天按钮关闭 */
+  .header {
+    z-index: 1300;
+  }
+
+  /* 窄屏抽屉遮罩(PR10-重1) */
+  .drawer-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(2, 6, 23, 0.55);
+    backdrop-filter: blur(1px);
+  }
+
+  @media (max-width: 900px) {
+    .hamburger,
+    .header-chat-btn {
+      display: inline-flex;
+    }
+
+    /* 左导航 → 离屏抽屉 */
+    .sidebar-left {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      bottom: 0;
+      width: 280px !important;
+      max-width: 82vw;
+      z-index: 1200;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: var(--sh-modal);
+      border-right: 1px solid var(--border);
+    }
+    .sidebar-left.drawer-open {
+      transform: translateX(0);
+    }
+
+    /* 右 LLM 栏 → 离屏抽屉 */
+    .llm-rail {
+      position: fixed;
+      top: 52px;
+      right: 0;
+      bottom: 0;
+      width: 320px !important;
+      max-width: 88vw;
+      z-index: 1200;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      box-shadow: var(--sh-modal);
+      border-left: 1px solid var(--border);
+    }
+    .llm-rail.drawer-open {
+      transform: translateX(0);
+    }
+
+    /* 抽屉模式不再可拖拽,隐藏分隔条 */
+    .resizer {
+      display: none;
+    }
   }
 </style>

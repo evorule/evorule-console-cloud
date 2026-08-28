@@ -15,17 +15,27 @@
 
   interface Props {
     state: ConnectionState;
+    /** 可选:点击横幅打开连接诊断抽屉 */
+    onDiagnose?: () => void;
   }
 
-  let { state }: Props = $props();
+  let { state, onDiagnose }: Props = $props();
+
+  function handleKey(e: KeyboardEvent) {
+    if (!onDiagnose) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onDiagnose();
+    }
+  }
 
   const cfg = $derived.by(() => {
     switch (state.status) {
       case "connected":
         return {
-          bg: "var(--color-success-bg, #f0fdf4)",
-          fg: "var(--color-success, #16a34a)",
-          border: "var(--color-success, #86efac)",
+          bg: "var(--success-bg, #f0fdf4)",
+          fg: "var(--success, #16a34a)",
+          border: "var(--success, #86efac)",
           icon: "✅",
           text: "已连接",
           sub: state.lastConnectedAt
@@ -35,8 +45,8 @@
         };
       case "connecting":
         return {
-          bg: "var(--color-warning-bg, #fffbeb)",
-          fg: "var(--color-warning, #d97706)",
+          bg: "var(--warning-bg, #fffbeb)",
+          fg: "var(--warning, #d97706)",
           border: "#fcd34d",
           icon: "🔗",
           text: "连接中...",
@@ -66,9 +76,9 @@
       case "disconnected":
       default:
         return {
-          bg: "var(--color-gray-50, #f9fafb)",
-          fg: "var(--color-gray-500, #6b7280)",
-          border: "var(--color-gray-200, #e5e7eb)",
+          bg: "var(--bg-page, #f9fafb)",
+          fg: "var(--text-secondary, #6b7280)",
+          border: "var(--border, #e5e7eb)",
           icon: "⛔",
           text: "未连接",
           sub: "未订阅任何 session 的事件流",
@@ -78,10 +88,7 @@
   });
 </script>
 
-<div
-  class="connection-banner"
-  style={`background: ${cfg.bg}; border-color: ${cfg.border}; color: ${cfg.fg};`}
->
+{#snippet bannerInner()}
   <span class="icon" class:pulse={cfg.pulse}>{cfg.icon}</span>
   <div class="texts">
     <div class="main-text">{cfg.text}</div>
@@ -92,7 +99,31 @@
   {#if state.status === "reconnecting" || state.status === "degraded"}
     <div class="spinner-mini" class:spin={cfg.pulse}></div>
   {/if}
-</div>
+  {#if onDiagnose}
+    <span class="chev" aria-hidden="true">›</span>
+  {/if}
+{/snippet}
+
+{#if onDiagnose}
+  <div
+    class="connection-banner clickable"
+    style={`background: ${cfg.bg}; border-color: ${cfg.border}; color: ${cfg.fg};`}
+    role="button"
+    tabindex="0"
+    onclick={onDiagnose}
+    onkeydown={handleKey}
+    aria-label="查看连接诊断"
+  >
+    {@render bannerInner()}
+  </div>
+{:else}
+  <div
+    class="connection-banner"
+    style={`background: ${cfg.bg}; border-color: ${cfg.border}; color: ${cfg.fg};`}
+  >
+    {@render bannerInner()}
+  </div>
+{/if}
 
 <style>
   .connection-banner {
@@ -103,6 +134,23 @@
     border: 1px solid;
     border-radius: 6px;
     font-size: 12px;
+    flex-shrink: 0;
+  }
+  .connection-banner.clickable {
+    cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+  .connection-banner.clickable:hover {
+    filter: brightness(0.96);
+  }
+  .connection-banner.clickable:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  .chev {
+    margin-left: 4px;
+    font-size: 16px;
+    opacity: 0.7;
     flex-shrink: 0;
   }
   .icon {

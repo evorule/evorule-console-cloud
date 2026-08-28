@@ -236,11 +236,11 @@
     font-size: 26px;
     font-weight: 700;
     margin: 0 0 6px 0;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .wizard-header p {
     font-size: 14px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin: 0;
   }
   .cancel-link {
@@ -249,14 +249,14 @@
     right: 0;
     background: none;
     border: none;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 12px;
     cursor: pointer;
     text-decoration: underline;
     padding: 4px 8px;
   }
   .cancel-link:hover {
-    color: var(--color-error-text, var(--color-error, #991b1b));
+    color: var(--danger, var(--danger, #991b1b));
   }
 
   /* 步骤进度指示器 */
@@ -264,7 +264,7 @@
     list-style: none;
     padding: 16px;
     margin: 0;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 8px;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -281,7 +281,7 @@
     transition: background 0.15s ease;
   }
   .progress-step.active {
-    background: var(--color-primary-bg, var(--color-info-bg, #eff6ff));
+    background: var(--brand-bg, var(--info-bg, #eff6ff));
   }
   .progress-num {
     display: inline-flex;
@@ -290,17 +290,17 @@
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: var(--color-gray-300, #cbd5e1);
+    background: var(--border, #cbd5e1);
     color: white;
     font-size: 12px;
     font-weight: 600;
   }
   .progress-step.active .progress-num {
-    background: var(--color-primary, #2563eb);
-    box-shadow: 0 0 0 3px var(--color-primary-bg, var(--color-info-bg, #eff6ff));
+    background: var(--brand, #2563eb);
+    box-shadow: 0 0 0 3px var(--brand-bg, var(--info-bg, #eff6ff));
   }
   .progress-step.done .progress-num {
-    background: var(--color-success, #16a34a);
+    background: var(--success, #16a34a);
   }
   .progress-content {
     display: flex;
@@ -310,21 +310,21 @@
   .progress-title {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .progress-step:not(.active):not(.done) .progress-title {
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .progress-desc {
     font-size: 10px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     line-height: 1.3;
   }
 
   /* 步骤主体容器 */
   .step-container {
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 8px;
     padding: 20px;
     min-height: 320px;
@@ -341,10 +341,10 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 12px;
-    background: var(--color-info-bg, #dbeafe);
+    background: var(--info-bg, #dbeafe);
     border-radius: 6px;
     font-size: 12px;
-    color: var(--color-info-text, var(--color-info, #1e40af));
+    color: var(--info, var(--info, #1e40af));
   }
   .skip-hint {
     flex: 1;
@@ -352,14 +352,14 @@
   .btn-skip {
     padding: 6px 14px;
     background: var(--bg-card);
-    border: 1px solid var(--color-info-text, var(--color-info, #1e40af));
-    color: var(--color-info-text, var(--color-info, #1e40af));
+    border: 1px solid var(--info, var(--info, #1e40af));
+    color: var(--info, var(--info, #1e40af));
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
   }
   .btn-skip:hover {
-    background: var(--color-info-bg, #dbeafe);
+    background: var(--info-bg, #dbeafe);
   }
 </style>

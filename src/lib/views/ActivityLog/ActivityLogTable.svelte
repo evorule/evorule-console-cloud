@@ -116,16 +116,16 @@
     font-size: 20px;
     font-weight: 600;
     margin: 0;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .log-count {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .log-empty {
     padding: 48px 24px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     background: var(--bg-card);
     border-radius: 8px;
   }
@@ -139,19 +139,19 @@
   }
   .log-table th {
     padding: 12px 16px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     text-align: left;
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     text-transform: uppercase;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
   }
   .log-table td {
     padding: 10px 16px;
     font-size: 13px;
-    color: var(--color-text-primary, #1e293b);
-    border-bottom: 1px solid var(--color-gray-100, #f1f5f9);
+    color: var(--text-primary, #1e293b);
+    border-bottom: 1px solid var(--bg-hover, #f1f5f9);
   }
   .log-table tr:last-child td {
     border-bottom: none;
@@ -171,19 +171,19 @@
   .col-target {
     font-family: monospace;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .col-detail {
     max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .col-time {
     font-family: monospace;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     white-space: nowrap;
   }
   .log-pagination {
@@ -196,22 +196,22 @@
   .page-btn {
     padding: 6px 14px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .page-btn:disabled {
-    background: var(--color-gray-100, #f1f5f9);
-    color: var(--color-gray-400, #94a3b8);
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-secondary, #94a3b8);
     cursor: not-allowed;
   }
   .page-btn:not(:disabled):hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .page-info {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
 </style>

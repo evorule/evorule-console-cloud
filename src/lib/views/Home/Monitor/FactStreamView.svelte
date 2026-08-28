@@ -137,7 +137,7 @@
     min-width: 0;
     min-height: 0;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
     height: 100%;
@@ -148,8 +148,8 @@
     justify-content: space-between;
     gap: 10px;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-    background: var(--color-gray-50, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
     flex-wrap: wrap;
     flex-shrink: 0;
   }
@@ -162,11 +162,11 @@
     margin: 0;
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .fs-count {
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-family: var(--font-mono, monospace);
   }
   .fs-right {
@@ -179,7 +179,7 @@
   .fs-type-filter {
     font-size: 11px;
     padding: 4px 8px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     background: var(--bg-card);
     font-family: inherit;
@@ -192,7 +192,7 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
     cursor: pointer;
   }
   .btn {
@@ -205,11 +205,11 @@
   }
   .btn-clear {
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border: 1px solid var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .btn-clear:hover {
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-hover, #f3f4f6);
   }
   .fs-list {
     flex: 1;
@@ -228,7 +228,7 @@
   .fs-empty {
     padding: 48px 16px;
     text-align: center;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     height: 100%;
     display: flex;
     flex-direction: column;

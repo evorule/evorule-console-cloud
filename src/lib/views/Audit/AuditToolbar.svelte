@@ -153,7 +153,7 @@
     gap: 16px;
     padding: 8px 12px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     flex-wrap: wrap;
   }
@@ -168,7 +168,7 @@
   }
   .mode-label {
     font-size: 11px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .tb-btn {
     font-size: 12px;
@@ -186,8 +186,8 @@
     cursor: not-allowed;
   }
   .tb-btn.primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .tb-btn.primary:hover:not(:disabled) {
@@ -195,30 +195,30 @@
   }
   .tb-btn.secondary {
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .tb-btn.secondary:hover:not(:disabled) {
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
   }
   .tb-btn.llm {
-    background: var(--color-warning-bg, #fef3c7);
-    border-color: var(--color-warning, #fde68a);
-    color: var(--color-warning, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    border-color: var(--warning, #fde68a);
+    color: var(--warning, #92400e);
   }
   .tb-btn.llm:hover:not(:disabled) {
-    background: var(--color-warning, #fde68a);
+    background: var(--warning, #fde68a);
   }
   .tb-btn.mode-btn {
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-gray-600, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
     padding: 5px 8px;
     font-size: 11px;
   }
   .tb-btn.mode-btn.active {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
 </style>

@@ -20,6 +20,7 @@
   import MonitorDashboard from "./Monitor/MonitorDashboard.svelte";
   import OnboardingBanner from "./OnboardingBanner.svelte";
   import DecisionMakerView from "$lib/views/DecisionMaker/DecisionMakerView.svelte";
+  import GuidedHint from "$lib/views/Feedback/GuidedHint.svelte";
 
   interface Props {
     layer: Layer;
@@ -104,6 +105,14 @@
   <!-- P11 缺口 3:首屏引导横幅(首次进入工作台时显示) -->
   <OnboardingBanner />
 
+  <!-- PR7:实时工作台首访提示(L1 监控大屏 / L2 编辑台 说明) -->
+  <GuidedHint
+    hintId="real-workbench"
+    variant="tip"
+    title="这是你的实时工作台"
+    body="顶部可在 L1 监控大屏(实时状态)与 L2 编辑台之间切换。先确认顶部连接状态为绿色,rule 与 session 才会实时刷新。"
+  />
+
   {#if isDecisionMaker}
     <!-- P11 缺口 4:决策者视图(简化版,隐藏技术细节) -->
     <div class="layer-panel decision-maker-panel">
@@ -169,17 +178,17 @@
     font-size: 18px;
     font-weight: 600;
     margin: 0;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .user-badge {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
 
   .layer-toggle {
     display: flex;
     gap: 4px;
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
     padding: 4px;
     border-radius: 6px;
   }
@@ -190,7 +199,7 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     transition: all 0.15s ease;
   }
   .layer-btn:disabled {
@@ -198,7 +207,7 @@
   }
   .layer-btn.active {
     background: var(--bg-card);
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
@@ -218,22 +227,22 @@
   }
   .btn-ghost {
     background: transparent;
-    color: var(--color-text-secondary, #64748b);
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    color: var(--text-secondary, #64748b);
+    border: 1px solid var(--border, #cbd5e1);
   }
   .btn-ghost:hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .btn-viewmode {
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, var(--color-info, #1e40af));
-    border: 1px solid var(--color-info, #3b82f6);
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, var(--info, #1e40af));
+    border: 1px solid var(--info, #3b82f6);
     font-weight: 600;
   }
   .btn-viewmode.decision-maker {
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning-text, var(--color-warning, #92400e));
-    border-color: var(--color-warning, #f59e0b);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, var(--warning, #92400e));
+    border-color: var(--warning, #f59e0b);
   }
   .btn-viewmode:hover {
     opacity: 0.85;
@@ -256,14 +265,14 @@
     gap: 12px;
     margin-bottom: 24px;
     padding-bottom: 16px;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
   }
   .panel-header h3 {
     font-size: 16px;
     font-weight: 600;
     margin: 0;
     flex: 1;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .status-badge {
     padding: 2px 10px;
@@ -272,8 +281,8 @@
     font-weight: 500;
   }
   .status-blue {
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info-text, var(--color-info, #1e40af));
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, var(--info, #1e40af));
   }
 
   .layer-content {
@@ -288,24 +297,24 @@
   .placeholder-text {
     font-size: 13px;
     line-height: 1.6;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-bottom: 24px;
   }
 
   .mock-rule-list {
     text-align: left;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 6px;
     padding: 12px 16px;
     font-family: monospace;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     max-width: 560px;
     margin: 0 auto;
   }
   .mock-rule {
     padding: 4px 0;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
   }
   .mock-rule:last-child {
     border-bottom: none;

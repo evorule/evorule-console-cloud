@@ -10,6 +10,21 @@
 
 ### 变更
 
+#### 一键启动脚本：清偿"已知限制"（README-STARTUP.md）
+
+- `start-all.ps1`：新增 `-Quiet` / `-NoBrowser` 参数（无人值守，不卡 `Read-Host`）；启动失败/端口超时自动回滚本次拉起的进程树（`taskkill /T` 连子进程，只动本次启动的，不碰既有实例）；三服务 stdout/stderr 统一重定向到 `logs\`（不再落根目录）
+- `start-all.ps1`：修复 evorule-server 裸起无法监听既定端口的既有缺陷——默认按兄弟目录推导 `--rules-dir`/`--core-eval`/`--service-registry`/`--allowed-origins` 参数组，支持 `EVORULE_SERVER_ARGS` / `EVORULE_RULE_ARGS` 环境变量整体覆盖（公开仓不硬编码管理员凭据，evorule-rule 首次引导走环境变量追加）
+- 修复启动脚本端口不一致：evorule-server 绑 18090 而前端 `DEFAULT_LOCAL_BASE_URL` 探测 18080，页面报"服务不可用"；统一到 18080（start-all / stop-all / status-all / README 同步）
+- 修复端口检测误报：vite 默认只绑 `::1`（Node 17+ localhost 解析），TcpClient 默认 IPv4 地址族探测必失败、Test-NetConnection 对 refused 场景每次耗时数秒拖垮 Wait-Port 轮询；统一改查 `Get-NetTCPConnection` 监听表（毫秒级、双栈皆准），`WEB_URL` 用 localhost 而非 127.0.0.1
+- 新增 `status-all.ps1`：三服务健康检查；`-AutoRestart` 只拉起死掉的服务（复用 start-all 幂等语义）
+- 新增 `register-watchdog.ps1` / `unregister-watchdog.ps1`：Windows 计划任务看门狗（每 5 分钟 `status-all -AutoRestart -Quiet`），服务异常退出自动恢复，进程由任务计划程序启动、脱离终端会话生命周期
+- `stop-all.ps1`：新增 `-Quiet`（自动化调用不卡输入）
+- `scripts/dev.mjs`：支持 `--yes` / `EVORULE_DEV_YES=1` 跳过端口占用交互确认（修复经 Start-Process 隐藏窗口启动时 stdin 仍为 TTY 导致确认挂起的缺陷）；`--yes` 不透传给 vite
+- 修复全部启动脚本的编码缺陷：重写后为无 BOM UTF-8，PS 5.1 按 ANSI/GBK 误读中文注释、奇数字节序列吞并后续引号导致解析错误；统一转为 UTF-8 with BOM
+- 回滚升级为**部分保活续启**：失败时已就绪的服务保持运行，只停止"本次拉起但未就绪"的进程树；修复后重跑 start-all.bat 续启（幂等跳过已运行的）
+- 日志轮转策略：每次拉起服务前当前日志转存 `*.prev`（旧 `.prev` 删除），任意时刻只保留"本轮 + 上一轮"两份，容量有界，无需手动清理或后台任务
+- `README-STARTUP.md`：日志位置与轮转策略、健康检查/看门狗用法、后端参数环境变量覆盖；"已知限制"五项全部解决（修复期间曾因无编码参数的文本替换产生 mojibake，已整文件重写修复）
+
 #### 规则写入链路适配（WorkspaceBackend 落地）
 
 内核依赖内联后遗留的 v0.1.1 API 调用债务全部清偿，规则写入链路对齐内核 v0.2.0 workspace 化架构（规划文档：`docs/planning/2026-08-27-workspace-write-chain.md`）。

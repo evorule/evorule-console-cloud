@@ -18,11 +18,11 @@
 
   const phaseMap: Record<ReactorPhase, { label: string; color: string; bg: string; border: string; icon: string }> = {
     idle:      { label: "空闲",    color: "#6b7280", bg: "#f9fafb", border: "#d1d5db", icon: "⏸" },
-    draining:  { label: "排出中",  color: "var(--brand, #1d4ed8)", bg: "var(--color-info-bg, #eff6ff)", border: "var(--color-info, #93c5fd)", icon: "🔽" },
-    executing: { label: "执行中",  color: "#15803d", bg: "#f0fdf4", border: "var(--color-success, #86efac)", icon: "▶" },
+    draining:  { label: "排出中",  color: "var(--brand, #1d4ed8)", bg: "var(--info-bg, #eff6ff)", border: "var(--info, #93c5fd)", icon: "🔽" },
+    executing: { label: "执行中",  color: "#15803d", bg: "#f0fdf4", border: "var(--success, #86efac)", icon: "▶" },
     awaiting_io:{label: "等待IO",  color: "#c2410c", bg: "#fff7ed", border: "#fdba74", icon: "⏳" },
     stable:    { label: "稳定",    color: "#0f766e", bg: "#f0fdfa", border: "#5eead4", icon: "✅" },
-    error:     { label: "错误",    color: "#b91c1c", bg: "var(--color-error-bg, #fef2f2)", border: "var(--color-error, #fca5a5)", icon: "❌" },
+    error:     { label: "错误",    color: "#b91c1c", bg: "var(--danger-bg, #fef2f2)", border: "var(--danger, #fca5a5)", icon: "❌" },
   };
 
   const phase = $derived(state ? phaseMap[state.phase] : phaseMap.idle);
@@ -87,7 +87,7 @@
     gap: 14px;
     padding: 8px 14px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     flex-wrap: wrap;
     flex-shrink: 0;
@@ -138,7 +138,7 @@
   }
   .metrics.muted {
     font-size: 11px;
-    color: var(--color-gray-400, #9ca3af);
+    color: var(--text-secondary, #9ca3af);
   }
   .metric-muted {
     font-size: 11px;
@@ -151,14 +151,14 @@
   }
   .metric-label {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     text-transform: uppercase;
     font-weight: 500;
   }
   .metric-value {
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .metric-value.mono {
     font-family: var(--font-mono, monospace);
@@ -168,11 +168,11 @@
     color: #c2410c;
   }
   .metric.alert .metric-value {
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
     animation: flash 1.5s ease-in-out infinite;
   }
   .metric.done .metric-value {
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   @keyframes flash {
     0%, 100% { opacity: 1; }

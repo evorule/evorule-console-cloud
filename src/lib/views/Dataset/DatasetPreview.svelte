@@ -227,16 +227,16 @@
 
 <style>
   .dataset-preview {
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 6px;
     padding: 12px;
     background: var(--bg-card);
   }
   .dataset-preview[data-status="error"] {
-    border-color: var(--color-error, #dc2626);
+    border-color: var(--danger, #dc2626);
   }
   .dataset-preview[data-status="warn"] {
-    border-color: var(--color-warning, #d97706);
+    border-color: var(--warning, #d97706);
   }
   .preview-header {
     display: flex;
@@ -256,16 +256,16 @@
     font-weight: 600;
   }
   .status-ok {
-    background: var(--color-success-bg, #f0fdf4);
-    color: var(--color-success, #16a34a);
+    background: var(--success-bg, #f0fdf4);
+    color: var(--success, #16a34a);
   }
   .status-warn {
-    background: var(--color-warning-bg, #fffbeb);
-    color: var(--color-warning, #d97706);
+    background: var(--warning-bg, #fffbeb);
+    color: var(--warning, #d97706);
   }
   .status-error {
-    background: var(--color-error-bg, #fef2f2);
-    color: var(--color-error, #dc2626);
+    background: var(--danger-bg, #fef2f2);
+    color: var(--danger, #dc2626);
   }
   .check-list {
     list-style: none;
@@ -280,10 +280,10 @@
     font-size: 12px;
   }
   .check-item[data-status="error"] .check-msg {
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
   }
   .check-item[data-status="warn"] .check-msg {
-    color: var(--color-warning, #d97706);
+    color: var(--warning, #d97706);
   }
   .check-icon {
     flex-shrink: 0;
@@ -291,17 +291,17 @@
   .override-summary {
     margin-bottom: 12px;
     padding: 6px 8px;
-    background: var(--color-info-bg, #f0f9ff);
+    background: var(--info-bg, #f0f9ff);
     border-radius: 4px;
     font-size: 12px;
-    color: var(--color-info, #2563eb);
+    color: var(--info, #2563eb);
   }
   .override-summary code {
     font-family: var(--font-mono, monospace);
     font-size: 11px;
   }
   .ruleset-section {
-    border-top: 1px solid var(--color-gray-200, #e2e8f0);
+    border-top: 1px solid var(--border, #e2e8f0);
     padding-top: 8px;
   }
   .btn-toggle {
@@ -309,11 +309,11 @@
     border: none;
     cursor: pointer;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 4px 0;
   }
   .btn-toggle:hover {
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .ruleset-preview {
     margin: 8px 0 0 0;

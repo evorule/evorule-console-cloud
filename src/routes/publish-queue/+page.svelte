@@ -30,6 +30,6 @@
   .loading {
     padding: 48px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
 </style>

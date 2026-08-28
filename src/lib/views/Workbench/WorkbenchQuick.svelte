@@ -91,16 +91,17 @@
   {#if activeTab === "rule"}
     <div class="quick-panel">
       <div class="form-field">
-        <label>规则 ID</label>
+        <label for="quick-rule-id">规则 ID</label>
         <input
+          id="quick-rule-id"
           type="text"
           bind:value={ruleId}
           placeholder="rule.&lt;scope&gt;.&lt;name&gt;"
         />
       </div>
       <div class="form-field">
-        <label>规则 JSON(type + params)</label>
-        <textarea bind:value={ruleJson}></textarea>
+        <label for="quick-rule-json">规则 JSON(type + params)</label>
+        <textarea id="quick-rule-json" bind:value={ruleJson}></textarea>
       </div>
       <div class="btn-row">
         <button
@@ -119,8 +120,8 @@
     <div class="quick-panel">
       <div class="form-row">
         <div class="form-field">
-          <label>Session</label>
-          <select bind:value={selectedSession}>
+          <label for="quick-session">Session</label>
+          <select id="quick-session" bind:value={selectedSession}>
             {#if sessionList.length === 0}
               <option value="">(暂无 session)</option>
             {:else}
@@ -131,8 +132,8 @@
           </select>
         </div>
         <div class="form-field" style="flex: 2;">
-          <label>Payload (JSON)</label>
-          <input type="text" bind:value={payloadJson} placeholder={"{key: value}"} />
+          <label for="quick-payload">Payload (JSON)</label>
+          <input id="quick-payload" type="text" bind:value={payloadJson} placeholder={"{key: value}"} />
         </div>
       </div>
       <div class="btn-row">

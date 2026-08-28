@@ -97,7 +97,7 @@
 <style>
   .decision-support-panel {
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -107,22 +107,22 @@
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    background: linear-gradient(135deg, var(--color-warning-bg, #fef3c7) 0%, var(--color-warning, #fde68a) 100%);
-    border-bottom: 1px solid var(--color-warning, #fde68a);
+    background: linear-gradient(135deg, var(--warning-bg, #fef3c7) 0%, var(--warning, #fde68a) 100%);
+    border-bottom: 1px solid var(--warning, #fde68a);
     flex-wrap: wrap;
   }
   .title {
     margin: 0;
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-warning, #78350f);
+    color: var(--warning, #78350f);
     flex-shrink: 0;
   }
   .meta {
     display: flex;
     gap: 10px;
     font-size: 10px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
     flex: 1;
     min-width: 0;
   }
@@ -134,11 +134,11 @@
     border: none;
     cursor: pointer;
     font-size: 14px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
     padding: 0 4px;
   }
   .close-btn:hover {
-    color: var(--color-warning, #78350f);
+    color: var(--warning, #78350f);
   }
 
   .dsp-body {
@@ -156,7 +156,7 @@
   .section-title {
     font-size: 11px;
     font-weight: 700;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
@@ -164,7 +164,7 @@
     margin: 0;
     padding-left: 20px;
     font-size: 12px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     line-height: 1.6;
   }
   .section-list li {
@@ -172,10 +172,10 @@
   }
 
   .risks .section-title {
-    color: var(--color-warning, #b45309);
+    color: var(--warning, #b45309);
   }
   .risks .section-list {
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
   }
 
   .action-list {
@@ -188,36 +188,36 @@
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    background: var(--color-gray-50, #f9fafb);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 4px;
     flex-wrap: wrap;
   }
   .action-text {
     font-size: 12px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     flex: 1;
     min-width: 0;
   }
   .rollback-btn {
     font-size: 11px;
     padding: 4px 10px;
-    background: var(--color-error-bg, #fef2f2);
-    color: var(--color-error, #991b1b);
-    border: 1px solid var(--color-error, #fca5a5);
+    background: var(--danger-bg, #fef2f2);
+    color: var(--danger, #991b1b);
+    border: 1px solid var(--danger, #fca5a5);
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
     white-space: nowrap;
   }
   .rollback-btn:hover {
-    background: var(--color-error-bg, #fee2e2);
+    background: var(--danger-bg, #fee2e2);
   }
 
   .dsp-empty {
     padding: 16px;
     text-align: center;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-size: 12px;
   }
 </style>

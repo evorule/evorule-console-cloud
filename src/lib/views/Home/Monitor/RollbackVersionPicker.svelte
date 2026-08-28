@@ -118,36 +118,36 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
   }
   .rb-title {
     margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .btn-close {
     background: transparent;
     border: none;
     cursor: pointer;
     font-size: 16px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     padding: 0 4px;
   }
   .btn-close:hover {
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .rb-hint {
     padding: 10px 16px;
     margin: 0;
     font-size: 12px;
     line-height: 1.5;
-    color: var(--color-text-secondary, #4b5563);
-    background: var(--color-warning-bg, #fffbeb);
-    border-bottom: 1px solid var(--color-warning, #fde68a);
+    color: var(--text-secondary, #4b5563);
+    background: var(--warning-bg, #fffbeb);
+    border-bottom: 1px solid var(--warning, #fde68a);
   }
   .rb-hint strong {
-    color: var(--color-warning, #b45309);
+    color: var(--warning, #b45309);
   }
   .rb-list {
     display: flex;
@@ -174,10 +174,10 @@
     font-family: inherit;
   }
   .rb-item:hover:not(.current) {
-    background: var(--color-info-bg, #eff6ff);
+    background: var(--info-bg, #eff6ff);
   }
   .rb-item.current {
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-hover, #f3f4f6);
     cursor: default;
     opacity: 0.75;
   }
@@ -194,19 +194,19 @@
     font-family: var(--font-mono, monospace);
     font-weight: 700;
     font-size: 14px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .rb-current-tag {
     font-size: 10px;
     padding: 1px 6px;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
     border-radius: 8px;
     font-weight: 600;
   }
   .rb-rules {
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .rb-right {
     display: flex;
@@ -214,7 +214,7 @@
     gap: 6px;
     flex-wrap: wrap;
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .rb-date {
     font-family: var(--font-mono, monospace);
@@ -227,7 +227,7 @@
   }
   .rb-action {
     margin-left: 6px;
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
     font-weight: 600;
   }
   .rb-item:hover:not(.current) .rb-action {
@@ -235,10 +235,10 @@
   }
   .rb-footer {
     padding: 10px 16px;
-    border-top: 1px solid var(--color-gray-200, #e5e7eb);
+    border-top: 1px solid var(--border, #e5e7eb);
     display: flex;
     justify-content: flex-end;
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
   }
   .btn {
     font-size: 12px;
@@ -250,10 +250,10 @@
   }
   .btn-cancel {
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border: 1px solid var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .btn-cancel:hover {
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-hover, #f3f4f6);
   }
 </style>

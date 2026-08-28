@@ -35,11 +35,11 @@
   .mp-title {
     margin: 0 0 4px;
     font-size: 22px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .mp-subtitle {
     margin: 0;
     font-size: 13px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
 </style>

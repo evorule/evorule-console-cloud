@@ -279,7 +279,7 @@
   }
   .count {
     font-size: 12px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .toolbar-right {
     display: flex;
@@ -289,35 +289,35 @@
   .btn {
     font-size: 13px;
     padding: 5px 12px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     background: var(--bg-card);
     cursor: pointer;
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .btn-text {
     border: none;
     background: transparent;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 5px 8px;
   }
   .btn-text:hover {
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .hint-banner {
     padding: 8px 12px;
-    background: var(--color-info-bg, #f0f9ff);
-    color: var(--color-info, #2563eb);
+    background: var(--info-bg, #f0f9ff);
+    color: var(--info, #2563eb);
     border-radius: 4px;
     font-size: 12px;
     margin-bottom: 12px;
   }
   .tree-container {
-    border: 1px solid var(--color-gray-200, #e2e8f0);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 6px;
     padding: 8px;
     background: var(--bg-card);
@@ -344,7 +344,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    border-bottom: 1px solid var(--border, #e2e8f0);
   }
   .modal-header h3 {
     margin: 0;
@@ -356,7 +356,7 @@
     border: none;
     cursor: pointer;
     font-size: 16px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     padding: 0 4px;
   }
   .modal-body {
@@ -366,7 +366,7 @@
     display: block;
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-bottom: 12px;
   }
   .form-input,
@@ -375,7 +375,7 @@
     width: 100%;
     font-size: 13px;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
     margin-top: 4px;
@@ -390,7 +390,7 @@
   }
   .preset-label {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .preset-icon {
     background: transparent;
@@ -401,17 +401,17 @@
     border-radius: 4px;
   }
   .preset-icon:hover {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
   }
   .preset-icon.active {
-    border-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #dbeafe);
+    border-color: var(--brand, #2563eb);
+    background: var(--info-bg, #dbeafe);
   }
   .modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid var(--color-gray-200, #e2e8f0);
+    border-top: 1px solid var(--border, #e2e8f0);
   }
 </style>

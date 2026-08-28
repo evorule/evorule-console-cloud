@@ -719,26 +719,26 @@
     align-items: center;
     justify-content: space-between;
     padding: 14px 18px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-    background: linear-gradient(135deg, var(--color-info-bg, #eff6ff) 0%, var(--color-info-bg, #dbeafe) 100%);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: linear-gradient(135deg, var(--info-bg, #eff6ff) 0%, var(--info-bg, #dbeafe) 100%);
     flex-shrink: 0;
   }
   .ed-title {
     margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: var(--color-info, #1e40af);
+    color: var(--info, #1e40af);
   }
   .ed-close {
     background: transparent;
     border: none;
     cursor: pointer;
     font-size: 16px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     padding: 0 4px;
   }
   .ed-close:hover:not(:disabled) {
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
   }
   .ed-close:disabled {
     opacity: 0.4;
@@ -753,10 +753,10 @@
   }
   .ed-warning {
     padding: 8px 12px;
-    background: var(--color-warning-bg, #fef3c7);
-    border: 1px solid var(--color-warning, #fde68a);
+    background: var(--warning-bg, #fef3c7);
+    border: 1px solid var(--warning, #fde68a);
     border-radius: 6px;
-    color: var(--color-warning, #92400e);
+    color: var(--warning, #92400e);
     font-size: 12px;
     margin-bottom: 12px;
   }
@@ -767,14 +767,14 @@
   .ed-section-title {
     font-size: 12px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
   .ed-hint {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-weight: 400;
     text-transform: none;
     letter-spacing: 0;
@@ -792,7 +792,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 5px;
     cursor: pointer;
     font-size: 12px;
@@ -800,9 +800,9 @@
   }
   .ed-content-card.selected,
   .ed-format-card.selected {
-    border-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #eff6ff);
-    color: var(--color-info, #1e40af);
+    border-color: var(--brand, #2563eb);
+    background: var(--info-bg, #eff6ff);
+    color: var(--info, #1e40af);
   }
   .ed-content-card input,
   .ed-format-card input {
@@ -819,14 +819,14 @@
   }
   .ed-filter-label {
     font-weight: 600;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
     min-width: 90px;
   }
   .ed-filter-row select,
   .ed-filter-row input {
     font-size: 11px;
     padding: 3px 6px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     font-family: inherit;
   }
@@ -841,7 +841,7 @@
     align-items: center;
     gap: 6px;
     font-size: 11px;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
     cursor: pointer;
   }
   .ed-option input {
@@ -857,13 +857,13 @@
   .ed-template-card {
     display: flex;
     align-items: stretch;
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     overflow: hidden;
   }
   .ed-template-card.selected {
-    border-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #eff6ff);
+    border-color: var(--brand, #2563eb);
+    background: var(--info-bg, #eff6ff);
   }
   .ed-template-load {
     flex: 1;
@@ -877,11 +877,11 @@
   .ed-template-name {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .ed-template-desc {
     font-size: 11px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
     margin: 2px 0;
   }
   .ed-template-meta {
@@ -892,45 +892,45 @@
   .ed-template-format {
     font-family: var(--font-mono, monospace);
     color: var(--brand, #7c3aed);
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     padding: 0 5px;
     border-radius: 2px;
   }
   .ed-template-source {
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .ed-template-delete {
     background: transparent;
     border: none;
-    border-left: 1px solid var(--color-gray-200, #e5e7eb);
+    border-left: 1px solid var(--border, #e5e7eb);
     cursor: pointer;
     padding: 0 10px;
     font-size: 12px;
-    color: var(--color-gray-400, #9ca3af);
+    color: var(--text-secondary, #9ca3af);
   }
   .ed-template-delete:hover {
     color: var(--danger, #ef4444);
-    background: var(--color-error-bg, #fef2f2);
+    background: var(--danger-bg, #fef2f2);
   }
 
   .ed-save-template-btn {
     font-size: 11px;
     padding: 5px 10px;
     background: var(--bg-card);
-    border: 1px dashed var(--color-gray-400, #9ca3af);
+    border: 1px dashed var(--text-secondary, #9ca3af);
     border-radius: 4px;
     cursor: pointer;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .ed-save-template-btn:hover {
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
   }
 
   .ed-progress {
     margin: 10px 0;
     padding: 8px 10px;
-    background: var(--color-gray-50, #f9fafb);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     position: relative;
     overflow: hidden;
@@ -938,7 +938,7 @@
   .ed-progress-bar {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, var(--color-info-bg, #dbeafe) 0%, #bfdbfe 100%);
+    background: linear-gradient(90deg, var(--info-bg, #dbeafe) 0%, #bfdbfe 100%);
     transition: width 0.3s ease;
     z-index: 0;
   }
@@ -946,20 +946,20 @@
     position: relative;
     z-index: 1;
     font-size: 11px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     font-weight: 500;
   }
   .ed-progress.err .ed-progress-bar {
-    background: var(--color-error-bg, #fee2e2);
+    background: var(--danger-bg, #fee2e2);
   }
 
   .ed-error {
     margin: 8px 0;
     padding: 8px 10px;
-    background: var(--color-error-bg, #fef2f2);
-    border: 1px solid var(--color-error, #fca5a5);
+    background: var(--danger-bg, #fef2f2);
+    border: 1px solid var(--danger, #fca5a5);
     border-radius: 6px;
-    color: var(--color-error, #991b1b);
+    color: var(--danger, #991b1b);
     font-size: 11px;
   }
 
@@ -968,8 +968,8 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 18px;
-    background: var(--color-gray-50, #f9fafb);
-    border-top: 1px solid var(--color-gray-200, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
+    border-top: 1px solid var(--border, #e5e7eb);
     flex-shrink: 0;
   }
   .ed-btn {
@@ -987,12 +987,12 @@
   }
   .ed-cancel {
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .ed-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .ed-primary:hover:not(:disabled) {
@@ -1019,12 +1019,12 @@
   .ed-sub-dialog h3 {
     margin: 0 0 12px;
     font-size: 14px;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .ed-sub-label {
     display: block;
     font-size: 12px;
-    color: var(--color-gray-700, #374151);
+    color: var(--text-primary, #374151);
     margin-bottom: 10px;
   }
   .ed-sub-label input,
@@ -1032,7 +1032,7 @@
     margin-top: 4px;
     font-size: 12px;
     padding: 4px 6px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     font-family: inherit;
   }

@@ -43,6 +43,8 @@
     workspaces,
     CONSOLE_VERSION,
   } from "$lib/kernel";
+  import GuidedHint from "$lib/views/Feedback/GuidedHint.svelte";
+  import RecommendationCard from "./RecommendationCard.svelte";
   import { netConfig } from "$lib/config/net-config";
   import { isLlmConfigured, llmConfig } from "$lib/config/llm-config";
   import { sessionStore } from "$lib/stores/session";
@@ -315,6 +317,17 @@
 </script>
 
 <div class="workbench">
+  <!-- PR7:极简工作台首访提示 -->
+  <GuidedHint
+    hintId="workbench"
+    variant="tip"
+    title="极简工作台 · 一屏看全貌"
+    body="这里汇总规则数、session、待审与最近操作。想深入某一块,点下方卡片或顶栏「分析视图 / 治理中心 / 审计记录」即可单页跳转。"
+  />
+
+  <!-- PR8:角色视图默认推荐 -->
+  <RecommendationCard />
+
   <h1 class="workbench-title">🚀 工作台</h1>
   <p class="workbench-subtitle">
     一键看到所有状态 + 高频操作 · 单页视图 1 击跳转

@@ -298,30 +298,30 @@
   }
   .queue-count {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .source-badge {
     font-size: 11px;
     padding: 2px 8px;
     border-radius: 10px;
-    background: var(--color-success-bg, #dcfce7);
-    color: var(--color-success, #166534);
+    background: var(--success-bg, #dcfce7);
+    color: var(--success, #166534);
   }
   .source-badge.offline {
-    background: var(--color-gray-100, #f1f5f9);
-    color: var(--color-gray-500, #64748b);
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-secondary, #64748b);
   }
   .queue-empty {
     padding: 48px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     background: var(--bg-card);
     border-radius: 8px;
   }
   .queue-error {
     padding: 48px;
     text-align: center;
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
     background: var(--bg-card);
     border-radius: 8px;
   }
@@ -334,24 +334,24 @@
     padding: 16px;
     background: var(--bg-card);
     border-radius: 8px;
-    border-left: 4px solid var(--color-gray-300, #cbd5e1);
+    border-left: 4px solid var(--border, #cbd5e1);
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
   }
   .queue-item.status-submitted,
   .queue-item.status-pending {
-    border-left-color: var(--color-warning, #f59e0b);
+    border-left-color: var(--warning, #f59e0b);
   }
   .queue-item.status-reviewing {
-    border-left-color: var(--color-info, #3b82f6);
+    border-left-color: var(--info, #3b82f6);
   }
   .queue-item.status-published {
-    border-left-color: var(--color-success, #22c55e);
+    border-left-color: var(--success, #22c55e);
   }
   .queue-item.status-rejected {
-    border-left-color: var(--color-error, #dc2626);
+    border-left-color: var(--danger, #dc2626);
   }
   .queue-item.status-rolled_back {
-    border-left-color: var(--color-gray-500, #64748b);
+    border-left-color: var(--text-secondary, #64748b);
   }
   .item-header {
     display: flex;
@@ -362,41 +362,41 @@
   .item-version {
     font-size: 16px;
     font-weight: 700;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .item-status {
     padding: 2px 10px;
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
-    background: var(--color-gray-100, #f1f5f9);
-    color: var(--color-text-secondary, #64748b);
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-secondary, #64748b);
   }
   .item-status.status-submitted,
   .item-status.status-pending {
-    background: var(--color-warning-bg, #fef3c7);
-    color: var(--color-warning, #92400e);
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning, #92400e);
   }
   .item-status.status-reviewing {
-    background: var(--color-info-bg, #dbeafe);
-    color: var(--color-info, #1e40af);
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, #1e40af);
   }
   .item-status.status-published {
-    background: var(--color-success-bg, #dcfce7);
-    color: var(--color-success, #166534);
+    background: var(--success-bg, #dcfce7);
+    color: var(--success, #166534);
   }
   .item-status.status-rejected {
-    background: var(--color-error-bg, #fee2e2);
-    color: var(--color-error, #991b1b);
+    background: var(--danger-bg, #fee2e2);
+    color: var(--danger, #991b1b);
   }
   .item-status.status-rolled_back {
-    background: var(--color-gray-100, #f1f5f9);
-    color: var(--color-gray-600, #475569);
+    background: var(--bg-hover, #f1f5f9);
+    color: var(--text-secondary, #475569);
   }
   .item-id {
     font-family: monospace;
     font-size: 11px;
-    color: var(--color-gray-400, #94a3b8);
+    color: var(--text-secondary, #94a3b8);
     margin-left: auto;
   }
   .item-meta {
@@ -404,23 +404,23 @@
     flex-wrap: wrap;
     gap: 16px;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-bottom: 12px;
   }
   .item-comment {
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .item-actions {
     display: flex;
     gap: 8px;
     align-items: center;
     padding-top: 12px;
-    border-top: 1px solid var(--color-gray-100, #f1f5f9);
+    border-top: 1px solid var(--bg-hover, #f1f5f9);
   }
   .comment-input {
     flex: 1;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     font-size: 13px;
   }
@@ -433,21 +433,21 @@
     font-weight: 500;
   }
   .btn-success {
-    background: var(--color-success, #22c55e);
+    background: var(--success, #22c55e);
     color: white;
   }
   .btn-danger {
-    background: var(--color-error, #dc2626);
+    background: var(--danger, #dc2626);
     color: white;
   }
   .btn-warning {
-    background: var(--color-warning, #f59e0b);
+    background: var(--warning, #f59e0b);
     color: white;
   }
   .btn-ghost {
     background: transparent;
-    color: var(--color-text-secondary, #64748b);
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    color: var(--text-secondary, #64748b);
+    border: 1px solid var(--border, #cbd5e1);
   }
   .reject-modal {
     position: fixed;
@@ -472,7 +472,7 @@
   .modal-content textarea {
     width: 100%;
     padding: 8px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     font-size: 13px;
     resize: vertical;

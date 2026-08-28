@@ -104,8 +104,8 @@
 <style>
   .dataset-card {
     padding: 14px 16px;
-    background: var(--color-bg-primary, #ffffff);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    background: var(--bg-page, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     transition: box-shadow 0.15s ease;
   }
@@ -122,11 +122,11 @@
   .card-name {
     font-size: 15px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .card-desc {
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin: 0 0 8px;
     line-height: 1.4;
     overflow: hidden;
@@ -141,7 +141,7 @@
   }
   .meta-item {
     font-size: 12px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .card-tags {
     display: flex;
@@ -154,13 +154,13 @@
     font-size: 11px;
     padding: 1px 8px;
     border-radius: 10px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
-    color: var(--color-gray-600, #4b5563);
-    background: var(--color-gray-50, #f9fafb);
+    border: 1px solid var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
+    background: var(--bg-page, #f9fafb);
   }
   .chip-category {
-    border-color: var(--color-info, #2563eb);
-    color: var(--color-info, #2563eb);
-    background: var(--color-info-bg, #f0f9ff);
+    border-color: var(--info, #2563eb);
+    color: var(--info, #2563eb);
+    background: var(--info-bg, #f0f9ff);
   }
 </style>

@@ -369,8 +369,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 20px;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
-    background: var(--color-gray-50, #f8fafc);
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    background: var(--bg-page, #f8fafc);
     flex-shrink: 0;
   }
   .editor-header h2 {
@@ -385,14 +385,14 @@
   .btn {
     font-size: 13px;
     padding: 6px 14px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     background: var(--bg-card);
     border-radius: 4px;
     cursor: pointer;
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .btn-sm {
@@ -414,14 +414,14 @@
     margin: 0 0 10px 0;
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     display: flex;
     align-items: baseline;
     gap: 8px;
   }
   .section-hint {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-weight: 400;
   }
   .form-row {
@@ -431,11 +431,11 @@
     display: block;
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-bottom: 4px;
   }
   .required {
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
   }
   .form-input,
   .form-textarea,
@@ -444,10 +444,10 @@
     width: 100%;
     font-size: 13px;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     margin-top: 4px;
     font-family: inherit;
   }
@@ -468,13 +468,13 @@
     gap: 4px;
     font-size: 12px;
     padding: 3px 8px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 12px;
     cursor: pointer;
     background: var(--bg-card);
   }
   .tag-chip.selected {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
   }
   .tag-chip .dot {
     width: 8px;
@@ -487,11 +487,11 @@
   .btn-add-tag {
     font-size: 11px;
     padding: 3px 8px;
-    border: 1px dashed var(--color-gray-400, #94a3b8);
+    border: 1px dashed var(--text-secondary, #94a3b8);
     background: transparent;
     border-radius: 12px;
     cursor: pointer;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .new-tag-form {
     display: inline-flex;
@@ -501,7 +501,7 @@
   .new-tag-name {
     font-size: 11px;
     padding: 3px 6px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 3px;
     width: 80px;
   }
@@ -509,16 +509,16 @@
     width: 24px;
     height: 24px;
     padding: 0;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 3px;
     cursor: pointer;
     background: transparent;
   }
   .param-hint .hint-box {
     padding: 16px;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 6px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 12px;
     text-align: center;
   }

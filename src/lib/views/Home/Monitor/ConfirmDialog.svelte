@@ -140,7 +140,7 @@
     align-items: center;
     gap: 10px;
     padding: 14px 18px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
   }
   .title-icon {
     font-size: 18px;
@@ -149,10 +149,10 @@
     margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .title-warning {
-    color: var(--color-warning, #b45309);
+    color: var(--warning, #b45309);
   }
   .title-danger {
     color: #b91c1c;
@@ -164,7 +164,7 @@
     margin: 0;
     font-size: 13px;
     line-height: 1.55;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
     white-space: pre-wrap;
   }
   .confirm-footer {
@@ -172,8 +172,8 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 18px;
-    background: var(--color-gray-50, #f9fafb);
-    border-top: 1px solid var(--color-gray-200, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
+    border-top: 1px solid var(--border, #e5e7eb);
   }
   .btn {
     font-size: 13px;
@@ -187,20 +187,20 @@
   }
   .btn-cancel {
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .btn-cancel:hover {
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-hover, #f3f4f6);
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .btn-primary:hover {
-    background: var(--color-primary-dark, var(--brand, #1d4ed8));
-    border-color: var(--color-primary-dark, var(--brand, #1d4ed8));
+    background: var(--brand-hover, var(--brand, #1d4ed8));
+    border-color: var(--brand-hover, var(--brand, #1d4ed8));
   }
   .btn-warning {
     background: #f59e0b;
@@ -212,8 +212,8 @@
     border-color: #d97706;
   }
   .btn-danger {
-    background: var(--color-error, #dc2626);
-    border-color: var(--color-error, #dc2626);
+    background: var(--danger, #dc2626);
+    border-color: var(--danger, #dc2626);
     color: white;
   }
   .btn-danger:hover {

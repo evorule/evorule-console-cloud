@@ -4,39 +4,23 @@
   P11 缺口 3:首屏引导横幅 OnboardingBanner。
   P11_UX_GAPS_FIX_DESIGN.md §4.5 定义。
   职责:首次进入工作台(状态 C)时显示引导横幅,指引新手下一步操作。
-  关闭后 localStorage 记录,不再重复显示。
+  关闭态由 onboardingStore.bannerDismissed 统一管理(PR4 迁移,旧孤立键已废弃),
+  因此「设置 → 新手引导 → 重新显示」可真正让它再次出现。
 -->
 
 <script lang="ts">
-	import { browser } from "$app/environment";
 	import { goto } from "$app/navigation";
 	import { taskFlowsDef } from "$lib/data/task-flows";
 	import { startTaskFlow } from "$lib/stores/task-flow";
 	import { sessionStore } from "$lib/stores/session";
 	import { toastInfo } from "$lib/stores/toast";
+	import { onboardingStore, dismissBanner } from "$lib/stores/onboarding";
 
-	const STORAGE_KEY = "evorule-console-cloud:onboarding-banner";
-
-	let dismissed = $state(false);
-
-	if (browser) {
-		try {
-			dismissed = localStorage.getItem(STORAGE_KEY) === "seen";
-		} catch {
-			dismissed = false;
-		}
-	}
+	const dismissed = $derived($onboardingStore.bannerDismissed);
 
 	function handleDismiss() {
-		dismissed = true;
-		if (browser) {
-			try {
-				localStorage.setItem(STORAGE_KEY, "seen");
-			} catch {
-				// 静默失败
-			}
-		}
-		toastInfo("引导横幅已关闭,可从设置重新显示", "新手引导");
+		dismissBanner();
+		toastInfo("引导横幅已关闭,可从「设置 → 新手引导」重新显示", "新手引导");
 	}
 
 	function handleStartTask() {
@@ -97,11 +81,11 @@
 
 <style>
 	.ob-banner {
-		background: linear-gradient(135deg, var(--color-info-bg, #dbeafe) 0%, #ede9fe 100%);
-		border: 1px solid var(--color-info, #3b82f6);
-		border-radius: 8px;
+		background: linear-gradient(135deg, var(--info-bg) 0%, rgba(124, 58, 237, 0.12) 100%);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--r-lg);
 		padding: 14px 18px;
-		margin-bottom: 16px;
+		margin-bottom: var(--sp-lg);
 	}
 	.ob-content {
 		display: flex;
@@ -120,12 +104,12 @@
 	.ob-title {
 		font-size: 15px;
 		font-weight: 600;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary);
 		margin-bottom: 4px;
 	}
 	.ob-desc {
 		font-size: 12px;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary);
 		line-height: 1.5;
 	}
 	.ob-actions {
@@ -137,35 +121,35 @@
 	.ob-btn {
 		padding: 6px 14px;
 		background: var(--bg-card);
-		border: 1px solid var(--color-gray-300, #d1d5db);
-		border-radius: 4px;
+		border: 1px solid var(--border);
+		border-radius: var(--r-sm);
 		cursor: pointer;
 		font-size: 13px;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary);
 		transition: all 0.15s ease;
 	}
 	.ob-btn:hover {
-		background: var(--color-gray-50, #f9fafb);
+		background: var(--bg-hover);
 	}
 	.ob-btn.primary {
-		background: var(--color-primary, #3b82f6);
-		color: white;
-		border-color: var(--color-primary, #3b82f6);
+		background: var(--brand);
+		color: #fff;
+		border-color: var(--brand);
 	}
 	.ob-btn.primary:hover {
-		opacity: 0.9;
+		background: var(--brand-hover);
 	}
 	.ob-close {
 		background: transparent;
 		border: none;
 		font-size: 14px;
 		cursor: pointer;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary);
 		padding: 4px;
 		line-height: 1;
 	}
 	.ob-close:hover {
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary);
 	}
 
 	.ob-quick-flows {
@@ -174,12 +158,12 @@
 		gap: 6px;
 		margin-top: 10px;
 		padding-top: 10px;
-		border-top: 1px dashed var(--color-gray-300, #d1d5db);
+		border-top: 1px dashed var(--border-strong);
 		flex-wrap: wrap;
 	}
 	.ob-quick-label {
 		font-size: 12px;
-		color: var(--color-text-secondary, #6b7280);
+		color: var(--text-secondary);
 		font-weight: 500;
 	}
 	.ob-quick-flow {
@@ -188,16 +172,16 @@
 		gap: 4px;
 		padding: 3px 10px;
 		background: var(--bg-card);
-		border: 1px solid var(--color-gray-200, #e5e7eb);
-		border-radius: 12px;
+		border: 1px solid var(--border);
+		border-radius: var(--r-full);
 		cursor: pointer;
 		font-size: 12px;
-		color: var(--color-text-primary, #1f2937);
+		color: var(--text-primary);
 		transition: all 0.15s ease;
 	}
 	.ob-quick-flow:hover {
-		border-color: var(--color-primary, #3b82f6);
-		color: var(--color-primary, #3b82f6);
+		border-color: var(--brand);
+		color: var(--brand);
 	}
 
 	@media (max-width: 768px) {

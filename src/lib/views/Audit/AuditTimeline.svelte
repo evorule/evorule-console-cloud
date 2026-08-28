@@ -168,14 +168,14 @@
     height: 100%;
     min-height: 0;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
   }
   .timeline-header {
     padding: 10px 12px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-    background: var(--color-gray-50, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
     flex-shrink: 0;
   }
   .header-row {
@@ -189,13 +189,13 @@
     margin: 0;
     font-size: 14px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .summary {
     display: flex;
     gap: 10px;
     font-size: 11px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .sum-item {
     display: inline-flex;
@@ -210,7 +210,7 @@
     font-weight: 600;
   }
   .sum-item strong {
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
 
   .filters {
@@ -223,7 +223,7 @@
   .filters select {
     font-size: 11px;
     padding: 3px 6px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     background: var(--bg-card);
     font-family: inherit;
@@ -233,7 +233,7 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
     cursor: pointer;
   }
   .filter-check input {
@@ -243,23 +243,23 @@
     font-size: 11px;
     padding: 3px 8px;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     cursor: pointer;
-    color: var(--color-gray-600, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .clear-btn:hover {
-    background: var(--color-gray-50, #f9fafb);
+    background: var(--bg-page, #f9fafb);
   }
 
   .range-hint {
     margin-top: 6px;
     padding: 4px 8px;
-    background: var(--color-info-bg, #eff6ff);
-    border: 1px solid var(--color-info, #93c5fd);
+    background: var(--info-bg, #eff6ff);
+    border: 1px solid var(--info, #93c5fd);
     border-radius: 4px;
     font-size: 11px;
-    color: var(--color-info, #1e40af);
+    color: var(--info, #1e40af);
   }
 
   .timeline-list {

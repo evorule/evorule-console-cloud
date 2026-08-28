@@ -17,7 +17,7 @@
 
 ### 方式 2 · 仓根目录双击
 
-- `start-all.bat` — 启全栈 + 自动开浏览器到 `/workbench`
+- `start-all.bat` — 启全栈 + 自动开浏览器到 `/`(evorule 首页)
 - `stop-all.bat` — 停全栈
 
 ### 方式 3 · PowerShell 命令行
@@ -39,7 +39,7 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1
 2. **evorule-rule-serve @ 18081** — 仓根目录的 `target/debug/evorule-rule-serve.exe`
 3. **console-cloud dev @ 5174** — `node scripts/dev.mjs`
 
-全部就绪后,自动打开浏览器 `http://127.0.0.1:5174/workbench`。
+全部就绪后,自动打开浏览器 `http://127.0.0.1:5174/`(evorule 首页)。
 
 `start-all.ps1` 会**先检测**端口是否已被占用:
 - 已被占用 → 跳过启动(认为已在运行)

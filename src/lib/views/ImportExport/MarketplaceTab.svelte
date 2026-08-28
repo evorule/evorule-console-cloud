@@ -244,7 +244,7 @@
   }
   .mt-search {
     padding: 8px 12px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 6px;
     font-family: inherit;
     font-size: 13px;
@@ -259,11 +259,11 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .mt-filter-label select {
     padding: 4px 8px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     font-family: inherit;
     font-size: 11px;
@@ -275,7 +275,7 @@
   }
   .mt-count {
     font-size: 12px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .mt-action-buttons {
     display: flex;
@@ -283,24 +283,24 @@
   }
   .mt-btn {
     padding: 6px 12px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     background: var(--bg-card);
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .mt-btn.primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .mt-empty {
     padding: 40px;
     text-align: center;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-size: 14px;
     background: #f9fafb;
     border-radius: 6px;
@@ -333,7 +333,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
   }
   .mt-dialog-header h3 {
     margin: 0;
@@ -344,7 +344,7 @@
     border: none;
     font-size: 20px;
     cursor: pointer;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .mt-dialog-body {
     padding: 16px;
@@ -358,13 +358,13 @@
     flex-direction: column;
     gap: 4px;
     font-size: 12px;
-    color: var(--color-text-secondary, #4b5563);
+    color: var(--text-secondary, #4b5563);
   }
   .mt-field input,
   .mt-field textarea,
   .mt-field select {
     padding: 6px 8px;
-    border: 1px solid var(--color-gray-300, #d1d5db);
+    border: 1px solid var(--border, #d1d5db);
     border-radius: 4px;
     font-family: inherit;
     font-size: 12px;
@@ -379,6 +379,6 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid var(--color-gray-200, #e5e7eb);
+    border-top: 1px solid var(--border, #e5e7eb);
   }
 </style>

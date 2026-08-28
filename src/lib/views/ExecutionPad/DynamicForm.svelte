@@ -190,7 +190,7 @@
   }
   .form-field.has-error .field-input,
   .form-field.has-error .field-select {
-    border-color: var(--color-error, #dc2626);
+    border-color: var(--danger, #dc2626);
   }
   .field-label {
     display: flex;
@@ -198,7 +198,7 @@
     gap: 4px;
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .label-text {
     display: flex;
@@ -206,7 +206,7 @@
     gap: 4px;
   }
   .required {
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
   }
   .term-hint {
     font-size: 11px;
@@ -215,17 +215,17 @@
   .field-input {
     font-size: 13px;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     font-family: inherit;
     width: 100%;
     box-sizing: border-box;
   }
   .field-input:disabled {
-    background: var(--color-gray-50, #f8fafc);
-    color: var(--color-text-secondary, #64748b);
+    background: var(--bg-page, #f8fafc);
+    color: var(--text-secondary, #64748b);
   }
   .field-textarea {
     resize: vertical;
@@ -234,10 +234,10 @@
   .field-select {
     font-size: 13px;
     padding: 6px 10px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     width: 100%;
     box-sizing: border-box;
   }
@@ -246,16 +246,16 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
     cursor: pointer;
   }
   .checkbox-text {
     font-weight: 500;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .field-error {
     font-size: 11px;
-    color: var(--color-error, #dc2626);
+    color: var(--danger, #dc2626);
   }
 </style>

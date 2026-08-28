@@ -100,11 +100,11 @@
     font-size: 28px;
     font-weight: 700;
     margin: 0 0 8px 0;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .login-header p {
     font-size: 14px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin: 0;
   }
   .user-grid {
@@ -118,24 +118,24 @@
     gap: 12px;
     padding: 16px;
     background: var(--bg-card);
-    border: 2px solid var(--color-gray-200, #e2e8f0);
+    border: 2px solid var(--border, #e2e8f0);
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
     transition: all 0.15s ease;
   }
   .user-card:hover {
-    border-color: var(--color-primary, #2563eb);
+    border-color: var(--brand, #2563eb);
   }
   .user-card.selected {
-    border-color: var(--color-primary, #2563eb);
-    background: var(--color-info-bg, #eff6ff);
+    border-color: var(--brand, #2563eb);
+    background: var(--info-bg, #eff6ff);
   }
   .user-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
     display: flex;
     align-items: center;
@@ -152,15 +152,15 @@
   .user-name {
     font-size: 15px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .user-role {
     font-size: 13px;
-    color: var(--color-primary, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .user-dept {
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .login-actions {
     display: flex;
@@ -177,11 +177,11 @@
     transition: all 0.15s ease;
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
     color: white;
   }
   .btn-primary:disabled {
-    background: var(--color-gray-300, #cbd5e1);
+    background: var(--border, #cbd5e1);
     cursor: not-allowed;
   }
   .btn-primary:not(:disabled):hover {
@@ -189,18 +189,18 @@
   }
   .btn-ghost {
     background: transparent;
-    color: var(--color-text-secondary, #64748b);
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    color: var(--text-secondary, #64748b);
+    border: 1px solid var(--border, #cbd5e1);
   }
   .btn-ghost:hover {
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
   }
   .role-hint {
     padding: 12px 16px;
-    background: var(--color-info-bg, #eff6ff);
+    background: var(--info-bg, #eff6ff);
     border-radius: 6px;
     font-size: 13px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     line-height: 1.6;
   }
 </style>

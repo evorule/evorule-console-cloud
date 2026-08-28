@@ -6,8 +6,9 @@
    视觉源: static/docker-demo.html（唯一权威），与之一字不差。
    品牌色: Docker Blue #1D63ED / Ocean Blue #2496ED / Navy #09101F
    布局:   顶栏 + 左侧导航侧栏 + 居中主内容 + 右侧 LLM 交互侧栏
-   原则:   全面弃用旧 token（--color-* / --spacing-* / --radius-*），
-   仅在此文件末尾保留旧名作为别名映射，避免破坏存量视图组件。
+   原则:   全面弃用旧 token（--color-* / --spacing-* / --radius-*）。
+   --color-* 别名与强制深色映射已在 PR9 全量迁移中移除，所有视图组件已改用 v3 token；
+   --spacing-* / --radius-* / --shadow-* / --text-* / --font-* 等旧别名仍保留为兼容映射。
    ===================================================================== */
 
 /* === 离线字体：local() 优先，无任何网络请求 === */
@@ -44,6 +45,7 @@
   --brand: #1d63ed;
   --brand-hover: #1557d0;
   --brand-light: #3b82f6;
+  --brand-bg: rgba(59, 130, 246, 0.16);
   --navy: #09101f;
 
   /* Spacing (8pt grid) */
@@ -178,24 +180,6 @@ html:root {
   --sidebar-text-active: #ffffff !important;
   --sidebar-hover: rgba(255, 255, 255, 0.06) !important;
   --sidebar-active: rgba(255, 255, 255, 0.08) !important;
-  /* 旧浅色主题 token(--color-*)映射到深色分层。
-     大量 legacy 组件用 var(--color-gray-50, #f8fafc) 等旧浅色变量作背景,
-     若这些变量未定义会回退到浅色 fallback 导致白块。此处统一映射为深色半透明层。 */
-  --color-gray-50: rgba(255, 255, 255, 0.04) !important;
-  --color-gray-100: rgba(255, 255, 255, 0.06) !important;
-  --color-gray-200: rgba(255, 255, 255, 0.1) !important;
-  --color-gray-300: rgba(255, 255, 255, 0.16) !important;
-  --color-gray-400: rgba(255, 255, 255, 0.4) !important;
-  --color-gray-500: rgba(255, 255, 255, 0.55) !important;
-  --color-gray-600: rgba(255, 255, 255, 0.68) !important;
-  --color-gray-700: rgba(255, 255, 255, 0.82) !important;
-  --color-gray-800: rgba(255, 255, 255, 0.9) !important;
-  --color-primary: #3b82f6 !important;
-  --color-primary-bg: rgba(59, 130, 246, 0.16) !important;
-  --color-info-bg: rgba(59, 130, 246, 0.14) !important;
-  --color-success-bg: rgba(46, 204, 113, 0.14) !important;
-  --color-warning-bg: rgba(243, 156, 18, 0.14) !important;
-  --color-danger-bg: rgba(231, 76, 60, 0.14) !important;
 }
 
 /* =====================================================================
@@ -207,6 +191,15 @@ html:root {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+/* PR10 安全子集:全局键盘焦点轮廓。
+   仅键盘聚焦(:focus-visible)时显示清晰描边,鼠标点击不显示。
+   已有自定义焦点样式的元素(.btn / .search-box 用 box-shadow 环 + outline:none)
+   因选择器更具体而保持原样;本规则为其余可聚焦元素(侧栏项、链接、
+   自定义 [role=button]、select 等)补齐可见焦点,满足无障碍要求。 */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 html,
 body {
@@ -317,28 +310,37 @@ a:hover {
 .search-box {
   flex: 1;
   max-width: 480px;
-  position: relative;
-}
-.search-box input {
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
   height: 36px;
   padding: 0 var(--sp-lg) 0 36px;
+  position: relative;
+  background: var(--bg-hover);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  background: var(--bg-hover);
-  color: var(--text-primary);
+  color: var(--text-secondary);
+  font: inherit;
   font-size: var(--fs-sm);
-  outline: none;
+  cursor: pointer;
+  text-align: left;
   transition: border-color var(--tr-fast), background var(--tr-fast),
     box-shadow var(--tr-fast);
 }
-.search-box input::placeholder {
-  color: var(--text-muted);
-}
-.search-box input:focus {
+.search-box:hover {
   background: var(--bg-card);
+  border-color: var(--border-strong);
+}
+.search-box:focus-visible {
+  outline: none;
   border-color: var(--brand);
   box-shadow: 0 0 0 3px rgba(29, 99, 237, 0.15);
+}
+.search-placeholder {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .search-box .search-icon {
   position: absolute;
@@ -348,12 +350,10 @@ a:hover {
   color: var(--text-muted);
   width: 18px;
   height: 18px;
+  pointer-events: none;
 }
 .search-box .kbd {
-  position: absolute;
-  right: var(--sp-sm);
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
@@ -1266,30 +1266,4 @@ select.input {
   --topbar-height: 52px;
   --bottom-bar-height: 90px;
   --brand-dim: var(--brand-hover);
-  /* 旧语义色别名 */
-  --color-primary: var(--brand);
-  --color-primary-hover: var(--brand-hover);
-  --color-secondary: var(--brand);
-  --color-accent: var(--brand-light);
-  --color-gray-50: var(--bg-page);
-  --color-gray-100: var(--bg-hover);
-  --color-gray-200: var(--border);
-  --color-gray-300: var(--border);
-  --color-gray-400: var(--text-secondary);
-  --color-gray-500: var(--text-secondary);
-  --color-gray-600: var(--text-secondary);
-  --color-gray-700: var(--text-primary);
-  --color-gray-800: var(--text-primary);
-  --color-gray-900: var(--text-primary);
-  --color-success: var(--success);
-  --color-success-bg: var(--success-bg);
-  --color-warning: var(--warning);
-  --color-warning-bg: var(--warning-bg);
-  --color-error: var(--danger);
-  --color-error-bg: var(--danger-bg);
-  --color-info: var(--info);
-  --color-info-bg: var(--info-bg);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
 }

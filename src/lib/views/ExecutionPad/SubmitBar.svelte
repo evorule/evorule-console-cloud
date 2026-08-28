@@ -129,8 +129,8 @@
     justify-content: space-between;
     gap: 16px;
     padding: 10px 14px;
-    background: var(--color-gray-50, #f8fafc);
-    border-top: 1px solid var(--color-gray-200, #e2e8f0);
+    background: var(--bg-page, #f8fafc);
+    border-top: 1px solid var(--border, #e2e8f0);
     flex-wrap: wrap;
   }
   .result-area {
@@ -146,12 +146,12 @@
     border: 1px solid;
   }
   .result-card.ok {
-    background: var(--color-success-bg, #d1fae5);
+    background: var(--success-bg, #d1fae5);
     border-color: #6ee7b7;
   }
   .result-card.fail {
-    background: var(--color-error-bg, #fee2e2);
-    border-color: var(--color-error, #fca5a5);
+    background: var(--danger-bg, #fee2e2);
+    border-color: var(--danger, #fca5a5);
   }
   .result-icon {
     font-size: 16px;
@@ -164,22 +164,22 @@
   .result-title {
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .result-time {
     font-weight: 400;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 11px;
   }
   .result-meta {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
   .result-card.fail .result-err {
-    color: var(--color-error, #991b1b);
+    color: var(--danger, #991b1b);
     font-weight: 500;
   }
   .result-empty {
@@ -187,7 +187,7 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .empty-icon {
     font-size: 14px;
@@ -200,7 +200,7 @@
   .btn {
     font-size: 12px;
     padding: 7px 14px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
     cursor: pointer;
@@ -218,26 +218,26 @@
   .btn-ghost {
     background: transparent;
     border-color: transparent;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .btn-ghost:hover:not(:disabled) {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
   }
   .btn-secondary {
     background: var(--bg-card);
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .btn-secondary:hover:not(:disabled) {
-    background: var(--color-gray-100, #f1f5f9);
+    background: var(--bg-hover, #f1f5f9);
   }
   .btn-primary {
-    background: var(--color-primary, #2563eb);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--brand, #2563eb);
+    border-color: var(--brand, #2563eb);
     color: white;
   }
   .btn-primary:hover:not(:disabled) {
-    background: var(--color-primary-dark, var(--brand, #1d4ed8));
-    border-color: var(--color-primary-dark, var(--brand, #1d4ed8));
+    background: var(--brand-hover, var(--brand, #1d4ed8));
+    border-color: var(--brand-hover, var(--brand, #1d4ed8));
   }
   .btn-submit {
     font-weight: 600;

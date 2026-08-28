@@ -28,6 +28,7 @@
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
   import type { LifecycleStatus } from '$lib/governance/types';
+  import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
 
   // ===== 连接面板 =====
   let connecting = $state(false);
@@ -248,6 +249,14 @@
     return s && s.length > 160 ? `${s.slice(0, 160)}…` : (s ?? '');
   }
 </script>
+
+<!-- PR7:治理中心首访提示 -->
+<GuidedHint
+  hintId="governance"
+  variant="tip"
+  title="治理中心 · 规则即资产"
+  body="先连接规则资产库(:18081),再建数据集、灌入规则,走 Draft → Candidate → Active → Published 五态生命周期。完整的生命周期说明见「帮助」页。"
+/>
 
 <!-- ==================== 未连接:连接面板 ==================== -->
 {#if !$governanceStore.connected}
@@ -552,7 +561,7 @@
     margin: 0 0 var(--spacing-xs);
   }
   .hint {
-    color: var(--color-gray-500);
+    color: var(--text-secondary);
     font-size: var(--text-sm);
     margin: 0 0 var(--spacing-md);
   }
@@ -564,16 +573,16 @@
   }
   .field > span {
     font-size: var(--text-sm);
-    color: var(--color-gray-500);
+    color: var(--text-secondary);
   }
   .field input,
   .field textarea,
   .field select,
   .reason {
     padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--color-gray-200);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--color-gray-50);
+    background: var(--bg-page);
     font-size: var(--text-sm);
     color: inherit;
   }
@@ -589,9 +598,9 @@
     flex: 1;
   }
   .err-box {
-    background: color-mix(in srgb, var(--color-error) 10%, transparent);
-    color: var(--color-error);
-    border: 1px solid var(--color-error);
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
+    border: 1px solid var(--danger);
     border-radius: var(--radius-md);
     padding: var(--spacing-sm) var(--spacing-md);
     font-size: var(--text-sm);
@@ -600,32 +609,32 @@
   }
   .btn {
     padding: var(--spacing-sm) var(--spacing-lg);
-    border: 1px solid var(--color-gray-200);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    background: var(--color-gray-100);
+    background: var(--bg-hover);
     color: inherit;
     cursor: pointer;
     font-size: var(--text-sm);
     transition: all var(--transition-fast);
   }
   .btn:hover {
-    background: var(--color-gray-200);
+    background: var(--border);
   }
   .btn-primary {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
+    background: var(--brand);
+    border-color: var(--brand);
     color: #fff;
   }
   .btn-primary:hover {
-    background: var(--color-primary-hover);
+    background: var(--brand-hover);
   }
   .btn-danger {
-    border-color: var(--color-error);
-    color: var(--color-error);
+    border-color: var(--danger);
+    color: var(--danger);
     background: transparent;
   }
   .btn-danger:hover {
-    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
   }
   .btn-ghost {
     background: transparent;
@@ -635,14 +644,14 @@
     font-size: var(--text-xs);
   }
   .card {
-    background: var(--color-gray-50);
-    border: 1px solid var(--color-gray-200);
+    background: var(--bg-page);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
   }
   .muted {
-    color: var(--color-gray-500);
+    color: var(--text-secondary);
     font-size: var(--text-sm);
   }
   .empty {
@@ -689,7 +698,7 @@
     font-weight: 600;
   }
   .create-form {
-    border-top: 1px dashed var(--color-gray-200);
+    border-top: 1px dashed var(--border);
     padding-top: var(--spacing-md);
     margin-bottom: var(--spacing-md);
   }
@@ -714,11 +723,11 @@
     gap: 4px;
   }
   .ds-item:hover {
-    background: var(--color-gray-100);
+    background: var(--bg-hover);
   }
   .ds-item.active {
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--brand) 12%, transparent);
+    border-color: var(--brand);
   }
   .ds-item-top {
     display: flex;
@@ -732,7 +741,7 @@
   }
   .ds-item-sub {
     font-size: var(--text-xs);
-    color: var(--color-gray-500);
+    color: var(--text-secondary);
   }
 
   /* 详情 */
@@ -750,7 +759,7 @@
     margin: 0 0 var(--spacing-xs);
   }
   .desc {
-    color: var(--color-gray-500);
+    color: var(--text-secondary);
     font-size: var(--text-sm);
     margin: var(--spacing-xs) 0 0;
   }
@@ -760,7 +769,7 @@
     gap: var(--spacing-sm);
     flex-wrap: wrap;
     padding: var(--spacing-md) 0;
-    border-bottom: 1px solid var(--color-gray-200);
+    border-bottom: 1px solid var(--border);
     margin-bottom: var(--spacing-md);
   }
   .publish-box {
@@ -795,7 +804,7 @@
   .chip {
     padding: 2px 10px;
     border-radius: var(--radius-full);
-    background: var(--color-gray-200);
+    background: var(--border);
     font-size: var(--text-xs);
     font-family: monospace;
   }
@@ -819,11 +828,11 @@
     flex-wrap: wrap;
   }
   .cause {
-    color: var(--color-gray-500);
+    color: var(--text-secondary);
     font-style: italic;
   }
   .entry-form {
-    border: 1px dashed var(--color-gray-300);
+    border: 1px dashed var(--border);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-md);
@@ -837,7 +846,7 @@
     gap: var(--spacing-sm);
   }
   .entry-list li {
-    border: 1px solid var(--color-gray-200);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: var(--spacing-sm) var(--spacing-md);
   }
@@ -855,8 +864,8 @@
   .entry-body {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--color-gray-500);
-    background: var(--color-gray-100);
+    color: var(--text-secondary);
+    background: var(--bg-hover);
     border-radius: var(--radius-sm);
     padding: var(--spacing-sm);
     overflow-x: auto;
@@ -871,18 +880,18 @@
     border-radius: var(--radius-full);
     font-size: var(--text-xs);
     font-weight: 500;
-    background: var(--color-gray-200);
-    color: var(--color-gray-700);
+    background: var(--border);
+    color: var(--text-primary);
   }
   .badge-lg {
     padding: 4px 12px;
     font-size: var(--text-sm);
   }
-  .status-draft { background: var(--color-gray-200); color: var(--color-gray-700); }
-  .status-candidate { background: color-mix(in srgb, var(--color-warning) 18%, transparent); color: #92400e; }
-  .status-active { background: color-mix(in srgb, var(--color-info) 18%, transparent); color: #1e40af; }
-  .status-published { background: color-mix(in srgb, var(--color-success) 18%, transparent); color: #065f46; }
-  .status-rejected { background: color-mix(in srgb, var(--color-error) 15%, transparent); color: #991b1b; }
+  .status-draft { background: var(--border); color: var(--text-primary); }
+  .status-candidate { background: color-mix(in srgb, var(--warning) 18%, transparent); color: #92400e; }
+  .status-active { background: color-mix(in srgb, var(--info) 18%, transparent); color: #1e40af; }
+  .status-published { background: color-mix(in srgb, var(--success) 18%, transparent); color: #065f46; }
+  .status-rejected { background: color-mix(in srgb, var(--danger) 15%, transparent); color: #991b1b; }
 
   @media (max-width: 900px) {
     .gov-layout {

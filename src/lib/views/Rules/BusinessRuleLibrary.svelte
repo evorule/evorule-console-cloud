@@ -278,13 +278,13 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 20px;
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
-    background: var(--color-gray-50, #f8fafc);
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    background: var(--bg-page, #f8fafc);
   }
   .title-group h1 {
     margin: 0;
     font-size: 20px;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .header-actions {
     display: flex;
@@ -293,7 +293,7 @@
   }
   .subtitle {
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     margin-left: 8px;
   }
   .lib-body {
@@ -304,7 +304,7 @@
     min-height: 0;
   }
   .lib-sidebar {
-    border-right: 1px solid var(--color-gray-200, #e2e8f0);
+    border-right: 1px solid var(--border, #e2e8f0);
     overflow-y: auto;
     background: var(--bg-card);
     display: flex;
@@ -313,11 +313,11 @@
   .list-header {
     padding: 8px 12px;
     font-size: 11px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-weight: 600;
     text-transform: uppercase;
-    background: var(--color-gray-50, #f8fafc);
-    border-bottom: 1px solid var(--color-gray-200, #e2e8f0);
+    background: var(--bg-page, #f8fafc);
+    border-bottom: 1px solid var(--border, #e2e8f0);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -329,7 +329,7 @@
   .empty-list {
     padding: 24px 12px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     font-size: 13px;
   }
   .empty-list .hint {
@@ -341,8 +341,8 @@
     max-width: 480px;
     padding: 24px;
     text-align: center;
-    color: var(--color-text-secondary, #64748b);
-    border: 1px dashed var(--color-border, #cbd5e1);
+    color: var(--text-secondary, #64748b);
+    border: 1px dashed var(--border, #cbd5e1);
     border-radius: 8px;
   }
   .dev-mode-placeholder .hint {
@@ -365,27 +365,27 @@
     font-family: var(--font-mono, monospace);
     font-size: 16px;
     margin: 0;
-    color: var(--color-text-primary, #1e293b);
+    color: var(--text-primary, #1e293b);
   }
   .btn {
     padding: 6px 12px;
-    border: 1px solid var(--color-gray-300, #cbd5e1);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 4px;
     background: var(--bg-card);
     cursor: pointer;
     font-size: 13px;
   }
   .btn-ai {
-    background: var(--color-info-bg, #f5f3ff);
+    background: var(--info-bg, #f5f3ff);
     border-color: var(--brand, #c4b5fd);
     color: var(--brand, #6d28d9);
   }
   .no-schema {
     padding: 32px;
     text-align: center;
-    background: var(--color-gray-50, #f8fafc);
+    background: var(--bg-page, #f8fafc);
     border-radius: 8px;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
   }
   .no-schema p {
     margin: 4px 0;
@@ -400,7 +400,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--color-text-secondary, #64748b);
+    color: var(--text-secondary, #64748b);
     text-align: center;
   }
   .empty-icon {

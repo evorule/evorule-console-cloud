@@ -126,7 +126,7 @@
     gap: 12px;
     padding: 8px 12px;
     background: var(--bg-card);
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
     flex-shrink: 0;
     flex-wrap: wrap;
   }
@@ -141,11 +141,11 @@
     margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .btt-subtitle {
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .btt-mode-btn {
     font-size: 11px;
@@ -156,18 +156,18 @@
     font-family: inherit;
     font-weight: 600;
     background: var(--bg-card);
-    border-color: var(--color-gray-300, #d1d5db);
-    color: var(--color-text-secondary, #4b5563);
+    border-color: var(--border, #d1d5db);
+    color: var(--text-secondary, #4b5563);
   }
   .btt-mode-btn.active-business {
-    background: var(--color-info-bg, #eff6ff);
-    border-color: var(--color-info, #93c5fd);
-    color: var(--color-info, #1e40af);
+    background: var(--info-bg, #eff6ff);
+    border-color: var(--info, #93c5fd);
+    color: var(--info, #1e40af);
   }
   .btt-mode-btn.active-developer {
     background: #f3f4f6;
-    border-color: var(--color-gray-400, #9ca3af);
-    color: var(--color-gray-700, #374151);
+    border-color: var(--text-secondary, #9ca3af);
+    color: var(--text-primary, #374151);
   }
 
   .btt-content {

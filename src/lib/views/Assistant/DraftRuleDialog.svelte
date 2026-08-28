@@ -249,8 +249,8 @@
 		padding: var(--spacing-md);
 	}
 	.dialog {
-		background: var(--color-gray-50);
-		color: var(--color-gray-900);
+		background: var(--bg-page);
+		color: var(--text-primary);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-xl);
 		max-width: 800px;
@@ -265,7 +265,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: var(--spacing-md) var(--spacing-lg);
-		background: var(--color-gray-900);
+		background: var(--text-primary);
 		color: #fff;
 	}
 	.dialog-header h2 {
@@ -301,12 +301,12 @@
 	.step label {
 		font-size: var(--text-sm);
 		font-weight: 500;
-		color: var(--color-gray-700);
+		color: var(--text-primary);
 	}
 	textarea {
 		width: 100%;
 		padding: var(--spacing-sm);
-		border: 1px solid var(--color-gray-300);
+		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
@@ -318,7 +318,7 @@
 	}
 	textarea:focus {
 		outline: none;
-		border-color: var(--color-primary);
+		border-color: var(--brand);
 		box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 	}
 	.actions {
@@ -339,18 +339,18 @@
 		cursor: not-allowed;
 	}
 	.btn-primary {
-		background: var(--color-primary);
+		background: var(--brand);
 		color: #fff;
 	}
 	.btn-primary:hover:not(:disabled) {
-		background: var(--color-primary-hover);
+		background: var(--brand-hover);
 	}
 	.btn-secondary {
-		background: var(--color-gray-200);
-		color: var(--color-gray-800);
+		background: var(--border);
+		color: var(--text-primary);
 	}
 	.btn-secondary:hover:not(:disabled) {
-		background: var(--color-gray-300);
+		background: var(--border);
 	}
 	.btn-mini {
 		padding: var(--spacing-xs) var(--spacing-sm);
@@ -366,15 +366,15 @@
 		flex-wrap: wrap;
 	}
 	.alert-error {
-		background: var(--color-error);
+		background: var(--danger);
 		color: #fff;
 	}
 	.alert-success {
-		background: var(--color-success);
+		background: var(--success);
 		color: #fff;
 	}
 	.alert-warning {
-		background: var(--color-warning);
+		background: var(--warning);
 		color: #fff;
 		flex-direction: column;
 		align-items: flex-start;
@@ -397,23 +397,23 @@
 		font-size: var(--text-sm);
 	}
 	.confidence .label {
-		color: var(--color-gray-600);
+		color: var(--text-secondary);
 	}
 	.confidence .value {
 		font-weight: 600;
 	}
 	.confidence .value.high {
-		color: var(--color-success);
+		color: var(--success);
 	}
 	.confidence .value.low {
-		color: var(--color-error);
+		color: var(--danger);
 	}
 	.dialog-footer {
 		padding: var(--spacing-md) var(--spacing-lg);
-		background: var(--color-gray-100);
+		background: var(--bg-hover);
 		display: flex;
 		justify-content: flex-end;
 		gap: var(--spacing-sm);
-		border-top: 1px solid var(--color-gray-200);
+		border-top: 1px solid var(--border);
 	}
 </style>

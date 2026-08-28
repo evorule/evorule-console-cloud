@@ -81,7 +81,7 @@
     min-width: 0;
     min-height: 0;
     background: var(--bg-card);
-    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border: 1px solid var(--border, #e5e7eb);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -90,19 +90,19 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
-    background: var(--color-gray-50, #f9fafb);
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-page, #f9fafb);
     flex-shrink: 0;
   }
   .perf-title {
     margin: 0;
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
   }
   .perf-updated {
     font-size: 10px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-family: var(--font-mono, monospace);
   }
   .perf-grid {
@@ -123,13 +123,13 @@
   }
   .perf-label {
     font-size: 11px;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
     font-weight: 500;
   }
   .perf-value {
     font-size: 13px;
     font-weight: 700;
-    color: var(--color-text-primary, #111827);
+    color: var(--text-primary, #111827);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -137,14 +137,14 @@
     text-decoration: none;
     font-size: 10px;
     font-weight: 500;
-    color: var(--color-gray-500, #6b7280);
+    color: var(--text-secondary, #6b7280);
   }
   .perf-value.ms.hot { color: #c2410c; }
-  .perf-value.danger { color: var(--color-error, #dc2626); animation: flash 1.4s ease-in-out infinite; }
+  .perf-value.danger { color: var(--danger, #dc2626); animation: flash 1.4s ease-in-out infinite; }
   @keyframes flash { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
   .perf-bar-track {
     height: 5px;
-    background: var(--color-gray-100, #f3f4f6);
+    background: var(--bg-hover, #f3f4f6);
     border-radius: 3px;
     overflow: hidden;
   }

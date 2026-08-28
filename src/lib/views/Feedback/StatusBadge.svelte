@@ -70,23 +70,23 @@
     padding: 2px 8px;
   }
   .status-gray {
-    background: var(--color-gray-100, #f3f4f6);
-    color: var(--color-gray-600, #4b5563);
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
   }
   .status-green {
-    background: var(--color-success-bg, #f0fdf4);
-    color: var(--color-success, #16a34a);
+    background: var(--success-bg, #f0fdf4);
+    color: var(--success, #16a34a);
   }
   .status-yellow {
-    background: var(--color-warning-bg, #fffbeb);
-    color: var(--color-warning, #d97706);
+    background: var(--warning-bg, #fffbeb);
+    color: var(--warning, #d97706);
   }
   .status-blue {
-    background: var(--color-info-bg, #f0f9ff);
-    color: var(--color-info, #2563eb);
+    background: var(--info-bg, #f0f9ff);
+    color: var(--info, #2563eb);
   }
   .status-red {
-    background: var(--color-error-bg, #fef2f2);
-    color: var(--color-error, #dc2626);
+    background: var(--danger-bg, #fef2f2);
+    color: var(--danger, #dc2626);
   }
 </style>
