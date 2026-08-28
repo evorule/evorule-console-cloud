@@ -12,6 +12,7 @@ e2e-runs.log
 
 # --- 临时/调试输出 ---
 *.log
+*.err
 *.txt
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
