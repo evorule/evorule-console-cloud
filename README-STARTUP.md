@@ -94,12 +94,19 @@ powershell -ExecutionPolicy Bypass -File unregister-watchdog.ps1  # 注销
 
 ```powershell
 $env:EVORULE_SERVER_BIN = 'C:\path\to\evorule-server.exe'
-$env:EVORULE_SERVER_ARGS = '--addr 127.0.0.1:18080 --rules-dir C:\path\to\rules ...'
+# 开启认证(可选):--auth-token 后,工作台需在 设置面板 → 联网配置 → 认证 Token 填入同一值
+$env:EVORULE_SERVER_ARGS = '--addr 127.0.0.1:18080 --rules-dir C:\path\to\rules --auth-token <your-token> ...'
 
 $env:EVORULE_RULE_BIN = 'C:\path\to\evorule-rule-serve.exe'
 # 首次引导管理员(公开仓不硬编码凭据,密码自行提供):
 $env:EVORULE_RULE_ARGS = '--host 127.0.0.1 --port 18081 --db C:\path\to\rule.db --admin-user admin --admin-password <your-password>'
 ```
+
+> 认证说明:不配 `--auth-token` 时认证关闭(开发模式,受保护域写入放行);
+> 配置后所有请求需 Bearer 凭据,在大众版「设置面板 → 联网配置 → 认证 Token」填入
+> 与 server 一致的值即可全端点生效(详见 README.md「认证配置」)。
+> 受保护域(`stable.llm.*`/`stable.system.*`)写入仅 service token 可用
+> (`--service-token`,供服务间调用,浏览器端不用)。
 
 也可改成 release 路径(更快启动,但需要 `cargo build --release`)。
 
