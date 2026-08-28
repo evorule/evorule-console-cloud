@@ -22,7 +22,7 @@ import type {
 	HistoricalState,
 	DiffResult,
 	FactRecord,
-} from "@evorule/console";
+} from "$lib/kernel";
 
 // ============================================================================
 // 1. Fact 流(6 条,代码审查 agent 完整链路)

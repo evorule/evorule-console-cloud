@@ -25,7 +25,7 @@ import {
 	type DiffResult,
 	type CausalChain,
 	type CommandResult
-} from '@evorule/console';
+} from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
 import { fetchProductionState, type ProductionState } from '../stores/production-state';
 import {

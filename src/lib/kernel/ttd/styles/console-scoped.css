@@ -1,0 +1,281 @@
+/*
+  Copyright 2026 EvoRule Project
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  console-scoped.css — ttd v1.0 主样式的 evorule-console 局部作用域版本
+
+  来源:./main.css(ttd v1.0,2026-07-31)
+  适配:见 ../VERSION.md
+    - 所有选择器加 `.ttd-root` 前缀,避免污染 evorule-console 主题
+    - `:root { --bg: ... }` → `.ttd-root { --bg: ... }`(局部作用域 CSS 变量)
+    - 删除 `html, body { height: 100%; overflow: hidden; }`(让 portal 控制外层布局)
+    - `body { ... }` → `.ttd-root { ... }`
+    - `*` reset → `.ttd-root *`(只 reset ttd 内部)
+    - 不包含原 .help-overlay(不在 portal 内嵌范围,evorule-console 有自己的帮助)
+
+  界面升级 v1.0 阶段 B.2 (2026-08-09):
+    - ttd 令牌重映射到 §B.1 新设计令牌(消除 GitHub-dark 独立配色,跟随 console 双主题)
+    - 圆角统一 4px(01 §1.3)
+    - 硬编码 rgba 改为 color-mix(主题自适应)
+    - 新增 .ttd-root.time-travel-amber 琥珀色回溯光晕(01 §2.5 / 实施文档 B.2/B.4)
+
+  使用:在 TimeTravel.svelte 顶部 `import '$lib/ttd/styles/console-scoped.css'`
+*/
+
+/* === 局部 CSS 变量 — 重映射到 §B.1 新设计令牌(跟随 console 双主题) === */
+.ttd-root {
+  /* ttd 内部仍用 --bg/--text 等短名,但值指向 app.css 的主题令牌 */
+  --bg: var(--bg-primary);
+  --bg-soft: var(--bg-card);
+  --bg-soft-2: var(--bg-hover);
+  --border: var(--border);
+  --text: var(--text-primary);
+  --text-dim: var(--text-secondary);
+  --accent: var(--brand);
+  --green: var(--success);
+  --orange: var(--warning);
+  --red: var(--danger);
+  /* --purple 为 cmd Fact 语义色(非设计系统令牌), 浅色下深紫 */
+  --purple: #7c3aed;
+  font-family: var(--font-sans);
+  font-size: 14px; line-height: 1.5;
+  background: var(--bg); color: var(--text);
+  height: 100%; overflow: hidden;
+}
+/* 深色驾驶舱下 purple 调亮 */
+[data-theme='dark'] .ttd-root {
+  --purple: #a78bfa;
+}
+
+/* === 局部 reset(原 * selector) === */
+.ttd-root *, .ttd-root *::before, .ttd-root *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+}
+
+/* === 元素基础样式(原 button/input/textarea/pre) — 4px 圆角 === */
+.ttd-root button {
+  font-family: inherit; font-size: 13px;
+  background: var(--bg-soft-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 12px; cursor: pointer;
+}
+.ttd-root button:hover { background: var(--border); }
+.ttd-root button.primary { background: var(--green); border-color: var(--green); color: #06231a; }
+.ttd-root button.primary:hover { background: color-mix(in srgb, var(--green) 88%, #000); }
+.ttd-root button.danger { background: color-mix(in srgb, var(--red) 20%, var(--bg-soft-2)); border-color: var(--red); color: var(--red); }
+.ttd-root button:disabled { opacity: 0.5; cursor: not-allowed; }
+.ttd-root input, .ttd-root select, .ttd-root textarea {
+  font-family: inherit; font-size: 13px;
+  background: var(--bg-soft-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 8px;
+}
+.ttd-root textarea { font-family: var(--font-mono); }
+.ttd-root pre, .ttd-root code { font-family: var(--font-mono); }
+.ttd-root pre { white-space: pre-wrap; word-break: break-all; }
+
+/* === Layout === */
+.ttd-root .header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; background: var(--bg-soft);
+  border-bottom: 1px solid var(--border); height: 56px;
+}
+.ttd-root .header h1 { font-size: 16px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.ttd-root .header .url { flex: 0 0 280px; }
+.ttd-root .header .search { flex: 1; max-width: 400px; }
+.ttd-root .header input { width: 100%; }
+.ttd-root .header .actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.ttd-root .main { display: flex; height: calc(100% - 56px); }
+.ttd-root .sidebar {
+  width: 240px; background: var(--bg-soft);
+  border-right: 1px solid var(--border); overflow-y: auto;
+}
+.ttd-root .sidebar h2 {
+  font-size: 12px; color: var(--text-dim); text-transform: uppercase;
+  padding: 12px 16px 8px;
+}
+.ttd-root .session-list { list-style: none; padding: 0 8px 8px; }
+.ttd-root .session-item {
+  padding: 8px 10px; margin-bottom: 4px;
+  background: var(--bg-soft-2); border-radius: 4px;
+  cursor: pointer; border-left: 3px solid transparent;
+}
+.ttd-root .session-item:hover { background: var(--border); }
+.ttd-root .session-item.active {
+  border-left-color: var(--accent); background: var(--border);
+}
+.ttd-root .session-item .id { font-weight: 600; color: var(--accent); font-size: 13px; }
+.ttd-root .session-item .meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+.ttd-root .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.ttd-root .tabs {
+  display: flex; gap: 2px; padding: 0 12px;
+  background: var(--bg-soft); border-bottom: 1px solid var(--border);
+}
+.ttd-root .tab {
+  padding: 10px 16px; cursor: pointer; color: var(--text-dim);
+  border-bottom: 2px solid transparent; user-select: none;
+  font-size: 13px; font-weight: 500;
+}
+.ttd-root .tab:hover { color: var(--text); }
+.ttd-root .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.ttd-root .panel { flex: 1; overflow-y: auto; padding: 16px; display: none; }
+.ttd-root .panel.active { display: block; }
+
+/* === Common === */
+.ttd-root .empty { text-align: center; padding: 40px; color: var(--text-dim); }
+.ttd-root .error {
+  background: color-mix(in srgb, var(--red) 12%, transparent); border: 1px solid var(--red);
+  border-radius: 4px; padding: 12px; color: var(--red); margin: 12px 0;
+}
+.ttd-root .success {
+  background: color-mix(in srgb, var(--green) 12%, transparent); border: 1px solid var(--green);
+  border-radius: 4px; padding: 12px; color: var(--green); margin: 12px 0;
+}
+.ttd-root .tooltip { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.ttd-root .kbd {
+  background: var(--bg-soft-2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 5px; font-family: var(--font-mono); font-size: 11px;
+}
+.ttd-root .actions-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.ttd-root .hidden { display: none !important; }
+.ttd-root .json-block {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 4px; padding: 12px; font-size: 12px;
+  max-height: 400px; overflow: auto;
+}
+
+/* === Audit badge === */
+.ttd-root .audit-badge {
+  font-size: 12px; padding: 3px 8px; border-radius: 4px;
+  background: var(--bg-soft-2); border: 1px solid var(--border);
+}
+.ttd-root .audit-badge.valid { color: var(--green); border-color: var(--green); }
+.ttd-root .audit-badge.invalid { color: var(--red); border-color: var(--red); }
+
+/* === Timeline === */
+.ttd-root .slider-wrap {
+  margin-bottom: 16px; padding: 14px; background: var(--bg-soft);
+  border: 1px solid var(--border); border-radius: 4px;
+}
+.ttd-root .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ttd-root .slider-header .ver { font-weight: 600; color: var(--accent); }
+.ttd-root .slider-track {
+  position: relative; height: 36px;
+  background: var(--bg-soft-2); border: 1px solid var(--border);
+  border-radius: 4px; cursor: pointer; user-select: none;
+}
+.ttd-root .slider-track .dots { position: absolute; inset: 0; pointer-events: none; }
+.ttd-root .slider-track .dot {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 6px; height: 6px; background: var(--text-dim); border-radius: 50%;
+}
+.ttd-root .slider-track .dot.cmd { background: var(--purple); }
+.ttd-root .slider-track .dot.stable { background: var(--accent); }
+.ttd-root .slider-track .dot.error { background: var(--red); }
+.ttd-root .slider-track .handle {
+  position: absolute; top: -4px; bottom: -4px; width: 3px;
+  background: var(--accent); transform: translateX(-50%); pointer-events: none;
+}
+.ttd-root .slider-track .handle::after {
+  content: ''; position: absolute; top: -8px; left: 50%;
+  transform: translateX(-50%); width: 12px; height: 12px;
+  background: var(--accent); border-radius: 50%;
+}
+.ttd-root .slider-ticks {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--text-dim); margin-top: 4px;
+}
+.ttd-root .fact-card {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-left: 4px solid var(--accent); border-radius: 4px;
+  padding: 12px 14px; margin-bottom: 10px; cursor: pointer;
+}
+.ttd-root .fact-card.cmd { border-left-color: var(--purple); }
+.ttd-root .fact-card.statetransition { border-left-color: var(--green); }
+.ttd-root .fact-card.iorequest { border-left-color: var(--orange); }
+.ttd-root .fact-card.ioresponse { border-left-color: var(--green); }
+.ttd-root .fact-card.stable { border-left-color: var(--accent); }
+.ttd-root .fact-card.error { border-left-color: var(--red); }
+.ttd-root .fact-card.selected { border-left-width: 6px; }
+.ttd-root .fact-card .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.ttd-root .fact-card .type { font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.ttd-root .fact-card .id { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+.ttd-root .fact-card .body { font-size: 12px; color: var(--text); }
+
+/* === JSON tree === */
+.ttd-root .jt-row { padding: 1px 0 1px 16px; }
+.ttd-root .jt-key { color: var(--accent); }
+.ttd-root .jt-val { color: var(--text); }
+.ttd-root .jt-val.string { color: var(--green); }
+.ttd-root .jt-val.number { color: var(--orange); }
+.ttd-root .jt-val.boolean { color: var(--purple); }
+.ttd-root .jt-val.null { color: var(--text-dim); }
+.ttd-root .jt-icon { color: var(--text-dim); margin-right: 4px; user-select: none; }
+.ttd-root .jt-size { color: var(--text-dim); font-size: 11px; margin-left: 4px; }
+
+/* === Diff === */
+.ttd-root .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ttd-root .diff-col {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 4px; padding: 12px;
+}
+.ttd-root .diff-col h4 { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.ttd-root .diff-line { font-family: var(--font-mono); font-size: 12px; padding: 2px 6px; border-radius: 4px; }
+.ttd-root .diff-line.added { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
+.ttd-root .diff-line.removed { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); text-decoration: line-through; }
+.ttd-root .diff-line.changed { background: color-mix(in srgb, var(--orange) 18%, transparent); color: var(--orange); }
+.ttd-root .diff-section-head {
+  font-size: 12px; margin: 12px 0 6px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+}
+.ttd-root .dt-root .diff-line { background: none; padding: 1px 0; text-decoration: none; }
+.ttd-root .dt-root .diff-line .dt-mark { display: inline-block; width: 14px; font-weight: 600; }
+.ttd-root .dt-root .diff-line.added { color: var(--green); }
+.ttd-root .dt-root .diff-line.removed { color: var(--red); }
+.ttd-root .dt-root .diff-line.changed { color: var(--orange); }
+.ttd-root .dt-root .diff-line.unchanged { color: var(--text-dim); }
+
+/* === Causal DAG === */
+.ttd-root .dag-wrap {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 4px; padding: 12px; overflow: auto; max-height: 600px;
+}
+.ttd-root .dag-svg { display: block; }
+.ttd-root .dag-node rect { fill: var(--bg-soft-2); stroke: var(--accent); stroke-width: 1.5; }
+.ttd-root .dag-node text { fill: var(--text); font-size: 11px; font-family: var(--font-mono); }
+.ttd-root .dag-node .dag-node-id { fill: var(--text-dim); font-size: 10px; }
+.ttd-root .dag-node:hover rect { fill: var(--border); }
+.ttd-root .dag-node.selected rect { stroke: var(--orange); stroke-width: 3; }
+.ttd-root .dag-edge { stroke: var(--text-dim); stroke-width: 1; fill: none; marker-end: url(#dag-arrow); }
+.ttd-root .dag-edge.highlight { stroke: var(--orange); stroke-width: 2; }
+
+/* === What-If === */
+.ttd-root .whatif-warn {
+  background: color-mix(in srgb, var(--orange) 12%, transparent); border: 1px solid var(--orange);
+  border-radius: 4px; padding: 8px 12px; color: var(--orange); margin-bottom: 12px;
+}
+.ttd-root .whatif-step { margin-bottom: 20px; }
+.ttd-root .whatif-step h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent); }
+.ttd-root .whatif-editor {
+  width: 100%; min-height: 200px; background: var(--bg-soft);
+  border: 1px solid var(--border); border-radius: 4px; padding: 8px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text); resize: vertical;
+}
+.ttd-root .whatif-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+
+/* === 琥珀色回溯模式 (界面升级 v1.0 阶段 B.2 / 01 §2.5) ===
+   TimeTravel.svelte 在 selectedVersion < maxVersion(离开实时位)时,
+   给 .ttd-root 加 .time-travel-amber class。
+   - 琥珀光晕 rgba(255,165,0,0.06) 叠在页面背景上(B.4 验收项 3 规定值)
+   - Fact 卡片 opacity 0.7(历史快照弱化)
+   - 由 store.subscribe 驱动,不重写 ttd vanilla DOM 逻辑。 */
+.ttd-root.time-travel-amber {
+  background:
+    rgba(255, 165, 0, 0.06),
+    var(--bg);
+  box-shadow: inset 0 0 60px rgba(255, 165, 0, 0.06);
+}
+.ttd-root.time-travel-amber .fact-card {
+  opacity: 0.7;
+}

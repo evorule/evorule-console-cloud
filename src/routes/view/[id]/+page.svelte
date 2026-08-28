@@ -14,8 +14,8 @@
 
 <script lang="ts">
   import { page } from "$app/stores";
-  import { setView, ExecutionPadView, StateView } from "@evorule/console";
-  import type { ViewId } from "@evorule/console";
+  import { setView, ExecutionPadView, StateView } from "$lib/kernel";
+  import type { ViewId } from "$lib/kernel";
   import {
     activeAssistantDialog,
     openAssistantDialog,

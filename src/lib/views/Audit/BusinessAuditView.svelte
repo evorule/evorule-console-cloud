@@ -28,7 +28,7 @@
     fetchCausalChain,
     clearCausalSelection,
     causalSelection,
-  } from "@evorule/console";
+  } from "$lib/kernel";
   import { toastInfo, toastError, toastSuccess } from "$lib/stores/toast";
   import {
     businessAuditStore,

@@ -14,7 +14,7 @@
 //       a) 集中处理 null case(配置不完备时返回 null)
 //       b) 大众版内部统一入口,后续可加日志/审计
 
-import { provideAssistant } from '@evorule/console';
+import { provideAssistant } from '$lib/kernel';
 import type { LlmAssistant } from './types';
 
 /**

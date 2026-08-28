@@ -21,7 +21,12 @@ import {
 	initDb,
 	type Industry,
 } from "./db";
-import { importRule, getAllRules } from "@evorule/console";
+import {
+	importRule,
+	getAllRules,
+	currentWorkspace,
+} from "$lib/kernel";
+import { getActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
 import { datasetStore } from "./dataset";
 import { businessFormSchemaStore } from "./business-form-schema";
 import { businessTermsStore } from "./business-terms";
@@ -271,9 +276,16 @@ export async function createLibraryFromTemplate(
 	const industry = template.industry as Industry;
 	initDb(libraryName, [], industry);
 
+	// 1.5 内核 v0.2.0:importRule 需 WorkspaceBackend + workspaceId
+	const wb = getActiveWorkspaceBackend();
+	const ws = get(currentWorkspace);
+	if (!ws) {
+		throw new Error("当前没有 workspace,无法导入库模板规则");
+	}
+
 	// 2. 导入规则
 	for (const rule of template.initialRules) {
-		importRule(JSON.stringify(rule));
+		await importRule(wb, ws.id, JSON.stringify(rule));
 	}
 
 	// 3. 设置术语

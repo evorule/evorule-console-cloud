@@ -14,7 +14,7 @@
 
 import { describe, test, expect, beforeEach } from "vitest";
 import { get as storeGet } from "svelte/store";
-import type { SessionId } from "@evorule/console";
+import type { SessionId } from "$lib/kernel";
 import {
   executeExport,
   exportExecutionStore,

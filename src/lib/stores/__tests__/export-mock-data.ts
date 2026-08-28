@@ -17,7 +17,7 @@ import type {
   CausalChain,
   CausalEntry,
   SessionState,
-} from "@evorule/console";
+} from "$lib/kernel";
 
 // ============================================================================
 // 1. Fact 流(6 条,呼吸科就诊完整链路)
@@ -177,7 +177,7 @@ export const MOCK_SESSION_STATE: SessionState = {
     prescription_queue: [{ drug: "头孢克洛", status: "dispensed" }],
   },
   queue: [],
-  // reactor 字段对齐 @evorule/console 的 ReactorState 契约
+  // reactor 字段对齐 $lib/kernel 的 ReactorState 契约
   //   phase / causal_depth / current_step / pending_io_count /
   //   structural_invariant_violations
   // 6 条 Fact 已处理完毕 → phase='stable'(级联收敛);

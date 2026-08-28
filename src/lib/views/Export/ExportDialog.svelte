@@ -18,7 +18,7 @@
 
 <script lang="ts">
   import { get } from "svelte/store";
-  import { currentSessionId, useBackend } from "@evorule/console";
+  import { currentSessionId, useBackend } from "$lib/kernel";
   import {
     exportExecutionStore,
     exportTemplatesStore,

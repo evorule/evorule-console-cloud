@@ -16,7 +16,7 @@
 // 但 P07 也支持其他 5 种内容 + 4 种格式,由 export-engine.ts 统一调度。
 
 import { writable } from "svelte/store";
-import type { ExecutionBackend } from "@evorule/console";
+import type { ExecutionBackend } from "$lib/kernel";
 
 // ============================================================================
 // 类型

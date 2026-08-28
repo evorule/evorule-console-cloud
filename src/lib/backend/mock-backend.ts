@@ -28,7 +28,7 @@ import type {
 	DiffResult,
 	CausalChain,
 	CommandResult,
-} from "@evorule/console";
+} from "$lib/kernel";
 import { get } from "svelte/store";
 import { demoDatasetStore, type DemoDataset } from "$lib/stores/demo-dataset";
 import {

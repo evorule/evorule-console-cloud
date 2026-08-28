@@ -10,7 +10,7 @@
 
 import { writable, derived, get } from "svelte/store";
 import { browser } from "$app/environment";
-import type { CommandResult, ExecutionBackend } from "@evorule/console";
+import type { CommandResult, ExecutionBackend } from "$lib/kernel";
 import type { LlmAssistant } from "$lib/assistant/types";
 import { getTemplate } from "./business-event-templates";
 

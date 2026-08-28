@@ -17,12 +17,21 @@
 -->
 
 <script lang="ts">
-	import { useAssistantOrNull, addRule, type AssistantProvider } from '@evorule/console';
-	import { RuleValidator, type ValidationResult } from '@evorule/console';
+	import {
+		useAssistantOrNull,
+		addRule,
+		useWorkspaceBackend,
+		currentWorkspace,
+		type AssistantProvider
+	} from '$lib/kernel';
+	import { RuleValidator, type ValidationResult } from '$lib/kernel';
+	import { get } from 'svelte/store';
 	import { closeAssistantDialog } from '$lib/stores/assistant-ui';
 	import { LlmError } from '$lib/assistant/llm-fetch';
 
 	const assistant: AssistantProvider | null = useAssistantOrNull();
+	// backend 在组件初始化期捕获(Svelte 5 context 不支持事件处理器内调用)
+	const wb = useWorkspaceBackend();
 
 	let description = $state('');
 	let draftJson = $state('');
@@ -61,7 +70,7 @@
 		}
 	}
 
-	function handleAdopt() {
+	async function handleAdopt() {
 		if (!draftJson) return;
 		// 校验:尝试 JSON.parse 确认是合法 JSON
 		try {
@@ -70,14 +79,23 @@
 			errorMsg = `草案 JSON 不合法: ${(e as Error).message}`;
 			return;
 		}
-		// 加入 user 规则库(用户可后续编辑)
+		// 加入 workspace 规则库(用户可后续编辑)
+		const ws = get(currentWorkspace);
+		if (!ws) {
+			errorMsg = '当前没有 workspace,无法保存规则';
+			return;
+		}
 		const id = `user.ai_draft.${Date.now()}`;
-		addRule({
-			id,
-			version: 1,
-			description: `AI 草案: ${description.slice(0, 50)}${description.length > 50 ? '...' : ''}`,
-			content: draftJson
-		});
+		try {
+			await addRule(wb, ws.id, {
+				name: id,
+				content: draftJson,
+				description: `AI 草案: ${description.slice(0, 50)}${description.length > 50 ? '...' : ''}`
+			});
+		} catch (e) {
+			errorMsg = `保存规则失败: ${(e as Error).message}`;
+			return;
+		}
 		adopted = true;
 		// 自动关闭(给个短暂反馈)
 		setTimeout(() => closeAssistantDialog(), 800);

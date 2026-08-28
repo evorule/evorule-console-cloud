@@ -105,7 +105,7 @@ vi.mock("$lib/stores/anomaly", () => ({
   clearAnomalies: vi.fn(),
 }));
 
-vi.mock("@evorule/console", () => ({
+vi.mock("$lib/kernel", () => ({
   resetAuditStore: vi.fn(),
 }));
 

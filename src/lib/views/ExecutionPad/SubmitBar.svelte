@@ -9,7 +9,7 @@
 -->
 
 <script lang="ts">
-  import type { CommandResult } from "@evorule/console";
+  import type { CommandResult } from "$lib/kernel";
   import type { TranslateStatus } from "$lib/stores/business-event";
 
   interface Props {

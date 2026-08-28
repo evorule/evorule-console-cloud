@@ -8,7 +8,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { useBackend } from '@evorule/console';
+  import { useBackend } from '$lib/kernel';
   import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
   import { type VersionHistoryEntry } from '$lib/stores/production-audit';
   import { roleToBackend } from '$lib/stores/publish-queue-api';

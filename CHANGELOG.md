@@ -8,6 +8,50 @@
 
 ## [Unreleased]
 
+### 变更
+
+#### 规则写入链路适配（WorkspaceBackend 落地）
+
+内核依赖内联后遗留的 v0.1.1 API 调用债务全部清偿，规则写入链路对齐内核 v0.2.0 workspace 化架构（规划文档：`docs/planning/2026-08-27-workspace-write-chain.md`）。
+
+**基础设施**
+
+- 补齐内核快照：`http-workspace-backend.ts`、`workspace-context.ts`（含 barrel 导出）
+- 新增 `MockWorkspaceBackend`：内存实现 WorkspaceBackend 全部 36 方法，含规则状态机（draft→candidate→active→blocked→archived）与版本 supersession；只读侧（沙盒/发布审批/转译/判定契约）不臆造语义，如实抛错提示连接 evorule-server；头部明示"离线演示数据不持久化"
+- 新增 `CloudWorkspaceBackend`：联网/离线双模式组合（online/offline → HttpWorkspaceBackend，noServer → Mock），与 `CloudHttpBackend` 同构，`reconfigure()` 实例不变
+- 新增模块级单例 `setActiveWorkspaceBackend` / `getActiveWorkspaceBackend`：供 store 层非组件调用点取用（Svelte 5 的 getContext 仅限组件初始化期，事件处理器/store 模块内调用会抛 lifecycle_outside_component）
+- `+layout.svelte`：`provideWorkspaceBackend` 双注入 + 模块级单例登记 + 启动引导（refreshWorkspaces → ensureDefaultWorkspace → seedBuiltinRules → refreshRules），失败如实提示不静默
+
+**链路适配（v0.1.1 → v0.2.0 API）**
+
+- 建库向导：`loadTemplate` / `StepFirstRule` 改异步 `addRule(backend, workspaceId, req)`
+- LLM 草案：`DraftRuleDialog` 采用动作走 `createRule`，含 workspace 缺失与写入失败的明示报错
+- 三个导入链路：`ruleset-import` / `rule-import-export` / `library-schema-import` 改 `await importRule(...)`；冲突检测从 `Rule.id` 改按 `Rule.name` 匹配（v0.2.0 中 id 为 server ULID，业务标识移至 name）
+- `BusinessRuleLibrary`：`updateRule` 4 参（仅 content，description 无更新通道时 toast 明示）；`selectRule` 带 backend + content 懒加载；开发者模式占位（内核 `RuleLibraryView` v0.2.0 已弃用为 /workspace 重定向壳，JSON 直接编辑待 workspace 视图专项补齐）
+- `Rule.source` 字段清理（v0.2.0 移除）：内置只读判定改走 `isRuleReadonly`（`rule-filter` / `RulePicker` / `BusinessRuleCard`）
+- 严格性修复：`Rule.content` 懒加载可空处理（`assemble-ruleset` / `impact-preview` / `DatasetPreview` / `ParamOverrideEditor` / `ExplainRuleDialog`，未加载时如实跳过/报错，不静默）；`Rule.description` 可空处理
+
+**测试与验证**
+
+- 重写 `db-and-templates.test.ts`（31 测试）：注入 MockWorkspaceBackend 测真实异步语义
+- 修复 `ruleset-import.test.ts`（15 测试）：await 语义 + skip/rename 策略按 name 匹配重新断言
+- 修复 `impact-preview.test.ts` / `assemble-ruleset.test.ts`：Rule 构造对齐 v0.2.0 形状
+- 回归基线：svelte-check 0 errors、vitest 904/904 全绿、`npm run build` 通过
+
+**登记债务（后续专项）**
+
+- `BusinessRuleLibrary` 开发者模式 JSON 直接编辑待补（内核视图弃用后暂以占位提示）
+- `updateRule` 的 description 更新通道缺失（内核 `updateRuleContent` API 不支持，UI 已明示）
+- publish-queue-api / production-state / production-audit 三个 store 直连 server 端点，与 WorkspaceBackend 职责重叠，待收敛
+
+#### 内核依赖内联（解除 npm 依赖）
+
+- 移除 `@evorule/console` npm 依赖（原 git URL / `file:` 双轨，lockfile 长期漂移）
+- 内核（evorule-console v0.2.0）实际使用的依赖闭包以源码快照内联到 `src/lib/kernel/`（41 文件，入口 `index.ts`，导出面与内核包对齐）
+- 全仓 62 个文件的 import 从 `@evorule/console` 改指 `$lib/kernel`，渲染行为不变
+- `verify.test.ts` 改为验证本地快照导入（CONSOLE_VERSION=0.2.0）
+- 文档同步：README / NOTICE / DUAL_LICENSE / CLA / RELEASE_PROCESS / CONTRIBUTING
+
 > 规划中：v0.2.0 本地 LLM（L2）付费扩展 + 依社区反馈优化迭代。
 
 ---

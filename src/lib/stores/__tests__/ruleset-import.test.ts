@@ -13,7 +13,9 @@ import {
 	blake3Hex,
 } from "../ruleset-import";
 import type { RulesetPackage } from "../ruleset-types";
-import { rules as kernelRulesStore, getAllRules, deleteRule } from "@evorule/console";
+import { resetRulesStore, currentWorkspace, getAllRules } from "$lib/kernel";
+import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
+import { setActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
 
 // ============================================================================
 // 1. buildDjbhRulesetPackage 内置规则集
@@ -94,13 +96,16 @@ describe("P09 blake3Hex", () => {
 // ============================================================================
 
 describe("P09 importRuleset 主函数", () => {
-	beforeEach(() => {
-		// 清空所有规则(用 set([]) 直接重置 kernel store)
-		kernelRulesStore.set([]);
-		// 双保险:逐条删除(以防 set 不被持久化)
-		for (const r of getAllRules()) {
-			deleteRule(r.id);
-		}
+	beforeEach(async () => {
+		// 重置内核 rules store + 注入内存 Mock backend(v0.2.0 写入走 WorkspaceBackend)
+		resetRulesStore();
+		const backend = new MockWorkspaceBackend();
+		const ws = await backend.createWorkspace({
+			name: "test-workspace",
+			owner_id: "tester",
+		});
+		setActiveWorkspaceBackend(backend);
+		currentWorkspace.set(ws);
 	});
 
 	test("导入完整规则集(5 条全成功)", async () => {
@@ -132,7 +137,13 @@ describe("P09 importRuleset 主函数", () => {
 			conflictResolution: "rename",
 		});
 		expect(result.imported).toBe(5);
-		expect(result.importedRuleIds.every((id) => id.includes("-imported-"))).toBe(true);
+		// v0.2.0:重命名体现在 name(业务标识),返回 id 为 server ULID
+		const names = getAllRules().map((r) => r.name);
+		for (const rule of pkg.rules) {
+			expect(
+				names.some((n) => n.startsWith(`user.${rule.id}-imported-`)),
+			).toBe(true);
+		}
 	});
 
 	test("无效 JSON 抛错", async () => {

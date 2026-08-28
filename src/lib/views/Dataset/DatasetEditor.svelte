@@ -10,8 +10,8 @@
 -->
 
 <script lang="ts">
-  import { getAllRules } from "@evorule/console";
-  import type { Rule } from "@evorule/console";
+  import { getAllRules } from "$lib/kernel";
+  import type { Rule } from "$lib/kernel";
   import {
     createDataset,
     updateDataset,

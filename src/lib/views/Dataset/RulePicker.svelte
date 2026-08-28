@@ -9,8 +9,8 @@
 -->
 
 <script lang="ts">
-  import { rules } from "@evorule/console";
-  import type { Rule } from "@evorule/console";
+  import { rules, isRuleReadonly } from "$lib/kernel";
+  import type { Rule } from "$lib/kernel";
   import { tagStore } from "$lib/stores/tag";
   import { categoryTree } from "$lib/stores/category";
   import type { CategoryNode } from "$lib/stores/category";
@@ -212,8 +212,8 @@
               <div class="rule-desc">{rule.description}</div>
               <div class="rule-meta">
                 <span class="rule-id">{rule.id}</span>
-                <span class="badge badge-{rule.source}">
-                  {rule.source === "builtin" ? "内置" : "用户"}
+                <span class="badge badge-{isRuleReadonly(rule) ? 'builtin' : 'user'}">
+                  {isRuleReadonly(rule) ? "内置" : "用户"}
                 </span>
                 {#if catId}
                   <span class="badge badge-cat">📂</span>

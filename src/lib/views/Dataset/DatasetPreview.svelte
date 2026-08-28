@@ -10,7 +10,7 @@
 -->
 
 <script lang="ts">
-  import { getAllRules } from "@evorule/console";
+  import { getAllRules } from "$lib/kernel";
   import type { Dataset } from "$lib/stores/dataset-types";
   import type { JsonPatch } from "$lib/types/json-patch";
   import { assembleRuleset } from "$lib/dataset/assemble-ruleset";
@@ -68,6 +68,10 @@
     for (const ruleId of dataset.ruleIds) {
       const rule = allRules.find((r) => r.id === ruleId);
       if (!rule) continue;
+      if (rule.content === undefined) {
+        parseFailures++;
+        continue;
+      }
       try {
         JSON.parse(rule.content);
       } catch {
@@ -104,6 +108,10 @@
             // 尝试应用,捕获运行时错误
             const rule = allRules.find((r) => r.id === override.ruleId);
             if (rule) {
+              if (rule.content === undefined) {
+                invalidPatchCount++;
+                continue;
+              }
               try {
                 applyJsonPatch(rule.content, [p]);
               } catch {

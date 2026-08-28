@@ -22,7 +22,7 @@ import {
   type Rule,
   type CausalEntry,
   type SessionAudit,
-} from "@evorule/console";
+} from "$lib/kernel";
 import { businessTermsStore, type BusinessTerm } from "./business-terms";
 
 // ============================================================================

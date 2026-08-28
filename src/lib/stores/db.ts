@@ -10,7 +10,7 @@
 
 import { writable, derived, get } from "svelte/store";
 import { browser } from "$app/environment";
-import { rules } from "@evorule/console";
+import { rules } from "$lib/kernel";
 
 export type Industry = "blank" | "finance" | "compliance" | "medical";
 

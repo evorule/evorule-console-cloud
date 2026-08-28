@@ -17,7 +17,7 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import { useBackend } from "@evorule/console";
+  import { useBackend } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { netConfig } from "$lib/config/net-config";

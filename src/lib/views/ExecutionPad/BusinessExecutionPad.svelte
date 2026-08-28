@@ -11,7 +11,7 @@
 
 <script lang="ts">
   import { get } from "svelte/store";
-  import type { ExecutionBackend } from "@evorule/console";
+  import type { ExecutionBackend } from "$lib/kernel";
   import {
     createEventFromTemplate,
     currentEvent,

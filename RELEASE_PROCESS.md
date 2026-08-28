@@ -110,26 +110,11 @@ npm run check && npm run test:unit && npm run test && npm run build
 }
 ```
 
-### 步骤 3：切换内核依赖为 git URL
+### 步骤 3：确认内核快照状态（如本次发版包含快照更新）
 
-编辑 `package.json` 的 `dependencies`：
+内核以源码快照形式内联于 `src/lib/kernel/`（取自 evorule-console，当前基线 v0.2.0）。本仓无 npm 内核依赖，无需切换 git URL。
 
-```json
-{
-  "dependencies": {
-    "@evorule/console": "git+https://gitee.com/evo-rule-lab/evorule-console.git#v0.1.1"
-  }
-}
-```
-
-> **注**：开发期用 `"file:../evorule-console"` 方便本地联调；发版时必须切 git URL，确保用户安装时从公开仓拉取。
-
-重新安装依赖验证：
-
-```bash
-npm install
-npm run check     # 确认 git URL 依赖可用
-```
+若本次发版包含快照更新，需在快照目录头部注释与 README「内核快照」节中同步更新来源版本号，并在 CHANGELOG 中注明快照基线变更。
 
 ### 步骤 4：更新 README 版本徽章
 
@@ -192,12 +177,12 @@ git push origin v0.1.0
 - 在 v0.1.0 基础上发 v0.1.1 patch 版本
 - 不要删除 / 重建 tag（会破坏依赖此版本的用户）
 
-### 2. 内核版本锁定
+### 2. 内核快照基线
 
-`package.json` 中 `@evorule/console` 的 git URL 锁定到 `#v0.1.1`。如需升级内核：
+内核以源码快照内联于 `src/lib/kernel/`（当前基线：evorule-console v0.2.0）。如需同步内核上游新版本：
 
 - bump 大众版版本号（v0.1.x → v0.2.0，因内核 API 可能 break）
-- 更新 git URL 的 tag（如 `#v0.2.0`）
+- 从内核仓目标 tag 重新提取快照并更新 `src/lib/kernel/index.ts` 头部基线注释与 README「内核快照」节
 - 重新跑全测试回归
 - 发新版
 

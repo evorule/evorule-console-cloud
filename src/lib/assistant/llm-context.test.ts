@@ -12,7 +12,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // vi.mock 在顶层声明,会被 hoist 到文件最前;factory 不依赖外部变量
 const mockProvideAssistant = vi.fn();
-vi.mock('@evorule/console', () => ({
+vi.mock('$lib/kernel', () => ({
 	provideAssistant: mockProvideAssistant,
 	// 其他导出空实现即可(llm-context.ts 只用 provideAssistant)
 	HttpBackend: class {},

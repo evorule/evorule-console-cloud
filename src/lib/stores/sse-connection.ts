@@ -21,7 +21,7 @@ import { browser } from "$app/environment";
 import type { SessionSwitchedEvent } from "./sse-events";
 import { appendFact, clearFacts } from "./fact-stream";
 import { appendAnomaly, clearAnomalies } from "./anomaly";
-import { resetAuditStore } from "@evorule/console";
+import { resetAuditStore } from "$lib/kernel";
 
 /** SSE 连接状态 */
 export type ConnectionStatus =

@@ -7,9 +7,9 @@
 
 [![version](https://img.shields.io/badge/version-0.1.0-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
-[![kernel](https://img.shields.io/badge/kernel-@evorule/console%20v0.1.1-blueviolet)](https://gitee.com/evo-rule-lab/evorule-console)
+[![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evo-rule-lab/evorule-console)
 
-`evorule-console-cloud` 在 [`@evorule/console`](https://gitee.com/evo-rule-lab/evorule-console) 内核基础上扩展：
+`evorule-console-cloud` 基于 evorule-console 内核快照（`src/lib/kernel/`，取自内核 v0.2.0）扩展：
 
 - **联网**：可连接远程 evorule-server（非仅本地 loopback）
 - **云 LLM 辅助**：OpenAI 兼容协议，多厂商预设（智谱/通义/DeepSeek/OpenAI），辅助生成规则草案/解释规则/生成测试输入
@@ -59,13 +59,13 @@
 
 evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
 
-| 层级 | 仓 | 定位 | LLM | 网络 | 依赖 |
+| 层级 | 仓 | 定位 | LLM | 网络 | 内核关系 |
 | --- | --- | --- | --- | --- | --- |
 | evorule-console（内核）| 独立 | 规则引擎面板内核，无智能只有执行 | ❌ 无 | ❌ 无（仅本地 HTTP）| 0（消费 evorule 核心）|
-| **evorule-console-cloud（本仓）** | 独立 | 二次开发者专业起点 | 云 LLM | ✅ 联网 | `npm i @evorule/console` |
-| 高级版 | 独立 | 保密行业定制 | 本地 GPU LLM | ✅ 联网/Tauri | `npm i @evorule/console` |
+| **evorule-console-cloud（本仓）** | 独立 | 二次开发者专业起点 | 云 LLM | ✅ 联网 | 内核快照内联（`src/lib/kernel/`），无 npm 依赖 |
+| 高级版 | 独立 | 保密行业定制 | 本地 GPU LLM | ✅ 联网/Tauri | 内核快照内联 |
 
-三仓各自独立 semver，通过 npm 依赖松绑。**起点必须一致，功能各不相同。**
+本仓与内核仓各自独立 semver。内核以**源码快照**形式内联于 `src/lib/kernel/`，本仓可独立演进；内核仓仍是上游参考，快照的后续同步按需手动进行。
 
 ---
 
@@ -90,17 +90,13 @@ evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发
 
 ---
 
-## 依赖内核
+## 内核快照
 
-大众版经 git URL 依赖内核（发版 tag 时强制提交 `dist/`，无需本地 prepack）：
+本仓不通过 npm 依赖内核。内核（evorule-console v0.2.0）实际使用的依赖闭包以源码快照形式内联在 `src/lib/kernel/`：
 
-```json
-{
-  "dependencies": {
-    "@evorule/console": "git+https://gitee.com/evo-rule-lab/evorule-console.git#v0.1.1"
-  }
-}
-```
+- 入口：`src/lib/kernel/index.ts`（导出面与内核包对齐，省略未使用的模块）
+- 内容：backend 抽象与类型、rules/session/audit/view stores、AssistantProvider 扩展槽、RuleValidator、执行台/状态/审计/时间旅行视图及 ttd 组件
+- 边界：快照后与本仓一同独立演进；内核仓的后续修改**不会**自动同步，需手动对照
 
 ---
 
@@ -209,7 +205,7 @@ npm run check && npx vitest run && npm run test && npm run build
 ## 验证
 
 ```bash
-npm run verify     # vitest:验证 @evorule/console 导入通路(CONSOLE_VERSION=0.1.1 + 所有导出可用)
+npm run verify     # vitest:验证 $lib/kernel 快照导入通路(CONSOLE_VERSION=0.2.0 + 所有导出可用)
 npm run check      # svelte-check:0 errors / 0 warnings
 npm run test:unit  # vitest:单元测试(assistant + backend + types)
 npm run test       # playwright:e2e(navigation + assistant-flow + settings-flow)
@@ -224,7 +220,7 @@ npm run build      # adapter-static:产出静态文件到 build/
 - TypeScript（strict）
 - Vite + adapter-static
 - vitest（单元测试 + 导入验证）+ playwright（e2e）
-- 内核 `@evorule/console` v0.1.1（git URL 安装）
+- 内核快照 `src/lib/kernel/`（取自 evorule-console v0.2.0）
 
 ---
 
@@ -248,7 +244,7 @@ evorule-console-cloud/
 │   └── verify.test.ts         # 导入验证(vitest)
 ├── tests/                     # playwright e2e(navigation + assistant-flow + settings-flow + 回归)
 ├── docs/                      # 公开文档(Diátaxis 四类 + ADR)
-├── package.json               # @evorule/console 依赖(git URL 安装)
+├── package.json               # 依赖声明(内核已内联,无 npm 内核依赖)
 ├── svelte.config.js           # adapter-static
 ├── vite.config.ts             # port 5174
 └── README.md(本文件)

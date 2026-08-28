@@ -12,7 +12,7 @@
 //   - LLM 因果总结按需触发(调 decisionSupportStore 或 CloudLlmAssistant)
 
 import { derived, writable, get } from "svelte/store";
-import { causalSelection, getAllRules, type Rule, type CausalEntry } from "@evorule/console";
+import { causalSelection, getAllRules, type Rule, type CausalEntry } from "$lib/kernel";
 import { businessTermsStore, type BusinessTerm } from "./business-terms";
 
 // ============================================================================

@@ -15,8 +15,7 @@ import { BUILTIN_FORM_SCHEMAS } from "./business-form-schemas-builtin";
 
 /** 合规规则 1:SOX-404 控制点必须填证据 */
 const COMPLIANCE_RULE_SOX = {
-  id: "compliance.sox_control_required",
-  version: 1,
+  name: "compliance.sox_control_required",
   description: "SOX-404 控制点必须填证据",
   content: JSON.stringify(
     {
@@ -58,8 +57,7 @@ const COMPLIANCE_RULE_SOX = {
 
 /** 合规规则 2:高风险事件需报送监管机构 */
 const COMPLIANCE_RULE_REGULATOR = {
-  id: "compliance.regulator_report",
-  version: 1,
+  name: "compliance.regulator_report",
   description: "高风险事件需报送监管机构",
   content: JSON.stringify(
     {

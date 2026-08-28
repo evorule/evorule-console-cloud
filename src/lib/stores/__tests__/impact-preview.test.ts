@@ -6,14 +6,14 @@
 //
 // 关联设计:P04_BUSINESS_EXECUTION_PAD_DESIGN.md §5.4 + §7.3(影响预览流)
 //
-// mock @evorule/console 的 getAllRules,控制内核规则库状态。
+// mock $lib/kernel 的 getAllRules,控制内核规则库状态。
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
 const { mockGetAllRules } = vi.hoisted(() => ({
   mockGetAllRules: vi.fn(),
 }));
-vi.mock("@evorule/console", () => ({
+vi.mock("$lib/kernel", () => ({
   getAllRules: mockGetAllRules,
 }));
 
@@ -22,16 +22,20 @@ import {
   computeImpactPreview,
   computeImpactPreviewForRules,
 } from "../impact-preview";
-import type { Rule } from "@evorule/console";
+import type { Rule } from "$lib/kernel";
 
-/** 构造测试规则 */
+/** 构造测试规则(v0.2.0 Rule 形状) */
 function makeRule(id: string, content: object, description = ""): Rule {
   return {
     id,
-    version: 1,
+    workspaceId: "ws_test",
+    name: id,
+    state: "draft",
+    currentVersionId: `${id}-v1`,
     description,
     content: JSON.stringify(content),
-    source: "user",
+    version: 1,
+    metadata: "{}",
     createdAt: "2026-01-01T00:00:00Z",
     updatedAt: "2026-01-01T00:00:00Z",
   };

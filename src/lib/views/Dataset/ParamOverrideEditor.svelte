@@ -10,7 +10,7 @@
 -->
 
 <script lang="ts">
-  import type { Rule } from "@evorule/console";
+  import type { Rule } from "$lib/kernel";
   import type { JsonPatch, JsonPatchOp } from "$lib/types/json-patch";
   import { applyJsonPatch } from "$lib/utils/json-patch";
 
@@ -29,6 +29,7 @@
 
   // === 原始规则 JSON(解析后供预览) ===
   const originalJson = $derived.by(() => {
+    if (rule.content === undefined) return null;
     try {
       return JSON.parse(rule.content);
     } catch {
@@ -38,6 +39,8 @@
 
   // === 应用 patch 后的预览 ===
   const patchedPreview = $derived.by(() => {
+    if (rule.content === undefined)
+      return "// 规则内容未加载,无法预览";
     if (patch.length === 0) return rule.content;
     try {
       return applyJsonPatch(rule.content, patch);

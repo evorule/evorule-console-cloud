@@ -32,7 +32,7 @@
 ### 原则 1：内核零修改，扩展槽注入
 
 ✅ **evorule-console-cloud 通过 `provideBackend()` / `provideAssistant()` 扩展槽注入联网后端与云 LLM 助手**
-❌ **不要修改 `@evorule/console` 内核包的任何代码**（内核独立发版，大众版只消费）
+❌ **不要零散修改 `src/lib/kernel/` 内核快照**（快照取自内核 v0.2.0，修改须与内核仓上游对照，保持可追溯）
 
 **为什么**：
 
@@ -99,7 +99,7 @@
 - Node: [e.g. 20.10]
 - 浏览器: [e.g. Chrome 126]
 - evorule-console-cloud 版本: [e.g. 0.1.0]
-- @evorule/console 内核版本: [e.g. 0.1.1]
+- 内核快照基线: [e.g. evorule-console v0.2.0]
 - 联网模式: [本地 / 联网]
 - LLM 是否启用: [是 / 否]
 - LLM 厂商: [智谱 / 通义 / DeepSeek / OpenAI / 自定义]
@@ -167,7 +167,7 @@
 feat(assistant): add new LLM provider preset for minimax
 fix(net-config): correct default baseUrl to localhost
 docs(changelog): record full-flow test milestone
-chore(deps): upgrade @evorule/console to 0.1.2
+chore(kernel): sync kernel snapshot from evorule-console v0.2.1
 refactor(settings): split llm-settings into sub-components
 test(e2e): add apiKey security verification case
 ```
@@ -224,7 +224,7 @@ test(e2e): add apiKey security verification case
 
 ### L_console 预校验
 
-内核 `@evorule/console` 的 `ruleValidator.ts` 是前端预校验层（G1-G7），与 evorule 核心仓的 `build.rs` + clippy + Kani（L0 权威）对齐。**内核 SPEC 变更时大众版需同步 bump 内核版本**。
+内核快照 `src/lib/kernel/validators/ruleValidator.ts` 是前端预校验层（G1-G7），与 evorule 核心仓的 `build.rs` + clippy + Kani（L0 权威）对齐。**内核 SPEC 变更时大众版需手动同步快照**。
 
 ---
 
@@ -272,7 +272,7 @@ test(e2e): add apiKey security verification case
 
 ## 禁止事项
 
-- ❌ **不要修改 `@evorule/console` 内核包代码**（破坏多产品线演化）
+- ❌ **不要零散修改 `src/lib/kernel/` 内核快照代码**（须对照内核仓上游，保持可追溯）
 - ❌ **不要让 LLM 自动执行规则 / 自动提交命令**（破坏确定性执行）
 - ❌ **不要在 prompt / 日志 / error.message 中暴露 apiKey**（违反三不原则）
 - ❌ **不要引入非 JSON 数据格式**（破坏透明性）

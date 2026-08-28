@@ -16,7 +16,6 @@
     "verify": "vitest run src/verify.test.ts"
   },
   "dependencies": {
-    "@evorule/console": "git+https://gitee.com/evo-rule-lab/evorule-console.git#v0.1.1",
     "@noble/hashes": "^2.3.0"
   },
   "devDependencies": {

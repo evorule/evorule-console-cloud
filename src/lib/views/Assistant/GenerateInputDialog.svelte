@@ -17,7 +17,7 @@
 -->
 
 <script lang="ts">
-	import { useAssistantOrNull, type AssistantProvider } from '@evorule/console';
+	import { useAssistantOrNull, type AssistantProvider } from '$lib/kernel';
 	import { closeAssistantDialog } from '$lib/stores/assistant-ui';
 	import { LlmError } from '$lib/assistant/llm-fetch';
 

@@ -22,9 +22,13 @@
     selectedRule,
     selectRule,
     updateRule,
-    RuleLibraryView,
-  } from "@evorule/console";
+    useWorkspaceBackend,
+    currentWorkspace,
+    isRuleReadonly,
+  } from "$lib/kernel";
+  import { get } from "svelte/store";
   import { dbStore } from "$lib/stores/db";
+  import { toastWarning } from "$lib/stores/toast";
   import { getMeta, setMeta } from "$lib/stores/rule-business-meta";
   import {
     businessFormSchemaStore,
@@ -47,6 +51,9 @@
     onaiGenerateDraft?: () => void;
     onaiExplainRule?: () => void;
   } = $props();
+
+  // backend 在组件初始化期捕获(Svelte 5 context 不支持事件处理器内调用)
+  const wb = useWorkspaceBackend();
 
   // === 模式状态 ===
   let devMode = $state(false);
@@ -80,7 +87,7 @@
 
   // === 业务预览(结构化层,本地计算) ===
   const structured = $derived.by(() => {
-    if (!$selectedRule) return null;
+    if (!$selectedRule || $selectedRule.content === undefined) return null;
     try {
       const ruleJson = JSON.parse($selectedRule.content);
       return explainStructured(ruleJson, $activeTermsByIndustry);
@@ -96,16 +103,38 @@
     selectedSchemaId = null;
   });
 
+  // === 选中规则(v0.2.0:selectRule 需 backend + workspaceId,含 content 懒加载) ===
+  async function handleSelect(ruleId: string): Promise<void> {
+    const ws = get(currentWorkspace);
+    if (!ws) return;
+    await selectRule(wb, ws.id, ruleId);
+  }
+
   // === 保存(业务表单 → 内核规则 + 业务元数据) ===
-  function handleSave(
+  async function handleSave(
     kernelContent: string,
     description: string,
     formValues: Record<string, string | number | boolean>,
-  ): void {
+  ): Promise<void> {
     if (!$selectedRuleId) return;
-    // 1. 更新内核规则 content + description
-    updateRule($selectedRuleId, { content: kernelContent, description });
-    // 2. 更新/创建业务元数据(formValues + schemaId)
+    // 1. 更新内核规则 content(v0.2.0:仅 content 可更新,description 无更新通道)
+    const ws = get(currentWorkspace);
+    if (!ws) {
+      toastWarning("当前没有 workspace,无法保存规则");
+      return;
+    }
+    try {
+      await updateRule(wb, ws.id, $selectedRuleId, { content: kernelContent });
+    } catch (e) {
+      toastWarning(`保存规则失败: ${(e as Error).message}`);
+      return;
+    }
+    // 2. 描述变更:内核 v0.2.0 updateRuleContent 不支持 description,如实提示
+    const currentDesc = $selectedRule?.description ?? "";
+    if (description && description !== currentDesc) {
+      toastWarning("规则描述暂不支持在线更新(内核 v0.2.0 限制),内容已保存");
+    }
+    // 3. 更新/创建业务元数据(formValues + schemaId)
     const schemaId = currentSchema?.id ?? selectedSchemaId ?? undefined;
     if (selectedMeta) {
       setMeta({ ...selectedMeta, formValues, schemaId });
@@ -127,8 +156,26 @@
 </script>
 
 {#if devMode}
-  <!-- 开发者模式:直接渲染内核 RuleLibraryView(JSON 编辑) -->
-  <RuleLibraryView {onaiGenerateDraft} {onaiExplainRule} />
+  <!-- 开发者模式:内核 v0.2.0 RuleLibraryView 已弃用(仅重定向 /workspace,
+       cloud 无此路由),JSON 直接编辑暂以占位提示,待 workspace 视图专项接入 -->
+  <div class="business-lib">
+    <header class="lib-header">
+      <div class="title-group">
+        <h1>规则库</h1>
+        <span class="subtitle">开发者模式 · JSON 直接编辑</span>
+      </div>
+      <div class="header-actions">
+        <DeveloperModeToggle bind:devMode />
+      </div>
+    </header>
+    <div class="dev-mode-placeholder">
+      <p>📋 开发者 JSON 编辑视图正在适配内核 v0.2.0 workspace 化重构</p>
+      <p class="hint">
+        内核 RuleLibraryView 已弃用(原为 /workspace 重定向壳),本视图将在
+        workspace 视图专项中补齐。当前请使用业务模式编辑规则。
+      </p>
+    </div>
+  </div>
 {:else}
   <!-- 业务模式:业务表单 + 业务预览 -->
   <div class="business-lib">
@@ -159,7 +206,7 @@
               {rule}
               meta={getMeta(rule.id)}
               selected={$selectedRuleId === rule.id}
-              onSelect={() => selectRule(rule.id)}
+              onSelect={() => handleSelect(rule.id)}
             />
           {/each}
           {#if filteredRules.length === 0}
@@ -288,6 +335,19 @@
   .empty-list .hint {
     font-size: 11px;
     margin-top: 4px;
+  }
+  .dev-mode-placeholder {
+    margin: 60px auto;
+    max-width: 480px;
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text-secondary, #64748b);
+    border: 1px dashed var(--color-border, #cbd5e1);
+    border-radius: 8px;
+  }
+  .dev-mode-placeholder .hint {
+    font-size: 12px;
+    margin-top: 8px;
   }
   .lib-detail {
     overflow-y: auto;
