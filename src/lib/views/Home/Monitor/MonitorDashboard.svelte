@@ -17,15 +17,20 @@
   import { get } from "svelte/store";
   import { onMount, onDestroy } from "svelte";
   // === Stores ===
-  import type { ProductionState } from "$lib/stores/production-state";
+  // 旁路 store 收敛(2026-08-28):ProductionState/DEFAULT_PRODUCTION_STATE 单一出处
+  // 在 $lib/backend/production-views;production-state 仅保留响应式缓存与 SSE 回调
+  import type { ProductionState } from "$lib/backend/production-views";
+  import { DEFAULT_PRODUCTION_STATE } from "$lib/backend/production-views";
   import {
     productionStateStore,
-    DEFAULT_PRODUCTION_STATE,
     onSessionSwitched as productionOnSessionSwitched,
     setSessionSwitchHandler,
     refreshProductionState,
-    fetchProductionState,
   } from "$lib/stores/production-state";
+  // 旁路 store 收敛(2026-08-28):生产状态统一经 backend.getProductionState()
+  //(带 Bearer token,随 mode 切换),不再直连 fetch
+  import { useBackend } from "$lib/kernel";
+  import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import {
     sseConnectionStore,
     startSSE,
@@ -96,9 +101,17 @@
   // === PR6: 连接诊断抽屉 ===
   let diagOpen = $state(false);
 
+  /** 经注入 backend 拉取生产状态(CloudHttpBackend / MockBackend 同名方法) */
+  // useBackend(getContext)只能在组件初始化期调用,此处 init 期捕获引用,
+  // 事件处理器(handleRetry)复用引用而非重新调用(见 kernel context 生命周期约束)
+  const backendRef = useBackend() as CloudHttpBackend;
+  function fetchStateViaBackend(): Promise<ProductionState> {
+    return backendRef.getProductionState();
+  }
+
   /** 重新连接:刷新生产态 + 在可用时重建 SSE 订阅 */
   function handleRetry() {
-    refreshProductionState(async () => fetchProductionState(baseUrl)).then(() => {
+    refreshProductionState(fetchStateViaBackend).then(() => {
       const ps = get(productionStateStore);
       if (ps.currentSessionId !== null && ps.status !== "offline") {
         stopSSE();
@@ -126,7 +139,7 @@
   // === 启动 ===
   onMount(async () => {
     // 1. 拉 production state
-    await refreshProductionState(async () => fetchProductionState(baseUrl));
+    await refreshProductionState(fetchStateViaBackend);
     // 2. 设置 U7 handler
     setSessionSwitchHandler((newSid, newVer) => {
       // SSE 重连:关闭旧,订阅新

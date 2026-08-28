@@ -10,8 +10,7 @@
   import { onMount } from 'svelte';
   import { useBackend } from '$lib/kernel';
   import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
-  import { type VersionHistoryEntry } from '$lib/stores/production-audit';
-  import { roleToBackend } from '$lib/stores/publish-queue-api';
+  import { type VersionHistoryEntry, roleToBackend } from '$lib/backend/production-views';
   import { can, getCurrentUser } from '$lib/stores/auth';
   import { toastSuccess, toastError } from '$lib/stores/toast';
   import EmptyState from '$lib/views/Feedback/EmptyState.svelte';

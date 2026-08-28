@@ -64,9 +64,7 @@ import {
 	AGENT_FACT_RECORDS,
 	AGENT_COMPLIANCE_FACTS,
 } from "$lib/data/demo-killer-agent";
-import type { ProductionState } from "$lib/stores/production-state";
-import type { PublishQueueItemView, PublishWriteResult } from "$lib/stores/publish-queue-api";
-import type { VersionHistoryEntry } from "$lib/stores/production-audit";
+import type { ProductionState, PublishQueueItemView, PublishWriteResult, VersionHistoryEntry } from "./production-views";
 
 /** MockBackend 专属 session 元数据(区分医疗/财务/agent/合规门禁) */
 interface MockSession {

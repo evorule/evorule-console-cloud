@@ -18,6 +18,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CloudHttpBackend } from './cloud-http-backend';
 import { DEFAULT_LOCAL_BASE_URL } from './types';
+import type { WorkspaceBackend } from '$lib/kernel';
 
 // ============ mock fetch(测代理方法用) ============
 
@@ -183,67 +184,40 @@ describe('代理方法(验证调用内部 HttpBackend)', () => {
 	});
 });
 
-// ============ Cloud 专属方法(getProductionState) ============
+// ============ Cloud 专属方法(getProductionState,workspace 委托) ============
+//
+// 旁路 store 收敛(2026-08-28):读方法改为委托注入的内核 WorkspaceBackend
+// (带 Bearer token,URL 拼接/reconfigure 属 HttpWorkspaceBackend 职责),
+// 不再自建 fetch 直连 /api/production/state。
+// 委托/降级/凭据的详细用例见 __tests__/cloud-http-backend.test.ts 与
+// __tests__/production-state.test.ts;此处仅保留注入语义冒烟。
 
-describe('Cloud 专属方法 getProductionState', () => {
-	test('调用 /api/production/state 并返回适配后的 ProductionState', async () => {
-		// 模拟服务器返回 snake_case 响应(对齐 ProductionStateRecord)
-		mockFetch.mockResolvedValueOnce({
-			ok: true,
-			status: 200,
-			headers: new Headers({ 'content-type': 'application/json' }),
-			json: async () => ({
-				id: 1,
+describe('Cloud 专属方法 getProductionState(workspace 委托)', () => {
+	/** 最小 WorkspaceBackend mock */
+	function mockWorkspace(impl: () => Promise<unknown>): WorkspaceBackend {
+		return { getProductionState: impl } as unknown as WorkspaceBackend;
+	}
+
+	test('注入 workspace 时委托并映射为视图', async () => {
+		const b = new CloudHttpBackend(
+			{ mode: 'offline' },
+			mockWorkspace(async () => ({
 				current_session_id: 42,
 				ruleset_version: 3,
 				ruleset_hash: 'blake3-abc',
-				last_operated_by: 'admin',
 				updated_at: '2026-08-07T12:00:00Z',
-			}),
-		} as unknown as Response);
-
-		const b = new CloudHttpBackend({ mode: 'offline', localBaseUrl: 'http://test:18080' });
+			})),
+		);
 		const ps = await b.getProductionState();
 
-		// 字段映射 + status 推导
 		expect(ps.currentSessionId).toBe(42);
-		expect(ps.rulesetVersion).toBe(3);
-		expect(ps.rulesetHash).toBe('blake3-abc');
 		expect(ps.status).toBe('running');
-		expect(ps.updatedAt).toBe('2026-08-07T12:00:00Z');
-
-		// 验证 fetch URL 用的是正确的 baseUrl
-		const calledUrl = mockFetch.mock.calls[0][0] as string;
-		expect(calledUrl).toBe('http://test:18080/api/production/state');
+		// 不再自建 fetch:读方法零直连
+		expect(mockFetch).not.toHaveBeenCalled();
 	});
 
-	test('reconfigure 后 getProductionState 用新 baseUrl', async () => {
-		mockFetch.mockResolvedValueOnce({
-			ok: true,
-			status: 200,
-			headers: new Headers({ 'content-type': 'application/json' }),
-			json: async () => ({
-				id: 1,
-				current_session_id: null,
-				ruleset_version: 0,
-				ruleset_hash: null,
-				updated_at: null,
-			}),
-		} as unknown as Response);
-
-		const b = new CloudHttpBackend({ mode: 'offline', localBaseUrl: 'http://old:18080' });
-		b.reconfigure({ mode: 'online', remoteBaseUrl: 'http://new:9000' });
-		await b.getProductionState();
-
-		const calledUrl = mockFetch.mock.calls[0][0] as string;
-		expect(calledUrl).toContain('http://new:9000');
-		expect(calledUrl).not.toContain('http://old:18080');
-	});
-
-	test('服务器不可达时返回 offline 默认值(不抛错)', async () => {
-		mockFetch.mockRejectedValueOnce(new TypeError('ECONNREFUSED'));
-
-		const b = new CloudHttpBackend({ mode: 'offline', localBaseUrl: 'http://test:18080' });
+	test('未注入 workspace → 返回 offline 默认值(不抛错)', async () => {
+		const b = new CloudHttpBackend({ mode: 'offline' });
 		const ps = await b.getProductionState();
 
 		expect(ps.status).toBe('offline');

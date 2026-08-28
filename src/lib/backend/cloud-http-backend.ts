@@ -11,6 +11,17 @@
 // 为什么不继承 HttpBackend:
 //   - HttpBackend.baseUrl 是 private readonly,不可变
 //   - 组合优于继承:reconfigure 时替换整个内部实例,干净利落
+//
+// Cloud 专属方法的数据通道(旁路 store 收敛专项 2026-08-28):
+//   - 读方法(getProductionState/getPublishQueue/getProductionAudit)委托内核
+//     WorkspaceBackend(带 Bearer token),本类只做视图模型映射
+//   - 写方法(reviewPublishRequest/emergencyRollbackRequest)保留自建 fetch +
+//     token:内核 WorkspaceBackend.reviewPublish/emergencyRollback 硬编码
+//     DEFAULT_REQUESTER/role,会丢失 UI 传入的操作者身份与角色(上游内核局限,
+//     登记为上游债务),待内核开放身份参数后收敛
+//   - 原三条旁路 store(publish-queue-api/production-state/production-audit)
+//     的直连 fetch 已删除;localStorage 本地发布状态机(stores/publish-queue.ts)
+//     已废弃,审批链路单通道走 server
 
 import {
 	HttpBackend,
@@ -24,29 +35,38 @@ import {
 	type FactRecord,
 	type DiffResult,
 	type CausalChain,
-	type CommandResult
+	type CommandResult,
+	type WorkspaceBackend
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
-import { fetchProductionState, type ProductionState } from '../stores/production-state';
 import {
-	fetchPublishQueue,
-	reviewPublishRequest,
-	emergencyRollbackRequest,
+	DEFAULT_PRODUCTION_STATE,
+	mapProductionAuditRecords,
+	mapProductionStateRecord,
+	mapPublishQueueItem,
+	type ProductionState,
 	type PublishQueueItemView,
 	type PublishWriteResult,
-} from '../stores/publish-queue-api';
-import { fetchProductionAudit, type VersionHistoryEntry } from '../stores/production-audit';
+	type VersionHistoryEntry,
+} from './production-views';
 
 export class CloudHttpBackend implements ExecutionBackend {
 	private backend: HttpBackend;
+	/** 内核 WorkspaceBackend 引用(读方法委托;+layout 注入同一实例) */
+	private workspace: WorkspaceBackend | null;
 	private _config: CloudBackendConfig;
 
-	constructor(config: Partial<CloudBackendConfig> = {}) {
+	constructor(
+		config: Partial<CloudBackendConfig> = {},
+		workspace: WorkspaceBackend | null = null
+	) {
 		this._config = {
 			mode: config.mode ?? 'offline',
 			remoteBaseUrl: config.remoteBaseUrl ?? DEFAULT_LOCAL_BASE_URL,
-			localBaseUrl: config.localBaseUrl ?? DEFAULT_LOCAL_BASE_URL
+			localBaseUrl: config.localBaseUrl ?? DEFAULT_LOCAL_BASE_URL,
+			authToken: config.authToken
 		};
+		this.workspace = workspace;
 		this.backend = new HttpBackend(this.resolveBaseUrl());
 	}
 
@@ -70,9 +90,9 @@ export class CloudHttpBackend implements ExecutionBackend {
 	// === 切换配置(核心) ===
 
 	/**
-	 * 重新配置 backend(切换 mode 或更新 baseUrl)。
+	 * 重新配置 backend(切换 mode 或更新 baseUrl/authToken)。
 	 *
-	 * 调用后,所有后续方法调用使用新 baseUrl。
+	 * 调用后,所有后续方法调用使用新配置。
 	 * 之前注入的 backend 引用不变 — 视图无需重新取用。
 	 *
 	 * @param config 部分配置,只更新传入的字段
@@ -89,6 +109,13 @@ export class CloudHttpBackend implements ExecutionBackend {
 			this._config.mode === 'online' ? this._config.remoteBaseUrl : this._config.localBaseUrl;
 		// 去掉末尾斜杠(与内核 HttpBackend 构造行为一致,避免 path 拼接出现 //)
 		return url.replace(/\/+$/, '');
+	}
+
+	/** Bearer 认证头(未配置 token 时空对象,仅 dev/免认证 server 可用) */
+	private authHeaders(): Record<string, string> {
+		return this._config.authToken
+			? { Authorization: `Bearer ${this._config.authToken}` }
+			: {};
 	}
 
 	// === 代理所有 15 方法到内部 HttpBackend ===
@@ -143,41 +170,53 @@ export class CloudHttpBackend implements ExecutionBackend {
 
 	// === Cloud 专属方法(不在内核 ExecutionBackend 接口内) ===
 	//
-	// 内核 ExecutionBackend 的 15 方法对齐 evorule-server 的会话/审计/时间旅行端点,
-	// 不含第四梯队新增的 production state / publish queue / sandbox 端点(内核无此概念)。
-	// cloud 版在此扩展这些方法,复用已解析的 this.baseUrl(随 mode 切换自动更新)。
-	//
 	// 视图层用法:
 	//   const backend = useBackend();
 	//   if (backend instanceof CloudHttpBackend) {
 	//     const ps = await backend.getProductionState();
 	//   }
-	// T5 的 MockBackend(adapter-static 无后端场景)应实现同名方法返回 offline 默认值。
+	// mock 模式(?mock=1)由 MockBackend 实现同名方法返回演示数据。
 
 	/**
-	 * 拉取生产运行状态(消费 evorule-server `GET /api/production/state`)。
+	 * 拉取生产运行状态(委托内核 WorkspaceBackend.getProductionState)。
 	 *
 	 * cloud 版 L1 监控大屏(P05) + HomeRouter 状态 C 默认层选择(T1 resolveDefaultLayer)
-	 * 需要此数据。复用 `this.baseUrl`(随 mode 切换),错误容错见 [`fetchProductionState`]。
+	 * 需要此数据。
 	 *
-	 * @returns ProductionState;失败时返回 status="offline" 的默认值,不抛错
+	 * # 错误容错(大屏不因一次拉取失败而崩)
+	 * 任何失败(网络 / 401 凭据 / 404 未初始化)→ 返回 status="offline" 默认值,
+	 * 不抛错;失败原因经 console.warn 可观测(不静默,凭据问题可据此定位)。
 	 */
 	async getProductionState(): Promise<ProductionState> {
-		return fetchProductionState(this.baseUrl);
+		if (!this.workspace) return { ...DEFAULT_PRODUCTION_STATE };
+		try {
+			const rec = await this.workspace.getProductionState();
+			return mapProductionStateRecord(rec);
+		} catch (e) {
+			console.warn('[CloudHttpBackend] getProductionState 失败,降级为 offline:', e);
+			return { ...DEFAULT_PRODUCTION_STATE };
+		}
 	}
 
 	/**
-	 * 拉取发布队列(消费 evorule-server `GET /api/publish/queue`)。
+	 * 拉取发布队列(委托内核 WorkspaceBackend.listPublishQueue)。
 	 *
-	 * 失败(网络错误 / 非 2xx / 响应非数组)→ 抛 Error,
+	 * 失败(网络错误 / 401 凭据 / 非 2xx)→ 抛 Error,
 	 * 由调用方 catch 后展示错误状态(不静默返回空数组,见 F3 偏差修正)。
 	 */
 	async getPublishQueue(): Promise<PublishQueueItemView[]> {
-		return fetchPublishQueue(this.baseUrl);
+		if (!this.workspace) {
+			throw new Error('发布队列不可用:未注入 WorkspaceBackend');
+		}
+		const items = await this.workspace.listPublishQueue();
+		return items.map(mapPublishQueueItem);
 	}
 
 	/**
 	 * 审批发布(消费 `POST /api/publish/queue/{queue_id}/review`)。
+	 *
+	 * 自建 fetch(带 Bearer token):内核 reviewPublish 硬编码操作者身份,
+	 * 会丢失 UI 传入的审批者与角色,故暂不委托(见文件头"数据通道"说明)。
 	 *
 	 * @param decision 'approved' | 'rejected'
 	 * @param comment 审批备注
@@ -191,12 +230,32 @@ export class CloudHttpBackend implements ExecutionBackend {
 		reviewedBy: string,
 		role: string,
 	): Promise<PublishWriteResult> {
-		return reviewPublishRequest(this.baseUrl, queueId, decision, comment, reviewedBy, role);
+		const url = `${this.baseUrl}/api/publish/queue/${queueId}/review`;
+		try {
+			const r = await fetch(url, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
+				body: JSON.stringify({
+					decision,
+					comment,
+					reviewed_by: reviewedBy,
+					role,
+				}),
+			});
+			if (!r.ok) {
+				const text = await r.text().catch(() => '');
+				return { ok: false, error: `审批失败(${r.status}): ${text.slice(0, 200)}` };
+			}
+			return { ok: true };
+		} catch {
+			return { ok: false, error: '审批失败:网络错误' };
+		}
 	}
 
 	/**
 	 * 紧急回滚(消费 `POST /api/publish/rollback`)。
 	 * 版本号单调递增:回滚到 targetVersion 的规则集,新版本号 = 当前 + 1。
+	 * 自建 fetch 理由同 reviewPublishRequest。
 	 */
 	async emergencyRollbackRequest(
 		targetVersion: number,
@@ -204,17 +263,40 @@ export class CloudHttpBackend implements ExecutionBackend {
 		operatedBy: string,
 		role: string,
 	): Promise<PublishWriteResult> {
-		return emergencyRollbackRequest(this.baseUrl, targetVersion, reason, operatedBy, role);
+		const url = `${this.baseUrl}/api/publish/rollback`;
+		try {
+			const r = await fetch(url, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
+				body: JSON.stringify({
+					target_version: targetVersion,
+					reason,
+					operated_by: operatedBy,
+					role,
+				}),
+			});
+			if (!r.ok) {
+				const text = await r.text().catch(() => '');
+				return { ok: false, error: `回滚失败(${r.status}): ${text.slice(0, 200)}` };
+			}
+			return { ok: true };
+		} catch {
+			return { ok: false, error: '回滚失败:网络错误' };
+		}
 	}
 
 	/**
-	 * 拉取发布审计 / 版本历史(消费 `GET /api/production/audit`)。
+	 * 拉取发布审计 / 版本历史(委托内核 WorkspaceBackend.listProductionAudit)。
 	 * 仅保留产生新版本的事件(ruleset_published / ruleset_rollback)。
 	 *
-	 * 失败(网络错误 / 非 2xx / 响应非数组)→ 抛 Error,
+	 * 失败(网络错误 / 401 凭据 / 非 2xx)→ 抛 Error,
 	 * 由调用方 catch 后展示错误状态(不静默返回空数组,见 F3 偏差修正)。
 	 */
 	async getProductionAudit(): Promise<VersionHistoryEntry[]> {
-		return fetchProductionAudit(this.baseUrl);
+		if (!this.workspace) {
+			throw new Error('版本历史不可用:未注入 WorkspaceBackend');
+		}
+		const records = await this.workspace.listProductionAudit();
+		return mapProductionAuditRecords(records);
 	}
 }

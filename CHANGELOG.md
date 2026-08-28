@@ -10,6 +10,38 @@
 
 ### 变更
 
+#### 旁路 store 收敛（凭据闭环 + 审批单通道化）
+
+清偿规则写入链路适配专项登记的第三项债务：三条旁路 store（publish-queue-api / production-state / production-audit）直连 server 端点、不带凭据、与 WorkspaceBackend 职责重叠，且发布审批存在"server 通道 + localStorage 本地状态机"双通道并存（规划文档：`planning/脱离console.txt` §2.3）。
+
+**凭据通道闭环**
+
+- `NetConfig` 新增 `authToken` 字段（localStorage 持久化，与 mode/baseUrl 同级）+ 设置面板输入项（密码型、失焦自动保存，代码注释与 UI 提示明示本机存储的 XSS 面）
+- `CloudHttpBackend`：审批/回滚两个自建 fetch 写方法携带 `Authorization: Bearer` 头；读方法（生产状态/发布队列/版本历史）统一委托内核 `WorkspaceBackend`（自带凭据）
+- `CloudWorkspaceBackend`：`authToken` 接线传入内核 `HttpWorkspaceBackend`（闭合盘点发现的 A1 缺口：内核支持但组合层未传）
+- `+layout.svelte`：从 netConfig 读 token 注入两个 backend，netConfig 变化时随 `reconfigure` 同步（实例引用不变）
+
+**直连旁路与双通道收敛**
+
+- 删除 `stores/publish-queue-api.ts` 与 `production-state.ts` 的直连 fetch；`production-state.ts` 收敛为纯响应式缓存，`MonitorDashboard` 改经 `backend.getProductionState()`（SSE 行为不变）
+- 删除 `stores/publish-queue.ts`（localStorage 本地发布状态机）与 `ReviewActions.svelte`（死代码）：审批链路单通道走 server（SQLite 持久化），DecisionMaker 待审数与队列页同源；离线演示数据由 `MockBackend` 既有 5 个 cloud 方法承接（不持久化，明示）
+- `production-audit` 的 localStorage 版本历史废弃，统一 server 通道（`backend.getProductionAudit()`）
+
+**类型收敛**
+
+- 新增 `$lib/backend/production-views.ts`：`ProductionState` / `PublishQueueItemView` / `VersionHistoryEntry` / `roleToBackend` 及三个映射函数的单一出处；视图层 import 全部改指 backend 层
+
+**测试**
+
+- 重写 `production-state.test.ts`（14 用例：映射 + status 推导 + `CloudHttpBackend.getProductionState` 委托/降级集成）
+- 新增 `production-views.test.ts`（8 用例：角色映射/队列项映射/审计事件过滤）与 `cloud-http-backend.test.ts`（10 用例：读委托/未注入如实抛错/写方法请求体与 Bearer 头断言）
+- 移除引用已删模块的 2 个旧测试文件（`publish-queue-api.test.ts` / `production-audit-api.test.ts`），有效用例已迁移
+
+**登记上游债务**
+
+- 内核 `HttpBackend`（执行侧会话 API）无 token 概念，会话/审计/时间旅行端点不校验凭据（A3）：属内核快照级缺口，按项目规则对照上游（gitee evo-rule-lab/evorule-console）另立专项处理，本仓不改快照
+- 内核 `WorkspaceBackend.reviewPublish` / `emergencyRollback` 硬编码操作者身份，会丢失 UI 传入的审批者与角色：cloud 暂以自建 fetch（带凭据）承接，待内核开放身份参数后收敛
+
 #### 一键启动脚本：清偿"已知限制"（README-STARTUP.md）
 
 - `start-all.ps1`：新增 `-Quiet` / `-NoBrowser` 参数（无人值守，不卡 `Read-Host`）；启动失败/端口超时自动回滚本次拉起的进程树（`taskkill /T` 连子进程，只动本次启动的，不碰既有实例）；三服务 stdout/stderr 统一重定向到 `logs\`（不再落根目录）
@@ -57,7 +89,7 @@
 
 - `BusinessRuleLibrary` 开发者模式 JSON 直接编辑待补（内核视图弃用后暂以占位提示）
 - `updateRule` 的 description 更新通道缺失（内核 `updateRuleContent` API 不支持，UI 已明示）
-- publish-queue-api / production-state / production-audit 三个 store 直连 server 端点，与 WorkspaceBackend 职责重叠，待收敛
+- publish-queue-api / production-state / production-audit 三个 store 直连 server 端点，与 WorkspaceBackend 职责重叠，待收敛（**已于 2026-08-28「旁路 store 收敛」专项闭合，见上**）
 
 #### 内核依赖内联（解除 npm 依赖）
 
