@@ -22,6 +22,12 @@ export interface CloudBackendConfig {
   mode: NetMode;
   remoteBaseUrl: string;
   localBaseUrl: string;
+  /**
+   * Bearer token(evorule-server `EVORULE_AUTH_TOKEN`)。
+   * 旁路 store 收敛专项(2026-08-28):server 开启认证后,发布队列/生产状态/
+   * 审计等端点需凭据;留空 = 不带 Authorization 头(仅 dev/免认证 server 可用)。
+   */
+  authToken?: string;
 }
 
 /**

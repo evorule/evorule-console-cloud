@@ -24,7 +24,7 @@
   import {
     roleToBackend,
     type PublishQueueItemView,
-  } from "$lib/stores/publish-queue-api";
+  } from "$lib/backend/production-views";
   import { can, getCurrentUser } from "$lib/stores/auth";
   import { logActivity } from "$lib/stores/activity-log";
   import { pushNotification } from "$lib/stores/notifications";

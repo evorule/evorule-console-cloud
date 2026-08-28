@@ -213,27 +213,15 @@
     goto("/help");
   }
 
-  // === 注入 backend(CloudHttpBackend 双模式 + ?mock=1 零依赖模式) ===
+  // === 注入 workspace backend(规则库/沙盒/发布等 server 应用层能力) ===
+  // 与 ExecutionBackend 并列的第二个后端(内核 v0.2.0 workspace 化架构)。
+  // mock 模式用内存 Mock(刷新即失,演示用);正常模式走 evorule-server workspace API。
+  // 旁路 store 收敛(2026-08-28):先构造 workspace backend,execution backend
+  // 持有其引用(Cloud 专属读方法委托,带 Bearer token)。
   const initialNet = get(netConfig);
   const useMock =
     browser && new URLSearchParams(window.location.search).get("mock") === "1";
 
-  let cloudBackend: CloudHttpBackend | null = null;
-  const backendImpl = useMock
-    ? new MockBackend()
-    : new CloudHttpBackend({
-        mode: initialNet.mode,
-        remoteBaseUrl: initialNet.remoteBaseUrl,
-        localBaseUrl: "http://localhost:18090",
-      });
-  if (!useMock) cloudBackend = backendImpl as CloudHttpBackend;
-  if (useMock) setDemoDataset("agent");
-
-  const backend = provideBackend(backendImpl);
-
-  // === 注入 workspace backend(规则库/沙盒/发布等 server 应用层能力) ===
-  // 与 ExecutionBackend 并列的第二个后端(内核 v0.2.0 workspace 化架构)。
-  // mock 模式用内存 Mock(刷新即失,演示用);正常模式走 evorule-server workspace API。
   let cloudWorkspaceBackend: CloudWorkspaceBackend | null = null;
   const workspaceImpl = useMock
     ? new MockWorkspaceBackend()
@@ -241,11 +229,30 @@
         mode: initialNet.mode,
         remoteBaseUrl: initialNet.remoteBaseUrl,
         localBaseUrl: "http://localhost:18090",
+        authToken: initialNet.authToken,
       });
   if (!useMock) cloudWorkspaceBackend = workspaceImpl as CloudWorkspaceBackend;
   const workspaceBackend = provideWorkspaceBackend(workspaceImpl);
   // 同步登记模块级单例(store 层非组件调用点用,见 cloud-workspace-backend.ts)
   setActiveWorkspaceBackend(workspaceImpl);
+
+  // === 注入 backend(CloudHttpBackend 双模式 + ?mock=1 零依赖模式) ===
+  let cloudBackend: CloudHttpBackend | null = null;
+  const backendImpl = useMock
+    ? new MockBackend()
+    : new CloudHttpBackend(
+        {
+          mode: initialNet.mode,
+          remoteBaseUrl: initialNet.remoteBaseUrl,
+          localBaseUrl: "http://localhost:18090",
+          authToken: initialNet.authToken,
+        },
+        workspaceImpl,
+      );
+  if (!useMock) cloudBackend = backendImpl as CloudHttpBackend;
+  if (useMock) setDemoDataset("agent");
+
+  const backend = provideBackend(backendImpl);
 
   $effect(() => {
     if (!cloudBackend) return;
@@ -253,6 +260,7 @@
     cloudBackend.reconfigure({
       mode: cfg.mode,
       remoteBaseUrl: cfg.remoteBaseUrl,
+      authToken: cfg.authToken,
     });
   });
 
@@ -262,6 +270,7 @@
     cloudWorkspaceBackend.reconfigure({
       mode: cfg.mode,
       remoteBaseUrl: cfg.remoteBaseUrl,
+      authToken: cfg.authToken,
     });
   });
 

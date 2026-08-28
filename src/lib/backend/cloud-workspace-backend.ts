@@ -60,6 +60,13 @@ import { MockWorkspaceBackend } from './mock-workspace-backend';
 export interface CloudWorkspaceBackendConfig extends CloudBackendConfig {
 	/** true 时不连任何 server,workspace 数据走内存 Mock(刷新即失) */
 	noServer: boolean;
+	/**
+	 * Bearer token(evorule-server `EVORULE_AUTH_TOKEN`)。
+	 * 旁路 store 收敛专项(2026-08-28):A1 接线——透传给内核
+	 * HttpWorkspaceBackend(支持可选 token),workspace/发布队列/生产状态
+	 * 全部端点随认证 server 闭环。留空 = 不带头(仅 dev)。
+	 */
+	authToken?: string;
 }
 
 // ============================================================================
@@ -101,9 +108,12 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 			mode: config.mode ?? 'offline',
 			remoteBaseUrl: config.remoteBaseUrl ?? DEFAULT_LOCAL_BASE_URL,
 			localBaseUrl: config.localBaseUrl ?? DEFAULT_LOCAL_BASE_URL,
-			noServer: config.noServer ?? false
+			noServer: config.noServer ?? false,
+			authToken: config.authToken
 		};
-		this.http = new HttpWorkspaceBackend(this.resolveBaseUrl());
+		// A1 接线(旁路 store 收敛 2026-08-28):token 传入内核实现,
+		// workspace 全部端点(含发布队列/生产状态/审计)凭据闭环
+		this.http = new HttpWorkspaceBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
 		this.mock = new MockWorkspaceBackend();
 	}
 
@@ -129,7 +139,7 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 	 */
 	reconfigure(config: Partial<CloudWorkspaceBackendConfig>): void {
 		this._config = { ...this._config, ...config };
-		this.http = new HttpWorkspaceBackend(this.resolveBaseUrl());
+		this.http = new HttpWorkspaceBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
 	}
 
 	private resolveBaseUrl(): string {

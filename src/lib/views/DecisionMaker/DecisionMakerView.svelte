@@ -14,11 +14,11 @@
 -->
 
 <script lang="ts">
+  import { onMount } from "svelte";
   import { productionStateStore } from "$lib/stores/production-state";
-  import {
-    publishQueueStore,
-    pendingReviewCount as getPendingCount,
-  } from "$lib/stores/publish-queue";
+  import { useBackend } from "$lib/kernel";
+  import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
+  import type { PublishQueueItemView } from "$lib/backend/production-views";
   import { sessionStore } from "$lib/stores/session";
   import EmptyState from "$lib/views/Feedback/EmptyState.svelte";
 
@@ -26,10 +26,22 @@
   const prodState = $derived($productionStateStore);
   const isRunning = $derived(prodState.status === "running");
 
-  // 派生:待审规则数(submitted + reviewing,P08 pendingReviewCount 函数)
-  // 引用 publishQueueStore 确保响应式 + 调用 getter 取值
-  const _ = $derived($publishQueueStore); // 响应式依赖
-  const pendingReviewCount = $derived(getPendingCount());
+  // 派生:待审规则数(旁路 store 收敛 2026-08-28:单通道走 server 队列;
+  // 原 localStorage 本地状态机已废弃,离线 mock 由 MockBackend 演示数据承接)
+  // useBackend(getContext)仅组件初始化期可调用,init 期捕获引用
+  const backendRef = useBackend() as CloudHttpBackend;
+  let queueItems = $state<PublishQueueItemView[]>([]);
+  const pendingReviewCount = $derived(
+    queueItems.filter((q) => q.status === "pending").length,
+  );
+  onMount(async () => {
+    try {
+      queueItems = await backendRef.getPublishQueue();
+    } catch {
+      // server 不可达/未认证:待审数置 0,不阻塞决策者视图其余指标
+      queueItems = [];
+    }
+  });
 
   // 派生:今日规则执行次数(模拟数据,P1 接真实统计)
   const todayExecutionCount = $derived(isRunning ? 1432 : 0);

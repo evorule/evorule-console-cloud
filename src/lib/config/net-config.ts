@@ -12,13 +12,23 @@ import { DEFAULT_LOCAL_BASE_URL, type NetMode } from '$lib/backend/types';
 export interface NetConfig {
 	mode: NetMode;
 	remoteBaseUrl: string;
+	/**
+	 * Bearer token(evorule-server `EVORULE_AUTH_TOKEN`)。
+	 *
+	 * 旁路 store 收敛专项(2026-08-28):server 开启认证后,workspace/发布队列/
+	 * 生产状态等端点均需凭据。localStorage 持久化(与 mode/baseUrl 同级)——
+	 * 安全取舍:面向内网单机部署场景,XSS 可读取此凭据(代码明示,不隐藏)。
+	 * 留空 = 不带 Authorization 头(仅免认证 server / dev 模式可用)。
+	 */
+	authToken: string;
 }
 
 const STORAGE_KEY = 'evorule-console-cloud:net-config';
 
 const DEFAULT_CONFIG: NetConfig = {
 	mode: 'offline',
-	remoteBaseUrl: DEFAULT_LOCAL_BASE_URL
+	remoteBaseUrl: DEFAULT_LOCAL_BASE_URL,
+	authToken: ''
 };
 
 function loadConfig(): NetConfig {
@@ -32,7 +42,8 @@ function loadConfig(): NetConfig {
 			remoteBaseUrl:
 				typeof parsed.remoteBaseUrl === 'string' && parsed.remoteBaseUrl.length > 0
 					? parsed.remoteBaseUrl
-					: DEFAULT_CONFIG.remoteBaseUrl
+					: DEFAULT_CONFIG.remoteBaseUrl,
+			authToken: typeof parsed.authToken === 'string' ? parsed.authToken : ''
 		};
 	} catch {
 		return DEFAULT_CONFIG;
@@ -55,6 +66,11 @@ export function setNetMode(mode: NetMode): void {
 
 export function setRemoteBaseUrl(url: string): void {
 	netConfig.update((c) => ({ ...c, remoteBaseUrl: url.trim() }));
+}
+
+/** 更新认证 token(设置面板输入;空串 = 不带 Authorization 头) */
+export function setAuthToken(token: string): void {
+	netConfig.update((c) => ({ ...c, authToken: token.trim() }));
 }
 
 /** 切换 online/offline(toggle) */

@@ -11,7 +11,7 @@
 
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { netConfig, setNetMode, setRemoteBaseUrl } from '$lib/config/net-config';
+	import { netConfig, setNetMode, setRemoteBaseUrl, setAuthToken } from '$lib/config/net-config';
 	import { DEFAULT_LOCAL_BASE_URL } from '$lib/backend/types';
 	import LlmSettings from './LlmSettings.svelte';
 	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
@@ -42,12 +42,17 @@
 	});
 
 	let remoteUrlInput = $state('');
+	let authTokenInput = $state('');
 	let isTestingNet = $state(false);
 	let netTestResult = $state<{ ok: boolean; message: string } | null>(null);
 
 	// 同步 store 到本地输入
 	$effect(() => {
 		remoteUrlInput = $netConfig.remoteBaseUrl;
+	});
+
+	$effect(() => {
+		authTokenInput = $netConfig.authToken;
 	});
 
 	function handleNetModeChange(mode: 'online' | 'offline') {
@@ -63,17 +68,26 @@
 		setRemoteBaseUrl(remoteUrlInput);
 	}
 
+	function handleAuthTokenInput(event: Event) {
+		authTokenInput = (event.target as HTMLInputElement).value;
+	}
+
+	function handleAuthTokenBlur() {
+		setAuthToken(authTokenInput);
+	}
+
 	async function handleTestNetConnection() {
 		const cfg = $netConfig;
 		const url = cfg.mode === 'online' ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
 		isTestingNet = true;
 		netTestResult = null;
 		try {
-			// 用临时 CloudHttpBackend 测试连接(不修改主 backend)
+			// 用临时 CloudHttpBackend 测试连接(不修改主 backend;带当前输入 token 以验证凭据)
 			const testBackend = new CloudHttpBackend({
 				mode: 'online',
 				remoteBaseUrl: url,
-				localBaseUrl: url
+				localBaseUrl: url,
+				authToken: authTokenInput.trim() || undefined
 			});
 			const ok = await testBackend.health();
 			netTestResult = {
@@ -234,6 +248,24 @@
 						<small class="hint">修改后失焦自动保存,backend 会立即用新 URL</small>
 					</div>
 				{/if}
+
+				<!-- 认证 token(两模式通用:server 开启 EVORULE_AUTH_TOKEN 时必填) -->
+				<div class="form-row">
+					<label for="auth-token">认证 Token(evorule-server EVORULE_AUTH_TOKEN)</label>
+					<input
+						id="auth-token"
+						type="password"
+						value={authTokenInput}
+						oninput={handleAuthTokenInput}
+						onblur={handleAuthTokenBlur}
+						placeholder="server 未开启认证可留空"
+						autocomplete="off"
+					/>
+					<small class="hint">
+						server 开启认证时必填,失焦自动保存;留空则请求不带凭据(仅免认证 server 可用)。
+						凭据保存在本机浏览器 localStorage,请勿在共享设备上填写。
+					</small>
+				</div>
 
 				<!-- 测试连接 -->
 				<div class="form-actions">
