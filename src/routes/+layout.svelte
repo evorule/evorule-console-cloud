@@ -30,6 +30,8 @@
   import type { ViewId } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { CloudWorkspaceBackend, setActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
+  import { roleToBackend } from "$lib/backend/production-views";
+  import { currentUser } from "$lib/stores/auth";
   import { MockBackend } from "$lib/backend/mock-backend";
   import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
   import { netConfig, toggleNetMode } from "$lib/config/net-config";
@@ -267,10 +269,15 @@
   $effect(() => {
     if (!cloudWorkspaceBackend) return;
     const cfg = $netConfig;
+    // D2(2026-08-28):审计归属跟随登录用户 — 登录/登出自动重建内部实现,
+    // 发布链路(submitted_by/reviewed_by/operated_by + role)与沙盒编排
+    // 记录真实操作者;未登录时 actor 置空,内核回落 "console" 并 warn
+    const user = $currentUser;
     cloudWorkspaceBackend.reconfigure({
       mode: cfg.mode,
       remoteBaseUrl: cfg.remoteBaseUrl,
       authToken: cfg.authToken,
+      actor: user ? { name: user.id, role: roleToBackend(user.role) } : null,
     });
   });
 

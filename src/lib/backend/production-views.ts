@@ -15,6 +15,7 @@
 
 import type {
 	PublishQueueItem,
+	PublishRole,
 	ProductionAuditRecord,
 	ProductionStateRecord,
 } from '$lib/kernel';
@@ -113,7 +114,7 @@ export interface PublishWriteResult {
  *   - exec(院领导)     → admin(可审批+回滚)
  *   - auditor(审计)    → doctor(只读)
  */
-export function roleToBackend(role: string): string {
+export function roleToBackend(role: string): PublishRole {
 	switch (role) {
 		case 'it':
 		case 'exec':

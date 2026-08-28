@@ -22,7 +22,6 @@
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { netConfig } from "$lib/config/net-config";
   import {
-    roleToBackend,
     type PublishQueueItemView,
   } from "$lib/backend/production-views";
   import { can, getCurrentUser } from "$lib/stores/auth";
@@ -85,13 +84,7 @@
     const user = getCurrentUser();
     if (!user) return;
     const comment = reviewComment[item.id] ?? "通过";
-    const res = await backend.reviewPublishRequest(
-      Number(item.id),
-      "approved",
-      comment,
-      user.id,
-      roleToBackend(user.role),
-    );
+    const res = await backend.reviewPublishRequest(Number(item.id), "approved", comment);
     if (!res.ok) {
       toastError(res.error ?? "审批失败", "发布队列");
       return;
@@ -112,13 +105,7 @@
     const user = getCurrentUser();
     if (!user) return;
     const id = rejectingId;
-    const res = await backend.reviewPublishRequest(
-      Number(id),
-      "rejected",
-      rejectComment || "驳回",
-      user.id,
-      roleToBackend(user.role),
-    );
+    const res = await backend.reviewPublishRequest(Number(id), "rejected", rejectComment || "驳回");
     if (!res.ok) {
       toastError(res.error ?? "驳回失败", "发布队列");
       return;
@@ -146,12 +133,7 @@
       toastError("该发布项无发布版本,无法回滚", "发布队列");
       return;
     }
-    const res = await backend.emergencyRollbackRequest(
-      targetVersion,
-      "发布队列紧急回滚",
-      user.id,
-      roleToBackend(user.role),
-    );
+    const res = await backend.emergencyRollbackRequest(targetVersion, "发布队列紧急回滚");
     if (!res.ok) {
       toastError(res.error ?? "回滚失败", "发布队列");
       return;

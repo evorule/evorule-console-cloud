@@ -374,24 +374,17 @@ export class MockBackend implements ExecutionBackend {
 		return [];
 	}
 
-	/** 审批发布(mock:本地 store 处理,此处仅确认签名)。 */
+	/** 审批发布(mock:本地 store 处理,此处仅确认签名;身份来自 backend actor)。 */
 	async reviewPublishRequest(
 		_queueId: number,
 		_decision: "approved" | "rejected",
 		_comment: string,
-		_reviewedBy: string,
-		_role: string,
 	): Promise<PublishWriteResult> {
 		return { ok: true };
 	}
 
 	/** 紧急回滚(mock:本地 store 处理)。 */
-	async emergencyRollbackRequest(
-		_targetVersion: number,
-		_reason: string,
-		_operatedBy: string,
-		_role: string,
-	): Promise<PublishWriteResult> {
+	async emergencyRollbackRequest(_targetVersion: number, _reason: string): Promise<PublishWriteResult> {
 		return { ok: true };
 	}
 

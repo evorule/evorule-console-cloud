@@ -1,54 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// CloudHttpBackend Cloud 专属方法单测 — 读委托 workspace / 写自建 fetch 凭据与请求体
+// CloudHttpBackend Cloud 专属方法单测 — 读写全委托内核 WorkspaceBackend
 //
 // 运行: npx vitest run src/lib/backend/__tests__/cloud-http-backend.test.ts
 //
 // 测试范围:
 //   - 读方法(getPublishQueue/getProductionAudit):委托内核 WorkspaceBackend + 视图映射;
 //     未注入 workspace 时如实抛错(不静默返回空数组,F3 偏差修正语义)
-//   - 写方法(reviewPublishRequest/emergencyRollbackRequest):自建 fetch 请求体对齐
-//     server api.rs;配置 authToken 时携带 Authorization: Bearer 头(T1-T4 凭据闭环);
-//     非 2xx / 网络错误 → ok=false 且含错误信息
+//   - 写方法(reviewPublishRequest/emergencyRollbackRequest):委托内核并透传参数,
+//     操作者身份/角色来自 backend actor(+layout 按登录用户注入,D2 闭合);
+//     内核抛错/未注入 workspace → ok=false 错误透传
 //
 // 不测:
 //   - getProductionState(见 stores/__tests__/production-state.test.ts)
-//   - 内核 HttpWorkspaceBackend 的真实 HTTP 行为(集成测试范畴)
+//   - 内核 HttpWorkspaceBackend 的身份透传与真实 HTTP 行为(内核单测 + 集成测试范畴)
 
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { CloudHttpBackend } from '../cloud-http-backend';
 import type { PublishQueueItem, ProductionAuditRecord, WorkspaceBackend } from '$lib/kernel';
-
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
-
-beforeEach(() => {
-  mockFetch.mockReset();
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
-function jsonOk(body: unknown): Response {
-  return {
-    ok: true,
-    status: 200,
-    headers: new Headers({ 'content-type': 'application/json' }),
-    json: async () => body,
-    text: async () => JSON.stringify(body),
-  } as unknown as Response;
-}
-
-function httpError(status: number, body: unknown = { error: 'failed' }): Response {
-  return {
-    ok: false,
-    status,
-    headers: new Headers({ 'content-type': 'application/json' }),
-    json: async () => body,
-    text: async () => JSON.stringify(body),
-  } as unknown as Response;
-}
 
 /** 最小 WorkspaceBackend mock(只实现被测方法) */
 function mockWorkspace(methods: Record<string, () => Promise<unknown>>): WorkspaceBackend {
@@ -132,96 +101,93 @@ describe('CloudHttpBackend 读方法', () => {
 });
 
 // ============================================================================
-// 写方法:自建 fetch(凭据 + 请求体)
+// 写方法:委托内核 WorkspaceBackend(D2 闭合后单通道,身份来自 backend actor)
 // ============================================================================
 
 describe('CloudHttpBackend.reviewPublishRequest', () => {
-  test('成功:请求体对齐 server api.rs + 配置 token 时携带 Bearer 头', async () => {
-    mockFetch.mockResolvedValueOnce(jsonOk({}));
-    const backend = new CloudHttpBackend({
-      mode: 'offline',
-      authToken: 'tok-123',
-    });
+  test('委托 workspace.reviewPublish,透传 queueId 与请求体(不再逐调用传身份)', async () => {
+    const reviewPublish = vi.fn().mockResolvedValue({});
+    const backend = new CloudHttpBackend(
+      { mode: 'offline' },
+      mockWorkspace({ reviewPublish: reviewPublish as unknown as () => Promise<unknown> }),
+    );
 
-    const res = await backend.reviewPublishRequest(7, 'approved', '通过', 'admin-1', 'admin');
+    const res = await backend.reviewPublishRequest(7, 'approved', '通过');
 
     expect(res.ok).toBe(true);
-    const [url, init] = mockFetch.mock.calls[0];
-    expect(url).toBe('http://localhost:18080/api/publish/queue/7/review');
-    expect((init as RequestInit).headers).toMatchObject({
-      Authorization: 'Bearer tok-123',
-      'Content-Type': 'application/json',
-    });
-    const body = JSON.parse((init as RequestInit).body as string);
-    expect(body).toEqual({
+    expect(reviewPublish).toHaveBeenCalledTimes(1);
+    expect(reviewPublish).toHaveBeenCalledWith(7, {
       decision: 'approved',
       comment: '通过',
-      reviewed_by: 'admin-1',
-      role: 'admin',
     });
   });
 
-  test('未配置 token:请求不带 Authorization 头(免认证 server 可用)', async () => {
-    mockFetch.mockResolvedValueOnce(jsonOk({}));
-    const backend = new CloudHttpBackend({ mode: 'offline' });
+  test('workspace.reviewPublish 抛错(如 actor 缺 role)→ ok=false + 错误透传', async () => {
+    const backend = new CloudHttpBackend(
+      { mode: 'offline' },
+      mockWorkspace({
+        reviewPublish: async () => {
+          throw new Error('发布操作需要 actor.role');
+        },
+      }),
+    );
 
-    await backend.reviewPublishRequest(7, 'rejected', '驳回', 'admin-1', 'admin');
-
-    const [, init] = mockFetch.mock.calls[0];
-    expect((init as RequestInit).headers).not.toHaveProperty('Authorization');
-  });
-
-  test('非 2xx → ok=false + 含状态码与响应片段', async () => {
-    mockFetch.mockResolvedValueOnce(httpError(400, { error: 'bad request' }));
-    const backend = new CloudHttpBackend({ mode: 'offline' });
-
-    const res = await backend.reviewPublishRequest(7, 'rejected', 'x', 'admin-1', 'admin');
+    const res = await backend.reviewPublishRequest(7, 'rejected', 'x');
 
     expect(res.ok).toBe(false);
-    expect(res.error).toContain('400');
+    expect(res.error).toContain('actor.role');
   });
 
-  test('网络错误 → ok=false', async () => {
-    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-    const backend = new CloudHttpBackend({ mode: 'offline' });
+  test('未注入 workspace → ok=false(不抛错,与读方法抛错语义区分:调用方仅 toast)', async () => {
+    const backend = new CloudHttpBackend({ mode: 'offline' }, null);
 
-    const res = await backend.reviewPublishRequest(7, 'approved', 'x', 'admin-1', 'admin');
+    const res = await backend.reviewPublishRequest(7, 'approved', 'x');
 
     expect(res.ok).toBe(false);
-    expect(res.error).toContain('网络错误');
+    expect(res.error).toContain('未注入 WorkspaceBackend');
   });
 });
 
 describe('CloudHttpBackend.emergencyRollbackRequest', () => {
-  test('成功:请求体对齐 server api.rs + Bearer 头', async () => {
-    mockFetch.mockResolvedValueOnce(jsonOk({ new_ruleset_version: 4, rolled_back_to: 3 }));
-    const backend = new CloudHttpBackend({
-      mode: 'offline',
-      authToken: 'tok-123',
-    });
+  test('委托 workspace.emergencyRollback,透传 target_version 与 reason', async () => {
+    const emergencyRollback = vi.fn().mockResolvedValue(undefined);
+    const backend = new CloudHttpBackend(
+      { mode: 'offline' },
+      mockWorkspace({ emergencyRollback: emergencyRollback as unknown as () => Promise<unknown> }),
+    );
 
-    const res = await backend.emergencyRollbackRequest(3, '误发布回滚', 'admin-1', 'admin');
+    const res = await backend.emergencyRollbackRequest(3, '误发布回滚');
 
     expect(res.ok).toBe(true);
-    const [url, init] = mockFetch.mock.calls[0];
-    expect(url).toBe('http://localhost:18080/api/publish/rollback');
-    expect((init as RequestInit).headers).toMatchObject({ Authorization: 'Bearer tok-123' });
-    const body = JSON.parse((init as RequestInit).body as string);
-    expect(body).toEqual({
+    expect(emergencyRollback).toHaveBeenCalledTimes(1);
+    expect(emergencyRollback).toHaveBeenCalledWith({
       target_version: 3,
       reason: '误发布回滚',
-      operated_by: 'admin-1',
-      role: 'admin',
     });
   });
 
-  test('网络错误 → ok=false', async () => {
-    mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-    const backend = new CloudHttpBackend({ mode: 'offline' });
+  test('workspace.emergencyRollback 抛错 → ok=false + 错误透传', async () => {
+    const backend = new CloudHttpBackend(
+      { mode: 'offline' },
+      mockWorkspace({
+        emergencyRollback: async () => {
+          throw new Error('回滚需要 admin 角色');
+        },
+      }),
+    );
 
-    const res = await backend.emergencyRollbackRequest(3, 'x', 'admin-1', 'admin');
+    const res = await backend.emergencyRollbackRequest(3, 'x');
 
     expect(res.ok).toBe(false);
-    expect(res.error).toContain('网络错误');
+    expect(res.error).toContain('回滚需要 admin 角色');
+  });
+
+  test('未注入 workspace → ok=false', async () => {
+    const backend = new CloudHttpBackend({ mode: 'offline' }, null);
+
+    const res = await backend.emergencyRollbackRequest(3, 'x');
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toContain('未注入 WorkspaceBackend');
   });
 });

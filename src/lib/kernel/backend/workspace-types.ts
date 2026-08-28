@@ -47,6 +47,24 @@ export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
 /** 发布角色 (models.rs PublishRole, serde rename_all = "snake_case") */
 export type PublishRole = 'doctor' | 'department_head' | 'admin';
 
+/**
+ * 操作者身份 — 审计归属的真实来源。
+ *
+ * server 发布链路审计字段 (submitted_by / reviewed_by / operated_by + role)
+ * 与沙盒编排字段 (started_by / closed_by / ?requester=) 均由请求体/查询参数
+ * 显式携带,后端不派生。调用方应把"当前登录用户 + 其发布角色"通过
+ * HttpWorkspaceBackend 构造参数传入,使 server 审计链记录真实操作者。
+ *
+ * role 仅发布侧三方法 (submitPublish / reviewPublish / emergencyRollback)
+ * 需要;未配置时这些方法会抛错 (见 http-workspace-backend.ts)。
+ */
+export interface ActorIdentity {
+	/** 操作者显示名 (写入 server 审计字段,如 'zhang.san') */
+	name: string;
+	/** 操作者发布角色 (仅发布侧方法必需) */
+	role?: PublishRole;
+}
+
 // ============================================================================
 // 2. Record 类型 (对齐 models.rs 结构体,字段名 snake_case,DateTime→string)
 // ============================================================================
