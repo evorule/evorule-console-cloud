@@ -38,12 +38,12 @@ evorule-console-cloud 采用**双轨许可模式**，为不同用户提供灵活
 
 evorule-console-cloud 是 **evorule-console（内核）的衍生产品**，定位为“**面向二次开发者的专业起点**”（联网 + 云 LLM）。两者关系如下：
 
-- **依赖关系**：evorule-console-cloud 通过 `@evorule/console` npm 包依赖 evorule-console 内核，在此之上扩展云端能力（联网检索、云 LLM 接入等）。
+- **内核关系**：evorule-console-cloud 内联 evorule-console 内核快照（`src/lib/kernel/`，取自内核 v0.2.0，AGPL-3.0-or-later），在此之上扩展云端能力（联网检索、云 LLM 接入等），无 npm 依赖。
 - **许可独立性**：evorule-console-cloud 拥有**独立的商业许可策略**。本文件约束 evorule-console-cloud 仓本身，与内核仓（evorule-console）的商业许可**相互独立**。
-- **传染性边界**：对 evorule-console-cloud 自有代码的修改，受本仓 AGPL-3.0-or-later 或商业许可约束；对 `@evorule/console` 内核包的使用，遵循内核自身的许可条款。
+- **传染性边界**：内联的 `src/lib/kernel/` 快照沿用内核的 AGPL-3.0-or-later 许可，不适用本仓商业许可豁免；对快照之外本仓自有代码的修改，受本仓 AGPL-3.0-or-later 或商业许可约束。
 - **衍生作品**：基于 evorule-console-cloud 二次开发的衍生作品，适用本仓的双重许可条款。
 
-> 简言之：**内核归内核，云端归云端**。二次开发者只需关注 evorule-console-cloud 仓的许可，内核以 npm 依赖形式被引入。
+> 简言之：**内核快照归 AGPL，云端自有代码归双许可**。二次开发者只需关注 evorule-console-cloud 仓的许可；修改内核快照（`src/lib/kernel/`）须遵守 AGPL-3.0-or-later。
 
 ---
 

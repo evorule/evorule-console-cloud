@@ -10,7 +10,7 @@
 
 <script lang="ts">
   import { get } from "svelte/store";
-  import { currentSessionId } from "@evorule/console";
+  import { currentSessionId } from "$lib/kernel";
   import ExportDialog from "./ExportDialog.svelte";
   import {
     exportJobsStore,

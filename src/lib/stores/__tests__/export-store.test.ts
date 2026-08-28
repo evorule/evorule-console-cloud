@@ -8,7 +8,7 @@
 
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { get as storeGet } from "svelte/store";
-import type { ExecutionBackend, SessionId } from "@evorule/console";
+import type { ExecutionBackend, SessionId } from "$lib/kernel";
 
 // 注:测试在 node 环境运行,$app/environment 的 browser=false。
 // exportTemplatesStore 只返回 builtin 模板,downloadBlob 静默返回(不触发 DOM)。
@@ -60,7 +60,7 @@ function makeMockBackend(overrides: Partial<MockBackend> = {}): MockBackend {
       { fact_id: 2, type: "rule_triggered", payload: { rule_id: "r1" } },
     ]),
     getAudit: vi.fn(async () => audit),
-    // SessionState 必须符合 @evorule/console 契约:{ payload, queue, reactor, version }
+    // SessionState 必须符合 $lib/kernel 契约:{ payload, queue, reactor, version }
     // reactor 字段对齐 ReactorState:phase/causal_depth/current_step/pending_io_count/
     // structural_invariant_violations(2 条 Fact → current_step=2, phase=stable)。
     // 旧实现返回 { status:"running", version:5 } —— 形状错误且 status 是 stale reactor 字段。

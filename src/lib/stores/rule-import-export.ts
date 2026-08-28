@@ -17,7 +17,10 @@ import {
 	exportRule,
 	importRule,
 	getAllRules,
-} from "@evorule/console";
+	currentWorkspace,
+} from "$lib/kernel";
+import { getActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
+import { get } from "svelte/store";
 import {
 	serializeTo,
 	deserializeFrom,
@@ -176,10 +179,12 @@ export async function importRuleUniversal(
 		ruleObj = data;
 	}
 
-	// 检查冲突
+	// 检查冲突(v0.2.0:业务标识在 name,importRule 生成 "user." 前缀 name)
 	const ruleId = (ruleObj as { id?: string })?.id;
 	const existing = getAllRules();
-	const exists = ruleId ? existing.some((r) => r.id === ruleId) : false;
+	const exists = ruleId
+		? existing.some((r) => r.name === ruleId || r.name === `user.${ruleId}`)
+		: false;
 
 	if (exists && conflictResolution === "skip") {
 		return { imported: ruleId ?? "", action: "skipped" };
@@ -197,7 +202,13 @@ export async function importRuleUniversal(
 		ruleJson = JSON.stringify(ruleObj);
 	}
 
-	const newRuleId = importRule(ruleJson);
+	// 内核 v0.2.0:importRule 需 WorkspaceBackend + workspaceId
+	const wb = getActiveWorkspaceBackend();
+	const ws = get(currentWorkspace);
+	if (!ws) {
+		throw new Error("当前没有 workspace,无法导入规则");
+	}
+	const newRuleId = await importRule(wb, ws.id, ruleJson);
 	return {
 		imported: newRuleId,
 		action: exists

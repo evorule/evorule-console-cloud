@@ -19,7 +19,7 @@
 // 关联设计:P02_BUSINESS_LANGUAGE_V0_DESIGN.md §9.3 + 内核 ruleValidator.d.ts
 
 import { describe, test, expect } from "vitest";
-import { RuleValidator } from "@evorule/console";
+import { RuleValidator } from "$lib/kernel";
 import {
   wrapAsKernelTransform,
   unwrapKernelTransform,

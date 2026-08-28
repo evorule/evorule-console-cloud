@@ -66,7 +66,7 @@
   }
 
   // === Step 2 → 3 ===
-  function handleDbConfirm(): void {
+  async function handleDbConfirm(): Promise<void> {
     if (template === "blank") {
       // 空白库:仅初始化库元数据,不加规则(Step 3 必须创建一条)
       initDb(dbName, businessObjects, "blank");
@@ -75,7 +75,7 @@
       // 模板库:初始化库 + 加载 builtin 规则 + 关联业务元数据
       // 模板加载会让 isEmptyDb 变 false,但 wizardInProgress=true 阻止 HomeRouter 切到 C
       try {
-        templateLoadedRuleIds = loadTemplate(template, dbName);
+        templateLoadedRuleIds = await loadTemplate(template, dbName);
         // 默认指向模板第一条规则,允许 Step 3 直接跳过
         createdRuleId = templateLoadedRuleIds[0] ?? null;
       } catch (e) {

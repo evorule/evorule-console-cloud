@@ -14,7 +14,7 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import { TimeTravelView } from "@evorule/console";
+  import { TimeTravelView } from "$lib/kernel";
   import TermOverlay from "./TermOverlay.svelte";
   import ConfirmDialog from "../Home/Monitor/ConfirmDialog.svelte";
   import { toastInfo } from "$lib/stores/toast";

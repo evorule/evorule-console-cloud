@@ -15,7 +15,7 @@
 -->
 
 <script lang="ts">
-	import { useAssistantOrNull, type AssistantProvider, selectedRule } from '@evorule/console';
+	import { useAssistantOrNull, type AssistantProvider, selectedRule } from '$lib/kernel';
 	import { closeAssistantDialog } from '$lib/stores/assistant-ui';
 	import { LlmError } from '$lib/assistant/llm-fetch';
 
@@ -33,6 +33,10 @@
 		const rule = $selectedRule;
 		if (!rule) {
 			errorMsg = '未选中规则';
+			return;
+		}
+		if (rule.content === undefined) {
+			errorMsg = '规则内容未加载,无法解释';
 			return;
 		}
 		isLoading = true;

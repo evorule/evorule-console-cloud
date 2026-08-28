@@ -8,16 +8,16 @@
 // 关联设计:P04_BUSINESS_EXECUTION_PAD_DESIGN.md §4.3 + §5.4 + §7.3(影响预览流)
 
 import { derived, get } from "svelte/store";
-import { getAllRules } from "@evorule/console";
-import type { Rule } from "@evorule/console";
+import { getAllRules } from "$lib/kernel";
+import type { Rule } from "$lib/kernel";
 import { businessEventStore, currentEventId } from "./business-event";
 
 /** 单条规则匹配结果 */
 export interface RuleMatchResult {
   /** 规则 ID */
   ruleId: string;
-  /** 规则描述 */
-  ruleDescription: string;
+  /** 规则描述(可能为 null) */
+  ruleDescription: string | null;
   /** 是否匹配 */
   matched: boolean;
   /** 匹配的字段名列表 */
@@ -91,6 +91,8 @@ export function computeImpactPreview(instruction: object): ImpactPreview {
  */
 export function matchRule(rule: Rule, instruction: object): RuleMatchResult {
   try {
+    // content 未加载视为解析失败(catch 分支返回不匹配)
+    if (rule.content === undefined) throw new Error("rule content not loaded");
     const ruleContent = JSON.parse(rule.content) as Record<string, unknown>;
     const payload = (instruction as { payload?: Record<string, unknown> }).payload ?? {};
 

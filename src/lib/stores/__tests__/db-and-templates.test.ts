@@ -1,4 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 EvoRule Project
+//
+// db 元数据 + 模板加载测试(v0.2.0 workspace 化重写)。
+// 内核 v0.2.0 起规则写入走 WorkspaceBackend(异步),模板加载需注入
+// MockWorkspaceBackend(内存实现,实例间天然隔离)。
+
+import { describe, test, expect, beforeEach } from "vitest";
 import { get } from "svelte/store";
 import {
   dbStore,
@@ -15,29 +22,29 @@ import {
   FINANCE_TEMPLATE,
   COMPLIANCE_TEMPLATE,
 } from "$lib/views/Build/templates";
-import { rules, deleteRule, getAllRules } from "@evorule/console";
+import { rules, resetRulesStore } from "$lib/kernel";
+import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
 import { tagStore } from "$lib/stores/tag";
 import { categoryStore } from "$lib/stores/category";
 import { ruleBusinessMetaStore } from "$lib/stores/rule-business-meta";
+import type { WorkspaceBackend } from "$lib/kernel";
 
-beforeEach(() => {
-  const allRules = getAllRules();
-  for (const r of allRules) {
-    if (r.source === "user") {
-      try { deleteRule(r.id); } catch { /* ignore */ }
-    }
-  }
-  const builtinIds = new Set(allRules.filter(r => r.source === "builtin").map(r => r.id));
-  rules.set(getAllRules().filter(r => builtinIds.has(r.id)));
+let backend: MockWorkspaceBackend;
+let ctx: { backend: WorkspaceBackend; workspaceId: string };
 
+beforeEach(async () => {
+  resetRulesStore();
   resetDb();
   tagStore.set([]);
   categoryStore.set([]);
   ruleBusinessMetaStore.set({});
-});
 
-afterEach(() => {
-  vi.restoreAllMocks();
+  backend = new MockWorkspaceBackend();
+  const ws = await backend.createWorkspace({
+    name: "test-workspace",
+    owner_id: "tester",
+  });
+  ctx = { backend, workspaceId: ws.id };
 });
 
 describe("dbStore - initDb 初始化库元数据", () => {
@@ -87,30 +94,19 @@ describe("dbStore - initDb 初始化库元数据", () => {
 });
 
 describe("isEmptyDb / ruleCount - 空库派生计算", () => {
-  test("初始状态(仅 builtin 规则)下 isEmptyDb 不为空", () => {
-    const builtinCount = get(rules).length;
-    expect(builtinCount).toBeGreaterThan(0);
-    expect(get(isEmptyDb)).toBe(false);
-    expect(get(ruleCount)).toBe(builtinCount);
-  });
-
-  test("清空 rules 后 isEmptyDb=true, ruleCount=0", () => {
-    const allRules = getAllRules();
-    for (const r of allRules) {
-      if (r.source === "user") {
-        try { deleteRule(r.id); } catch { /* ignore */ }
-      }
-    }
-    rules.set([]);
+  test("重置后 rules 为空,isEmptyDb=true", () => {
+    // v0.2.0:内置规则经 seedBuiltinRules 写入 workspace,store 重置后为空
+    expect(get(rules).length).toBe(0);
     expect(get(isEmptyDb)).toBe(true);
     expect(get(ruleCount)).toBe(0);
     expect(checkEmptyDb()).toBe(true);
   });
 
-  test("checkEmptyDb 同步检查正确", () => {
-    expect(checkEmptyDb()).toBe(get(isEmptyDb));
-    rules.set([]);
-    expect(checkEmptyDb()).toBe(true);
+  test("loadTemplate 后 isEmptyDb=false, ruleCount=规则数", async () => {
+    const ids = await loadTemplate("finance", "财务测试库", ctx);
+    expect(get(isEmptyDb)).toBe(false);
+    expect(get(ruleCount)).toBe(ids.length);
+    expect(checkEmptyDb()).toBe(false);
   });
 });
 
@@ -136,15 +132,15 @@ describe("templates - getTemplate 只读访问", () => {
 });
 
 describe("templates - loadTemplate 加载 finance 模板", () => {
-  test("loadTemplate('finance') 返回 ruleIds.length > 0", () => {
-    const ids = loadTemplate("finance", "财务测试库");
+  test("loadTemplate('finance') 返回 ruleIds.length > 0", async () => {
+    const ids = await loadTemplate("finance", "财务测试库", ctx);
     expect(Array.isArray(ids)).toBe(true);
     expect(ids.length).toBeGreaterThan(0);
     expect(ids.length).toBe(FINANCE_TEMPLATE.builtinRules.length);
   });
 
-  test("loadTemplate('finance') 后 dbStore 正确", () => {
-    loadTemplate("finance", "我的财务库");
+  test("loadTemplate('finance') 后 dbStore 正确", async () => {
+    await loadTemplate("finance", "我的财务库", ctx);
     const db = get(dbStore);
     expect(db.dbName).toBe("我的财务库");
     expect(db.industry).toBe("finance");
@@ -152,21 +148,22 @@ describe("templates - loadTemplate 加载 finance 模板", () => {
     expect(db.businessObjects.length).toBeGreaterThan(0);
   });
 
-  test("loadTemplate('finance') 后规则被添加到 rules store", () => {
+  test("loadTemplate('finance') 后规则被添加到 rules store", async () => {
     const beforeCount = get(ruleCount);
-    const ids = loadTemplate("finance", "财务库");
+    const ids = await loadTemplate("finance", "财务库", ctx);
     const afterCount = get(ruleCount);
     expect(afterCount - beforeCount).toBe(ids.length);
     expect(afterCount - beforeCount).toBe(FINANCE_TEMPLATE.builtinRules.length);
     for (const id of ids) {
-      const rule = get(rules).find(r => r.id === id);
+      const rule = get(rules).find((r) => r.id === id);
       expect(rule).toBeDefined();
-      expect(rule!.source).toBe("user");
+      // v0.2.0:通过 addRule 写入的规则为 draft 状态,非只读
+      expect(rule!.state).toBe("draft");
     }
   });
 
-  test("loadTemplate('finance') 后每条规则都有业务元数据", () => {
-    const ids = loadTemplate("finance", "财务库");
+  test("loadTemplate('finance') 后每条规则都有业务元数据", async () => {
+    const ids = await loadTemplate("finance", "财务库", ctx);
     const metaMap = get(ruleBusinessMetaStore);
     for (const id of ids) {
       expect(metaMap[id]).toBeDefined();
@@ -175,33 +172,39 @@ describe("templates - loadTemplate 加载 finance 模板", () => {
       expect(Array.isArray(metaMap[id].businessTermIds)).toBe(true);
     }
   });
+
+  test("loadTemplate 后规则内容写入 backend(mock 内存可查)", async () => {
+    const ids = await loadTemplate("finance", "财务库", ctx);
+    const remoteRules = await backend.listRules(ctx.workspaceId);
+    expect(remoteRules.length).toBe(ids.length);
+  });
 });
 
 describe("templates - loadTemplate 加载 compliance 模板", () => {
-  test("loadTemplate('compliance') 返回 ruleIds.length > 0", () => {
-    const ids = loadTemplate("compliance", "合规测试库");
+  test("loadTemplate('compliance') 返回 ruleIds.length > 0", async () => {
+    const ids = await loadTemplate("compliance", "合规测试库", ctx);
     expect(Array.isArray(ids)).toBe(true);
     expect(ids.length).toBeGreaterThan(0);
     expect(ids.length).toBe(COMPLIANCE_TEMPLATE.builtinRules.length);
   });
 
-  test("loadTemplate('compliance') 后 dbStore 正确", () => {
-    loadTemplate("compliance", "我的合规库");
+  test("loadTemplate('compliance') 后 dbStore 正确", async () => {
+    await loadTemplate("compliance", "我的合规库", ctx);
     const db = get(dbStore);
     expect(db.dbName).toBe("我的合规库");
     expect(db.industry).toBe("compliance");
     expect(db.businessObjects).toEqual(COMPLIANCE_TEMPLATE.defaultBusinessObjects);
   });
 
-  test("loadTemplate('compliance') 后规则被添加", () => {
+  test("loadTemplate('compliance') 后规则被添加", async () => {
     const beforeCount = get(ruleCount);
-    const ids = loadTemplate("compliance", "合规库");
+    const ids = await loadTemplate("compliance", "合规库", ctx);
     const afterCount = get(ruleCount);
     expect(afterCount - beforeCount).toBe(ids.length);
   });
 
-  test("loadTemplate('compliance') 后业务元数据 industry=compliance", () => {
-    const ids = loadTemplate("compliance", "合规库");
+  test("loadTemplate('compliance') 后业务元数据 industry=compliance", async () => {
+    const ids = await loadTemplate("compliance", "合规库", ctx);
     const metaMap = get(ruleBusinessMetaStore);
     for (const id of ids) {
       expect(metaMap[id].industry).toBe("compliance");
@@ -214,16 +217,16 @@ describe("templates - blank 模板不应调用 loadTemplate", () => {
     expect(getTemplate("blank")).toBeNull();
   });
 
-  test("loadTemplate 未知 id 会抛错(类型系统外的调用)", () => {
-    expect(() => {
-      (loadTemplate as any)("blank", "空白库");
-    }).toThrow(/未知模板/);
+  test("loadTemplate 未知 id 会抛错(类型系统外的调用)", async () => {
+    await expect(
+      (loadTemplate as any)("blank", "空白库", ctx),
+    ).rejects.toThrow(/未知模板/);
   });
 
-  test("loadTemplate 完全不存在的 id 抛错", () => {
-    expect(() => {
-      (loadTemplate as any)("nonexistent", "库名");
-    }).toThrow(/未知模板/);
+  test("loadTemplate 完全不存在的 id 抛错", async () => {
+    await expect(
+      (loadTemplate as any)("nonexistent", "库名", ctx),
+    ).rejects.toThrow(/未知模板/);
   });
 });
 
@@ -241,20 +244,20 @@ describe("templates - builtinRules 每条符合内核 transform 数组格式", (
     }
   });
 
-  test("FINANCE_TEMPLATE 第一条 rule:有 branch + io_request 结构", () => {
+  test("FINANCE_TEMPLATE 第一条 rule:有 branch 结构", () => {
     const rule = FINANCE_TEMPLATE.builtinRules[0];
     const parsed = JSON.parse(rule.content);
     const hasBranch = parsed.transform.some((t: any) => t.type === "branch");
     expect(hasBranch).toBe(true);
   });
 
-  test("FINANCE_TEMPLATE 每条 rule 有 id/version/description/content", () => {
+  test("FINANCE_TEMPLATE 每条 rule 有 name/description/content", () => {
+    // v0.2.0:TemplateRule 以 name 标识(workspace 内唯一),不再有 id/version
     for (const rule of FINANCE_TEMPLATE.builtinRules) {
-      expect(rule.id).toBeTruthy();
-      expect(typeof rule.version).toBe("number");
+      expect(rule.name).toBeTruthy();
       expect(rule.description).toBeTruthy();
       expect(rule.content).toBeTruthy();
-      expect(rule.id.startsWith("finance.")).toBe(true);
+      expect(rule.name.startsWith("finance.")).toBe(true);
     }
   });
 
@@ -270,9 +273,9 @@ describe("templates - builtinRules 每条符合内核 transform 数组格式", (
     }
   });
 
-  test("COMPLIANCE_TEMPLATE 每条 rule 有正确 id 前缀", () => {
+  test("COMPLIANCE_TEMPLATE 每条 rule 有正确 name 前缀", () => {
     for (const rule of COMPLIANCE_TEMPLATE.builtinRules) {
-      expect(rule.id.startsWith("compliance.")).toBe(true);
+      expect(rule.name.startsWith("compliance.")).toBe(true);
     }
   });
 
@@ -293,25 +296,22 @@ describe("templates - builtinRules 每条符合内核 transform 数组格式", (
 });
 
 describe("templates - 多次加载互不干扰(clean up 验证)", () => {
-  test("先加载 finance,再重置后加载 compliance,计数正确", () => {
-    const financeIds = loadTemplate("finance", "财务库");
+  test("先加载 finance,重置后加载 compliance,计数正确", async () => {
+    const financeIds = await loadTemplate("finance", "财务库", ctx);
     expect(financeIds.length).toBe(2);
 
-    const userRules1 = get(rules).filter(r => r.source === "user");
-    expect(userRules1.length).toBeGreaterThanOrEqual(2);
-
-    const allRules = getAllRules();
-    for (const r of allRules) {
-      if (r.source === "user") {
-        try { deleteRule(r.id); } catch { /* ignore */ }
-      }
-    }
-    const builtinIds = new Set(allRules.filter(r => r.source === "builtin").map(r => r.id));
-    rules.set(getAllRules().filter(r => builtinIds.has(r.id)));
+    // 重置(store + 元数据;mock backend 换新实例,天然隔离)
+    resetRulesStore();
     resetDb();
     ruleBusinessMetaStore.set({});
+    backend = new MockWorkspaceBackend();
+    const ws = await backend.createWorkspace({
+      name: "test-workspace-2",
+      owner_id: "tester",
+    });
+    ctx = { backend, workspaceId: ws.id };
 
-    const complianceIds = loadTemplate("compliance", "合规库");
+    const complianceIds = await loadTemplate("compliance", "合规库", ctx);
     expect(complianceIds.length).toBe(2);
     const db = get(dbStore);
     expect(db.industry).toBe("compliance");

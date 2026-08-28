@@ -18,7 +18,7 @@
 
 import { writable, get } from "svelte/store";
 import { browser } from "$app/environment";
-import { getAllRules } from "@evorule/console";
+import { getAllRules } from "$lib/kernel";
 import { datasetStore } from "./dataset";
 import { businessFormSchemaStore } from "./business-form-schema";
 import type { ImportSnapshot } from "./import-export-types";

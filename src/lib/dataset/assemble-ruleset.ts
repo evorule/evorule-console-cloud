@@ -11,8 +11,8 @@
 // - 运行时用 getAllRules() 拿到最新规则,再 applyJsonPatch 应用参数覆盖
 // - 缺失规则跳过并告警(不阻断组装)
 
-import { getAllRules } from "@evorule/console";
-import type { Rule } from "@evorule/console";
+import { getAllRules } from "$lib/kernel";
+import type { Rule } from "$lib/kernel";
 import type { Dataset } from "$lib/stores/dataset-types";
 import { applyJsonPatch } from "$lib/utils/json-patch";
 
@@ -55,10 +55,24 @@ export function assembleRuleset(dataset: Dataset): AssembleResult {
 
     const override = dataset.paramOverrides.find((p) => p.ruleId === ruleId);
     if (override && override.patch.length > 0) {
+      if (rule.content === undefined) {
+        console.warn(
+          `[assembleRuleset] 数据集 ${dataset.id}: 规则 ${ruleId} 内容未加载,已跳过`,
+        );
+        skippedRuleIds.push(ruleId);
+        continue;
+      }
       const patched = applyJsonPatch(rule.content, override.patch);
       ruleset.push(patched);
       overriddenRuleIds.push(ruleId);
     } else {
+      if (rule.content === undefined) {
+        console.warn(
+          `[assembleRuleset] 数据集 ${dataset.id}: 规则 ${ruleId} 内容未加载,已跳过`,
+        );
+        skippedRuleIds.push(ruleId);
+        continue;
+      }
       ruleset.push(rule.content);
     }
   }
@@ -80,7 +94,8 @@ export function assembleSingleRule(
 
   const override = dataset.paramOverrides.find((p) => p.ruleId === ruleId);
   if (override && override.patch.length > 0) {
+    if (rule.content === undefined) return null;
     return applyJsonPatch(rule.content, override.patch);
   }
-  return rule.content;
+  return rule.content ?? null;
 }

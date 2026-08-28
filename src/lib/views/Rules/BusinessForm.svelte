@@ -12,7 +12,7 @@
 -->
 
 <script lang="ts">
-  import { RuleValidator } from "@evorule/console";
+  import { RuleValidator } from "$lib/kernel";
   import type {
     BusinessFormSchema,
     BusinessFormField,

@@ -24,7 +24,7 @@
   import { exportDataset } from "$lib/stores/dataset-import-export";
   import { exportFormSchema } from "$lib/stores/form-import-export";
   import { exportLibrarySchema } from "$lib/stores/library-schema-import";
-  import { getAllRules } from "@evorule/console";
+  import { getAllRules } from "$lib/kernel";
   import { datasetStore } from "$lib/stores/dataset";
   import { businessFormSchemaStore } from "$lib/stores/business-form-schema";
   import BatchExportDialog from "./BatchExportDialog.svelte";

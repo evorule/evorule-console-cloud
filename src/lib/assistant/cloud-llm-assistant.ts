@@ -13,7 +13,7 @@
 //   - 注入到内核扩展槽后,内核视图只调三方法,不感知 CloudLlmConfig
 //   - LLM 只生成草案,最终规则是用户审核后的 JSON(规则即数据),不破坏执行确定性
 
-import { RuleValidator, type ValidationResult } from '@evorule/console';
+import { RuleValidator, type ValidationResult } from '$lib/kernel';
 import type { LlmAssistant, CloudLlmConfig } from './types';
 import { callChatApi, LlmError } from './llm-fetch';
 import {

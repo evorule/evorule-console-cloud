@@ -7,8 +7,8 @@
 // 关联设计:P03_DATASET_DESIGN.md §5.7
 
 import { derived } from "svelte/store";
-import { rules } from "@evorule/console";
-import type { Rule } from "@evorule/console";
+import { rules, isRuleReadonly } from "$lib/kernel";
+import type { Rule } from "$lib/kernel";
 import { getTagsOfRule } from "./rule-tag";
 import { getCategoryOfRule } from "./rule-category";
 import { getCategoryAndDescendants } from "./category";
@@ -58,9 +58,11 @@ export function filteredRules(filter: RuleFilter) {
 export function applyFilter(allRules: Rule[], filter: RuleFilter): Rule[] {
   let result = allRules;
 
-  // 1. 来源筛选
+  // 1. 来源筛选(v0.2.0:source 字段移除,内置只读判定改走 isRuleReadonly)
   if (filter.status !== "all") {
-    result = result.filter((r) => r.source === filter.status);
+    result = result.filter((r) =>
+      filter.status === "builtin" ? isRuleReadonly(r) : !isRuleReadonly(r),
+    );
   }
 
   // 2. 搜索(名称/描述/ID,大小写不敏感)
@@ -68,7 +70,7 @@ export function applyFilter(allRules: Rule[], filter: RuleFilter): Rule[] {
     const q = filter.searchQuery.trim().toLowerCase();
     result = result.filter(
       (r) =>
-        r.description.toLowerCase().includes(q) ||
+        (r.description ?? "").toLowerCase().includes(q) ||
         r.id.toLowerCase().includes(q),
     );
   }

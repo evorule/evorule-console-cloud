@@ -33,19 +33,19 @@ evorule-console-cloud 全部代码资产统一采用 AGPL-3.0-or-later，可通�
 
 ## 与 evorule-console 的关系
 
-evorule-console-cloud 是 [evorule-console](https://gitee.com/evo-rule-lab/evorule-console) 的**衍生产品**，二者关系：
+evorule-console-cloud 源自 [evorule-console](https://gitee.com/evo-rule-lab/evorule-console)（内核），二者关系：
 
 | 维度 | evorule-console（内核）| evorule-console-cloud（大众版）|
 | --- | --- | --- |
 | 定位 | 规则引擎面板内核（无 LLM、不绑定网络栈）| 二次开发者专业起点（联网 + 云 LLM）|
-| 依赖 | 无外部 evorule 仓依赖 | `@evorule/console` v0.1.1（npm 依赖）|
+| 内核关系 | 无外部 evorule 仓依赖 | 内核快照内联于 `src/lib/kernel/`（取自内核 v0.2.0），无 npm 依赖 |
 | 联网 | ❌ 仅开发期 loopback | ✅ 联网/离线双模式（CloudHttpBackend）|
 | LLM | ❌ 无 LLM 扩展槽实现 | ✅ 云 LLM（OpenAI 兼容协议，多厂商预设）|
-| 代码修改 | — | **不修改内核**，通过 `provideBackend()` / `provideAssistant()` 扩展槽注入 |
+| 演进 | 独立演进 | 快照后独立演进，扩展槽注入联网后端与云 LLM 助手 |
 | 版本 | 独立 semver | 独立 semver |
 | 许可 | 独立 | 独立（沿用双许可架构）|
 
-**关键边界**：evorule-console-cloud 不复用 evorule-console 的代码，而是通过 npm 依赖 `@evorule/console` 包，在运行时通过扩展槽注入联网后端与云 LLM 助手。二者各自独立建仓、独立许可、独立版本。
+**关键边界**：evorule-console-cloud 自 2026-08 起不再通过 npm 依赖 `@evorule/console` 包。内核实际使用的依赖闭包以源码快照形式内联在 `src/lib/kernel/`（AGPL-3.0-or-later，与内核仓许可一致，版权归属 EvoRule Project），快照的版权与许可声明遵循内核仓的 LICENSE。二者各自独立建仓、独立版本。
 
 ## 设计原则
 

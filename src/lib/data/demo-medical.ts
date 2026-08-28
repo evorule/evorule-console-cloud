@@ -19,7 +19,7 @@ import type {
 	HistoricalState,
 	DiffResult,
 	FactRecord,
-} from "@evorule/console";
+} from "$lib/kernel";
 
 // ============================================================================
 // 1. Fact 流(6 条,呼吸科就诊完整链路)

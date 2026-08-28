@@ -17,10 +17,10 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { get } from "svelte/store";
 import type { BusinessTerm } from "../business-terms";
-import type { Rule, CausalEntry } from "@evorule/console";
+import type { Rule, CausalEntry } from "$lib/kernel";
 
-// === Mock @evorule/console 依赖 ===
-vi.mock("@evorule/console", async (importOriginal) => {
+// === Mock $lib/kernel 依赖 ===
+vi.mock("$lib/kernel", async (importOriginal) => {
   const actual: any = await importOriginal();
   const { writable } = await import("svelte/store");
   const auditData = writable<any>(null);
@@ -57,7 +57,7 @@ import {
   type BusinessCausalNode,
 } from "../business-causal";
 import { businessTermsStore } from "../business-terms";
-import { auditData, verifyResult, causalSelection, getAllRules } from "@evorule/console";
+import { auditData, verifyResult, causalSelection, getAllRules } from "$lib/kernel";
 
 // === 测试数据构造辅助 ===
 

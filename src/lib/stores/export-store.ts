@@ -18,8 +18,8 @@ import { browser } from "$app/environment";
 import type {
   ExecutionBackend,
   SessionId,
-} from "@evorule/console";
-import { CONSOLE_VERSION } from "@evorule/console";
+} from "$lib/kernel";
+import { CONSOLE_VERSION } from "$lib/kernel";
 import { businessTermsStore } from "./business-terms";
 import { sessionStore } from "./session";
 import { productionStateStore } from "./production-state";

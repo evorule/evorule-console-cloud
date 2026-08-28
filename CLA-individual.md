@@ -21,9 +21,9 @@
 
 ## 1. 定义
 
-- **“项目”** 指 **evorule-console-cloud**（EvoRule 控制台云端版，基于 evorule-console 内核的衍生产品，定位为面向二次开发者的专业起点，联网 + 云 LLM）及其相关代码仓库，包括但不限于：
-  - `evorule-console-cloud`（本仓库）
-  - 上游内核 `evorule-console`（以 `@evorule/console` npm 包形式被本仓库依赖）
+- **“项目”** 指 **evorule-console-cloud**（EvoRule 控制台云端版，基于 evorule-console 内核快照的衍生产品，定位为面向二次开发者的专业起点，联网 + 云 LLM）及其相关代码仓库，包括但不限于：
+  - `evorule-console-cloud`（本仓库，含内联于 `src/lib/kernel/` 的内核快照）
+  - 上游内核 `evorule-console`（快照来源，独立仓库）
   - 未来可能增加的关联仓库
 - **“贡献”** 指您（贡献者）提交给项目的任何源代码、文档、测试用例、补丁、翻译、示例或其他材料，通过 Pull Request / Merge Request / Issue / Email / 任何其他渠道提交。
 - **“版权人”** 指 EvoRule Project（项目版权所有者）。

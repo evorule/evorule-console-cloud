@@ -18,7 +18,7 @@
   import {
     currentSessionId,
     causalSelection,
-  } from "@evorule/console";
+  } from "$lib/kernel";
   import {
     businessCausalStore,
   } from "$lib/stores/business-causal";

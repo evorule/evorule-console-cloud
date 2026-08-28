@@ -17,7 +17,7 @@ import type {
 	HistoricalState,
 	DiffResult,
 	FactRecord,
-} from "@evorule/console";
+} from "$lib/kernel";
 
 // ============================================================================
 // 1. Fact 流(6 条,报销审批完整链路)

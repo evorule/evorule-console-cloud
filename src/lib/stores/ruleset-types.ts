@@ -8,7 +8,7 @@
 //   - RulesetPackage:官方规则集标准格式(生态级共享)
 //   - 任何 evorule 生态应用(server/application/第三方 Agent)可直接消费
 //   - 等保 2.0 三级门禁规则集(DJBH 2.0 Level 3)为首个官方规则集
-//   - P0 类型定义在 console-cloud,P1 迁移到 @evorule/console 内核(协议层共享)
+//   - P0 类型定义在 console-cloud,P1 迁移到 $lib/kernel 内核(协议层共享)
 //
 // 关联设计:P09_IMPORT_EXPORT_INFRA_DESIGN.md §3.8 + §4.6
 

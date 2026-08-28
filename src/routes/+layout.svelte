@@ -18,12 +18,20 @@
   import {
     VIEW_LIST,
     provideBackend,
+    provideWorkspaceBackend,
     provideAssistant,
     CONSOLE_VERSION,
-  } from "@evorule/console";
-  import type { ViewId } from "@evorule/console";
+    refreshWorkspaces,
+    ensureDefaultWorkspace,
+    seedBuiltinRules,
+    refreshRules,
+    currentWorkspace,
+  } from "$lib/kernel";
+  import type { ViewId } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
+  import { CloudWorkspaceBackend, setActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
   import { MockBackend } from "$lib/backend/mock-backend";
+  import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
   import { netConfig, toggleNetMode } from "$lib/config/net-config";
   import { setDemoDataset } from "$lib/stores/demo-dataset";
   import { llmConfig, isLlmConfigured } from "$lib/config/llm-config";
@@ -154,6 +162,22 @@
 
   const backend = provideBackend(backendImpl);
 
+  // === 注入 workspace backend(规则库/沙盒/发布等 server 应用层能力) ===
+  // 与 ExecutionBackend 并列的第二个后端(内核 v0.2.0 workspace 化架构)。
+  // mock 模式用内存 Mock(刷新即失,演示用);正常模式走 evorule-server workspace API。
+  let cloudWorkspaceBackend: CloudWorkspaceBackend | null = null;
+  const workspaceImpl = useMock
+    ? new MockWorkspaceBackend()
+    : new CloudWorkspaceBackend({
+        mode: initialNet.mode,
+        remoteBaseUrl: initialNet.remoteBaseUrl,
+        localBaseUrl: "http://localhost:18090",
+      });
+  if (!useMock) cloudWorkspaceBackend = workspaceImpl as CloudWorkspaceBackend;
+  const workspaceBackend = provideWorkspaceBackend(workspaceImpl);
+  // 同步登记模块级单例(store 层非组件调用点用,见 cloud-workspace-backend.ts)
+  setActiveWorkspaceBackend(workspaceImpl);
+
   $effect(() => {
     if (!cloudBackend) return;
     const cfg = $netConfig;
@@ -162,6 +186,33 @@
       remoteBaseUrl: cfg.remoteBaseUrl,
     });
   });
+
+  $effect(() => {
+    if (!cloudWorkspaceBackend) return;
+    const cfg = $netConfig;
+    cloudWorkspaceBackend.reconfigure({
+      mode: cfg.mode,
+      remoteBaseUrl: cfg.remoteBaseUrl,
+    });
+  });
+
+  // === 规则库启动引导(幂等) ===
+  // refreshWorkspaces(空则自动建默认 ws) → 补种内置示例(按名查重) → 拉规则列表。
+  // 失败如实提示(server 未启动/网络问题),不静默吞掉。
+  async function bootstrapRuleLibrary(): Promise<void> {
+    try {
+      await refreshWorkspaces(workspaceBackend);
+      let ws = get(currentWorkspace);
+      if (!ws) ws = await ensureDefaultWorkspace(workspaceBackend);
+      await seedBuiltinRules(workspaceBackend, ws.id);
+      await refreshRules(workspaceBackend, ws.id);
+    } catch (e) {
+      console.error("[layout] 规则库初始化失败:", e);
+      toastInfo(
+        `规则库初始化失败:${(e as Error).message}(请检查 evorule-server 是否已启动)`
+      );
+    }
+  }
 
   // === 注入 LLM assistant(配置完备时注入,否则 null) ===
   const initialLlm = get(llmConfig);
@@ -210,6 +261,9 @@
       .catch(() => {
         connected = false;
       });
+
+    // 规则库启动引导(workspace → 内置示例 → 规则列表)
+    bootstrapRuleLibrary();
   });
 
   // 当前活动路由字符串,用于导航高亮
@@ -220,7 +274,7 @@
 
 <svelte:head>
   <style>
-    /* 强制深色:覆盖内核 @evorule/console 附带全局浅色变量(执行台/状态等内核组件)
+    /* 强制深色:覆盖内核 $lib/kernel 附带全局浅色变量(执行台/状态等内核组件)
        内核自带 app.css 在 :root 定义 --bg-card:#ffffff,复用其组件时会把该页全局变量覆盖为白;
        此处用 html 选择器 + !important 兜底,保证任何路由都是深色。 */
     html {

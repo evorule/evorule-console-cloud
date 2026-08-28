@@ -16,7 +16,9 @@
 //
 // 关联设计:P09_IMPORT_EXPORT_INFRA_DESIGN.md §3.8 + §4.6 + §6.4
 
-import { importRule, getAllRules } from "@evorule/console";
+import { importRule, getAllRules, currentWorkspace } from "$lib/kernel";
+import { getActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
+import { get } from "svelte/store";
 import { blake3 } from "@noble/hashes/blake3.js";
 import type {
 	RulesetPackage,
@@ -261,6 +263,13 @@ export async function importRuleset(
 	const conflictResolution: ConflictResolution =
 		options?.conflictResolution ?? "rename";
 
+	// 内核 v0.2.0:importRule 需 WorkspaceBackend + workspaceId
+	const wb = getActiveWorkspaceBackend();
+	const ws = get(currentWorkspace);
+	if (!ws) {
+		throw new Error("当前没有 workspace,无法导入规则集");
+	}
+
 	// 1. 解析
 	let pkg: RulesetPackage;
 	try {
@@ -292,15 +301,16 @@ export async function importRuleset(
 	}
 
 	// 4. 逐条导入
-	// 内核 importRule 会给 id 加 "user." 前缀(如 "djbh.x" → "user.djbh.x"),
-	// 冲突检测需同时匹配原始 ID 和带前缀的 ID。
+	// 内核 v0.2.0:规则 id 为 server ULID,业务标识在 name(importRule 生成
+	// "user." 前缀 name,如 "djbh.x" → "user.djbh.x")。冲突检测按 name 匹配,
+	// 同时匹配原始 ID 和带前缀的 ID。
 	const existingRules = getAllRules();
 	const existingIds = new Set<string>();
 	for (const r of existingRules) {
-		existingIds.add(r.id);
+		existingIds.add(r.name);
 		// 去掉 "user." 前缀,加入原始 ID(用于匹配 ruleset 中的 rule.id)
-		if (r.id.startsWith("user.")) {
-			existingIds.add(r.id.slice(5));
+		if (r.name.startsWith("user.")) {
+			existingIds.add(r.name.slice(5));
 		}
 	}
 	const conflicts: string[] = [];
@@ -321,7 +331,7 @@ export async function importRuleset(
 					const newId = `${rule.id}-imported-${Date.now().toString(36)}`;
 					const renamedContent = rewriteRuleId(rule.content, newId);
 					try {
-						const newRuleId = importRule(renamedContent);
+						const newRuleId = await importRule(wb, ws.id, renamedContent);
 						importedRuleIds.push(newRuleId);
 						imported++;
 					} catch (e) {
@@ -335,7 +345,7 @@ export async function importRuleset(
 					// 内核 importRule 默认会创建新 ID(不覆盖)
 					// P0 简化:overwrite 等同 rename + 标记
 					try {
-						const newRuleId = importRule(rule.content);
+						const newRuleId = await importRule(wb, ws.id, rule.content);
 						importedRuleIds.push(newRuleId);
 						imported++;
 						conflicts.push(`${rule.id}:已存在,已导入为新版本`);
@@ -348,7 +358,7 @@ export async function importRuleset(
 				case "merge":
 					// P0 不实现对象级 merge,降级为 rename
 					try {
-						const newRuleId = importRule(rule.content);
+						const newRuleId = await importRule(wb, ws.id, rule.content);
 						importedRuleIds.push(newRuleId);
 						imported++;
 						conflicts.push(`${rule.id}:merge 降级为 rename`);
@@ -362,7 +372,7 @@ export async function importRuleset(
 		}
 		// 不存在,直接导入
 		try {
-			const newRuleId = importRule(rule.content);
+			const newRuleId = await importRule(wb, ws.id, rule.content);
 			importedRuleIds.push(newRuleId);
 			imported++;
 		} catch (e) {

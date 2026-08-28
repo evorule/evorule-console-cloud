@@ -15,10 +15,18 @@
 import type { BusinessTerm } from "$lib/stores/business-terms";
 import type { BusinessFormSchema } from "$lib/stores/business-form-schema";
 import type { RuleBusinessMeta } from "$lib/stores/rule-business-meta";
-import type { Rule } from "@evorule/console";
 import type { Industry } from "$lib/stores/db";
 import { BUILTIN_BUSINESS_TERMS } from "./business-terms-builtin";
 import { BUILTIN_FORM_SCHEMAS } from "./business-form-schemas-builtin";
+
+/** 模板内置规则(写入参数形状,对齐内核 addRule req;id/state/version 由 server 生成) */
+export interface TemplateRule {
+  /** 规则名(workspace 内唯一) */
+  name: string;
+  /** 规则内容 JSON 字符串 */
+  content: string;
+  description?: string;
+}
 
 export interface BusinessTemplate {
   id: "blank" | "finance" | "compliance";
@@ -26,8 +34,8 @@ export interface BusinessTemplate {
   industry: Industry;
   displayName: string;
   description: string;
-  /** builtin 规则集(代码内置,通过 addRule 加为 user 规则) */
-  builtinRules: Array<Omit<Rule, "source" | "createdAt" | "updatedAt">>;
+  /** builtin 规则集(代码内置,通过 addRule 写入 workspace) */
+  builtinRules: TemplateRule[];
   /** 业务术语(builtin,代码内置) */
   businessTerms: BusinessTerm[];
   /** 业务表单 schema(builtin) */
@@ -40,8 +48,7 @@ export interface BusinessTemplate {
 
 /** 财务审批规则 1:报销金额 ≥ 10000 元需 CFO 批准 */
 const FINANCE_RULE_CFO = {
-  id: "finance.expense_limit_cfo",
-  version: 1,
+  name: "finance.expense_limit_cfo",
   description: "报销金额 ≥ 10000 元需 CFO 批准",
   content: JSON.stringify(
     {
@@ -84,8 +91,7 @@ const FINANCE_RULE_CFO = {
 
 /** 财务审批规则 2:多级审批 5000-10000 财务主管,10000+ CFO */
 const FINANCE_RULE_MULTI_LEVEL = {
-  id: "finance.multi_level_approval",
-  version: 1,
+  name: "finance.multi_level_approval",
   description: "多级审批:5000-10000 财务主管,10000+ CFO",
   content: JSON.stringify(
     {

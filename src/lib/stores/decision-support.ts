@@ -12,7 +12,7 @@
 //   - 缓存策略:同 auditRange 不重复分析(避免 LLM 调用浪费)
 
 import { writable, get } from "svelte/store";
-import type { AssistantProvider } from "@evorule/console";
+import type { AssistantProvider } from "$lib/kernel";
 import type { LlmAssistant } from "$lib/assistant/types";
 import { businessAuditStore, type BusinessAuditEntry } from "./business-audit";
 

@@ -6,7 +6,7 @@
 //
 // 关联设计:P03_DATASET_DESIGN.md §8.2 + §9.1(assembleRuleset 测试)
 //
-// mock @evorule/console 的 getAllRules,控制内核规则库状态。
+// mock $lib/kernel 的 getAllRules,控制内核规则库状态。
 
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
@@ -14,26 +14,30 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 const { mockGetAllRules } = vi.hoisted(() => ({
   mockGetAllRules: vi.fn(),
 }));
-vi.mock("@evorule/console", () => ({
+vi.mock("$lib/kernel", () => ({
   getAllRules: mockGetAllRules,
 }));
 
 import { assembleRuleset, assembleSingleRule } from "../assemble-ruleset";
 import type { Dataset } from "$lib/stores/dataset-types";
-import type { Rule } from "@evorule/console";
+import type { Rule } from "$lib/kernel";
 
-/** 构造测试规则 */
+/** 构造测试规则(v0.2.0 Rule 形状) */
 function makeRule(
   id: string,
   content: object,
-  source: "builtin" | "user" = "user",
+  _source: "builtin" | "user" = "user",
 ): Rule {
   return {
     id,
-    version: 1,
+    workspaceId: "ws_test",
+    name: id,
+    state: "draft",
+    currentVersionId: `${id}-v1`,
     description: `规则 ${id}`,
     content: JSON.stringify(content, null, 2),
-    source,
+    version: 1,
+    metadata: "{}",
     createdAt: "2026-01-01T00:00:00Z",
     updatedAt: "2026-01-01T00:00:00Z",
   };

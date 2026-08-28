@@ -9,7 +9,7 @@
 -->
 
 <script lang="ts">
-  import type { Rule } from "@evorule/console";
+  import { isRuleReadonly, type Rule } from "$lib/kernel";
   import type { RuleBusinessMeta } from "$lib/stores/rule-business-meta";
   import { getTermsByIds } from "$lib/stores/business-terms";
 
@@ -53,10 +53,10 @@
   {/if}
 
   <div class="card-footer">
-    <span class="badge badge-{rule.source}">
-      {rule.source === "builtin" ? "内置" : "用户"}
+    <span class="badge badge-{isRuleReadonly(rule) ? 'builtin' : 'user'}">
+      {isRuleReadonly(rule) ? "内置" : "用户"}
     </span>
-    <span class="version">v{rule.version}</span>
+    <span class="version">v{rule.version ?? 1}</span>
   </div>
 </button>
 

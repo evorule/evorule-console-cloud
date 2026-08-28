@@ -10,9 +10,9 @@
 // 与内核边界:
 //   - 内核只看到 AssistantProvider(三方法),不知道 CloudLlmConfig
 //   - 大众版 LlmAssistant 继承 AssistantProvider,新增 isConfigured() 等大众版独有方法
-//   - 内核 import { AssistantProvider } from '@evorule/console' 仍是隔离的
+//   - 内核 import { AssistantProvider } from '$lib/kernel' 仍是隔离的
 
-import type { AssistantProvider } from '@evorule/console';
+import type { AssistantProvider } from '$lib/kernel';
 
 /**
  * LLM Assistant 抽象(大众版内部用)。
