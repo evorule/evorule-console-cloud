@@ -226,6 +226,56 @@ describe('Cloud 专属方法 getProductionState(workspace 委托)', () => {
 	});
 });
 
+// ============ 执行侧凭据(D1 闭合,2026-08-28) ============
+//
+// 上游 0073a0c:HttpBackend 增可选 authToken;CloudHttpBackend 构造/reconfigure
+// 将 _config.authToken 传入内核,执行侧 15 方法请求统一携带 Bearer 头。
+
+describe('CloudHttpBackend 执行侧凭据(Bearer)', () => {
+	function okJson(): Response {
+		return {
+			ok: true,
+			status: 200,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => ({ sessions: [] }),
+			text: async () => '{}',
+		} as unknown as Response;
+	}
+
+	test('配置 authToken:执行侧请求(listSessions)携带 Authorization 头', async () => {
+		mockFetch.mockResolvedValueOnce(okJson());
+		const b = new CloudHttpBackend({ mode: 'offline', authToken: 'tok-exec' });
+
+		await b.listSessions();
+
+		expect(mockFetch.mock.calls[0][1]?.headers).toMatchObject({
+			Authorization: 'Bearer tok-exec',
+		});
+	});
+
+	test('未配置 authToken:执行侧请求不带 Authorization 头', async () => {
+		mockFetch.mockResolvedValueOnce(okJson());
+		const b = new CloudHttpBackend({ mode: 'offline' });
+
+		await b.listSessions();
+
+		const h = mockFetch.mock.calls[0][1]?.headers as Record<string, string> | undefined;
+		expect(h?.['Authorization']).toBeUndefined();
+	});
+
+	test('reconfigure 更新 authToken:实例引用不变,新 token 生效', async () => {
+		mockFetch.mockResolvedValueOnce(okJson());
+		const b = new CloudHttpBackend({ mode: 'offline', authToken: 'old-token' });
+
+		b.reconfigure({ authToken: 'new-token' });
+		await b.listSessions();
+
+		expect(mockFetch.mock.calls[0][1]?.headers).toMatchObject({
+			Authorization: 'Bearer new-token',
+		});
+	});
+});
+
 // ============ 满足 ExecutionBackend 接口 ============
 
 describe('接口完整性', () => {
