@@ -9,7 +9,6 @@
 -->
 
 <script lang="ts">
-  import { get } from "svelte/store";
   import type { FactData } from "$lib/stores/sse-events";
   import {
     factStreamStore,
@@ -31,8 +30,9 @@
   let autoScroll = $state(true);
   let listRef = $state<{ scrollToBottom: () => void } | null>(null);
 
-  let allFacts = $derived(get(factStreamStore));
-  let total = $derived(get(factCount));
+  // $ 前缀订阅;get() 快照读在 $derived 中不追踪,新事实到来列表会失明
+  let allFacts = $derived($factStreamStore);
+  let total = $derived($factCount);
 
   let factTypeOptions = $derived.by<string[]>(() => {
     const set = new Set<string>();

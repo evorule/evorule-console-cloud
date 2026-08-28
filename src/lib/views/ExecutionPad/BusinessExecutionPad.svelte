@@ -56,14 +56,14 @@
   let developerMode = $state(false);
   let submitting = $state(false);
 
-  // 派生:当前事件
-  const ev = $derived(get(currentEvent));
+  // 派生:当前事件($ 前缀订阅;get() 快照读在 $derived 中不追踪,事件更新会失明)
+  const ev = $derived($currentEvent);
 
   const selectedTemplate: BusinessEventTemplate | undefined = $derived(
     ev ? getTemplate(ev.templateId) : undefined,
   );
 
-  const preview = $derived(get(impactPreview));
+  const preview = $derived($impactPreview);
 
   // === 事件选择 ===
   function handleSelectTemplate(templateId: string): void {

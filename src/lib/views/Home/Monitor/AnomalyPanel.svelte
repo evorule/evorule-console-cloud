@@ -9,7 +9,6 @@
 -->
 
 <script lang="ts">
-  import { get } from "svelte/store";
   import type { AnomalyData, AnomalyLevel } from "$lib/stores/sse-events";
   import {
     anomalyStore,
@@ -27,9 +26,10 @@
   let expandError = $state(true);
   let expandWarning = $state(false);
 
-  let all = $derived(get(anomalyStore));
-  let total = $derived(get(anomalyCount));
-  let criticalCount = $derived(get(criticalAnomalyCount));
+  // $ 前缀订阅;get() 快照读在 $derived 中不追踪,新异常到来面板会失明
+  let all = $derived($anomalyStore);
+  let total = $derived($anomalyCount);
+  let criticalCount = $derived($criticalAnomalyCount);
 
   function byLevel(level: AnomalyLevel): AnomalyData[] {
     return all.filter((a) => a.level === level).slice(0, maxShownPerLevel);
