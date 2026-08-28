@@ -22,7 +22,7 @@ vite.config.ts.timestamp-*
 .env.*
 !.env.example
 
-# --- Mavis / runtime 中间产物 ---
+# --- 内部运行时中间产物 ---
 .workbuddy/
 /data/
 

@@ -194,7 +194,7 @@ v0.1.0 不含 L2 本地 LLM。L2 作为付费扩展，规划在 v0.2.0+ 实施�
 
 ## 联系
 
-- **发版决策**：用户（Mr. DAMU ZHENG）
+- **发版决策**：项目维护者
 - **技术执行**：维护者
 - **Gitee Issues**：<https://gitee.com/evorule/evorule-console-cloud/issues>
 - **邮箱**：<evorulelab@gmail.com>

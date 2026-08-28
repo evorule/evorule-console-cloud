@@ -3,11 +3,16 @@
 # start-all.ps1 - 一键启动 evorule 全栈
 #
 # 启 3 个进程(隐藏窗口):
-#   1. evorule-server  @ 18090  (D:\evorule-server\target\debug\evorule-server.exe)
-#   2. evorule-rule-serve @ 18081  (D:\evorule-rule\target\debug\evorule-rule-serve.exe)
+#   1. evorule-server  @ 18090  (<evorule-server 仓根>\target\<profile>\evorule-server.exe)
+#   2. evorule-rule-serve @ 18081  (<evorule-rule 仓根>\target\<profile>\evorule-rule-serve.exe)
 #   3. console-cloud dev @ 5174  (node scripts/dev.mjs)
 #
 # 等 3 个端口就绪后,自动开浏览器到 /workbench
+#
+# 路径自动检测:默认假设 evorule-server / evorule-rule 是本仓的兄弟目录。
+# 如不在默认位置,可通过环境变量覆盖:
+#   $env:EVORULE_SERVER_BIN = 'C:\path\to\evorule-server.exe'
+#   $env:EVORULE_RULE_BIN   = 'C:\path\to\evorule-rule-serve.exe'
 #
 # 调用方式:
 #   - 双击 start-all.bat(优先)
@@ -16,11 +21,14 @@
 
 $ErrorActionPreference = 'Stop'
 
-# === 路径常量 ===
+# === 路径常量(支持环境变量覆盖) ===
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$SERVER_EXE = 'D:\evorule-server\target\debug\evorule-server.exe'
-$RULE_EXE   = 'D:\evorule-rule\target\debug\evorule-rule-serve.exe'
-$DEV_DIR    = 'D:\evorule-console-cloud'
+$PARENT = Split-Path -Parent $ROOT
+$DEFAULT_SERVER_BIN = Join-Path $PARENT 'evorule-server\target\debug\evorule-server.exe'
+$DEFAULT_RULE_BIN   = Join-Path $PARENT 'evorule-rule\target\debug\evorule-rule-serve.exe'
+$SERVER_EXE = if ($env:EVORULE_SERVER_BIN) { $env:EVORULE_SERVER_BIN } else { $DEFAULT_SERVER_BIN }
+$RULE_EXE   = if ($env:EVORULE_RULE_BIN)   { $env:EVORULE_RULE_BIN }   else { $DEFAULT_RULE_BIN }
+$DEV_DIR    = $ROOT
 $PORT_SERVER = 18090
 $PORT_RULE   = 18081
 $PORT_WEB    = 5174
@@ -80,7 +88,7 @@ function Get-ProcByPort([int]$port) {
 function Start-Backend([string]$exePath, [int]$port, [string]$svcName, [string[]]$extraArgs) {
     if (-not (Test-Path $exePath)) {
         Show-Err "$svcName binary not found: $exePath"
-        Show-Warn "Need to build first: cd to repo root, run 'cargo build'"
+        Show-Warn "Set env var EVORULE_SERVER_BIN / EVORULE_RULE_BIN, or place the binary under <evorule-server 仓根>\target\debug\"
         return $false
     }
     $existing = Get-ProcByPort $port
