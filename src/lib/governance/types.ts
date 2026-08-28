@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — 治理数据契约（对齐 evorule-rule REST JSON，Phase 2 F1）
 //
-// 数据源:evorule-rule（D:\evorule-rule）REST API。
+// 数据源:evorule-rule REST API。
 // 对齐声明:字段名/枚举值逐一与 evorule-rule Rust serde 序列化一致
 // （lifecycle.status 为 PascalCase；visibility 为 snake_case；分页封装 {items, next_cursor}）。
 // 若 evorule-rule 改契约，此处与后端会漂移 —— 该文件是契约锚点（SSOT），需同步。

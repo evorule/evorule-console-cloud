@@ -150,6 +150,12 @@
     goto("/workbench");
   }
 
+  // 帮助页(/help)— 公开文档,任何时候可访问
+  function navHelpRoute() {
+    showSettings = false;
+    goto("/help");
+  }
+
   // === 注入 backend(CloudHttpBackend 双模式 + ?mock=1 零依赖模式) ===
   const initialNet = get(netConfig);
   const useMock =
@@ -403,6 +409,22 @@
             <span class="nav-label">{view.label}</span>
           </button>
         {/each}
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section">
+        <!-- 帮助页(新)— 5 分钟上手 + 详细指南入口 -->
+        <button
+          class="sidebar-item help-item"
+          class:active={isActive("/help")}
+          onclick={navHelpRoute}
+          title="帮助 — 5 分钟上手 + 详细使用指南"
+          aria-pressed={isActive("/help")}
+        >
+          <span class="nav-icon">❓</span>
+          <span class="nav-label">帮助</span>
+        </button>
       </div>
 
       <div class="sidebar-divider"></div>

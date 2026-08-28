@@ -4,8 +4,8 @@
  * 门禁分层(详见 ./GATE_ALIGNMENT.md):
  *   L0 (权威)   — 核心仓 build.rs + clippy + Kani
  *                 扫描 Rust 源码,编译时拦截,最终权威
- *                 位置: D:\evorule\evorule-{tcb,reactor,governance,cli}\build.rs
- *                 索引: D:\evorule\GATE_REFERENCE.md
+ *                 位置: <evorule 核心仓根>\evorule-{tcb,reactor,governance,cli}\build.rs
+ *                 索引: <evorule 核心仓根>\GATE_REFERENCE.md
  *
  *   L_console    — 本文件 (UX 预校验,非权威)
  *                 扫描 JSON 规则内容,提交前给业务专家即时反馈

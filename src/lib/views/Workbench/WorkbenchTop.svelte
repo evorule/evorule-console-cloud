@@ -91,6 +91,13 @@
   >
     📋 4 引导任务
   </button>
+  <a
+    class="status-btn"
+    href="/help"
+    title="打开帮助页(5 分钟上手 + 详细使用指南)"
+  >
+    ❓ 帮助
+  </a>
 </div>
 
 <style>

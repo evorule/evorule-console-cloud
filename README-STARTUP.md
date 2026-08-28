@@ -1,12 +1,12 @@
 # evorule 一键启动指南
 
-> 双击就启动全栈,关掉就全部停止
+> 双击就启动全栈,关掉就全部停止 — 解决"多 cd / 多后端分散 / 后台进程管理"的产品级 UX 痛点。
 
 ## 三种使用方式
 
 ### 方式 1:桌面快捷(推荐,一次性配置)
 
-**第一次**:双击 `install-shortcut.bat` 创建桌面快捷,会生成:
+**第一次**:双击 `evorule-console-cloud` 仓根目录的 `install-shortcut.bat` 创建桌面快捷,会生成:
 - 桌面 `evorule-启动.lnk` (绿色启动图标)
 - 桌面 `evorule-停止.lnk` (红色停止图标)
 
@@ -20,7 +20,7 @@
 ### 方式 3:命令行
 
 ```powershell
-cd D:\evorule-console-cloud
+cd <evorule-console-cloud 仓根目录>
 .\start-all.bat
 # 或
 powershell -ExecutionPolicy Bypass -File .\start-all.ps1
@@ -30,8 +30,8 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1
 
 `start-all.ps1` 按以下顺序启动(每步等端口就绪):
 
-1. **evorule-server @ 18090** — `D:\evorule-server\target\debug\evorule-server.exe`
-2. **evorule-rule-serve @ 18081** — `D:\evorule-rule\target\debug\evorule-rule-serve.exe`
+1. **evorule-server @ 18090** — `<evorule-server 仓根>\target\debug\evorule-server.exe`
+2. **evorule-rule-serve @ 18081** — `<evorule-rule 仓根>\target\debug\evorule-rule-serve.exe`
 3. **console-cloud dev @ 5174** — `node scripts/dev.mjs`
 
 全部就绪后,自动打开浏览器 `http://127.0.0.1:5174/workbench`。
@@ -49,26 +49,26 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1
 如果 binary 路径不在默认位置,改 `start-all.ps1` 顶部的常量:
 
 ```powershell
-$SERVER_EXE = 'D:\evorule-server\target\debug\evorule-server.exe'
-$RULE_EXE   = 'D:\evorule-rule\target\debug\evorule-rule-serve.exe'
-$DEV_DIR    = 'D:\evorule-console-cloud'
+$SERVER_EXE = '<evorule-server 仓根>\target\debug\evorule-server.exe'
+$RULE_EXE   = '<evorule-rule 仓根>\target\debug\evorule-rule-serve.exe'
+$DEV_DIR    = '<evorule-console-cloud 仓根>'
 ```
 
 也可以改成 release 路径(更快启动,但需要 `cargo build --release`):
 ```powershell
-$SERVER_EXE = 'D:\evorule-server\target\release\evorule-server.exe'
-$RULE_EXE   = 'D:\evorule-rule\target\release\evorule-rule-serve.exe'
+$SERVER_EXE = '<evorule-server 仓根>\target\release\evorule-server.exe'
+$RULE_EXE   = '<evorule-rule 仓根>\target\release\evorule-rule-serve.exe'
 ```
 
 ## 日志位置
 
-- `D:\evorule-console-cloud\.dev-stdout.log` — vite dev 输出
-- `D:\evorule-console-cloud\.dev-stderr.log` — vite dev 错误
+- `<evorule-console-cloud 仓根>\.dev-stdout.log` — vite dev 输出
+- `<evorule-console-cloud 仓根>\.dev-stderr.log` — vite dev 错误
 - evorule-server / evorule-rule 的日志:各自 stdout(本脚本用 `WindowStyle=Hidden` 隐藏,如需调试可改为 `Normal`)
 
 ## 已知限制
 
-- dev server 30 分钟 maxRunMs **仍未解**
+- 后台 dev server 在某些自动化运行环境下可能受 30 分钟最大运行时长限制
   - 解决:用 nssm 把 `node scripts/dev.mjs` 装成 Windows 服务(后续 todo)
   - 或:用 `start-all.bat` 频繁重启(临时方案)
 - `WindowStyle=Hidden` 隐藏后,服务异常时看不到输出 → 看 `.dev-*.log`
