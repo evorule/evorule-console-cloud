@@ -35,7 +35,7 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1
 
 `start-all.ps1` 按以下顺序启动(每步等端口就绪):
 
-1. **evorule-server @ 18090** — 仓根目录的 `target/debug/evorule-server.exe`(或 `target/release/`)
+1. **evorule-server @ 18080** — 仓根目录的 `target/debug/evorule-server.exe`(或 `target/release/`)
 2. **evorule-rule-serve @ 18081** — 仓根目录的 `target/debug/evorule-rule-serve.exe`
 3. **console-cloud dev @ 5174** — `node scripts/dev.mjs`
 
@@ -51,7 +51,7 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1
 
 | 端口 | 服务 | 进程 |
 |---|---|---|
-| 18090 | evorule-server(执行引擎) | evorule-server.exe |
+| 18080 | evorule-server(执行引擎) | evorule-server.exe |
 | 18081 | evorule-rule(规则库/沙盒/治理) | evorule-rule-serve.exe |
 | 5174 | console-cloud dev(Vite) | node.exe |
 
@@ -64,8 +64,8 @@ Vite dev 默认 listen `::1`(IPv6 localhost),所以 `127.0.0.1:5174` 在某些�
 ### 端口被占用
 
 ```
-=== [1/3] evorule-server @ 18090 ===
-  [OK] evorule-server already running (PID 7272, port 18090)
+=== [1/3] evorule-server @ 18080 ===
+  [OK] evorule-server already running (PID 7272, port 18080)
 ```
 
 如果旧实例卡死,先 `stop-all.bat` 再 `start-all.bat`。
@@ -73,7 +73,7 @@ Vite dev 默认 listen `::1`(IPv6 localhost),所以 `127.0.0.1:5174` 在某些�
 ### binary 不存在
 
 ```
-=== [1/3] evorule-server @ 18090 ===
+=== [1/3] evorule-server @ 18080 ===
   [ERR] evorule-server binary not found: ...target/debug/evorule-server.exe
   [WARN] Need to build first: cd to repo root, run 'cargo build'
 ```

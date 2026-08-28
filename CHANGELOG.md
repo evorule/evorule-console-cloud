@@ -10,6 +10,16 @@
 
 ### 修复
 
+#### 启动必弹「规则库初始化失败」— 18090 旧端口残留
+
+- **根因**:`+layout.svelte` 硬编码 `localBaseUrl: "http://localhost:18090"`(旧端口方案残留),而 evorule-server 实际统一运行于 **18080**(start-all/status-all/stop-all 与 `DEFAULT_LOCAL_BASE_URL` 均为 18080)。默认离线模式下,规则库启动引导(refreshWorkspaces → 建默认 ws → 补种内置示例 → 拉规则列表)全部打向无监听的 18090 → `Failed to fetch` → 每次启动必弹 toast,且顶部状态条恒为「未连接」。
+- **修复**:`+layout.svelte` 的 `localBaseUrl` 改引 `DEFAULT_LOCAL_BASE_URL`(单一事实来源);联网/离线切换按钮 title 改为动态插值(顺带修复 `{$netConfig.remoteBaseUrl}` 被当字面量渲染的旧显示缺陷)。
+- **同源文案/配置清理**(18090 → 18080):HelpStart、HelpQuickstart、HelpWorkbench、WorkbenchTop、WorkbenchView 注释、onboarding.ts、vite.config.ts 代理目标、docs/tutorial/01-quickstart.md、docs/how-to/start-services.md。
+- **排查澄清**:evorule-rule(:18081 规则资产库)与本次故障无关——其服务与日志正常,浏览器侧 Failed to fetch 仅为诊断时手动探测的噪音;治理视图直连 18081 属独立按需通道。
+- 回归:svelte-check 0 errors / vitest 883/883 / build ✓;浏览器实测启动无 toast、状态条「已连接」、console 零报错。
+
+### 修复
+
 #### 建库向导无法退出（HomeRouter 状态决策冻结）
 
 - **根因**：`HomeRouter` 的 `mode = $derived(resolveMode())` 内部经 `get(store)` 快照读取 — Svelte 5 中 `get()` 不被 `$derived` 依赖追踪，`mode` 在组件挂载时求值一次后永久冻结。登录/取消向导/完成建库等 store 变更均无法触发 A/B/C 重判：点「取消，回 demo」handler 已执行（logout + force-demo 落库），但页面停留在向导；完成建库同样无法切到工作台。此前能进入向导纯粹依赖登录页跳转引发的组件重挂载。

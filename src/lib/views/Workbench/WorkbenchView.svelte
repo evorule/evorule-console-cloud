@@ -155,7 +155,7 @@
   });
 
   // === 健康检查 ===
-  // server 走 ExecutionBackend.health()(18090)
+  // server 走 ExecutionBackend.health()(18080)
   // rule 没有原生 health,server 起来后试着 listWorkspaces 间接探测(18081)
   // rule 探测放在 server 起来后才做,避免对已知的"server 离线"做无谓探测
   async function checkHealth(): Promise<void> {

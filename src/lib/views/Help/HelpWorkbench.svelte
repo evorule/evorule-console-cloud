@@ -15,7 +15,7 @@
     <p><strong>关键交互</strong>:<code>🔄 刷新</code>(立即拉数据) / <code>📋 4 引导任务</code>(跳 5 步建库向导)</p>
     <p><strong>含义</strong>:</p>
     <ul>
-      <li>● 已连接(server) = 18090 端口 listen 且 health() 通过</li>
+      <li>● 已连接(server) = 18080 端口 listen 且 health() 通过</li>
       <li>● 已连接(rule) = listWorkspaces() 成功</li>
       <li>workspace: 显示当前活动的 ws 名</li>
       <li>模式: ☁ 联网 / 🖥 离线</li>

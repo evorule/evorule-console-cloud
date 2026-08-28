@@ -30,6 +30,7 @@
   import type { ViewId } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { CloudWorkspaceBackend, setActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
+  import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { roleToBackend } from "$lib/backend/production-views";
   import { currentUser } from "$lib/stores/auth";
   import { MockBackend } from "$lib/backend/mock-backend";
@@ -230,7 +231,7 @@
     : new CloudWorkspaceBackend({
         mode: initialNet.mode,
         remoteBaseUrl: initialNet.remoteBaseUrl,
-        localBaseUrl: "http://localhost:18090",
+        localBaseUrl: DEFAULT_LOCAL_BASE_URL,
         authToken: initialNet.authToken,
       });
   if (!useMock) cloudWorkspaceBackend = workspaceImpl as CloudWorkspaceBackend;
@@ -246,7 +247,7 @@
         {
           mode: initialNet.mode,
           remoteBaseUrl: initialNet.remoteBaseUrl,
-          localBaseUrl: "http://localhost:18090",
+          localBaseUrl: DEFAULT_LOCAL_BASE_URL,
           authToken: initialNet.authToken,
         },
         workspaceImpl,
@@ -444,8 +445,8 @@
         class="icon-btn"
         onclick={toggleNetMode}
         title={$netConfig.mode === "online"
-          ? `联网模式 · {$netConfig.remoteBaseUrl} · 点击切回本地`
-          : "离线模式 · localhost:18090 · 点击切到联网"}
+          ? `联网模式 · ${$netConfig.remoteBaseUrl} · 点击切回本地`
+          : `离线模式 · ${DEFAULT_LOCAL_BASE_URL.replace(/^https?:\/\//, "")} · 点击切到联网`}
         aria-label="切换联网/离线模式"
       >
         {$netConfig.mode === "online" ? "☁️" : "🖥️"}
