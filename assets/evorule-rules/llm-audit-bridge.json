@@ -1,0 +1,95 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "app.consolecloud.llm_audit",
+  "rule_id": "llm_audit.bridge",
+  "version": "0.1.0",
+  "description": "evorule-console-cloud LLM 审计桥剧本 - 一次性 sidecar 会话的 call_external 单轮回路：命令事实(prompt 全文) → IoRequest(浏览器本地执行 LLM) → io_response(结果全文) → Stable",
+  "metadata": {
+    "author": "EvoRule Project",
+    "license": "CC0-1.0 Universal (Public Domain)",
+    "spdx_license_id": "CC0-1.0",
+    "provenance": {
+      "derived_from": [
+        "app.evoagent.agent v0.4.0 (D:\\evo-agent\\assets\\agent_constitution.json)"
+      ],
+      "date": "2026-08-31",
+      "workstream": "LLM 审计桥专项(02-约束总表 K 族)",
+      "note": "应用剧本由消费方自持(属地原则):本文件归 evorule-console-cloud 所有,部署时通过 evorule-server --rules-dir 指向本目录(与 TCB 宪法 core_eval.json 合并加载)"
+    },
+    "deployment": {
+      "method": "evorule-server 启动参数 --rules-dir <本目录>(分发包已内置 rules/llm-audit-bridge.json);独立部署前端时需自行将本文件放入 server 的业务规则目录"
+    },
+    "sections": [
+      "1. call_external 单轮回路: 无结果 → io_request(messages 透传); 有结果 → 消费收敛 Stable",
+      "2. noop 收尾规则(镜像 app.evoagent.agent 的收敛模式)"
+    ],
+    "constraints": [
+      "io_request 是 branch 的叶子节点(on_false 分支),之前不能有 set/push 操作",
+      "每条 transform 规则最多一个 io_request 元指令",
+      "仅透传 messages(evo-agent 宪法 v0.3.1 起的参数形态);本桥不使用 tools,故未透传",
+      "不做 react_iteration/merge 循环:审计桥协议为一次会话一条命令一次 LLM 调用,循环剧本属于 evo-agent",
+      "消费后以 JSON null 清除 __io_results__.call_external(exists 将 null 视为不存在)",
+      "与 app.evoagent.agent 不可同时加载于同一 server 规则集(call_external 规则会重复执行);evo-agent 经 --core_eval 整体替换宪法,二者部署形态互斥"
+    ]
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "call_external" },
+        "on_true": [
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "exists",
+                "path": "__exec__.payload.__io_results__.call_external"
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "llm_response",
+                    "operation": "set",
+                    "value": "__exec__.payload.__io_results__.call_external"
+                  }
+                },
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.__io_results__.call_external",
+                    "operation": "set",
+                    "value": null
+                  }
+                },
+                {
+                  "type": "push",
+                  "params": {
+                    "instructions": [{ "type": "noop" }]
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "io_request",
+                  "params": {
+                    "io_type": "call_external",
+                    "messages": "__exec__.instruction.params.messages"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "noop" },
+        "on_true": []
+      }
+    }
+  ]
+}

@@ -8,6 +8,8 @@
 //   - 大众版独有:isConfigured(配置完备性) + testConnection(测试连接)
 //   - 草案校验:LLM 产出后用内核 RuleValidator 校验,失败也不抛错,返回 confidence=0 + 校验错误
 //   - apiKey 安全:不进 prompt / 不进日志 / 不进 error.message(由 llm-fetch.ts 保证)
+//   - 审计桥(2026-08-30):三方法经 callChatApiAudited 走 evorule 侧车协议,
+//     prompt 全文与 LLM 结果入审计链;testConnection 保持直连(连通性探针)
 //
 // 与内核边界:
 //   - 注入到内核扩展槽后,内核视图只调三方法,不感知 CloudLlmConfig
@@ -15,7 +17,8 @@
 
 import { RuleValidator, type ValidationResult } from '$lib/kernel';
 import type { LlmAssistant, CloudLlmConfig } from './types';
-import { callChatApi, LlmError } from './llm-fetch';
+import { callChatApi, type ChatApiParams, LlmError } from './llm-fetch';
+import { callChatApiAudited, type AuditPurpose } from './audited-llm';
 import {
 	promptGenerateRuleDraft,
 	promptExplainRule,
@@ -97,6 +100,25 @@ export class CloudLlmAssistant implements LlmAssistant {
 	// ========================================================================
 
 	/**
+	 * 经审计桥执行一次 LLM 对话(业务 LLM 调用统一入口)。
+	 *
+	 * 三个定向任务(草案/解释/输入)不走直连:每次调用创建一次性 sidecar
+	 * 会话,prompt 全文与 LLM 结果都进 evorule 审计链(与 evo-agent
+	 * AuditedLlm 同契约)。testConnection 除外 —— 它是配置连通性探针,
+	 * 可在 server 未启动时独立验证 LLM 端点。
+	 *
+	 * @throws LlmError 子类(LLM 执行失败) / AuditedBridgeError(协议失败)
+	 */
+	private auditedChat(params: Omit<ChatApiParams, 'apiEndpoint' | 'apiKey' | 'model'> & { auditPurpose: AuditPurpose }): Promise<string> {
+		return callChatApiAudited({
+			apiEndpoint: this.config.apiEndpoint,
+			apiKey: this.config.apiKey,
+			model: this.config.model,
+			...params
+		});
+	}
+
+	/**
 	 * 用途1: 自然语言 → JSON 规则草案。
 	 *
 	 * 返回 { rule, confidence }:
@@ -110,12 +132,10 @@ export class CloudLlmAssistant implements LlmAssistant {
 		naturalLanguage: string
 	): Promise<{ rule: object; confidence: number }> {
 		const prompt = promptGenerateRuleDraft(naturalLanguage);
-		const reply = await callChatApi({
-			apiEndpoint: this.config.apiEndpoint,
-			apiKey: this.config.apiKey,
-			model: this.config.model,
+		const reply = await this.auditedChat({
 			userMessage: prompt,
-			temperature: 0.2 // 偏确定性
+			temperature: 0.2, // 偏确定性
+			auditPurpose: 'draft_rule'
 		});
 
 		// LLM 可能返回 markdown 代码块包裹,提取 JSON
@@ -159,12 +179,10 @@ export class CloudLlmAssistant implements LlmAssistant {
 	async explainRule(rule: object): Promise<string> {
 		const ruleJson = typeof rule === 'string' ? rule : JSON.stringify(rule, null, 2);
 		const prompt = promptExplainRule(ruleJson);
-		const reply = await callChatApi({
-			apiEndpoint: this.config.apiEndpoint,
-			apiKey: this.config.apiKey,
-			model: this.config.model,
+		const reply = await this.auditedChat({
 			userMessage: prompt,
-			temperature: 0.3 // 稍高,说明更自然
+			temperature: 0.3, // 稍高,说明更自然
+			auditPurpose: 'explain_rule'
 		});
 		return reply.trim();
 	}
@@ -174,12 +192,10 @@ export class CloudLlmAssistant implements LlmAssistant {
 	 */
 	async generateInput(description: string): Promise<object> {
 		const prompt = promptGenerateInput(description);
-		const reply = await callChatApi({
-			apiEndpoint: this.config.apiEndpoint,
-			apiKey: this.config.apiKey,
-			model: this.config.model,
+		const reply = await this.auditedChat({
 			userMessage: prompt,
-			temperature: 0.2
+			temperature: 0.2,
+			auditPurpose: 'gen_tests'
 		});
 
 		const jsonStr = extractJson(reply);
