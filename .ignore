@@ -1,0 +1,9 @@
+# 构建产物与依赖（防止 fd 索引扫描）
+node_modules/
+.svelte-kit/
+build/
+dist/
+logs/
+test-results/
+.trae/
+.versions_backup/

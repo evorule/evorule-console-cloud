@@ -26,6 +26,7 @@ vite.config.ts.timestamp-*
 # --- 内部运行时中间产物 ---
 .workbuddy/
 /data/
+.trae/
 
 # --- 内部工作文档(不入版本,公开文档走 docs/) ---
 文档/
