@@ -183,7 +183,7 @@ export interface EntryVersionsResponse {
  * 条目内容级 diff 响应（GET /v1/entries/{id}/diff?from=&to=）
  *
  * 后端为键级归因（顶层路径 added/removed/changed 列表），非逐字符文本 diff；
- * 历史版本完整载荷按"诚实标注"设计不可得（跨版本共享快照行），故仅 hash + keys 口径。
+ * 内容以 content_hash 刻定，双版本完整载荷经 GET /v1/entries/{id}/versions/{version} 回查。
  */
 export interface EntryDiffResponse {
 	dataset_id: string;
@@ -199,4 +199,13 @@ export interface EntryDiffResponse {
 		removed: string[];
 		changed: string[];
 	};
+}
+
+/** 条目指定版本完整载荷响应（GET /v1/entries/{id}/versions/{version}；历史版本载荷回查） */
+export interface EntryVersionPayloadResponse {
+	dataset_id: string;
+	entry_id: string;
+	version: number;
+	/** 规则条目含 rule_body，数据条目含 payload（全版本留痕，33 号 §6） */
+	entry: Record<string, unknown>;
 }

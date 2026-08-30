@@ -27,7 +27,7 @@
     createVersion
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
-  import type { EntryDiffResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
+  import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import JsonViewer from '$lib/views/Dataset/JsonViewer.svelte';
@@ -218,6 +218,18 @@
   let diffTo = $state<Record<string, number>>({});
   let diffLoading = $state<Record<string, boolean>>({});
   let diffError = $state<Record<string, string | null>>({});
+  // D-B③ 双栏载荷缓存（key = "from:to"，版本不可变故可安全缓存）
+  let payloadCache = $state<Record<string, { key: string; fromPayload: unknown; toPayload: unknown }>>({});
+
+  /** 载荷提取：规则条目展示 rule_body，数据条目展示 payload（D-B③ 口径） */
+  function payloadOf(e: unknown): unknown {
+    if (e && typeof e === 'object') {
+      const o = e as Record<string, unknown>;
+      if ('payload' in o) return o.payload;
+      if ('rule_body' in o) return o.rule_body;
+    }
+    return e;
+  }
 
   /** 展开/收起条目的"版本与对比"区（首次展开拉取版本链，默认选最后两版） */
   async function toggleDiff(entryId: string): Promise<void> {
@@ -266,6 +278,15 @@
     diffLoading[entryId] = true;
     try {
       diffCache[entryId] = await bk.entryDiff(entryId, from, to);
+      // D-B③：回查双版本完整载荷（同区间命中缓存则跳过）
+      const key = `${from}:${to}`;
+      if (payloadCache[entryId]?.key !== key) {
+        const [pf, pt]: [EntryVersionPayloadResponse, EntryVersionPayloadResponse] = await Promise.all([
+          bk.entryVersionPayload(entryId, from),
+          bk.entryVersionPayload(entryId, to)
+        ]);
+        payloadCache[entryId] = { key, fromPayload: payloadOf(pf.entry), toPayload: payloadOf(pt.entry) };
+      }
     } catch (e) {
       diffError[entryId] = e instanceof Error ? e.message : String(e);
     } finally {
@@ -371,6 +392,7 @@
           </div>
           {#if diffCache[entryId]}
             {@const d = diffCache[entryId] as EntryDiffResponse}
+            {@const p = payloadCache[entryId]}
             <div class="diff-result">
               <span class="badge {d.changed ? 'diff-changed' : 'diff-same'}">
                 {d.changed ? `内容已变 v${d.from} → v${d.to}` : `内容未变 v${d.from} → v${d.to}`}
@@ -385,7 +407,20 @@
                   {#each d.keys.changed as key (key)}<span class="key-badge key-changed" title="变更">± {key}</span>{/each}
                 </div>
               {/if}
-              <p class="muted diff-note">键级归因口径(content_hash + 顶层路径);历史版本完整载荷按后端诚实标注设计不可得。</p>
+              {#if p && p.key === `${d.from}:${d.to}`}
+                <!-- D-B③：双版本载荷并排（规则条目=rule_body，数据条目=payload） -->
+                <div class="payload-cols">
+                  <div class="payload-col">
+                    <p class="muted payload-title">v{d.from} 载荷</p>
+                    <JsonViewer value={p.fromPayload} maxHeight="320px" />
+                  </div>
+                  <div class="payload-col">
+                    <p class="muted payload-title">v{d.to} 载荷</p>
+                    <JsonViewer value={p.toPayload} maxHeight="320px" />
+                  </div>
+                </div>
+              {/if}
+              <p class="muted diff-note">键级归因口径（content_hash + 顶层路径）；载荷为各版本完整内容快照（全版本留痕可回查）。</p>
             </div>
           {/if}
         {:else}
@@ -1136,6 +1171,23 @@
   .key-added { background: color-mix(in srgb, var(--success) 18%, transparent); color: #065f46; }
   .key-removed { background: color-mix(in srgb, var(--danger) 15%, transparent); color: #991b1b; }
   .key-changed { background: color-mix(in srgb, var(--warning) 20%, transparent); color: #92400e; }
+  /* D-B③ 双版本载荷并排（条目 diff 工具专项） */
+  .payload-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    width: 100%;
+  }
+  @media (max-width: 720px) {
+    .payload-cols {
+      grid-template-columns: 1fr;
+    }
+  }
+  .payload-title {
+    margin: 0 0 var(--spacing-xs);
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
   .diff-note {
     margin: 0;
     font-size: var(--text-xs);
