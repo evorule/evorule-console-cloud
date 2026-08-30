@@ -28,7 +28,9 @@
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
   import type { LifecycleStatus } from '$lib/governance/types';
+  import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
+  import JsonViewer from '$lib/views/Dataset/JsonViewer.svelte';
 
   // ===== 连接面板 =====
   let connecting = $state(false);
@@ -234,6 +236,15 @@
     Rejected: '已驳回'
   };
 
+  // Q12 段2 P5:数据集类型徽标(缺省 = rule_set,兼容旧后端)
+  function kindLabel(ds: { dataset_kind?: string }): string {
+    return ds.dataset_kind === 'knowledge' ? '数据资产' : '规则集';
+  }
+  function kindClass(ds: { dataset_kind?: string }): string {
+    return ds.dataset_kind === 'knowledge' ? 'kind-knowledge' : 'kind-ruleset';
+  }
+  const selectedIsKnowledge = $derived(selected?.dataset_kind === 'knowledge');
+
   function statusClass(s: LifecycleStatus): string {
     return `status-${s.toLowerCase()}`;
   }
@@ -389,7 +400,10 @@
               >
                 <span class="ds-item-top">
                   <span class="ds-name">{ds.name || ds.dataset_id}</span>
-                  <span class="badge {statusClass(ds.lifecycle.status)}">{statusLabel[ds.lifecycle.status]}</span>
+                  <span class="ds-item-badges">
+                    <span class="badge {kindClass(ds)}">{kindLabel(ds)}</span>
+                    <span class="badge {statusClass(ds.lifecycle.status)}">{statusLabel[ds.lifecycle.status]}</span>
+                  </span>
                 </span>
                 <span class="ds-item-sub">
                   {ds.dataset_id} · {ds.versioning.current} · {fmtTime(ds.meta.created_at)}
@@ -410,8 +424,11 @@
             <p class="muted">{selected.dataset_id} · 租户 {selected.tenant_id} · {selected.visibility}</p>
             {#if selected.description}<p class="desc">{selected.description}</p>{/if}
           </div>
-          <span class="badge badge-lg {statusClass(selected.lifecycle.status)}">
-            {statusLabel[selected.lifecycle.status]}
+          <span class="ds-item-badges">
+            <span class="badge badge-lg {kindClass(selected)}">{kindLabel(selected)}</span>
+            <span class="badge badge-lg {statusClass(selected.lifecycle.status)}">
+              {statusLabel[selected.lifecycle.status]}
+            </span>
           </span>
         </div>
 
@@ -485,16 +502,20 @@
           </div>
         {/if}
 
-        <!-- 条目(规则) -->
+        <!-- 条目(Q12 段2 P5:按数据集类型分流 —— rule_set = 规则条目;knowledge = 数据资产条目) -->
         <div class="sec">
           <div class="sec-head">
-            <span>规则条目({$governanceStore.entries.length})</span>
-            <button class="btn btn-sm" onclick={() => (showAddEntry = !showAddEntry)}>
-              {showAddEntry ? '收起' : '+ 灌入规则'}
-            </button>
+            <span>
+              {selectedIsKnowledge ? `数据条目(${$governanceStore.entries.length})` : `规则条目(${$governanceStore.entries.length})`}
+            </span>
+            {#if !selectedIsKnowledge}
+              <button class="btn btn-sm" onclick={() => (showAddEntry = !showAddEntry)}>
+                {showAddEntry ? '收起' : '+ 灌入规则'}
+              </button>
+            {/if}
           </div>
 
-          {#if showAddEntry}
+          {#if showAddEntry && !selectedIsKnowledge}
             <div class="entry-form">
               <div class="field-row">
                 <label class="field">
@@ -522,20 +543,49 @@
           {#if $governanceStore.loadingEntries}
             <div class="muted">加载中…</div>
           {:else if $governanceStore.entries.length === 0}
-            <div class="muted empty">尚无规则条目。点「+ 灌入规则」粘贴 evorule 规则 JSON。</div>
+            <div class="muted empty">
+              {selectedIsKnowledge ? '尚无数据条目。数据资产条目经治理 API 或快照包导入。' : '尚无规则条目。点「+ 灌入规则」粘贴 evorule 规则 JSON。'}
+            </div>
+          {:else if selectedIsKnowledge}
+            <ul class="entry-list">
+              {#each $governanceStore.entries as e (e.entry_id)}
+                {@const k = e as import('$lib/governance/types').KnowledgeEntry}
+                <li>
+                  <div class="entry-top">
+                    <span class="entry-id">{k.entry_id}</span>
+                    <span class="muted">v{k.version}{k.domain ? ` · ${k.domain}` : ''}</span>
+                    {#if k.status && k.status !== 'Active'}
+                      <span class="badge {statusClass(k.status)}">{statusLabel[k.status] ?? k.status}</span>
+                    {/if}
+                  </div>
+                  <div class="kn-meta">
+                    <span class="chip" title="领域 JSON Schema 引用(D3 强校验锚)">{k.schema_ref}</span>
+                    {#each k.tags as t (t)}
+                      <span class="chip">{t}</span>
+                    {/each}
+                  </div>
+                  {#if k.provenance?.source}
+                    <p class="muted kn-source">溯源:{k.provenance.source}{k.provenance.clause ? ` · ${k.provenance.clause}` : ''}</p>
+                  {/if}
+                  <JsonViewer value={k.payload} maxHeight="320px" />
+                </li>
+              {/each}
+            </ul>
           {:else}
             <ul class="entry-list">
               {#each $governanceStore.entries as e (e.entry_id)}
-                <li>
-                  <div class="entry-top">
-                    <span class="entry-id">{e.entry_id}</span>
-                    <span class="muted">v{e.version}{e.domain ? ` · ${e.domain}` : ''}</span>
-                    {#if e.status && e.status !== 'Active'}
-                      <span class="badge {statusClass(e.status)}">{statusLabel[e.status] ?? e.status}</span>
-                    {/if}
-                  </div>
-                  <pre class="entry-body">{rulePreview(e.rule_body)}</pre>
-                </li>
+                {#if !isKnowledgeEntry(e)}
+                  <li>
+                    <div class="entry-top">
+                      <span class="entry-id">{e.entry_id}</span>
+                      <span class="muted">v{e.version}{e.domain ? ` · ${e.domain}` : ''}</span>
+                      {#if e.status && e.status !== 'Active'}
+                        <span class="badge {statusClass(e.status)}">{statusLabel[e.status] ?? e.status}</span>
+                      {/if}
+                    </div>
+                    <pre class="entry-body">{rulePreview(e.rule_body)}</pre>
+                  </li>
+                {/if}
               {/each}
             </ul>
           {/if}
@@ -892,6 +942,31 @@
   .status-active { background: color-mix(in srgb, var(--info) 18%, transparent); color: #1e40af; }
   .status-published { background: color-mix(in srgb, var(--success) 18%, transparent); color: #065f46; }
   .status-rejected { background: color-mix(in srgb, var(--danger) 15%, transparent); color: #991b1b; }
+
+  /* 数据集类型徽标(Q12 段2 P5/C1) */
+  .ds-item-badges {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+  }
+  .kind-ruleset { background: var(--border); color: var(--text-secondary); }
+  .kind-knowledge {
+    background: color-mix(in srgb, var(--brand) 14%, transparent);
+    color: var(--brand);
+  }
+
+  /* knowledge 数据条目(C2/C3) */
+  .kn-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-xs);
+  }
+  .kn-source {
+    margin: 0 0 var(--spacing-xs);
+  }
 
   @media (max-width: 900px) {
     .gov-layout {

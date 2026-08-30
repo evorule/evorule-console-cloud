@@ -10,6 +10,14 @@
 /** 生命周期 5 态（决策点④）：Draft → Candidate → Active → Published → Rejected */
 export type LifecycleStatus = 'Draft' | 'Candidate' | 'Active' | 'Published' | 'Rejected';
 
+/**
+ * 数据集类型（Q12 数据资产化 R1 / 段2 P5）
+ * - `rule_set`：规则集，条目为 transform 指令集 → 进 TCB 确定性执行；
+ * - `knowledge`：数据资产集，条目为领域结构化 payload + schema_ref → 不进 TCB。
+ * 后端 serde default = rule_set（旧数据集缺省该字段）。
+ */
+export type DatasetKind = 'rule_set' | 'knowledge';
+
 /** 生命周期状态变更审计（只增不改，state_history） */
 export interface LifecycleStateChange {
 	from: string;
@@ -28,6 +36,8 @@ export interface GovernanceDataset {
 	dataset_id: string;
 	name: string;
 	description?: string | null;
+	/** 数据集类型（Q12 R1；后端缺省 = rule_set） */
+	dataset_kind?: DatasetKind;
 	domain: string[];
 	tags: string[];
 	tenant_id: string;
@@ -94,6 +104,38 @@ export interface AddEntryRequest {
 	tags?: string[];
 	consumed_inputs?: string[];
 	rule_body: unknown;
+}
+
+/**
+ * 数据资产条目（KnowledgeEntry，Q12 数据资产化 R2 / 段2 P5）
+ *
+ * knowledge 数据集专属载荷：`payload` 为领域结构化 JSON（零转译），
+ * `schema_ref` 为领域 JSON Schema 引用（D3 强校验锚）。不进 TCB。
+ * 治理元数据（entry_id/version/status/provenance/domain/tags）与规则条目同构。
+ */
+export interface KnowledgeEntry {
+	entry_id: string;
+	dataset_id: string;
+	/** 条目治理版本：整型单调递增（同规则条目） */
+	version: number;
+	status?: LifecycleStatus;
+	provenance: {
+		source: string;
+		clause?: string | null;
+		document_id?: string | null;
+		effective_from?: string | null;
+		effective_to?: string | null;
+		last_verified?: string | null;
+		verified_by?: string | null;
+	};
+	domain: string;
+	tags: string[];
+	/** 领域结构化数据本体（任意 JSON，零转译） */
+	payload: unknown;
+	/** 领域 JSON Schema 引用 URI（D3） */
+	schema_ref: string;
+	governance?: unknown;
+	[key: string]: unknown;
 }
 
 /** 创建数据集请求体（POST /v1/datasets） */
