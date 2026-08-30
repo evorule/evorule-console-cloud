@@ -22,8 +22,12 @@ import type {
 	CreateDatasetRequest,
 	GovernanceDataset,
 	GovernanceEntry,
+	KnowledgeEntry,
 	VersioningInfo
 } from './types';
+
+/** 条目（规则或数据资产，按选中数据集 dataset_kind 分流） */
+export type GovernanceItem = GovernanceEntry | KnowledgeEntry;
 
 export interface GovernanceState {
 	backend: GovernanceBackend | null;
@@ -38,7 +42,8 @@ export interface GovernanceState {
 	datasets: GovernanceDataset[];
 	loadingDatasets: boolean;
 	selectedId: string | null;
-	entries: GovernanceEntry[];
+	/** 条目列表（规则条目或数据资产条目，Q12 段2 P5 按数据集类型分流） */
+	entries: GovernanceItem[];
 	loadingEntries: boolean;
 	versioning: VersioningInfo | null;
 }
@@ -172,7 +177,11 @@ async function loadEntries(datasetId: string): Promise<void> {
 	const bk = backend();
 	governanceStore.update((s) => ({ ...s, loadingEntries: true }));
 	try {
-		const entries = await bk.listEntries(datasetId);
+		// Q12 段2 P5：按选中数据集类型分流取数（后端按 dataset_kind 分流返回对应条目）
+		const s0 = get(governanceStore);
+		const kind = s0.datasets.find((d) => d.dataset_id === datasetId)?.dataset_kind ?? 'rule_set';
+		const entries: GovernanceItem[] =
+			kind === 'knowledge' ? await bk.listKnowledgeEntries(datasetId) : await bk.listEntries(datasetId);
 		governanceStore.update((s) => ({ ...s, entries, loadingEntries: false }));
 	} catch (err) {
 		governanceStore.update((s) => ({ ...s, loadingEntries: false }));
@@ -186,6 +195,11 @@ export async function addEntry(datasetId: string, req: AddEntryRequest): Promise
 	const entry = await bk.addEntry(datasetId, req);
 	await loadEntries(datasetId);
 	return entry;
+}
+
+/** 判断条目是否为数据资产条目（Q12 段2 P5：payload/schema_ref 形态） */
+export function isKnowledgeEntry(e: GovernanceItem): e is KnowledgeEntry {
+	return typeof (e as KnowledgeEntry).payload !== 'undefined';
 }
 
 // ====================================================================

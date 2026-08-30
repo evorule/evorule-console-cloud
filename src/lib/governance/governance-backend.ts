@@ -16,6 +16,7 @@ import type {
 	CreateDatasetRequest,
 	GovernanceDataset,
 	GovernanceEntry,
+	KnowledgeEntry,
 	LifecycleStatus,
 	Page,
 	VersioningInfo
@@ -183,6 +184,20 @@ export class GovernanceBackend {
 	/** 列出数据集内条目 */
 	async listEntries(datasetId: string): Promise<GovernanceEntry[]> {
 		const page = await this.request<Page<GovernanceEntry>>({
+			method: 'GET',
+			path: `/v1/datasets/${encodeURIComponent(datasetId)}/entries?limit=100`
+		});
+		return page.items ?? [];
+	}
+
+	/**
+	 * 列出 knowledge 数据集内的数据资产条目（Q12 段2 P5）
+	 *
+	 * 后端 `GET /datasets/{id}/entries` 按数据集类型分流（rule_set → 规则条目；
+	 * knowledge → 数据条目），本方法为 knowledge 数据集的类型化取数入口。
+	 */
+	async listKnowledgeEntries(datasetId: string): Promise<KnowledgeEntry[]> {
+		const page = await this.request<Page<KnowledgeEntry>>({
 			method: 'GET',
 			path: `/v1/datasets/${encodeURIComponent(datasetId)}/entries?limit=100`
 		});
