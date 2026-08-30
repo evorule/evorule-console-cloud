@@ -15,6 +15,7 @@ import type {
 	AddEntryRequest,
 	CreateDatasetRequest,
 	EntryDiffResponse,
+	EntryVersionPayloadResponse,
 	EntryVersionsResponse,
 	GovernanceDataset,
 	GovernanceEntry,
@@ -231,12 +232,25 @@ export class GovernanceBackend {
 	 * 条目内容级 diff（44 号 §9 C2；GET /v1/entries/{id}/diff?from=&to=）
 	 *
 	 * 键级归因（keys added/removed/changed）+ content_hash 口径；
-	 * 历史版本完整载荷后端按诚实标注设计不可得。from 须小于 to 且版本存在。
+	 * 双版本完整载荷经 entryVersionPayload(entryId, version) 回查。from 须小于 to 且版本存在。
 	 */
 	async entryDiff(entryId: string, from: number, to: number): Promise<EntryDiffResponse> {
 		return this.request<EntryDiffResponse>({
 			method: 'GET',
 			path: `/v1/entries/${encodeURIComponent(entryId)}/diff?from=${from}&to=${to}`
+		});
+	}
+
+	/**
+	 * 条目指定版本完整载荷（条目 diff 工具 D-B③；GET /v1/entries/{id}/versions/{version}）
+	 *
+	 * 版本链端点仅给摘要（version/status/content_hash）；本端点回查逐版本载荷
+	 * （entries/knowledge_entries 全版本留痕，33 号 §6），规则条目含 rule_body，数据条目含 payload。
+	 */
+	async entryVersionPayload(entryId: string, version: number): Promise<EntryVersionPayloadResponse> {
+		return this.request<EntryVersionPayloadResponse>({
+			method: 'GET',
+			path: `/v1/entries/${encodeURIComponent(entryId)}/versions/${version}`
 		});
 	}
 
