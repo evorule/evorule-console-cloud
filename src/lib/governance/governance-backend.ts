@@ -14,6 +14,8 @@
 import type {
 	AddEntryRequest,
 	CreateDatasetRequest,
+	EntryDiffResponse,
+	EntryVersionsResponse,
 	GovernanceDataset,
 	GovernanceEntry,
 	KnowledgeEntry,
@@ -210,6 +212,31 @@ export class GovernanceBackend {
 			method: 'POST',
 			path: `/v1/datasets/${encodeURIComponent(datasetId)}/entries`,
 			body: req
+		});
+	}
+
+	/**
+	 * 条目版本链（44 号 §5 C1；GET /v1/entries/{id}/versions）
+	 *
+	 * 规则与 knowledge 条目后端同构分流（Q12 R4），摘要均为 version/status/content_hash。
+	 */
+	async entryVersions(entryId: string): Promise<EntryVersionsResponse> {
+		return this.request<EntryVersionsResponse>({
+			method: 'GET',
+			path: `/v1/entries/${encodeURIComponent(entryId)}/versions`
+		});
+	}
+
+	/**
+	 * 条目内容级 diff（44 号 §9 C2；GET /v1/entries/{id}/diff?from=&to=）
+	 *
+	 * 键级归因（keys added/removed/changed）+ content_hash 口径；
+	 * 历史版本完整载荷后端按诚实标注设计不可得。from 须小于 to 且版本存在。
+	 */
+	async entryDiff(entryId: string, from: number, to: number): Promise<EntryDiffResponse> {
+		return this.request<EntryDiffResponse>({
+			method: 'GET',
+			path: `/v1/entries/${encodeURIComponent(entryId)}/diff?from=${from}&to=${to}`
 		});
 	}
 
