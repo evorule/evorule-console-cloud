@@ -27,15 +27,13 @@
 
 ## 发版治理原则
 
-> **核心原则**：开发完成后**不立即发版**，必须经过反复人工测试，用户明确确认“可以发布”后才 tag v0.1.0 + push 到 Gitee 公开仓。
-
+>
 | 阶段 | 版本号 | Gitee 状态 | 说明 |
 | --- | --- | --- | --- |
 | 开发期（Phase 1-7）| `0.0.x` | 本地 commit，**不 push** | 功能开发 + 自动化测试 |
 | 人工测试期 | `0.0.x` | 本地 commit，**不 push** | 用户人工验收 + 修复回归 |
 | **发版** | `0.1.0` | **tag + push** | 用户明确确认“可以发布”后执行 |
 
-**push 时机由用户决定**，开发者不得擅自 push。
 
 ---
 
@@ -52,9 +50,9 @@ npm run test           # playwright: 全部 PASS
 npm run build          # adapter-static: 产出 build/ 成功
 ```
 
-### 2. 用户人工测试验收通过
+### 2. 人工测试验收通过
 
-用户已完成以下场景的人工测试（详见 [CHANGELOG.md](CHANGELOG.md) 人工测试验收清单）：
+完成以下场景的人工测试（详见 [CHANGELOG.md](CHANGELOG.md) 人工测试验收清单）：
 
 - [ ] 5 视图功能正常（规则库 / 执行台 / 状态 / 审计 / 时间旅行）
 - [ ] 设置面板：联网配置 + LLM 配置全流程
@@ -81,10 +79,6 @@ npm run build          # adapter-static: 产出 build/ 成功
 - [x] CHANGELOG.md
 - [x] README.md
 - [x] RELEASE_PROCESS.md（本文件）
-
-### 4. 用户明确确认
-
-> **用户明确说“可以发布”后，才能进入下一步。**
 
 ---
 
@@ -144,8 +138,6 @@ git tag -a v0.1.0 -m "evorule-console-cloud v0.1.0 联网大众版首发"
 
 ### 步骤 7：push 到 Gitee 公开仓
 
-**前提**：用户已在 Gitee 创建 `evorule/evorule-console-cloud` 空仓（不初始化 README/.gitignore/LICENSE）。
-
 ```bash
 git remote add origin https://gitee.com/evorule/evorule-console-cloud.git
 git push -u origin main
@@ -163,7 +155,6 @@ git push origin v0.1.0
 ### 步骤 9：发布后工作
 
 - 在 Gitee 创建 v0.1.0 Release（附 CHANGELOG 摘要）
-- 通知用户发版完成
 - 更新本仓的“下个版本规划”（v0.2.0 L2 本地 LLM 等）
 
 ---
