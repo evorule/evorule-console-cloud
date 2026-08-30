@@ -14,7 +14,19 @@ evorule 体验版(单机一键启动)
 
 退出
 ----
-关闭任务栏上最小化的 "evorule-server" 窗口即可。
+关闭任务栏上最小化的两个窗口("evorule-server" 和 "evorule-rule")即可。
+两个服务互相独立,一个失败不影响另一个;全部关闭后再双击
+start-evorule.bat 可重新启动。
+
+体验治理视图(规则资产库,可选)
+------------------------------
+主界面之外的「治理」页连接本地的规则资产治理服务
+(evorule-rule,端口 18081,启动脚本已自动拉起)。首次使用:
+
+1. 进入「治理」页,连接地址保持默认 http://127.0.0.1:18081
+2. 登录体验账号:用户名 admin / 密码 evorule-demo
+3. 即可浏览数据集、5 态生命周期、审批发布等治理功能
+(仅限本机体验包默认凭据;正式部署必须更换密码)
 
 体验 AI 助手(可选)
 ------------------
@@ -36,17 +48,19 @@ Key 只保存在你本机浏览器中,不会上传到任何第三方。
 
 目录说明
 --------
-- start-evorule.bat   一键启动脚本
-- evorule-server.exe  本地服务(evorule-server)
-- web\                前端页面(evorule-console-cloud)
-- rules\              运行规则集(LLM 审计桥剧本)
-- resources\          引擎宪法(core_eval.json)
+- start-evorule.bat        一键启动脚本
+- evorule-server.exe       主服务(evorule-server,运行时 :18080)
+- evorule-rule-serve.exe   治理服务(evorule-rule,规则资产库 :18081)
+- web\                     前端页面(evorule-console-cloud)
+- rules\                   运行规则集(LLM 审计桥剧本)
+- resources\               引擎宪法(core_eval.json)
+- data\                    首次启动后生成的本地数据(两个服务的库文件)
 
 常见问题
 --------
-Q: 端口 18080 被占用怎么办?
-A: 编辑 start-evorule.bat,把两处 18080 改成其他端口(如 18081),
-   浏览器地址也相应修改。
+Q: 端口 18080 或 18081 被占用怎么办?
+A: 编辑 start-evorule.bat,把对应端口改成其他值(如 18081→18082),
+   浏览器地址与治理页连接地址也相应修改。
 
 Q: 浏览器没自动打开?
 A: 手动访问 http://localhost:18080
