@@ -26,6 +26,20 @@ import {
 	LlmResponseError
 } from './llm-fetch';
 
+// 审计桥 mock:委托真实 callChatApi(走全局 fetch mock)。
+// 协议回路本身由 audited-llm.test.ts 单测覆盖;本文件聚焦三方法的
+// prompt 组装/JSON 提取/校验/错误映射,不重复 mock 侧车协议。
+vi.mock('./audited-llm', () => ({
+	callChatApiAudited: async (
+		params: Record<string, unknown> & { auditPurpose?: string }
+	): Promise<string> => {
+		const { callChatApi } = await import('./llm-fetch');
+		const { auditPurpose: _auditPurpose, ...rest } = params;
+		void _auditPurpose;
+		return callChatApi(rest as unknown as Parameters<typeof callChatApi>[0]);
+	}
+}));
+
 // ============ mock fetch ============
 
 const mockFetch = vi.fn();

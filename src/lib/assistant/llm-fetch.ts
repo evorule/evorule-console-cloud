@@ -113,6 +113,29 @@ export interface ChatApiParams {
 }
 
 /**
+ * 构造 OpenAI 兼容 messages 数组。
+ *
+ * 顺序:system(可选) → history(按时间顺序) → 当前 userMessage。
+ *
+ * 导出动机(审计桥 2026-08-30):audited-llm 侧车协议把 prompt 全文写入
+ * 审计链命令事实,必须与本函数实际发给 LLM 的 messages 完全一致
+ * (单一构造点,防审计内容与真实请求漂移)。
+ */
+export function buildMessages(params: Pick<ChatApiParams, 'userMessage' | 'systemMessage' | 'history'>): Array<{ role: string; content: string }> {
+	const messages: Array<{ role: string; content: string }> = [];
+	if (params.systemMessage) {
+		messages.push({ role: 'system', content: params.systemMessage });
+	}
+	if (params.history && params.history.length > 0) {
+		for (const h of params.history) {
+			messages.push({ role: h.role, content: h.content });
+		}
+	}
+	messages.push({ role: 'user', content: params.userMessage });
+	return messages;
+}
+
+/**
  * 调用 OpenAI 兼容 /v1/chat/completions,返回 assistant 回复文本。
  *
  * 错误处理:
@@ -138,16 +161,13 @@ export async function callChatApi(params: ChatApiParams): Promise<string> {
 		model,
 		userMessage,
 		systemMessage,
+		history,
 		temperature = 0.2,
 		timeoutMs = 30_000
 	} = params;
 
-	// 构造 messages
-	const messages: Array<{ role: string; content: string }> = [];
-	if (systemMessage) {
-		messages.push({ role: 'system', content: systemMessage });
-	}
-	messages.push({ role: 'user', content: userMessage });
+	// 构造 messages(system → history → user,单一构造点见 buildMessages)
+	const messages = buildMessages({ userMessage, systemMessage, history });
 
 	const body = JSON.stringify({
 		model,

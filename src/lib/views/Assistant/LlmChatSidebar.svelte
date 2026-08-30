@@ -3,7 +3,7 @@
 <!-- evorule-console-cloud — 右侧 LLM 交互侧栏（VS Code 风格：上对话区 + 底部输入框） -->
 <!--
   职责:
-    - 与云 LLM 多轮连续对话（复用 llm-fetch.ts 的 history 参数）
+    - 与云 LLM 多轮连续对话(经审计桥 callChatApiAudited,prompt/回复入审计链)
     - 未配置 LLM 时显示提示，引导到「设置 → LLM 配置」
     - 只读交互，不生成草案/不改规则（与三定向任务边界一致）
 
@@ -14,7 +14,7 @@
 
 <script lang="ts">
 	import { llmConfig, isLlmConfigured } from '$lib/config/llm-config';
-	import { callChatApi } from '$lib/assistant/llm-fetch';
+	import { callChatApiAudited } from '$lib/assistant/audited-llm';
 	import { EVORULE_RULE_SPEC } from '$lib/assistant/prompts';
 
 	interface ChatMessage {
@@ -66,14 +66,16 @@ ${EVORULE_RULE_SPEC}
 
 		try {
 			const cfg = $llmConfig;
-			const reply = await callChatApi({
+			// 经审计桥执行:对话 prompt 全文与回复入 evorule 审计链(侧车协议)
+			const reply = await callChatApiAudited({
 				apiEndpoint: cfg.apiEndpoint,
 				apiKey: cfg.apiKey,
 				model: cfg.model,
 				userMessage: text,
 				systemMessage: SYSTEM_PROMPT,
 				history,
-				temperature: 0.4
+				temperature: 0.4,
+				auditPurpose: 'chat'
 			});
 			messages = [...messages, { role: 'assistant', content: reply }];
 		} catch (e) {
