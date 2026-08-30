@@ -159,3 +159,44 @@ export interface Page<T> {
 	items: T[];
 	next_cursor?: string | null;
 }
+
+// ====================================================================
+// 条目版本链与内容级 diff（44 号 §5/§9；规则与 knowledge 条目后端同构分流）
+// ====================================================================
+
+/** 条目版本摘要（GET /v1/entries/{id}/versions 的 versions[] 元素） */
+export interface EntryVersionSummary {
+	version: number;
+	status: LifecycleStatus | null;
+	/** BLAKE3 内容哈希（content_hash 刻定内容，跨版本共享快照行去重） */
+	content_hash: string;
+}
+
+/** 条目版本链响应（GET /v1/entries/{id}/versions） */
+export interface EntryVersionsResponse {
+	dataset_id: string;
+	entry_id: string;
+	versions: EntryVersionSummary[];
+}
+
+/**
+ * 条目内容级 diff 响应（GET /v1/entries/{id}/diff?from=&to=）
+ *
+ * 后端为键级归因（顶层路径 added/removed/changed 列表），非逐字符文本 diff；
+ * 历史版本完整载荷按"诚实标注"设计不可得（跨版本共享快照行），故仅 hash + keys 口径。
+ */
+export interface EntryDiffResponse {
+	dataset_id: string;
+	entry_id: string;
+	from: number;
+	to: number;
+	from_content_hash: string;
+	to_content_hash: string;
+	changed: boolean;
+	note?: string;
+	keys?: {
+		added: string[];
+		removed: string[];
+		changed: string[];
+	};
+}

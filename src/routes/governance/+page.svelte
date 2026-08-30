@@ -27,7 +27,7 @@
     createVersion
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
-  import type { LifecycleStatus } from '$lib/governance/types';
+  import type { EntryDiffResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import JsonViewer from '$lib/views/Dataset/JsonViewer.svelte';
@@ -210,6 +210,74 @@
     }
   }
 
+  // ===== 条目版本与对比（条目 diff 工具专项；规则/数据条目通用，后端已同构分流） =====
+  let diffOpen = $state<Record<string, boolean>>({});
+  let versionCache = $state<Record<string, EntryVersionSummary[]>>({});
+  let diffCache = $state<Record<string, EntryDiffResponse>>({});
+  let diffFrom = $state<Record<string, number>>({});
+  let diffTo = $state<Record<string, number>>({});
+  let diffLoading = $state<Record<string, boolean>>({});
+  let diffError = $state<Record<string, string | null>>({});
+
+  /** 展开/收起条目的"版本与对比"区（首次展开拉取版本链，默认选最后两版） */
+  async function toggleDiff(entryId: string): Promise<void> {
+    diffOpen[entryId] = !diffOpen[entryId];
+    if (diffOpen[entryId] && !versionCache[entryId]) {
+      const bk = get(governanceStore).backend;
+      if (!bk) {
+        diffError[entryId] = '未连接治理服务';
+        return;
+      }
+      diffError[entryId] = null;
+      diffLoading[entryId] = true;
+      try {
+        const r = await bk.entryVersions(entryId);
+        versionCache[entryId] = r.versions;
+        const vs = r.versions;
+        if (vs.length >= 2) {
+          diffFrom[entryId] = vs[vs.length - 2].version;
+          diffTo[entryId] = vs[vs.length - 1].version;
+        } else if (vs.length === 1) {
+          diffFrom[entryId] = vs[0].version;
+          diffTo[entryId] = vs[0].version;
+        }
+      } catch (e) {
+        diffError[entryId] = e instanceof Error ? e.message : String(e);
+      } finally {
+        diffLoading[entryId] = false;
+      }
+    }
+  }
+
+  /** 执行对比（from < to；结果缓存到 diffCache） */
+  async function runDiff(entryId: string): Promise<void> {
+    const from = diffFrom[entryId];
+    const to = diffTo[entryId];
+    if (!from || !to || from >= to) {
+      toastError('对比区间非法:from 须小于 to', '条目 diff');
+      return;
+    }
+    const bk = get(governanceStore).backend;
+    if (!bk) {
+      diffError[entryId] = '未连接治理服务';
+      return;
+    }
+    diffError[entryId] = null;
+    diffLoading[entryId] = true;
+    try {
+      diffCache[entryId] = await bk.entryDiff(entryId, from, to);
+    } catch (e) {
+      diffError[entryId] = e instanceof Error ? e.message : String(e);
+    } finally {
+      diffLoading[entryId] = false;
+    }
+  }
+
+  function shortHash(h?: string): string {
+    if (!h) return '-';
+    return h.length > 14 ? `${h.slice(0, 14)}…` : h;
+  }
+
   // ===== 派生 =====
   // 注意:必须用 $governanceStore 直接引用(Svelte 5 $derived 不追踪 get(store)),
   //       否则选中数据集/角色在 store 变化后不会更新。
@@ -260,6 +328,73 @@
     return s && s.length > 160 ? `${s.slice(0, 160)}…` : (s ?? '');
   }
 </script>
+
+<!-- 条目「版本与对比」区（条目 diff 工具专项;规则/数据条目共用片段） -->
+{#snippet entryDiff(entryId: string)}
+  <button class="btn btn-sm diff-toggle" onclick={() => toggleDiff(entryId)}>
+    {diffOpen[entryId] ? '收起版本对比' : '版本与对比'}
+  </button>
+  {#if diffOpen[entryId]}
+    <div class="diff-panel">
+      {#if diffError[entryId]}
+        <p class="diff-error">{diffError[entryId]}</p>
+      {:else if diffLoading[entryId]}
+        <p class="muted">加载中…</p>
+      {:else if (versionCache[entryId] ?? []).length === 0}
+        <p class="muted">无版本记录。</p>
+      {:else}
+        <div class="vchain">
+          {#each versionCache[entryId] as v (v.version)}
+            <span class="vrow">
+              <span class="muted">v{v.version}</span>
+              {#if v.status && v.status !== 'Active'}
+                <span class="badge {statusClass(v.status)}">{statusLabel[v.status] ?? v.status}</span>
+              {/if}
+              <span class="chip" title="BLAKE3 内容哈希(content_hash 刻定内容)">{shortHash(v.content_hash)}</span>
+            </span>
+          {/each}
+        </div>
+        {#if (versionCache[entryId] ?? []).length >= 2}
+          <div class="diff-controls">
+            <select bind:value={diffFrom[entryId]} aria-label="起始版本">
+              {#each versionCache[entryId] as v (v.version)}
+                <option value={v.version}>v{v.version}</option>
+              {/each}
+            </select>
+            <span class="muted">→</span>
+            <select bind:value={diffTo[entryId]} aria-label="目标版本">
+              {#each versionCache[entryId] as v (v.version)}
+                <option value={v.version}>v{v.version}</option>
+              {/each}
+            </select>
+            <button class="btn btn-sm" onclick={() => runDiff(entryId)}>对比</button>
+          </div>
+          {#if diffCache[entryId]}
+            {@const d = diffCache[entryId] as EntryDiffResponse}
+            <div class="diff-result">
+              <span class="badge {d.changed ? 'diff-changed' : 'diff-same'}">
+                {d.changed ? `内容已变 v${d.from} → v${d.to}` : `内容未变 v${d.from} → v${d.to}`}
+              </span>
+              <span class="chip" title="起始版本内容哈希">{shortHash(d.from_content_hash)}</span>
+              <span class="muted">→</span>
+              <span class="chip" title="目标版本内容哈希">{shortHash(d.to_content_hash)}</span>
+              {#if d.keys}
+                <div class="keys">
+                  {#each d.keys.added as key (key)}<span class="key-badge key-added" title="新增">+ {key}</span>{/each}
+                  {#each d.keys.removed as key (key)}<span class="key-badge key-removed" title="移除">− {key}</span>{/each}
+                  {#each d.keys.changed as key (key)}<span class="key-badge key-changed" title="变更">± {key}</span>{/each}
+                </div>
+              {/if}
+              <p class="muted diff-note">键级归因口径(content_hash + 顶层路径);历史版本完整载荷按后端诚实标注设计不可得。</p>
+            </div>
+          {/if}
+        {:else}
+          <p class="muted">仅一个版本,无对比区间。</p>
+        {/if}
+      {/if}
+    </div>
+  {/if}
+{/snippet}
 
 <!-- PR7:治理中心首访提示 -->
 <GuidedHint
@@ -568,6 +703,7 @@
                     <p class="muted kn-source">溯源:{k.provenance.source}{k.provenance.clause ? ` · ${k.provenance.clause}` : ''}</p>
                   {/if}
                   <JsonViewer value={k.payload} maxHeight="320px" />
+                  {@render entryDiff(k.entry_id)}
                 </li>
               {/each}
             </ul>
@@ -584,6 +720,7 @@
                       {/if}
                     </div>
                     <pre class="entry-body">{rulePreview(e.rule_body)}</pre>
+                    {@render entryDiff(e.entry_id)}
                   </li>
                 {/if}
               {/each}
@@ -932,6 +1069,77 @@
     font-weight: 500;
     background: var(--border);
     color: var(--text-primary);
+  }
+
+  /* 条目「版本与对比」区(条目 diff 工具专项) */
+  .diff-toggle {
+    margin-top: var(--spacing-xs);
+  }
+  .diff-panel {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .diff-error {
+    margin: 0;
+    color: var(--danger);
+    font-size: var(--text-xs);
+  }
+  .vchain {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+  .vrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  .diff-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  .diff-controls select {
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    font-size: var(--text-xs);
+  }
+  .diff-result {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+  .diff-changed { background: color-mix(in srgb, var(--warning) 20%, transparent); color: #92400e; }
+  .diff-same { background: color-mix(in srgb, var(--success) 18%, transparent); color: #065f46; }
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    width: 100%;
+  }
+  .key-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-family: monospace;
+  }
+  .key-added { background: color-mix(in srgb, var(--success) 18%, transparent); color: #065f46; }
+  .key-removed { background: color-mix(in srgb, var(--danger) 15%, transparent); color: #991b1b; }
+  .key-changed { background: color-mix(in srgb, var(--warning) 20%, transparent); color: #92400e; }
+  .diff-note {
+    margin: 0;
+    font-size: var(--text-xs);
+    width: 100%;
   }
   .badge-lg {
     padding: 4px 12px;
