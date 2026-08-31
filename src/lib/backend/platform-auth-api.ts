@@ -196,3 +196,205 @@ export async function platformChangePassword(
 		}),
 	});
 }
+
+// ---------------------------------------------------------------------------
+// 管理端点(UV-017 W4:用户管理 / 角色管理,需 manage_users / manage_roles 权限)
+// ---------------------------------------------------------------------------
+
+/** 管理端点统一错误:401(未认证)/ 403(缺权限点)由 PlatformAuthError 携带 status */
+export interface PlatformUserView {
+	username: string;
+	displayName: string;
+	email: string;
+	department: string;
+	status: string;
+	role: string;
+}
+
+export interface PlatformRoleView {
+	name: string;
+	builtin: boolean;
+	status: string;
+	description: string;
+	permissions: string[];
+}
+
+/** `GET /api/platform/permissions` — 权限点注册表 + 内置角色(角色编辑器渲染用) */
+export async function listPermissionRegistry(
+	baseUrl: string,
+	token: string
+): Promise<{ actions: string[]; builtinRoles: PlatformRoleView[] }> {
+	const v = await request<{
+		success: boolean;
+		actions: string[];
+		builtin_roles: { name: string; builtin: boolean; permissions: string[] }[];
+	}>(baseUrl, '/api/platform/permissions', { token });
+	return {
+		actions: v.actions,
+		builtinRoles: (v.builtin_roles ?? []).map((r) => ({
+			name: r.name,
+			builtin: r.builtin,
+			status: 'ACTIVE',
+			description: '',
+			permissions: r.permissions,
+		})),
+	};
+}
+
+/** `GET /api/platform/users` — 用户列表(view_users 或 manage_users) */
+export async function listUsers(
+	baseUrl: string,
+	token: string
+): Promise<{ users: PlatformUserView[]; version: number }> {
+	const v = await request<{ success: boolean; users: PlatformUserView[]; version: number }>(
+		baseUrl,
+		'/api/platform/users',
+		{ token }
+	);
+	return { users: v.users, version: v.version };
+}
+
+export interface CreateUserInput {
+	username: string;
+	password: string;
+	displayName?: string;
+	email?: string;
+	department?: string;
+	role: string;
+}
+
+/** `POST /api/platform/users` — 创建用户(manage_users) */
+export async function createUser(
+	baseUrl: string,
+	token: string,
+	input: CreateUserInput
+): Promise<void> {
+	await request<{ success: boolean }>(baseUrl, '/api/platform/users', {
+		method: 'POST',
+		token,
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			username: input.username,
+			password: input.password,
+			display_name: input.displayName ?? '',
+			email: input.email ?? '',
+			department: input.department ?? '',
+			role: input.role,
+		}),
+	});
+}
+
+export interface UpdateUserInput {
+	displayName?: string;
+	email?: string;
+	department?: string;
+	role?: string;
+	status?: string;
+}
+
+/** `PATCH /api/platform/users/{username}` — 更新用户(manage_users) */
+export async function updateUser(
+	baseUrl: string,
+	token: string,
+	username: string,
+	input: UpdateUserInput
+): Promise<void> {
+	const body: Record<string, string> = {};
+	if (input.displayName !== undefined) body.display_name = input.displayName;
+	if (input.email !== undefined) body.email = input.email;
+	if (input.department !== undefined) body.department = input.department;
+	if (input.role !== undefined) body.role = input.role;
+	if (input.status !== undefined) body.status = input.status;
+	await request<{ success: boolean }>(
+		baseUrl,
+		`/api/platform/users/${encodeURIComponent(username)}`,
+		{ method: 'PATCH', token, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+	);
+}
+
+/** `DELETE /api/platform/users/{username}` — 删除用户(墓碑,manage_users) */
+export async function deleteUser(
+	baseUrl: string,
+	token: string,
+	username: string
+): Promise<void> {
+	await request<{ success: boolean }>(
+		baseUrl,
+		`/api/platform/users/${encodeURIComponent(username)}`,
+		{ method: 'DELETE', token }
+	);
+}
+
+/** `GET /api/platform/roles` — 角色列表(登录用户可读) */
+export async function listRoles(
+	baseUrl: string,
+	token: string
+): Promise<{ roles: PlatformRoleView[]; version: number }> {
+	const v = await request<{ success: boolean; roles: PlatformRoleView[]; version: number }>(
+		baseUrl,
+		'/api/platform/roles',
+		{ token }
+	);
+	return { roles: v.roles, version: v.version };
+}
+
+export interface CreateRoleInput {
+	name: string;
+	description?: string;
+	permissions: string[];
+}
+
+/** `POST /api/platform/roles` — 创建自定义角色(manage_roles) */
+export async function createRole(
+	baseUrl: string,
+	token: string,
+	input: CreateRoleInput
+): Promise<void> {
+	await request<{ success: boolean }>(baseUrl, '/api/platform/roles', {
+		method: 'POST',
+		token,
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			name: input.name,
+			description: input.description ?? '',
+			permissions: input.permissions,
+		}),
+	});
+}
+
+export interface UpdateRoleInput {
+	description?: string;
+	status?: string;
+	permissions?: string[];
+}
+
+/** `PATCH /api/platform/roles/{name}` — 更新角色(manage_roles) */
+export async function updateRole(
+	baseUrl: string,
+	token: string,
+	name: string,
+	input: UpdateRoleInput
+): Promise<void> {
+	const body: Record<string, unknown> = {};
+	if (input.description !== undefined) body.description = input.description;
+	if (input.status !== undefined) body.status = input.status;
+	if (input.permissions !== undefined) body.permissions = input.permissions;
+	await request<{ success: boolean }>(
+		baseUrl,
+		`/api/platform/roles/${encodeURIComponent(name)}`,
+		{ method: 'PATCH', token, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+	);
+}
+
+/** `DELETE /api/platform/roles/{name}` — 删除自定义角色(墓碑,manage_roles) */
+export async function deleteRole(
+	baseUrl: string,
+	token: string,
+	name: string
+): Promise<void> {
+	await request<{ success: boolean }>(
+		baseUrl,
+		`/api/platform/roles/${encodeURIComponent(name)}`,
+		{ method: 'DELETE', token }
+	);
+}
