@@ -73,6 +73,26 @@
   });
 
   // ===== 连接 =====
+  /**
+   * 可达性探测(UV-007 连通性自检):no-cors 模式下仅判网络层通断,
+   * resolve=服务可达(reject=不可达),不读响应内容( opaque,无 CORS 依赖)。
+   */
+  async function probeReachable(baseUrl: string): Promise<boolean> {
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 5000);
+      await fetch(baseUrl.replace(/\/+$/, '') + '/', {
+        method: 'GET',
+        mode: 'no-cors',
+        signal: ctl.signal
+      });
+      clearTimeout(timer);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function handleConnect(): Promise<void> {
     const cfg = get(governanceConfig);
     if (!cfg.baseUrl.trim() || !cfg.username || !cfg.password) {
@@ -85,7 +105,12 @@
       await connect(cfg.baseUrl.trim(), cfg.tenantId.trim() || 'default', cfg.username, cfg.password);
       toastSuccess('已连接 evorule-rule', '治理');
     } catch (e) {
-      connError = e instanceof Error ? e.message : String(e);
+      // UV-007 连通性自检:区分「服务不可达」与「凭据/权限错误」,分别给出自服务引导
+      const reachable = await probeReachable(cfg.baseUrl.trim());
+      const raw = e instanceof Error ? e.message : String(e);
+      connError = reachable
+        ? `服务可达但登录失败:${raw}\n请检查用户名/密码(治理凭据与主系统独立;体验包演示凭据 admin/evorule-demo,见 README-STARTUP.txt)。`
+        : `无法连接治理服务 ${cfg.baseUrl.trim()}。\n请确认 evorule-rule-serve(:18081)已启动 —— 分发包由 start-evorule.bat 自动拉起,手动部署见 README-STARTUP.txt;若刚启动请稍候重试。`;
     } finally {
       connecting = false;
     }
@@ -447,6 +472,11 @@
       <p class="hint">
         连接规则资产库(:18081)以管理数据集、规则与发布。密码仅存本地(localStorage),不上传。
       </p>
+      <p class="hint boundary-note">
+        <strong>为什么是两个系统?</strong>治理中心是独立子系统 evorule-rule(规则资产库:
+        五态生命周期、审批发布、版本链),主系统 evorule-server(:18080)负责规则执行与审计。
+        资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。体验包演示凭据:admin / evorule-demo(见 README-STARTUP.txt)。
+      </p>
       <label class="field">
         <span>服务地址</span>
         <input
@@ -786,6 +816,14 @@
     color: var(--text-secondary);
     font-size: var(--text-sm);
     margin: 0 0 var(--spacing-md);
+  }
+  .boundary-note {
+    border-left: 3px solid var(--brand);
+    padding-left: var(--spacing-sm);
+    background: color-mix(in srgb, var(--brand) 5%, transparent);
+    padding-top: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
   .field {
     display: flex;

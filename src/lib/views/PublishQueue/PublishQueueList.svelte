@@ -175,7 +175,13 @@
   {:else if error}
     <div class="queue-error">⚠️ {error}</div>
   {:else if queue.length === 0}
-    <div class="queue-empty">📭 暂无发布请求</div>
+    <div class="queue-empty">
+      📭 暂无发布请求
+      <p class="queue-empty-hint">
+        发布请求经治理审批流产生:在「治理中心」将数据集推进到 Active 后提交发布,
+        请求会出现在这里等待处理。当前队列健康为空属正常状态。
+      </p>
+    </div>
   {:else}
     <div class="queue-list">
       {#each queue as req (req.id)}
@@ -299,6 +305,13 @@
     color: var(--text-secondary, #64748b);
     background: var(--bg-card);
     border-radius: 8px;
+  }
+  .queue-empty-hint {
+    margin: 8px auto 0;
+    max-width: 460px;
+    font-size: 13px;
+    color: var(--text-secondary, #64748b);
+    opacity: 0.85;
   }
   .queue-error {
     padding: 48px;

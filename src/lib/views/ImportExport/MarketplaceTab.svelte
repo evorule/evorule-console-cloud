@@ -161,6 +161,10 @@
   {#if $filteredTemplates.length === 0}
     <div class="mt-empty">
       📭 未找到匹配的模板
+      <p class="mt-empty-hint">
+        想快速上手?点右上「📥 导入官方规则集」一键导入内置规则集(如等保 2.0 三级门禁),
+        或上传你自己的模板。
+      </p>
     </div>
   {:else}
     <div class="mt-grid">
@@ -304,6 +308,13 @@
     font-size: 14px;
     background: #f9fafb;
     border-radius: 6px;
+  }
+  .mt-empty-hint {
+    margin: 8px auto 0;
+    max-width: 460px;
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
+    opacity: 0.85;
   }
   .mt-grid {
     display: grid;
