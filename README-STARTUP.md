@@ -1,4 +1,4 @@
-﻿# evorule 一键启动指南
+# evorule 一键启动指南
 
 > 双击就启动全栈,关掉就全部停止 — 解决"多 cd / 多后端分散 / 后台进程管理"的产品级 UX 痛点。
 
@@ -107,6 +107,21 @@ $env:EVORULE_RULE_ARGS = '--host 127.0.0.1 --port 18081 --db C:\path\to\rule.db 
 > 与 server 一致的值即可全端点生效(详见 README.md「认证配置」)。
 > 受保护域(`stable.llm.*`/`stable.system.*`)写入仅 service token 可用
 > (`--service-token`,供服务间调用,浏览器端不用)。
+
+## 平台登录与用户管理(UV-017)
+
+除演示模式(P0 预置用户一键登录,走本地权限矩阵)外,console 支持**平台账号登录**,
+账号/角色/会话全部存于 evorule-server(事实日志回放,Argon2id 口令哈希,审计链留痕):
+
+- **首次部署**:登录页选「平台登录」→ server 无任何用户时自动进入引导,
+  创建第一个平台管理员(内置 `administrator` 角色,持有全部 15 个权限点)。
+- **登录态**:会话 token 有效期 7 天;登出/用户停用/删除即时吊销全部在线会话。
+- **用户管理**(左侧栏「👥 用户管理」,需 `view_users` 或 `manage_users`):
+  创建账号、分配角色、启停、删除;不能停用/删除自己,最后一名启用中的管理员受平台保护。
+- **角色管理**(「🛡️ 角色管理」,需 `manage_roles`):内置 4 角色
+  (administrator/approver/rule_engineer/viewer)不可删除;
+  `administrator` 权限集锁定,其余角色权限集可调整;支持创建自定义角色(权限矩阵勾选)。
+- **权限生效**:角色权限变更后,在线用户 ≤30 秒(下次导航)自动按新矩阵执行。
 
 也可改成 release 路径(更快启动,但需要 `cargo build --release`)。
 
