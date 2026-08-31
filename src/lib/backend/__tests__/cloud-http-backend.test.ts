@@ -303,3 +303,97 @@ describe('CloudHttpBackend 审计档案(UV-016)', () => {
     vi.unstubAllGlobals();
   });
 });
+
+// ============================================================================
+// 平台认证事件(UV-018):只读报表端点 /api/audit/platform-events
+// ============================================================================
+
+describe('CloudHttpBackend 平台认证事件(UV-018)', () => {
+  /** mock 全局 fetch 返回 JSON 响应,并捕获请求参数 */
+  function mockFetchJson(payload: unknown): ReturnType<typeof vi.fn> {
+    const fn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fn);
+    return fn;
+  }
+
+  const EVENTS = {
+    total: 2,
+    events: [
+      {
+        fact_id: 1,
+        path: 'platform.event.login_failed.1725000000001aaaa1111bbbb2222',
+        kind: 'login_failed',
+        ts_ms: 1725000000001,
+        detail: { username: 'bob' },
+      },
+      {
+        fact_id: 2,
+        path: 'platform.event.user_created.1725000000002cccc3333dddd4444',
+        kind: 'user_created',
+        ts_ms: 1725000000002,
+        detail: { username: 'carol', by: 'admin' },
+      },
+    ],
+  };
+
+  test('listPlatformEvents:GET /api/audit/platform-events + Bearer 头', async () => {
+    const fetchMock = mockFetchJson(EVENTS);
+    const backend = new CloudHttpBackend({
+      mode: 'offline',
+      localBaseUrl: 'http://127.0.0.1:18080',
+      authToken: 'tok-1',
+    });
+
+    const resp = await backend.listPlatformEvents();
+
+    expect(resp.total).toBe(2);
+    expect(resp.events[0].kind).toBe('login_failed');
+    expect(resp.events[1].detail).toEqual({ username: 'carol', by: 'admin' });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://127.0.0.1:18080/api/audit/platform-events');
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      'Bearer tok-1',
+    );
+    vi.unstubAllGlobals();
+  });
+
+  test('listPlatformEvents:kind 过滤 + limit 追加查询参数', async () => {
+    const fetchMock = mockFetchJson({ total: 1, events: [EVENTS.events[0]] });
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await backend.listPlatformEvents('login_failed', 50);
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      'http://localhost:18080/api/audit/platform-events?kind=login_failed&limit=50',
+    );
+    vi.unstubAllGlobals();
+  });
+
+  test('listPlatformEvents:无过滤参数时不带查询串', async () => {
+    const fetchMock = mockFetchJson({ total: 0, events: [] });
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await backend.listPlatformEvents();
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://localhost:18080/api/audit/platform-events');
+    vi.unstubAllGlobals();
+  });
+
+  test('端点非 2xx → 如实抛 HttpBackendError(不静默降级)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('未认证', { status: 401 })),
+    );
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await expect(backend.listPlatformEvents()).rejects.toThrow('HTTP 401');
+    vi.unstubAllGlobals();
+  });
+});

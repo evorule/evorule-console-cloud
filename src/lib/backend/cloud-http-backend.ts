@@ -90,6 +90,27 @@ export interface ArchiveSessionsResponse {
 	active_session_ids: number[];
 }
 
+// UV-018:平台认证事件(只读)响应类型(对齐 evorule-server platform_events_handler)
+export interface PlatformEventEntry {
+	/** 共享事实 ID(链序 = 写入时间序) */
+	fact_id: number;
+	/** 事实路径(完整,取证定位用) */
+	path: string;
+	/** 事件类型(login_success / user_created / role_updated / ...) */
+	kind: string;
+	/** 事件时间(Unix 毫秒,自路径内嵌时间戳解析;畸形路径为 null) */
+	ts_ms: number | null;
+	/** 事件详情(kind 特定:username / role / by / ...;缺失为 null) */
+	detail: Record<string, unknown> | null;
+}
+
+export interface PlatformEventsResponse {
+	/** 事件列表(fact_id 链序) */
+	events: PlatformEventEntry[];
+	/** 过滤后总数(limit 截断前) */
+	total: number;
+}
+
 export class CloudHttpBackend implements ExecutionBackend {
 	private backend: HttpBackend;
 	/** 内核 WorkspaceBackend 引用(读方法委托;+layout 注入同一实例) */
@@ -335,6 +356,28 @@ export class CloudHttpBackend implements ExecutionBackend {
 		const q = includeContent ? '?include_content=true' : '';
 		return this.backend.getJson<ArchiveAudit>(
 			`/api/audit-archive/sessions/${id}/audit${q}`
+		);
+	}
+
+	/**
+	 * 拉取平台认证事件(UV-018,消费 `GET /api/audit/platform-events`)。
+	 *
+	 * 只读报表:登录/改密/用户与角色管理事件已入共享事实 WAL(prev_hash 链),
+	 * 经此回看。失败直接抛 Error,由调用方展示错误状态(不静默返回空)。
+	 *
+	 * @param kind 可选,按事件类型过滤(如 login_failed)
+	 * @param limit 可选,最多返回条数(链序取前 N)
+	 */
+	async listPlatformEvents(
+		kind?: string,
+		limit?: number
+	): Promise<PlatformEventsResponse> {
+		const q = new URLSearchParams();
+		if (kind) q.set('kind', kind);
+		if (limit !== undefined) q.set('limit', String(limit));
+		const qs = q.toString();
+		return this.backend.getJson<PlatformEventsResponse>(
+			`/api/audit/platform-events${qs ? `?${qs}` : ''}`
 		);
 	}
 }

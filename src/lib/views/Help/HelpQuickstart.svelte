@@ -35,12 +35,12 @@
     <div class="step-num">1</div>
     <div class="step-body">
       <h3>看工作台(30 秒)</h3>
-      <p>启动后浏览器自动打开 evorule 首页(<code>http://127.0.0.1:5174/</code>)。点侧栏顶部 <code>🚀 工作台</code> 进入 dashboard,看到 5 个 region:</p>
+      <p>启动后浏览器自动打开 evorule 首页(<code>http://127.0.0.1:5174/</code>)。点侧栏顶部 <code>🧭 总览</code> 进入 dashboard,注册表驱动的卡片按序排布:</p>
       <ul>
-        <li>顶部状态条(server/rule 连接 + workspace)</li>
-        <li>4 统计卡(规则/Sessions/待审/最近 fact)</li>
+        <li>我的工作区 + 系统状态(server/rule 连接 + workspace)</li>
+        <li>统计卡(规则/Sessions/待审/最近 fact)</li>
         <li>一键操作 + 最近活动</li>
-        <li>跳单页(8 按钮)</li>
+        <li>快速跳单页(分析视图 + 治理页)</li>
       </ul>
     </div>
   </div>
@@ -49,7 +49,7 @@
     <div class="step-num">2</div>
     <div class="step-body">
       <h3>跳到规则库(1 分钟)</h3>
-      <p>点工作台 Region 2 第一张卡,或侧栏"分析视图 → 📐 规则库",或访问:</p>
+      <p>点工作台「📈 统计」卡的规则卡,或侧栏"分析视图 → 📐 规则库",或访问:</p>
       <button class="link-btn" onclick={() => jumpTo("/view/rules")}>/view/rules →</button>
       <p class="hint">期望看到 5 个 demo 规则(<code>rule.demo.*</code>)。空的话说明 evorule-rule-serve 没起。</p>
     </div>

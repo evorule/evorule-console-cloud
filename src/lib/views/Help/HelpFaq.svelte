@@ -57,7 +57,7 @@
   </div>
 
   <div class="faq">
-    <h3>Q:工作台 Region 3 加规则只支持"set" type,怎么加 call/conditional?</h3>
+    <h3>Q:工作台「一键操作」的加规则只支持"set" type,怎么加 call/conditional?</h3>
     <p>当前只预填了 set 模板。要加其它 type,改 <code>WorkbenchQuick.svelte</code> 加 type 下拉选择,或直接去 <code>/view/rules</code> 完整规则库视图操作。</p>
   </div>
 
@@ -74,7 +74,7 @@
 
   <div class="faq">
     <h3>Q:侧栏的"工作台"和"分析视图"是什么关系?</h3>
-    <p>"🚀 工作台"是新加的极简首页(<code>/workbench</code>),一屏看清所有状态。"分析视图"下面是 5 个深度视图(规则库/执行台/状态/审计/时间旅行),适合具体操作。</p>
+    <p>"🧭 总览"是极简首页(<code>/workbench</code>),一屏看清所有状态。"分析视图"下面是 5 个深度视图(规则库/执行台/状态/审计/时间旅行),适合具体操作。</p>
     <p>workbench 适合"看一眼",分析视图适合"做一件事"。</p>
   </div>
 
