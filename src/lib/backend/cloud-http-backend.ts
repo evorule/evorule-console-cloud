@@ -215,8 +215,8 @@ export class CloudHttpBackend implements ExecutionBackend {
 	/**
 	 * 拉取生产运行状态(委托内核 WorkspaceBackend.getProductionState)。
 	 *
-	 * cloud 版 L1 监控大屏(P05) + HomeRouter 状态 C 默认层选择(T1 resolveDefaultLayer)
-	 * 需要此数据。
+	 * cloud 版 L1 监控大屏(P05,现 /monitor 直达页)与总览 monitor-summary
+	 * widget(UV-021)需要此数据。
 	 *
 	 * # 错误容错(大屏不因一次拉取失败而崩)
 	 * 任何失败(网络 / 401 凭据 / 404 未初始化)→ 返回 status="offline" 默认值,

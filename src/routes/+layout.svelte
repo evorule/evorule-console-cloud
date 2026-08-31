@@ -503,17 +503,29 @@
     <!-- 左导航侧栏 -->
     <aside class="sidebar sidebar-left {leftDrawerOpen ? 'drawer-open' : ''}" style:width={`${leftWidth}px`}>
       <div class="sidebar-section">
-        <!-- 极简工作台(新)— Dashboard 风格,任何时候可访问 -->
+        <!-- 总览(UV-021 W2)— 唯一首页,Dashboard 风格,任何时候可访问 -->
         <button
           class="sidebar-item workbench-item"
           class:active={isActive("/workbench")}
           aria-current={isActive("/workbench") ? "page" : undefined}
           onclick={navWorkbenchRoute}
-          title="极简首页 — 一键看到所有状态 + 高频操作 + 单页跳"
+          title="总览 — 一键看到所有状态 + 高频操作 + 单页跳"
           aria-pressed={isActive("/workbench")}
         >
-          <span class="nav-icon">🚀</span>
-          <span class="nav-label">工作台</span>
+          <span class="nav-icon">🧭</span>
+          <span class="nav-label">总览</span>
+        </button>
+        <!-- 监控大屏直达(UV-021 W2)— 原 RealWorkbench L1 面板独立成页 -->
+        <button
+          class="sidebar-item"
+          class:active={isActive("/monitor")}
+          aria-current={isActive("/monitor") ? "page" : undefined}
+          onclick={() => go("/monitor")}
+          title="监控大屏 — 生产运行状态实时总览"
+          aria-pressed={isActive("/monitor")}
+        >
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">监控</span>
         </button>
       </div>
 

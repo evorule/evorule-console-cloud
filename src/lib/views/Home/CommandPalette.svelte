@@ -38,7 +38,7 @@
 
 	function buildCommands(): Command[] {
 		const nav: Command[] = [
-			{ id: "nav-workbench", title: "工作台", group: "导航", hint: "极简 dashboard,随时可进", keywords: "workbench dashboard 首页", run: () => goto("/workbench") },
+			{ id: "nav-workbench", title: "总览", group: "导航", hint: "首页 dashboard,随时可进", keywords: "workbench dashboard 首页 总览", run: () => goto("/workbench") },
 			{ id: "nav-help", title: "帮助中心", group: "导航", hint: "5 分钟上手 + 详细指南", keywords: "help 帮助 文档", run: () => goto("/help") },
 			{ id: "nav-governance", title: "治理中心", group: "导航", hint: "数据集 / 规则 / 5 态生命周期", keywords: "governance 规则 治理", run: () => goto("/governance") },
 			{ id: "nav-audit", title: "审计记录", group: "导航", hint: "BLAKE3 审计链 + 因果回溯", keywords: "audit 审计", run: () => goto("/audit") },
