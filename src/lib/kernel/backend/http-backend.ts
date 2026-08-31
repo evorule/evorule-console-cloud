@@ -309,6 +309,14 @@ export class HttpBackend implements ExecutionBackend {
     );
   }
 
+  /**
+   * 公开只读 GET JSON(UV-016 审计档案等 server 扩展端点使用)。
+   * 复用统一 headers(Bearer)与错误处理,供 Cloud 层组合调用。
+   */
+  getJson<T>(path: string): Promise<T> {
+    return this.fetchJson<T>(path);
+  }
+
   // ------------------------------------------------------------------------
   // === 时间旅行 ===
   // ------------------------------------------------------------------------
