@@ -475,7 +475,8 @@
       <p class="hint boundary-note">
         <strong>为什么是两个系统?</strong>治理中心是独立子系统 evorule-rule(规则资产库:
         五态生命周期、审批发布、版本链),主系统 evorule-server(:18080)负责规则执行与审计。
-        资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。体验包演示凭据:admin / evorule-demo(见 README-STARTUP.txt)。
+        资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。体验包演示凭据:admin / evorule-demo(见 README-STARTUP.txt);
+        正式部署须先换密钥与密码(幂等引导仅首启生效,详见 README-STARTUP.txt「安全提示」)。
       </p>
       <label class="field">
         <span>服务地址</span>
