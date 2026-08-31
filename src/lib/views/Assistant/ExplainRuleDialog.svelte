@@ -26,6 +26,9 @@
 	let errorMsg = $state<string | null>(null);
 
 	async function handleExplain() {
+		// 并发防护:上一次调用未结束前忽略重复触发(自动触发与手动重试竞态
+		// 会产生两个侧车审计会话,晚到的失败会覆盖成功结果 — UV-003 实测教训)
+		if (isLoading) return;
 		if (!assistant) {
 			errorMsg = 'LLM 未注入(配置不完备?)';
 			return;
