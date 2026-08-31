@@ -21,6 +21,7 @@ import { get } from 'svelte/store';
 import { sessionStore } from '$lib/stores/session';
 import { checkEmptyDb } from '$lib/stores/db';
 import { can } from '$lib/stores/auth';
+import { toastInfo } from '$lib/stores/toast';
 
 export const load: LayoutLoad = ({ url }) => {
 	if (!browser) return {}; // SSR/prerender 时跳过守卫(adapter-static 默认无 SSR)
@@ -61,8 +62,21 @@ export const load: LayoutLoad = ({ url }) => {
 	}
 
 	if (url.pathname === '/audit') {
-		if (!session.loggedIn) throw redirect(307, '/login');
-		if (!can('view_audit_chain')) throw redirect(307, '/');
+		if (!session.loggedIn) {
+			// UV-014:登录墙前置说明 —— 守卫 redirect 会短路页面 onMount,提示必须在这里给
+			toastInfo(
+				'审计员工作台属治理侧,需治理角色登录(auditor/admin 等)。演示凭据见包内 README-STARTUP.txt;本地免登录的审计链视图在工作台「审计」入口。',
+				'登录墙'
+			);
+			throw redirect(307, '/login');
+		}
+		if (!can('view_audit_chain')) {
+			toastInfo(
+				'当前账号无 view_audit_chain 权限(需 auditor/admin 等治理角色)。如需演示,请用 README-STARTUP.txt 中的治理凭据登录。',
+				'权限不足'
+			);
+			throw redirect(307, '/');
+		}
 	}
 
 	// /login / /demo 不守卫

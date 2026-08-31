@@ -10,6 +10,7 @@
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import Term from '$lib/views/Help/Term.svelte';
 
+  // 登录墙前置说明在 +layout.ts 守卫(toast + redirect);此处 onMount 仅作双保险跳转
   onMount(() => {
     if (!$isLoggedIn) {
       goto('/login');

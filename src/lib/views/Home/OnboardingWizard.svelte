@@ -115,6 +115,8 @@
   function handleComplete(): void {
     // 释放 wizardInProgress → HomeRouter 自动切到状态 C(此时有库 + 有规则)
     setWizardInProgress(false);
+    // UV-014 导航发现性:建库完成即指路市场(官方规则集导入是体验链路的下一站)
+    toastInfo('建库完成!工作台右上「快速跳单页」或左侧导航「市场」可一键导入官方规则集(如等保 2.0 门禁)。', '下一步');
     autoMode();
   }
 
