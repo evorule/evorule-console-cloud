@@ -3,20 +3,29 @@ evorule 体验版(单机一键启动)
 
 环境要求
 --------
-- Windows 10/11 64 位
+- Windows 10/11 64 位,或 macOS 12+(Apple Silicon/Intel),或主流
+  Linux x86_64 发行版
 - 无需安装任何运行时(Node/Rust/数据库都不需要)
+- 注意:三个平台的包各自独立(二进制不通用),按你的系统下载
+  对应压缩包(win64 / macos64 / linux64)
 
 启动
 ----
 1. 解压本压缩包到任意目录(路径建议不含空格)
-2. 双击 start-evorule.bat
+2. 双击 start-evorule.bat (Windows)
+   macOS: 终端执行 sh start-evorule.sh,或双击 start-evorule.command
+   Linux: 终端执行 sh start-evorule.sh
+   (macOS/Linux 首次使用需先执行:
+    chmod +x evorule-server evorule-rule-serve)
 3. 浏览器自动打开 http://localhost:18080 即可使用
 
 退出
 ----
-关闭任务栏上最小化的两个窗口("evorule-server" 和 "evorule-rule")即可。
-两个服务互相独立,一个失败不影响另一个;全部关闭后再双击
-start-evorule.bat 可重新启动。
+Windows: 关闭任务栏上最小化的两个窗口("evorule-server" 和
+"evorule-rule")即可。
+macOS/Linux: 执行 sh stop-evorule.sh(服务日志在 data/logs/ 下)。
+两个服务互相独立,一个失败不影响另一个;全部关闭后再重新
+启动即可。
 
 体验治理视图(规则资产库,可选)
 ------------------------------
@@ -103,7 +112,8 @@ service_registry.json,可自行扩展为真实 HTTP 服务端点。
 常见问题
 --------
 Q: 端口 18080 或 18081 被占用怎么办?
-A: 编辑 start-evorule.bat,把对应端口改成其他值(如 18081→18082),
+A: 编辑启动脚本(Windows: start-evorule.bat;macOS/Linux:
+   start-evorule.sh),把对应端口改成其他值(如 18081→18082),
    浏览器地址与治理页连接地址也相应修改。
 
 Q: 浏览器没自动打开?
