@@ -62,6 +62,12 @@
 			model: preset.defaultModel
 		});
 
+		// 预设占位 Key(如 Ollama 固定 'ollama'):仅当用户未填 Key 时自动填入,
+		// 避免覆盖用户从其他厂商带来的真实 Key
+		if (preset.presetApiKey && !apiKeyInput.trim()) {
+			updateLlmConfig({ apiKey: preset.presetApiKey });
+		}
+
 		// 清空测试结果(切换厂商后需重测)
 		testResult = null;
 	}
@@ -291,19 +297,22 @@
 	{:else}
 		<div class="alert alert-info">
 			ℹ️ LLM 已禁用。规则库/执行台视图将与 evorule-console 内核一致,不渲染 AI 按钮。
-			启用后可配置云 LLM 厂商(智谱 GLM 有免费额度)。
+			启用后可配置云 LLM 厂商;若无 API Key,可选「Ollama(本机)」预设,
+			本机安装 Ollama 后无需联网、无需 Key 即可使用(智谱 GLM 有免费额度)。
 		</div>
 	{/if}
 
-	<!-- L2 占位(Phase 7 规划文档,Phase 6 仅占位) -->
+	<!-- 本地 LLM:Ollama 预设已可用(OpenAI 兼容端点直连本机);L2 指 llama.cpp 等深度集成 -->
 	<hr class="divider" />
 	<div class="l2-placeholder">
-		<h3>🖥️ 本地 LLM(L2,付费扩展,敬请期待)</h3>
+		<h3>🖥️ 本地 LLM</h3>
 		<p class="hint">
-			基于 Ollama / llama.cpp 的本地 LLM 集成,无需联网,数据不出本机。
-			适合对数据隐私要求高的企业用户。
+			已支持:厂商预设选择「Ollama(本机,无需联网/Key)」——本机安装并运行
+			<code>ollama serve</code> 后,启用 LLM 并选中该预设即可使用本地模型,数据不出本机。
 		</p>
-		<p class="hint muted">规划中,大众版 v0.1.0 不含此功能。详见 docs/L2_LOCAL_LLM_PLAN.md</p>
+		<p class="hint muted">
+			深度集成(模型管理/推理参数/自动启停)为后续版本规划。
+		</p>
 	</div>
 </section>
 
