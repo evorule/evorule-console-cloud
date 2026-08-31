@@ -23,9 +23,11 @@
     type PlatformRoleView,
   } from "$lib/backend/platform-auth-api";
   import { netConfig } from "$lib/config/net-config";
-  import { getCurrentUser } from "$lib/stores/auth";
-  import { PLATFORM_ROLE_LABELS } from "$lib/stores/auth";
+  import { currentUser, hasPermission, PLATFORM_ROLE_LABELS } from "$lib/stores/auth";
   import { toastSuccess, toastError } from "$lib/stores/toast";
+
+  /** 是否可管理(manage_users);仅 view_users 时页面为只读视图(与 server 403 语义一致) */
+  const canManage = $derived(hasPermission($currentUser, "manage_users"));
 
   let users = $state<PlatformUserView[]>([]);
   let roles = $state<PlatformRoleView[]>([]);
@@ -34,7 +36,7 @@
   let busy = $state(false);
 
   // 当前登录名(自我保护:不渲染对自己的 停用/删除 按钮)
-  const myUsername = getCurrentUser()?.username ?? "";
+  const myUsername = $derived($currentUser?.username ?? "");
 
   // === 弹窗状态 ===
   let showCreate = $state(false);
@@ -182,9 +184,13 @@
   <header class="page-header">
     <h2>👥 用户管理</h2>
     <span class="page-count">{users.length} 个账号</span>
-    <button class="btn btn-primary" onclick={() => (showCreate = true)} disabled={busy}>
-      + 创建用户
-    </button>
+    {#if canManage}
+      <button class="btn btn-primary" onclick={() => (showCreate = true)} disabled={busy}>
+        + 创建用户
+      </button>
+    {:else}
+      <span class="readonly-note">只读(view_users) · 管理需 manage_users</span>
+    {/if}
   </header>
 
   {#if loading}
@@ -219,14 +225,18 @@
                 </span>
               </td>
               <td class="row-actions">
-                <button class="btn btn-sm" onclick={() => openEdit(u)} disabled={busy}>编辑</button>
-                {#if u.username !== myUsername}
-                  <button class="btn btn-sm" onclick={() => toggleStatus(u)} disabled={busy}>
-                    {u.status === 'ACTIVE' ? '停用' : '启用'}
-                  </button>
-                  <button class="btn btn-sm btn-danger" onclick={() => (deleteTarget = u)} disabled={busy}>
-                    删除
-                  </button>
+                {#if canManage}
+                  <button class="btn btn-sm" onclick={() => openEdit(u)} disabled={busy}>编辑</button>
+                  {#if u.username !== myUsername}
+                    <button class="btn btn-sm" onclick={() => toggleStatus(u)} disabled={busy}>
+                      {u.status === 'ACTIVE' ? '停用' : '启用'}
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick={() => (deleteTarget = u)} disabled={busy}>
+                      删除
+                    </button>
+                  {/if}
+                {:else}
+                  <span class="dim">—</span>
                 {/if}
               </td>
             </tr>
@@ -363,6 +373,11 @@
   }
   .page-header .btn-primary {
     margin-left: auto;
+  }
+  .readonly-note {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
   }
   .page-empty {
     padding: 48px;

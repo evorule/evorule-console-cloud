@@ -32,7 +32,7 @@
   import { CloudWorkspaceBackend, setActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { roleToBackend } from "$lib/backend/production-views";
-  import { currentUser, can } from "$lib/stores/auth";
+  import { currentUser, hasPermission } from "$lib/stores/auth";
   import { MockBackend } from "$lib/backend/mock-backend";
   import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
   import { netConfig, toggleNetMode } from "$lib/config/net-config";
@@ -626,8 +626,10 @@
             <span class="nav-icon">🗂️</span>
             <span class="nav-label">治理中心</span>
           </button>
-          <!-- 平台管理(UV-017 W4):仅 platform 登录且持有对应用户可见 -->
-          {#if can("view_users") || can("manage_users")}
+          <!-- 平台管理(UV-017 W4):仅 platform 登录且持有对应用户可见。
+               用 hasPermission($currentUser,…) 而非 can():后者内部 get(currentUser)
+               非响应式,模板表达式不会随登录态变化重算 -->
+          {#if hasPermission($currentUser, "view_users") || hasPermission($currentUser, "manage_users")}
             <button
               class="sidebar-item"
               class:active={isActive("/users")}
@@ -640,7 +642,7 @@
               <span class="nav-label">用户管理</span>
             </button>
           {/if}
-          {#if can("manage_roles")}
+          {#if hasPermission($currentUser, "manage_roles")}
             <button
               class="sidebar-item"
               class:active={isActive("/roles")}
