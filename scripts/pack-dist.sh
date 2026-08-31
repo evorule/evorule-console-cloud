@@ -9,6 +9,7 @@
 #   web/                     <- 本仓 adapter-static 产物(build/)
 #   rules/                   <- 本仓 assets/evorule-rules/
 #   resources/core_eval.json <- evorule-server 仓 TCB 宪法
+#   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,UV-033)
 #   start-evorule.sh / stop-evorule.sh / README-STARTUP.txt
 #
 # 用法(先完成三处构建,在目标平台本机执行):
@@ -48,6 +49,7 @@ for f in "$SERVER_BIN" "$RULE_BIN" "$CORE_EVAL" \
          "$ROOT/assets/evorule-rules/llm-audit-bridge.json" \
          "$ROOT/assets/evorule-rules/demo-svc.json" \
          "$ROOT/assets/service_registry.json" \
+         "$ROOT/assets/plugin_manifest.json" \
          "$ROOT/packaging/start-evorule.sh" \
          "$ROOT/packaging/stop-evorule.sh" \
          "$ROOT/packaging/README-STARTUP.txt"; do
@@ -71,6 +73,7 @@ cp -R "$ROOT/build/." "$STAGE/web"
 cp "$ROOT/assets/evorule-rules/"* "$STAGE/rules"
 cp "$CORE_EVAL" "$STAGE/resources/core_eval.json"
 cp "$ROOT/assets/service_registry.json" "$STAGE/service_registry.json"
+cp "$ROOT/assets/plugin_manifest.json" "$STAGE/plugin_manifest.json"
 cp "$ROOT/packaging/start-evorule.sh" "$STAGE/start-evorule.sh"
 cp "$ROOT/packaging/stop-evorule.sh" "$STAGE/stop-evorule.sh"
 chmod +x "$STAGE/start-evorule.sh" "$STAGE/stop-evorule.sh" \
@@ -100,11 +103,12 @@ check "$CORE_EVAL" "$STAGE/resources/core_eval.json"
 check "$ROOT/assets/evorule-rules/llm-audit-bridge.json" "$STAGE/rules/llm-audit-bridge.json"
 check "$ROOT/assets/evorule-rules/demo-svc.json" "$STAGE/rules/demo-svc.json"
 check "$ROOT/assets/service_registry.json" "$STAGE/service_registry.json"
+check "$ROOT/assets/plugin_manifest.json" "$STAGE/plugin_manifest.json"
 check "$ROOT/build/index.html" "$STAGE/web/index.html"
 check "$ROOT/packaging/start-evorule.sh" "$STAGE/start-evorule.sh"
 check "$ROOT/packaging/stop-evorule.sh" "$STAGE/stop-evorule.sh"
 check "$ROOT/packaging/README-STARTUP.txt" "$STAGE/README-STARTUP.txt"
-echo "[OK] 10 项关键文件复制核验通过"
+echo "[OK] 11 项关键文件复制核验通过"
 
 # ---- 打 tar.gz ----
 cd "$ROOT/dist"

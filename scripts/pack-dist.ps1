@@ -8,6 +8,7 @@
 #   web/                     <- 本仓 adapter-static 产物(build/)
 #   rules/                   <- 本仓 assets/evorule-rules/(LLM 审计桥剧本)
 #   resources/core_eval.json <- evorule-server 仓 TCB 宪法(server 默认路径 ./resources/)
+#   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,UV-033)
 #   start-evorule.bat       <- packaging/ 启动脚本(双服务,部分保活)
 #   README-STARTUP.txt      <- packaging/ 使用说明
 #
@@ -32,6 +33,7 @@ $stage = "$root\dist\$stageName"
 # ---- 前置校验(fail-fast,缺件不打包) ----
 foreach ($f in @($ServerExe, $CoreEval, $RuleExe, "$root\build\index.html", "$root\assets\evorule-rules\llm-audit-bridge.json",
                  "$root\assets\evorule-rules\demo-svc.json", "$root\assets\service_registry.json",
+                 "$root\assets\plugin_manifest.json",
                  "$root\packaging\start-evorule.bat", "$root\packaging\README-STARTUP.txt")) {
     if (-not (Test-Path $f)) { throw "缺少前置文件: $f (是否已完成 release 构建 / npm run build?)" }
 }
@@ -57,6 +59,7 @@ $expect = @{
     "$stage\rules\llm-audit-bridge.json" = (Get-Item "$root\assets\evorule-rules\llm-audit-bridge.json").Length
     "$stage\rules\demo-svc.json"         = (Get-Item "$root\assets\evorule-rules\demo-svc.json").Length
     "$stage\service_registry.json"       = (Get-Item "$root\assets\service_registry.json").Length
+    "$stage\plugin_manifest.json"        = (Get-Item "$root\assets\plugin_manifest.json").Length
     "$stage\web\index.html"              = (Get-Item "$root\build\index.html").Length
     "$stage\start-evorule.bat"           = (Get-Item "$root\packaging\start-evorule.bat").Length
     "$stage\README-STARTUP.txt"          = (Get-Item "$root\packaging\README-STARTUP.txt").Length
@@ -65,7 +68,7 @@ foreach ($k in $expect.Keys) {
     if (-not (Test-Path $k)) { throw "复制核验失败(目标缺失): $k" }
     if ((Get-Item $k).Length -ne $expect[$k]) { throw "复制核验失败(大小不一致): $k" }
 }
-Write-Host "[OK] 9 项关键文件复制核验通过"
+Write-Host "[OK] 10 项关键文件复制核验通过"
 
 # ---- 打 zip ----
 $zip = "$root\dist\$stageName.zip"

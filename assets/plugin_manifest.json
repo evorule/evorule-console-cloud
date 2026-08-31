@@ -1,0 +1,7 @@
+{
+  "plugins": {
+    "demo-services": {
+      "enabled": true
+    }
+  }
+}

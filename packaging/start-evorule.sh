@@ -41,6 +41,7 @@ echo "[2/3] Starting main service (evorule-server, port $PORT_MAIN)..."
 nohup ./evorule-server \
     --addr "127.0.0.1:$PORT_MAIN" --web-dir web --rules-dir rules \
     --service-registry service_registry.json \
+    --plugins plugin_manifest.json \
     --wal-dir ./data/wal --wal-fsync \
     > "$LOG_DIR/evorule-server.log" 2>&1 &
 echo $! > data/evorule-server.pid
