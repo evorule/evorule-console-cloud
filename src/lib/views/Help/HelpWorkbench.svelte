@@ -2,17 +2,28 @@
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   HelpWorkbench — /help 的工作台速查 tab
-  内容:5 region 速查 + 何时用 / 不用
+  内容:总览页卡片速查 + 何时用 / 不用
+  UV-024:文案对齐 widgets/registry.ts 注册表现状,不再硬编码卡片数/region 数
 -->
 
 <div class="help-pane">
-  <h2>📊 工作台(/workbench)5 Region 速查</h2>
-  <p class="lead">极简首页 — Dashboard 风格,一屏看清一切。详细设计见 <code>docs/workbench.md</code>。</p>
+  <h2>📊 总览(/workbench)卡片速查</h2>
+  <p class="lead">注册表驱动的 Dashboard 首页,一屏看清一切。卡片集由 <code>widgets/registry.ts</code> 定义 — 新增卡片 = 写组件 + 追加一行,此处列举随版本演进,以注册表为准。</p>
 
   <div class="region">
-    <h3>1 · 顶部状态条</h3>
+    <h3>🧭 我的工作区</h3>
+    <p>登录身份、当前 workspace 与角色提示;未登录时给登录引导。</p>
+  </div>
+
+  <div class="region">
+    <h3>📊 生产运行摘要</h3>
+    <p>生产环境运行状态摘要。需 <code>view_monitor</code> 权限,无权限时自动隐藏。</p>
+  </div>
+
+  <div class="region">
+    <h3>🔌 系统状态</h3>
     <p><strong>显示</strong>:server/rule 连接状态 + workspace + 模式 + 版本</p>
-    <p><strong>关键交互</strong>:<code>🔄 刷新</code>(立即拉数据) / <code>📋 4 引导任务</code>(跳 5 步建库向导)</p>
+    <p><strong>关键交互</strong>:<code>🔄 刷新</code>(立即拉数据)</p>
     <p><strong>含义</strong>:</p>
     <ul>
       <li>● 已连接(server) = 18080 端口 listen 且 health() 通过</li>
@@ -23,7 +34,7 @@
   </div>
 
   <div class="region">
-    <h3>2 · 4 统计卡</h3>
+    <h3>📈 统计</h3>
     <div class="cards-grid">
       <div class="stat-preview">
         <div class="icon">📐</div>
@@ -54,7 +65,12 @@
   </div>
 
   <div class="region">
-    <h3>3 · 一键操作(3 tab)</h3>
+    <h3>🎯 决策者视图</h3>
+    <p>面向决策角色的待办与建议汇总。角色白名单可见(demo exec/auditor,平台 approver),其余角色自动隐藏。</p>
+  </div>
+
+  <div class="region">
+    <h3>⚡ 一键操作</h3>
     <ul>
       <li><strong>➕ 加规则</strong>:填规则 ID + JSON,点提交直接进当前 workspace(仅支持 <code>type: set</code>)</li>
       <li><strong>▶ 试运行</strong>:选 session + payload,点执行走 <code>submitCommand</code></li>
@@ -64,7 +80,7 @@
   </div>
 
   <div class="region">
-    <h3>4 · 最近活动</h3>
+    <h3>🕘 最近活动</h3>
     <p>从当前 session 的 <code>audit.entries</code> 取最近 8 条 fact。</p>
     <ul>
       <li>🟢 <strong>绿</strong>:command(提交了 set/call/conditional)</li>
@@ -76,24 +92,18 @@
   </div>
 
   <div class="region">
-    <h3>5 · 跳单页(8 按钮)</h3>
-    <div class="jump-grid">
-      <div class="jump-preview">📐 规则库</div>
-      <div class="jump-preview">▶ 执行台</div>
-      <div class="jump-preview">📦 状态</div>
-      <div class="jump-preview">🔍 审计</div>
-      <div class="jump-preview">⏱ 时间旅行</div>
-      <div class="jump-preview">📤 导出</div>
-      <div class="jump-preview">📥 发布队列</div>
-      <div class="jump-preview">🗂️ 治理中心</div>
-    </div>
-    <p>前 5 个无需登录;后 3 个(导出/发布队列/治理中心)未登录显示 🔒 锁。</p>
+    <h3>↗ 快速跳单页</h3>
+    <p>两组入口同网格:</p>
+    <ul>
+      <li><strong>分析视图</strong>(规则库/执行台/状态/审计/时间旅行)— 免登录</li>
+      <li><strong>页面入口</strong>(市场/导出/发布队列/治理中心)— 由导航注册表派生,门控与侧栏同清单同语义;未登录显示 🔒 锁</li>
+    </ul>
   </div>
 
   <h2>何时该看工作台</h2>
   <ul>
-    <li><strong>刚启动全栈</strong> — 看状态条,确认 server/rule 都连上</li>
-    <li><strong>新用户上手</strong> — 5 region 涵盖最常用操作</li>
+    <li><strong>刚启动全栈</strong> — 看「系统状态」卡,确认 server/rule 都连上</li>
+    <li><strong>新用户上手</strong> — 卡片集涵盖最常用操作</li>
     <li><strong>日常巡检</strong> — 一屏看清 3 件事:连接状态 / 待审数 / 最近活动</li>
     <li><strong>发现异常</strong> — "最近 FACT" 卡显示 #N 时,直接点跳审计查</li>
   </ul>
@@ -182,21 +192,6 @@
     font-size: 10px;
     color: var(--text-muted);
   }
-  .jump-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin: 8px 0;
-  }
-  .jump-preview {
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 8px;
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-primary);
-  }
   .hint {
     padding: 8px 12px;
     background: var(--bg-input);
@@ -214,7 +209,7 @@
     color: var(--text-primary);
   }
   @media (max-width: 768px) {
-    .cards-grid, .jump-grid {
+    .cards-grid {
       grid-template-columns: repeat(2, 1fr);
     }
   }

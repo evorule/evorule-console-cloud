@@ -8,6 +8,7 @@
   import { isLoggedIn, can } from '$lib/stores/auth';
   import BusinessAuditView from '$lib/views/Audit/BusinessAuditView.svelte';
   import ArchiveSessionsPanel from '$lib/views/Audit/ArchiveSessionsPanel.svelte';
+  import PlatformEventsPanel from '$lib/views/Audit/PlatformEventsPanel.svelte';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import Term from '$lib/views/Help/Term.svelte';
 
@@ -39,6 +40,8 @@
     <BusinessAuditView />
     <!-- UV-016:历史会话审计档案(只读,服务器重启后 WAL 重建回看) -->
     <ArchiveSessionsPanel />
+    <!-- UV-018:平台认证事件报表(登录/用户/角色管理事件,prev_hash 链) -->
+    <PlatformEventsPanel />
   </div>
 {:else}
   <div class="loading">检查权限中...</div>
