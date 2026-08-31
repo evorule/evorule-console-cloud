@@ -14,11 +14,12 @@
 <script lang="ts">
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import RollbackVersionPicker from "./RollbackVersionPicker.svelte";
-  import { getCurrentUser } from "$lib/stores/auth";
+  import { getCurrentUser, hasPermission } from "$lib/stores/auth";
+  import type { Role } from "$lib/stores/permission-matrix";
   import {
     ACTION_TO_CONFIRM,
+    ACTION_TO_PERMISSION,
     canPerform as logicCanPerform,
-    permissionTooltip as logicPermissionTooltip,
     type InterventionAction as LogicAction,
   } from "./intervention-bar-logic";
 
@@ -37,12 +38,23 @@
     return getCurrentUser()?.role ?? null;
   }
 
+  /**
+   * 权限判定(UV-017 W3 双轨):
+   * - platform 登录:服务端下发的 permissions 清单为准(hasPermission)
+   * - demo 登录:本地 P08 角色矩阵(logicCanPerform)
+   * 未映射动作默认允许(P0 宽松策略,与 logic 层一致)。
+   */
   function canPerform(action: InterventionAction): boolean {
-    return logicCanPerform(currentRole(), action);
+    const u = getCurrentUser();
+    if (!u) return false;
+    const perm = ACTION_TO_PERMISSION[action];
+    if (!perm) return true;
+    if (u.authKind === "platform") return hasPermission(u, perm);
+    return logicCanPerform(u.role as Role, action);
   }
 
   function permissionTooltip(action: InterventionAction): string {
-    return logicPermissionTooltip(currentRole(), action);
+    return canPerform(action) ? "" : "无权限(角色限制)";
   }
 
   let { currentRulesetVersion, onAction, disabled = false }: Props = $props();

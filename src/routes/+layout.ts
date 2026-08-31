@@ -20,11 +20,18 @@ import { browser } from '$app/environment';
 import { get } from 'svelte/store';
 import { sessionStore } from '$lib/stores/session';
 import { checkEmptyDb } from '$lib/stores/db';
-import { can } from '$lib/stores/auth';
+import { can, isPlatformSession, refreshCurrentUser } from '$lib/stores/auth';
 import { toastInfo } from '$lib/stores/toast';
 
 export const load: LayoutLoad = ({ url }) => {
 	if (!browser) return {}; // SSR/prerender 时跳过守卫(adapter-static 默认无 SSR)
+
+	// UV-017 W3:platform 会话节流刷新(30s 一次,随导航触发)。
+	// - 授权变更后权限矩阵自动更新(permissions_version)
+	// - 会话被吊销(登出/停用/删除)→ 本地登出,后续 loggedIn 判断自然跳登录
+	if (isPlatformSession()) {
+		void refreshCurrentUser();
+	}
 
 	const session = get(sessionStore);
 	const emptyDb = checkEmptyDb(); // 派生 isEmptyDb 的同步版(路由守卫用)
