@@ -86,6 +86,20 @@ export const load: LayoutLoad = ({ url }) => {
 		}
 	}
 
+	// /users /roles 平台管理路由守卫(UV-017 W4):
+	// - 未登录跳 /login
+	// - 权限不足跳 /(demo 用户权限矩阵不含平台管理点,自然被拒)
+	// - /users 需 view_users 或 manage_users;/roles 需 manage_roles
+	if (url.pathname === '/users') {
+		if (!session.loggedIn) throw redirect(307, '/login');
+		if (!can('view_users') && !can('manage_users')) throw redirect(307, '/');
+	}
+
+	if (url.pathname === '/roles') {
+		if (!session.loggedIn) throw redirect(307, '/login');
+		if (!can('manage_roles')) throw redirect(307, '/');
+	}
+
 	// /login / /demo 不守卫
 	// /(首页)不守卫:HomeRouter 自动决策
 

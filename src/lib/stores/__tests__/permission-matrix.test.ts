@@ -47,6 +47,16 @@ describe('P08 permission-matrix — 矩阵完整性', () => {
 		expect(ROLE_LABELS.exec).toBe('院领导');
 		expect(ROLE_LABELS.auditor).toBe('审计员');
 	});
+
+	// UV-017 W4:平台管理 3 点仅 platform 登录由服务端下发,
+	// demo 矩阵刻意不含 → 演示用户永远进不了用户/角色管理
+	test('demo 矩阵不含平台管理 3 点(manage_users/manage_roles/view_users)', () => {
+		for (const role of listAllRoles()) {
+			expect(checkPermission(role, 'manage_users')).toBe(false);
+			expect(checkPermission(role, 'manage_roles')).toBe(false);
+			expect(checkPermission(role, 'view_users')).toBe(false);
+		}
+	});
 });
 
 // ============================================================================

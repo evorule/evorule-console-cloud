@@ -12,7 +12,13 @@
 //
 // 关联设计:P08_COLLAB_WORKFLOW_DESIGN.md §5(权限矩阵详设)
 
-/** 权限动作清单(12 个,P08 §5.1) */
+/**
+ * 权限动作清单(12 业务点 + 3 平台管理点 = 15)。
+ * 与 evorule-server platform_auth::PLATFORM_ACTIONS 保持一一对应:
+ *   - 业务 12 点(P08 §5.1 种子):demo 矩阵(ROLE_PERMISSIONS)覆盖
+ *   - 平台管理 3 点(UV-017 新增):仅 platform 登录由服务端下发,
+ *     demo 矩阵刻意不含 → 演示用户永远无法进入用户/角色管理
+ */
 export type PermissionAction =
 	| 'view_monitor' // 查看监控大屏
 	| 'view_audit_chain' // 查看审计链
@@ -25,7 +31,18 @@ export type PermissionAction =
 	| 'start_sandbox' // 启动沙盒(需 WS 成员)
 	| 'approve_publish' // 审批发布
 	| 'view_publish_queue' // 查看发布队列
-	| 'view_test_report'; // 查看测试报告
+	| 'view_test_report' // 查看测试报告
+	// 平台管理 3 点(UV-017,server 权限点注册表权威定义)
+	| 'manage_users' // 用户管理(增删改/启停/改角色)
+	| 'manage_roles' // 角色管理(自定义角色 + 权限集)
+	| 'view_users'; // 查看用户列表(只读)
+
+/** 平台管理 3 点(角色矩阵编辑器分组渲染用;demo 矩阵不含) */
+export const PLATFORM_MANAGE_ACTIONS: PermissionAction[] = [
+	'view_users',
+	'manage_users',
+	'manage_roles',
+];
 
 /** 5 角色(P08 §5.2) */
 export type Role = 'user' | 'lead' | 'it' | 'exec' | 'auditor';
