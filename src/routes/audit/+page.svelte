@@ -7,6 +7,7 @@
   import { goto } from '$app/navigation';
   import { isLoggedIn, can } from '$lib/stores/auth';
   import BusinessAuditView from '$lib/views/Audit/BusinessAuditView.svelte';
+  import ArchiveSessionsPanel from '$lib/views/Audit/ArchiveSessionsPanel.svelte';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import Term from '$lib/views/Help/Term.svelte';
 
@@ -36,6 +37,8 @@
       <p><Term id="blake3" /> 不可篡改审计链 · 因果链回溯 · <Term id="timetravel" /> 回放</p>
     </header>
     <BusinessAuditView />
+    <!-- UV-016:历史会话审计档案(只读,服务器重启后 WAL 重建回看) -->
+    <ArchiveSessionsPanel />
   </div>
 {:else}
   <div class="loading">检查权限中...</div>

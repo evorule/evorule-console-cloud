@@ -48,6 +48,48 @@ import {
 	type VersionHistoryEntry,
 } from './production-views';
 
+// UV-016:审计档案(只读)响应类型(对齐 evorule-server audit_archive.rs)
+export interface ArchiveSessionMeta {
+	session_id: number;
+	fact_count: number;
+	first_fact_type: string;
+	last_fact_type: string;
+	/** LLM 侧车审计会话(首条 LLM 形态 Command 为 call_external 且带 messages) */
+	is_llm_sidecar: boolean;
+	/** 侧车审计用途(audit_purpose 标签,非侧车为 null) */
+	audit_purpose: string | null;
+	/** WAL 文件总字节数(含轮换分片) */
+	wal_bytes: number;
+}
+
+export interface ArchiveAuditEntry {
+	fact_id: number;
+	fact_type: string;
+	/** 1-based 审计链条目序号 */
+	logical_time: number;
+	prev_hash: string;
+	content_hash: string;
+	cause: number | null;
+	/** include_content=true 时的完整 Fact 内容(IoRequest params / IoResponse result 等) */
+	content_json?: unknown;
+}
+
+export interface ArchiveAudit {
+	session_id: number;
+	fact_count: number;
+	last_hash: string;
+	verified: boolean;
+	/** 旧格式无哈希记录数(不参与验证,如实上报) */
+	unhashed_records: number;
+	entries: ArchiveAuditEntry[];
+}
+
+export interface ArchiveSessionsResponse {
+	sessions: ArchiveSessionMeta[];
+	/** 仍活跃(内存中)的会话 ID,用于列表标记 */
+	active_session_ids: number[];
+}
+
 export class CloudHttpBackend implements ExecutionBackend {
 	private backend: HttpBackend;
 	/** 内核 WorkspaceBackend 引用(读方法委托;+layout 注入同一实例) */
@@ -265,5 +307,34 @@ export class CloudHttpBackend implements ExecutionBackend {
 		}
 		const records = await this.workspace.listProductionAudit();
 		return mapProductionAuditRecords(records);
+	}
+
+	/**
+	 * 拉取历史会话审计档案列表(UV-016,消费 `GET /api/audit-archive/sessions`)。
+	 *
+	 * 只读档案:服务器重启后活跃会话清空,WAL 文件中的历史会话(含 LLM 侧车
+	 * 审计会话)经此回看。失败直接抛 Error,由调用方展示错误状态。
+	 */
+	async listArchiveSessions(): Promise<ArchiveSessionsResponse> {
+		return this.backend.getJson<ArchiveSessionsResponse>(
+			'/api/audit-archive/sessions'
+		);
+	}
+
+	/**
+	 * 读取单会话档案审计链(UV-016,消费
+	 * `GET /api/audit-archive/sessions/{id}/audit?include_content=`)。
+	 *
+	 * @param includeContent true 时每条附 content_json 完整 Fact 内容
+	 *   (含 IoRequest params / IoResponse result,LLM 审计详情依赖此参数)
+	 */
+	async getArchiveAudit(
+		id: SessionId,
+		includeContent: boolean = false
+	): Promise<ArchiveAudit> {
+		const q = includeContent ? '?include_content=true' : '';
+		return this.backend.getJson<ArchiveAudit>(
+			`/api/audit-archive/sessions/${id}/audit${q}`
+		);
 	}
 }

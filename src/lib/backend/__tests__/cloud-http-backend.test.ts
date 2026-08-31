@@ -191,3 +191,115 @@ describe('CloudHttpBackend.emergencyRollbackRequest', () => {
     expect(res.error).toContain('未注入 WorkspaceBackend');
   });
 });
+
+// ============================================================================
+// 审计档案(UV-016):只读档案端点,直连执行侧 /api/audit-archive
+// ============================================================================
+
+describe('CloudHttpBackend 审计档案(UV-016)', () => {
+  const ARCHIVE_LIST = {
+    sessions: [
+      {
+        session_id: 7,
+        fact_count: 4,
+        first_fact_type: 'Command',
+        last_fact_type: 'Stable',
+        is_llm_sidecar: true,
+        audit_purpose: 'draft_rule',
+        wal_bytes: 2048,
+      },
+      {
+        session_id: 8,
+        fact_count: 2,
+        first_fact_type: 'Command',
+        last_fact_type: 'Stable',
+        is_llm_sidecar: false,
+        audit_purpose: null,
+        wal_bytes: 512,
+      },
+    ],
+    active_session_ids: [8],
+  };
+
+  /** mock 全局 fetch 返回 JSON 响应,并捕获请求参数 */
+  function mockFetchJson(payload: unknown): ReturnType<typeof vi.fn> {
+    const fn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fn);
+    return fn;
+  }
+
+  test('listArchiveSessions:GET /api/audit-archive/sessions + Bearer 头', async () => {
+    const fetchMock = mockFetchJson(ARCHIVE_LIST);
+    const backend = new CloudHttpBackend({
+      mode: 'offline',
+      localBaseUrl: 'http://127.0.0.1:18080',
+      authToken: 'tok-1',
+    });
+
+    const resp = await backend.listArchiveSessions();
+
+    expect(resp.sessions).toHaveLength(2);
+    expect(resp.active_session_ids).toEqual([8]);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://127.0.0.1:18080/api/audit-archive/sessions');
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      'Bearer tok-1',
+    );
+    vi.unstubAllGlobals();
+  });
+
+  test('getArchiveAudit:includeContent=true 追加查询参数', async () => {
+    const fetchMock = mockFetchJson({
+      session_id: 7,
+      fact_count: 2,
+      last_hash: 'h',
+      verified: true,
+      unhashed_records: 0,
+      entries: [],
+    });
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    const audit = await backend.getArchiveAudit(7, true);
+
+    expect(audit.verified).toBe(true);
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      'http://localhost:18080/api/audit-archive/sessions/7/audit?include_content=true',
+    );
+    vi.unstubAllGlobals();
+  });
+
+  test('getArchiveAudit:默认不带 include_content', async () => {
+    const fetchMock = mockFetchJson({
+      session_id: 7,
+      fact_count: 0,
+      last_hash: 'h',
+      verified: true,
+      unhashed_records: 0,
+      entries: [],
+    });
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await backend.getArchiveAudit(7);
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://localhost:18080/api/audit-archive/sessions/7/audit');
+    vi.unstubAllGlobals();
+  });
+
+  test('档案端点非 2xx → 如实抛 HttpBackendError(不静默降级)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('wal_dir 未启用', { status: 404 })),
+    );
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await expect(backend.getArchiveAudit(99, false)).rejects.toThrow('HTTP 404');
+    vi.unstubAllGlobals();
+  });
+});
