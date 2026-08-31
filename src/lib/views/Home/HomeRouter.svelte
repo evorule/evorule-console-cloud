@@ -1,38 +1,29 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:状态感知 + 层感知首页路由
+  职责:状态感知首页路由(UV-021 W2 收敛)
     - 状态决策(A/B/C):
         force-demo           → A DemoHome
         !session.loggedIn    → A DemoHome
         isEmptyDb            → B OnboardingWizard
-        wizardInProgress     → B OnboardingWizard(T2 新增,见下)
-        else                 → C RealWorkbench
-    - 层感知(状态 C 内部):
-        进入 C 时若 layerStore=null,按 production 状态选默认层
-        有已发布规则 → L1 监控大屏;无 → L2 编辑台
+        wizardInProgress     → B OnboardingWizard(向导进行中不切走)
+        else                 → C goto('/workbench') 总览着陆(UV-021 W2)
+    - 历史:状态 C 原内嵌 RealWorkbench(层感知 L1/L2),已随 UV-021 W2 退役:
+      总览 /workbench 成为唯一首页,监控大屏改由侧栏「监控」直达(/monitor)
 
-  T2 新增 wizardInProgress:
-    - 模板在 Step 2 调 loadTemplate 会向内核 rules store 加 builtin 规则,
-      导致派生 isEmptyDb 变 false
-    - 若不覆盖,HomeRouter 会立即从状态 B(向导)切到状态 C(工作台),
-      向导流程被中断
-    - wizardInProgress=true 时,HomeRouter 忽略 isEmptyDb,保持在状态 B
-  依赖:sessionStore / isEmptyDb / homeModeStore / wizardInProgress / layerStore / productionStateStore
-  关联设计:HOME_DESIGN.md §3(状态机) + §4.4(HomeRouter 决策) + §3.3(层视图切换矩阵)
+  依赖:sessionStore / isEmptyDb / homeModeStore / wizardInProgress
+  关联设计:HOME_DESIGN.md §3(状态机) + UV-021 盘点与计划(07)
 -->
 
 <script lang="ts">
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
   import { sessionStore } from "$lib/stores/session";
   import { isEmptyDb } from "$lib/stores/db";
   import { homeModeStore, wizardInProgress } from "$lib/stores/home-mode";
-  import { layerStore, resolveDefaultLayer } from "$lib/stores/layer";
-  import { productionStateStore } from "$lib/stores/production-state";
   import { shouldAutoStartTour, startTour } from "$lib/stores/onboarding";
   import DemoHome from "./DemoHome.svelte";
   import OnboardingWizard from "./OnboardingWizard.svelte";
-  import RealWorkbench from "./RealWorkbench.svelte";
 
   type HomeMode = "A" | "B" | "C";
 
@@ -55,11 +46,10 @@
     return "C";
   });
 
-  // 进入状态 C 时,若 layerStore 未初始化,按 production 状态选默认层
-  // (有已发布规则 → L1 监控大屏;无 → L2 编辑台)
+  // 状态 C → 总览着陆(UV-021 W2):/workbench 是唯一首页
   $effect(() => {
-    if (mode === "C" && $layerStore === null) {
-      layerStore.set(resolveDefaultLayer($productionStateStore));
+    if (mode === "C") {
+      void goto("/workbench");
     }
   });
 
@@ -76,5 +66,17 @@
 {:else if mode === "B"}
   <OnboardingWizard />
 {:else}
-  <RealWorkbench layer={$layerStore} />
+  <!-- C:跳转 /workbench 过渡态(正常情况一闪而过) -->
+  <div class="redirecting">正在进入总览…</div>
+
+  <style>
+    .redirecting {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-secondary, #64748b);
+      font-size: 14px;
+    }
+  </style>
 {/if}

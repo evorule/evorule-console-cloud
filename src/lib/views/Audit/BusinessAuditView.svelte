@@ -64,7 +64,7 @@
 
   // === Props ===
   interface Props {
-    /** 回滚请求回调(由父组件 / RealWorkbench 处理实际回滚 API) */
+    /** 回滚请求回调(由父组件处理实际回滚 API) */
     onRollbackRequest?: (targetVersion: number) => void;
     /** 导出按钮回调(打开 P07 ExportDialog,预选 audit_chain) */
     onExportRequest?: (preset: {
