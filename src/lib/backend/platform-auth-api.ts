@@ -102,13 +102,16 @@ async function request<T>(
 	throw new PlatformAuthError(message, r.status, hasServerMessage);
 }
 
-/** `GET /api/platform/auth/status` — 是否需要 bootstrap(尚无任何用户) */
-export async function fetchAuthStatus(baseUrl: string): Promise<{ needsBootstrap: boolean }> {
-	const v = await request<{ success: boolean; needs_bootstrap: boolean }>(
+/** `GET /api/platform/auth/status` — 是否需要 bootstrap(尚无任何用户) + 演示登录入口开关(UV-020) */
+export async function fetchAuthStatus(
+	baseUrl: string
+): Promise<{ needsBootstrap: boolean; demoAuth: boolean }> {
+	const v = await request<{ success: boolean; needs_bootstrap: boolean; demo_auth?: boolean }>(
 		baseUrl,
 		'/api/platform/auth/status'
 	);
-	return { needsBootstrap: v.needs_bootstrap === true };
+	// demo_auth 缺省 true:兼容旧 server / server 不可达时保留演示入口(离线可用原则)
+	return { needsBootstrap: v.needs_bootstrap === true, demoAuth: v.demo_auth !== false };
 }
 
 /** `POST /api/platform/auth/bootstrap` — 创建首个平台管理员(仅无用户时可用) */

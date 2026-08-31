@@ -93,12 +93,21 @@ describe('platform-auth-api', () => {
 		expect((err as PlatformAuthError).message).toContain('无法连接 evorule-server');
 	});
 
-	it('fetchAuthStatus:映射 needs_bootstrap', async () => {
+	it('fetchAuthStatus:映射 needs_bootstrap + demo_auth', async () => {
 		fetchMock.mockResolvedValueOnce(
-			jsonResponse(200, { success: true, needs_bootstrap: true })
+			jsonResponse(200, { success: true, needs_bootstrap: true, demo_auth: false })
 		);
 		const s = await fetchAuthStatus(BASE);
 		expect(s.needsBootstrap).toBe(true);
+		expect(s.demoAuth).toBe(false);
+	});
+
+	it('fetchAuthStatus:demo_auth 缺省 true(兼容旧 server,保留演示入口)', async () => {
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse(200, { success: true, needs_bootstrap: false })
+		);
+		const s = await fetchAuthStatus(BASE);
+		expect(s.demoAuth).toBe(true);
 	});
 
 	it('bootstrapAdmin:POST body 为 snake_case display_name', async () => {
