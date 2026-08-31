@@ -1,0 +1,23 @@
+{
+  "inverse_kinematics_solver": {
+    "url": "http://127.0.0.1:1/inverse_kinematics_solver",
+    "method": "POST",
+    "timeout_ms": 5000,
+    "version": "1.0.0",
+    "description": "六关节机械臂逆运动学求解(server 原生内置服务;声明性占位:路由由原生 demo-services 命中,本 URL 不会被调用)"
+  },
+  "rule_sandbox": {
+    "url": "http://127.0.0.1:1/rule_sandbox",
+    "method": "POST",
+    "timeout_ms": 5000,
+    "version": "1.0.0",
+    "description": "规则沙箱验证(server 原生内置服务;声明性占位:路由由原生 demo-services 命中,本 URL 不会被调用)"
+  },
+  "llm_advisor": {
+    "url": "http://127.0.0.1:1/llm_advisor",
+    "method": "POST",
+    "timeout_ms": 30000,
+    "version": "1.0.0",
+    "description": "C6 敏感服务凭据配置位(声明性占位:路由由原生 demo-services 命中,本 URL 在 mock 阶段不会被调用;Phase 3 归位 evo-agent 时在此配置真实端点/凭据)"
+  }
+}

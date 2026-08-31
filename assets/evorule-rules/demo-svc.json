@@ -1,0 +1,96 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "app.consolecloud.demo_svc",
+  "rule_id": "demo_svc.bridge",
+  "version": "0.1.0",
+  "description": "evorule-console-cloud 服务调用演示剧本 - call_service 单轮回路：命令事实 → IoRequest(service_name/args 自指令透传,server 原生内置服务进程内应答) → io_response → payload.svc_response → Stable。全链路离线可跑,零外部依赖",
+  "metadata": {
+    "author": "EvoRule Project",
+    "license": "CC0-1.0 Universal (Public Domain)",
+    "spdx_license_id": "CC0-1.0",
+    "provenance": {
+      "derived_from": [
+        "app.consolecloud.llm_audit v0.1.0 (assets/evorule-rules/llm-audit-bridge.json,单轮回路模式同源)"
+      ],
+      "date": "2026-08-31",
+      "workstream": "UV-006 service_registry 进包(03-优化台账)",
+      "note": "演示服务选用 server 原生 demo-services 的 inverse_kinematics_solver(六关节逆运动学求解):进程内确定性执行,无需外部 HTTP 服务。target_pose 数值为字符串形态(TCB 数据模型无 Float)"
+    },
+    "deployment": {
+      "method": "evorule-server 启动参数 --rules-dir <本目录>(分发包已内置 rules/demo-svc.json);配合 --service-registry service_registry.json 提供服务声明"
+    },
+    "sections": [
+      "1. call_service 单轮回路: 无结果 → io_request(service_name/args 自指令透传,镜像 evo-agent 宪法 v0.4.0 形态); 有结果 → 消费落 payload.svc_response 收敛 Stable",
+      "2. noop 收尾规则(镜像 llm-audit-bridge 的收敛模式)"
+    ],
+    "constraints": [
+      "io_request 是 branch 的叶子节点(on_false 分支),之前不能有 set/push 操作",
+      "每条 transform 规则最多一个 io_request 元指令",
+      "service_name/args 自指令透传(如 inverse_kinematics_solver 为 server 原生 NATIVE_SERVICE_NAMES,零外部依赖);args 带可选 '?' 后缀,缺失时原生服务取内置默认值",
+      "TCB 数据模型无 Float:args 中浮点值用字符串形态(如 \"0.5\"),原生服务 arg_f64 兼容",
+      "消费后以 JSON null 清除 __io_results__.call_service(exists 将 null 视为不存在)",
+      "service_name 必须在 server 原生 NATIVE_SERVICE_NAMES 或 service_registry.json 中声明,否则 IoRequest 返回 unknown service_name"
+    ]
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "call_service" },
+        "on_true": [
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "exists",
+                "path": "__exec__.payload.__io_results__.call_service"
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "svc_response",
+                    "operation": "set",
+                    "value": "__exec__.payload.__io_results__.call_service"
+                  }
+                },
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.__io_results__.call_service",
+                    "operation": "set",
+                    "value": null
+                  }
+                },
+                {
+                  "type": "push",
+                  "params": {
+                    "instructions": [{ "type": "noop" }]
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "io_request",
+                  "params": {
+                    "io_type": "call_service",
+                    "service_name": "__exec__.instruction.params.service_name",
+                    "args?": "__exec__.instruction.params.args"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "noop" },
+        "on_true": []
+      }
+    }
+  ]
+}
