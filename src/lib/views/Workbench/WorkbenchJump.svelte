@@ -1,9 +1,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  Region 5 — 8 个跳单页按钮
+  Region 5 — 9 个跳单页按钮
     网格布局,一键跳到常用视图/治理页
-    登录限定项(发布队列/版本历史/审计记录/治理中心)未登录时禁用 + 提示
+    登录限定项(发布队列/治理中心)未登录时禁用 + 提示
+    UV-014 导航发现性:补「市场」入口(此前全局无任何入口指向 /marketplace);
+    「审计」(本地链,免登录)与「治理中心」(治理角色登录)title 澄清语义
 -->
 
 <script lang="ts">
@@ -14,6 +16,8 @@
     path: string;
     /** 需要登录才能访问 */
     loginRequired: boolean;
+    /** 未登录时的锁定原因说明(UV-014 前置引导) */
+    lockHint?: string;
   }
 
   const JUMP_TARGETS: JumpTarget[] = [
@@ -22,6 +26,7 @@
     { id: "state", label: "状态", icon: "📦", path: "/view/state", loginRequired: false },
     { id: "audit", label: "审计", icon: "🔍", path: "/view/audit", loginRequired: false },
     { id: "timetravel", label: "时间旅行", icon: "⏱", path: "/view/timetravel", loginRequired: false },
+    { id: "marketplace", label: "市场", icon: "🛒", path: "/marketplace", loginRequired: false },
     { id: "export", label: "导出", icon: "📤", path: "/export", loginRequired: true },
     { id: "publish-queue", label: "发布队列", icon: "📥", path: "/publish-queue", loginRequired: true },
     { id: "governance", label: "治理中心", icon: "🗂️", path: "/governance", loginRequired: true },
@@ -33,6 +38,23 @@
   }
 
   let { loggedIn, onNav }: Props = $props();
+
+  /** 悬停说明:语义澄清 + 未登录锁定前置引导(UV-014) */
+  function hintOf(t: JumpTarget, loggedIn: boolean): string {
+    if (t.loginRequired && !loggedIn) return t.lockHint || "需登录";
+    switch (t.id) {
+      case "audit":
+        return "审计链与因果链(本地,免登录);治理侧完整审计员工作台见「治理中心」";
+      case "governance":
+        return "治理中心 — 需治理角色登录(admin/approver 等,演示凭据见启动说明)";
+      case "publish-queue":
+        return "发布队列 — 需登录并具备发布队列查看权限";
+      case "marketplace":
+        return "模板市场 — 官方规则集(等保 2.0 等)一键导入";
+      default:
+        return t.label;
+    }
+  }
 </script>
 
 <div class="region-jump">
@@ -43,7 +65,7 @@
         class="jump-btn"
         class:disabled={target.loginRequired && !loggedIn}
         onclick={() => onNav(target.path, target.loginRequired)}
-        title={target.loginRequired && !loggedIn ? "需登录" : target.label}
+        title={hintOf(target, loggedIn)}
       >
         <span class="icon">{target.icon}</span>
         <span>{target.label}</span>

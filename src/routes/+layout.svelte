@@ -216,6 +216,12 @@
     goto("/help");
   }
 
+  function navMarketplace() {
+    closeDrawers();
+    showSettings = false;
+    goto("/marketplace");
+  }
+
   // === 注入 workspace backend(规则库/沙盒/发布等 server 应用层能力) ===
   // 与 ExecutionBackend 并列的第二个后端(内核 v0.2.0 workspace 化架构)。
   // mock 模式用内存 Mock(刷新即失,演示用);正常模式走 evorule-server workspace API。
@@ -533,6 +539,18 @@
       <div class="sidebar-divider"></div>
 
       <div class="sidebar-section">
+        <!-- 模板市场 — 官方规则集一键导入(UV-014 导航发现性) -->
+        <button
+          class="sidebar-item help-item"
+          class:active={isActive("/marketplace")}
+          aria-current={isActive("/marketplace") ? "page" : undefined}
+          onclick={navMarketplace}
+          title="模板市场 — 官方规则集(等保 2.0 等)一键导入"
+          aria-pressed={isActive("/marketplace")}
+        >
+          <span class="nav-icon">🛒</span>
+          <span class="nav-label">市场</span>
+        </button>
         <!-- 帮助页(新)— 5 分钟上手 + 详细指南入口 -->
         <button
           class="sidebar-item help-item"
