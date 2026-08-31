@@ -38,11 +38,15 @@
   let bootPassword = $state('');
   let bootBusy = $state(false);
 
+  // === UV-020:演示登录入口开关(server 下发;不可达时保留,离线可用原则) ===
+  let demoAuthAllowed = $state(true);
+
   onMount(() => {
     // 探测 server 状态:不可达时如实提示,不静默(离线场景仍可用演示模式)
     fetchAuthStatus($netConfig.remoteBaseUrl)
       .then((s) => {
         needsBootstrap = s.needsBootstrap;
+        demoAuthAllowed = s.demoAuth;
       })
       .catch((e: unknown) => {
         if (e instanceof PlatformAuthError && e.status === 0) {
@@ -225,9 +229,13 @@
   <!-- 模式切换 -->
   <div class="mode-switch">
     {#if mode === 'platform'}
-      <button class="link-btn" onclick={() => (mode = 'demo')}>
-        切换到演示模式(预置角色一键登录,不连 server)→
-      </button>
+      {#if demoAuthAllowed}
+        <button class="link-btn" onclick={() => (mode = 'demo')}>
+          切换到演示模式(预置角色一键登录,不连 server)→
+        </button>
+      {:else}
+        <span class="demo-disabled-hint">演示模式已被服务器管理员关闭</span>
+      {/if}
     {:else}
       <button class="link-btn" onclick={() => (mode = 'platform')}>
         ← 返回平台账号登录
@@ -386,6 +394,10 @@
   }
   .mode-switch {
     text-align: center;
+  }
+  .demo-disabled-hint {
+    font-size: 13px;
+    color: var(--text-secondary, #64748b);
   }
   .link-btn {
     background: transparent;
