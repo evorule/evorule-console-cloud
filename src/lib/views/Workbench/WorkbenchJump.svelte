@@ -6,43 +6,42 @@
     登录限定项(发布队列/治理中心)未登录时禁用 + 提示
     UV-014 导航发现性:补「市场」入口(此前全局无任何入口指向 /marketplace);
     「审计」(本地链,免登录)与「治理中心」(治理角色登录)title 澄清语义
+    UV-022 首项改造:页面类入口(市场/导出/发布队列/治理中心)改由 NAV_REGISTRY
+    派生(jump:true 子集),门控与侧栏同清单同语义(闭合 UV-023);
+    /view/* 分析视图仍属 VIEW_LIST 域,在本组件本地声明
 -->
 
 <script lang="ts">
   import type { User } from "$lib/stores/auth";
   import type { PermissionAction } from "$lib/stores/permission-matrix";
+  import { NAV_REGISTRY, visibleNavItems } from "$lib/config/nav-registry";
 
-  interface JumpTarget {
+  /** /view/* 分析视图快捷入口(kernel view 域,不进 NAV_REGISTRY) */
+  interface ViewJumpTarget {
     id: string;
     label: string;
     icon: string;
     path: string;
-    /** 需要登录才能访问 */
-    loginRequired: boolean;
-    /** 平台权限门控(UV-021 W1e):声明后无权限用户直接隐藏该入口 */
-    permission?: PermissionAction;
-    /** 未登录时的锁定原因说明(UV-014 前置引导) */
-    lockHint?: string;
   }
 
-  const JUMP_TARGETS: JumpTarget[] = [
-    { id: "rules", label: "规则库", icon: "📐", path: "/view/rules", loginRequired: false },
-    { id: "execution", label: "执行台", icon: "▶", path: "/view/execution", loginRequired: false },
-    { id: "state", label: "状态", icon: "📦", path: "/view/state", loginRequired: false },
-    { id: "audit", label: "审计", icon: "🔍", path: "/view/audit", loginRequired: false },
-    { id: "timetravel", label: "时间旅行", icon: "⏱", path: "/view/timetravel", loginRequired: false },
-    { id: "marketplace", label: "市场", icon: "🛒", path: "/marketplace", loginRequired: false },
-    { id: "export", label: "导出", icon: "📤", path: "/export", loginRequired: true },
-    {
-      id: "publish-queue",
-      label: "发布队列",
-      icon: "📥",
-      path: "/publish-queue",
-      loginRequired: true,
-      permission: "view_publish_queue",
-    },
-    { id: "governance", label: "治理中心", icon: "🗂️", path: "/governance", loginRequired: true },
+  const VIEW_JUMP_TARGETS: ViewJumpTarget[] = [
+    { id: "rules", label: "规则库", icon: "📐", path: "/view/rules" },
+    { id: "execution", label: "执行台", icon: "▶", path: "/view/execution" },
+    { id: "state", label: "状态", icon: "📦", path: "/view/state" },
+    { id: "audit", label: "审计", icon: "🔍", path: "/view/audit" },
+    { id: "timetravel", label: "时间旅行", icon: "⏱", path: "/view/timetravel" },
   ];
+
+  /** 页面类跳单项(NAV_REGISTRY jump:true 派生,含登录/权限门控) */
+  interface PageJumpTarget {
+    id: string;
+    label: string;
+    icon: string;
+    path: string;
+    loginRequired: boolean;
+    permissions?: PermissionAction[];
+    lockHint?: string;
+  }
 
   interface Props {
     loggedIn: boolean;
@@ -54,13 +53,16 @@
 
   let { loggedIn, user, hasPermission, onNav }: Props = $props();
 
-  /** 权限门控:声明了 permission 且当前用户无权 → 该入口不渲染(UV-021) */
-  const visibleTargets = $derived(
-    JUMP_TARGETS.filter((t) => t.permission === undefined || hasPermission(user, t.permission))
+  /** 页面类可见项:复用导航注册表同一过滤纯函数(门控与侧栏一致) */
+  const visiblePageTargets = $derived(
+    visibleNavItems(NAV_REGISTRY, {
+      loggedIn,
+      hasPermission: (a) => hasPermission(user, a),
+    }).filter((d) => d.jump),
   );
 
   /** 悬停说明:语义澄清 + 未登录锁定前置引导(UV-014) */
-  function hintOf(t: JumpTarget, loggedIn: boolean): string {
+  function hintOf(t: { id: string; label: string; loginRequired?: boolean; lockHint?: string }): string {
     if (t.loginRequired && !loggedIn) return t.lockHint || "需登录";
     switch (t.id) {
       case "audit":
@@ -80,16 +82,26 @@
 <div class="region-jump">
   <h2 class="region-title"><span class="icon">↗</span>快速跳单页</h2>
   <div class="jump-grid">
-    {#each visibleTargets as target (target.id)}
+    {#each VIEW_JUMP_TARGETS as t (t.id)}
       <button
         class="jump-btn"
-        class:disabled={target.loginRequired && !loggedIn}
-        onclick={() => onNav(target.path, target.loginRequired)}
-        title={hintOf(target, loggedIn)}
+        onclick={() => onNav(t.path, false)}
+        title={hintOf(t)}
       >
-        <span class="icon">{target.icon}</span>
-        <span>{target.label}</span>
-        {#if target.loginRequired && !loggedIn}
+        <span class="icon">{t.icon}</span>
+        <span>{t.label}</span>
+      </button>
+    {/each}
+    {#each visiblePageTargets as t (t.id)}
+      <button
+        class="jump-btn"
+        class:disabled={t.loginRequired && !loggedIn}
+        onclick={() => onNav(t.path, t.loginRequired ?? false)}
+        title={hintOf(t)}
+      >
+        <span class="icon">{t.icon}</span>
+        <span>{t.label}</span>
+        {#if t.loginRequired && !loggedIn}
           <span class="lock">🔒</span>
         {/if}
       </button>

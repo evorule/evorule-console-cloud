@@ -33,6 +33,7 @@
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { roleToBackend } from "$lib/backend/production-views";
   import { currentUser, hasPermission } from "$lib/stores/auth";
+  import { NAV_REGISTRY, navItemsByGroup, visibleNavItems, type NavDef } from "$lib/config/nav-registry";
   import { MockBackend } from "$lib/backend/mock-backend";
   import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
   import { netConfig, toggleNetMode } from "$lib/config/net-config";
@@ -177,13 +178,17 @@
     goto('/');
   }
 
-  // /export 也受守卫约束(需 已登录 && 库非空)
-  function navExport() {
+  // /export 也受守卫约束(需 已登录 && 库非空)→ requiresDb 语义的注册表项走此分流
+  function navTo(item: NavDef) {
     closeDrawers();
     showSettings = false;
+    if (!item.requiresDb) {
+      goto(item.path);
+      return;
+    }
     const loggedIn = get(sessionStore).loggedIn;
     if (loggedIn && !get(isEmptyDb)) {
-      goto('/export');
+      goto(item.path);
       return;
     }
     if (!loggedIn) {
@@ -202,25 +207,18 @@
     goto(path);
   }
 
-  // 极简工作台(新)— 纯 dashboard,无需登录/无需库,任何时候都能跳
-  function navWorkbenchRoute() {
-    closeDrawers();
-    showSettings = false;
-    goto("/workbench");
-  }
-
-  // 帮助页(/help)— 公开文档,任何时候可访问
-  function navHelpRoute() {
-    closeDrawers();
-    showSettings = false;
-    goto("/help");
-  }
-
-  function navMarketplace() {
-    closeDrawers();
-    showSettings = false;
-    goto("/marketplace");
-  }
+  // === 导航注册表(UV-022 首项):侧栏/跳单卡/命令面板消费同一清单 ===
+  // 可见项纯函数过滤(登录态 + 权限 ANY 语义);门控与跳单卡一致(闭合 UV-023)
+  const navVisible = $derived.by(() => {
+    const loggedIn = $sessionStore.loggedIn;
+    const user = $currentUser;
+    return navItemsByGroup(
+      visibleNavItems(NAV_REGISTRY, {
+        loggedIn,
+        hasPermission: (a) => hasPermission(user, a),
+      }),
+    );
+  });
 
   // === 注入 workspace backend(规则库/沙盒/发布等 server 应用层能力) ===
   // 与 ExecutionBackend 并列的第二个后端(内核 v0.2.0 workspace 化架构)。
@@ -503,30 +501,20 @@
     <!-- 左导航侧栏 -->
     <aside class="sidebar sidebar-left {leftDrawerOpen ? 'drawer-open' : ''}" style:width={`${leftWidth}px`}>
       <div class="sidebar-section">
-        <!-- 总览(UV-021 W2)— 唯一首页,Dashboard 风格,任何时候可访问 -->
-        <button
-          class="sidebar-item workbench-item"
-          class:active={isActive("/workbench")}
-          aria-current={isActive("/workbench") ? "page" : undefined}
-          onclick={navWorkbenchRoute}
-          title="总览 — 一键看到所有状态 + 高频操作 + 单页跳"
-          aria-pressed={isActive("/workbench")}
-        >
-          <span class="nav-icon">🧭</span>
-          <span class="nav-label">总览</span>
-        </button>
-        <!-- 监控大屏直达(UV-021 W2)— 原 RealWorkbench L1 面板独立成页 -->
-        <button
-          class="sidebar-item"
-          class:active={isActive("/monitor")}
-          aria-current={isActive("/monitor") ? "page" : undefined}
-          onclick={() => go("/monitor")}
-          title="监控大屏 — 生产运行状态实时总览"
-          aria-pressed={isActive("/monitor")}
-        >
-          <span class="nav-icon">📊</span>
-          <span class="nav-label">监控</span>
-        </button>
+        <!-- home 组:总览/监控(NAV_REGISTRY 驱动,UV-022) -->
+        {#each navVisible.home as item (item.id)}
+          <button
+            class="sidebar-item"
+            class:active={isActive(item.path)}
+            aria-current={isActive(item.path) ? "page" : undefined}
+            onclick={() => navTo(item)}
+            title={item.title}
+            aria-pressed={isActive(item.path)}
+          >
+            <span class="nav-icon">{item.icon}</span>
+            <span class="nav-label">{item.label}</span>
+          </button>
+        {/each}
       </div>
 
       <div class="sidebar-divider"></div>
@@ -551,123 +539,44 @@
       <div class="sidebar-divider"></div>
 
       <div class="sidebar-section">
-        <!-- 模板市场 — 官方规则集一键导入(UV-014 导航发现性) -->
-        <button
-          class="sidebar-item help-item"
-          class:active={isActive("/marketplace")}
-          aria-current={isActive("/marketplace") ? "page" : undefined}
-          onclick={navMarketplace}
-          title="模板市场 — 官方规则集(等保 2.0 等)一键导入"
-          aria-pressed={isActive("/marketplace")}
-        >
-          <span class="nav-icon">🛒</span>
-          <span class="nav-label">市场</span>
-        </button>
-        <!-- 帮助页(新)— 5 分钟上手 + 详细指南入口 -->
-        <button
-          class="sidebar-item help-item"
-          class:active={isActive("/help")}
-          aria-current={isActive("/help") ? "page" : undefined}
-          onclick={navHelpRoute}
-          title="帮助 — 5 分钟上手 + 详细使用指南"
-          aria-pressed={isActive("/help")}
-        >
-          <span class="nav-icon">❓</span>
-          <span class="nav-label">帮助</span>
-        </button>
+        <!-- discover 组:市场/帮助(NAV_REGISTRY 驱动,UV-022) -->
+        {#each navVisible.discover as item (item.id)}
+          <button
+            class="sidebar-item"
+            class:active={isActive(item.path)}
+            aria-current={isActive(item.path) ? "page" : undefined}
+            onclick={() => navTo(item)}
+            title={item.title}
+            aria-pressed={isActive(item.path)}
+          >
+            <span class="nav-icon">{item.icon}</span>
+            <span class="nav-label">{item.label}</span>
+          </button>
+        {/each}
       </div>
 
       <div class="sidebar-divider"></div>
 
       <div class="sidebar-section">
-        <div class="sidebar-label">治理与协作</div>
-        <button
-          class="sidebar-item"
-          class:active={isActive("/export")}
-          aria-current={isActive("/export") ? "page" : undefined}
-          onclick={() => navExport()}
-          title="通用结果导出中心 — 6 种内容 × 4 种格式,BLAKE3 完整性自证"
-          aria-pressed={isActive("/export")}
-        >
-          <span class="nav-icon">📤</span>
-          <span class="nav-label">导出</span>
-        </button>
-
-        {#if $sessionStore.loggedIn}
-          <button
-            class="sidebar-item"
-            class:active={isActive("/publish-queue")}
-            aria-current={isActive("/publish-queue") ? "page" : undefined}
-            onclick={() => go("/publish-queue")}
-            title="发布队列 — 规则集发布审批与紧急回滚"
-            aria-pressed={isActive("/publish-queue")}
-          >
-            <span class="nav-icon">📥</span>
-            <span class="nav-label">发布队列</span>
-          </button>
-          <button
-            class="sidebar-item"
-            class:active={isActive("/version-history")}
-            aria-current={isActive("/version-history") ? "page" : undefined}
-            onclick={() => go("/version-history")}
-            title="版本历史 — 生产规则集版本时间线"
-            aria-pressed={isActive("/version-history")}
-          >
-            <span class="nav-icon">📜</span>
-            <span class="nav-label">版本历史</span>
-          </button>
-          <button
-            class="sidebar-item"
-            class:active={isActive("/audit")}
-            aria-current={isActive("/audit") ? "page" : undefined}
-            onclick={() => go("/audit")}
-            title="审计员工作台 — BLAKE3 审计链 + 因果链回溯"
-            aria-pressed={isActive("/audit")}
-          >
-            <span class="nav-icon">🔍</span>
-            <span class="nav-label">审计记录</span>
-          </button>
-          <button
-            class="sidebar-item"
-            class:active={isActive("/governance")}
-            aria-current={isActive("/governance") ? "page" : undefined}
-            onclick={() => go("/governance")}
-            title="治理(evorule-rule)— 数据集/规则/5 态生命周期/审批发布/版本链"
-            aria-pressed={isActive("/governance")}
-          >
-            <span class="nav-icon">🗂️</span>
-            <span class="nav-label">治理中心</span>
-          </button>
-          <!-- 平台管理(UV-017 W4):仅 platform 登录且持有对应用户可见。
-               用 hasPermission($currentUser,…) 而非 can():后者内部 get(currentUser)
-               非响应式,模板表达式不会随登录态变化重算 -->
-          {#if hasPermission($currentUser, "view_users") || hasPermission($currentUser, "manage_users")}
-            <button
-              class="sidebar-item"
-              class:active={isActive("/users")}
-              aria-current={isActive("/users") ? "page" : undefined}
-              onclick={() => go("/users")}
-              title="用户管理 — 平台账号/角色分配/启停(manage_users 可管理)"
-              aria-pressed={isActive("/users")}
-            >
-              <span class="nav-icon">👥</span>
-              <span class="nav-label">用户管理</span>
-            </button>
-          {/if}
-          {#if hasPermission($currentUser, "manage_roles")}
-            <button
-              class="sidebar-item"
-              class:active={isActive("/roles")}
-              aria-current={isActive("/roles") ? "page" : undefined}
-              onclick={() => go("/roles")}
-              title="角色管理 — 自定义角色与权限矩阵"
-              aria-pressed={isActive("/roles")}
-            >
-              <span class="nav-icon">🛡️</span>
-              <span class="nav-label">角色管理</span>
-            </button>
-          {/if}
+        {#if navVisible.governance.length > 0}
+          <div class="sidebar-label">治理与协作</div>
         {/if}
+        <!-- governance 组:NAV_REGISTRY 驱动(UV-022);门控在注册表过滤层统一处理
+             (发布队列 view_publish_queue / 用户管理 view_users|manage_users /
+              角色管理 manage_roles / 其余登录限定),与跳单卡同清单(闭合 UV-023) -->
+        {#each navVisible.governance as item (item.id)}
+          <button
+            class="sidebar-item"
+            class:active={isActive(item.path)}
+            aria-current={isActive(item.path) ? "page" : undefined}
+            onclick={() => navTo(item)}
+            title={item.title}
+            aria-pressed={isActive(item.path)}
+          >
+            <span class="nav-icon">{item.icon}</span>
+            <span class="nav-label">{item.label}</span>
+          </button>
+        {/each}
       </div>
 
       <div class="sidebar-divider"></div>

@@ -12,9 +12,13 @@
 
 <script lang="ts">
 	import { goto } from "$app/navigation";
+	import { get } from "svelte/store";
 	import { taskFlowsDef } from "$lib/data/task-flows";
 	import { startTaskFlow } from "$lib/stores/task-flow";
 	import { toggleNetMode } from "$lib/config/net-config";
+	import { NAV_REGISTRY, visibleNavItems } from "$lib/config/nav-registry";
+	import { currentUser, hasPermission } from "$lib/stores/auth";
+	import { sessionStore } from "$lib/stores/session";
 	import { resetBanner, resetTour, startTour } from "$lib/stores/onboarding";
 
 	let {
@@ -37,14 +41,20 @@
 	}
 
 	function buildCommands(): Command[] {
+		// 导航组(UV-022):从 NAV_REGISTRY 派生,与侧栏/跳单卡同清单同门控。
+		// 面板每次打开重建命令列表,登录态/权限快照即时生效。
 		const nav: Command[] = [
-			{ id: "nav-workbench", title: "总览", group: "导航", hint: "首页 dashboard,随时可进", keywords: "workbench dashboard 首页 总览", run: () => goto("/workbench") },
-			{ id: "nav-help", title: "帮助中心", group: "导航", hint: "5 分钟上手 + 详细指南", keywords: "help 帮助 文档", run: () => goto("/help") },
-			{ id: "nav-governance", title: "治理中心", group: "导航", hint: "数据集 / 规则 / 5 态生命周期", keywords: "governance 规则 治理", run: () => goto("/governance") },
-			{ id: "nav-audit", title: "审计记录", group: "导航", hint: "BLAKE3 审计链 + 因果回溯", keywords: "audit 审计", run: () => goto("/audit") },
-			{ id: "nav-publish", title: "发布队列", group: "导航", hint: "发布审批 / 紧急回滚", keywords: "publish 发布 队列", run: () => goto("/publish-queue") },
-			{ id: "nav-version", title: "版本历史", group: "导航", hint: "生产规则集版本时间线", keywords: "version 版本 历史", run: () => goto("/version-history") },
-			{ id: "nav-export", title: "导出中心", group: "导航", hint: "结果导出 × 4 种格式", keywords: "export 导出", run: () => goto("/export") },
+			...visibleNavItems(NAV_REGISTRY, {
+				loggedIn: get(sessionStore).loggedIn,
+				hasPermission: (a) => hasPermission(get(currentUser), a),
+			}).map((d) => ({
+				id: `nav-${d.id}`,
+				title: d.label,
+				group: "导航",
+				hint: d.title,
+				keywords: `${d.id} ${d.label}`,
+				run: () => goto(d.path),
+			})),
 			{ id: "nav-login", title: "登录 / 账号", group: "导航", hint: "登录以解锁授权能力", keywords: "login 登录 账号", run: () => goto("/login") },
 		];
 
