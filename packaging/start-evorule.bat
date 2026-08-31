@@ -14,6 +14,12 @@ timeout /t 2 /nobreak >nul
 echo [3/3] Opening browser...
 start "" "http://localhost:18080"
 echo.
+echo SECURITY NOTE: this demo pack ships PUBLIC default credentials
+echo   governance login: admin / evorule-demo
+echo For real deployments, edit start-evorule.bat and change --admin-user,
+echo --admin-password AND --secret BEFORE first start (see README-STARTUP.txt,
+echo section "Safety Notice (Required Reading for Formal Deployment)").
+echo.
 echo Done. If the browser did not open, visit http://localhost:18080
 echo To stop: close BOTH minimized windows ("evorule-server" and "evorule-rule") in the taskbar.
 echo (For Chinese instructions, open README-STARTUP.txt)
