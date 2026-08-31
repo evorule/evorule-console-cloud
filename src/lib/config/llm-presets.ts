@@ -11,6 +11,7 @@
 //   - 所有预设都是 OpenAI 兼容的 /v1/chat/completions 端点
 //   - 文心一言(百度)原生不完全 OpenAI 兼容,标记为 needsAdapter=true(后续适配)
 //   - 其他主流厂商都已提供 OpenAI 兼容端点
+//   - Ollama(本机)同为 OpenAI 兼容协议,无需 Key 即可直连(端点 127.0.0.1:11434)
 
 export interface LlmPreset {
 	/** 厂商 id(对应 CloudLlmConfig.provider) */
@@ -27,8 +28,10 @@ export interface LlmPreset {
 	needsAdapter?: boolean;
 	/** 适配层说明(needsAdapter=true 时显示) */
 	adapterNote?: string;
-	/** 帮助文档 URL */
+	/** 帮助文档 URL(申请 Key / 安装指引) */
 	helpUrl?: string;
+	/** 预设占位 Key(如 Ollama 不校验 Key 但客户端要求非空;切换预设且用户未填 Key 时自动填入) */
+	presetApiKey?: string;
 }
 
 /**
@@ -76,12 +79,30 @@ export const LLM_PRESETS: LlmPreset[] = [
 		helpUrl: 'https://platform.minimaxi.com/user-center/basic-information/interface-key'
 	},
 	{
+		provider: 'kimi',
+		label: 'Kimi(Moonshot)',
+		apiEndpoint: 'https://api.moonshot.cn/v1/chat/completions',
+		defaultModel: 'kimi-k2-0905-preview',
+		models: ['kimi-k2-0905-preview', 'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+		helpUrl: 'https://platform.moonshot.cn/console/api-keys'
+	},
+	{
 		provider: 'openai',
 		label: 'OpenAI(国际标准,需代理)',
 		apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 		defaultModel: 'gpt-4o-mini',
 		models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
 		helpUrl: 'https://platform.openai.com/api-keys'
+	},
+	{
+		provider: 'ollama',
+		label: 'Ollama(本机,无需联网/Key)',
+		apiEndpoint: 'http://127.0.0.1:11434/v1/chat/completions',
+		defaultModel: 'qwen3:8b',
+		models: ['qwen3:8b', 'qwen3:4b', 'deepseek-r1:8b', 'llama3.1:8b', 'glm4:9b'],
+		helpUrl: 'https://ollama.com/download',
+		/** Ollama 不校验 Key,但 OpenAI 兼容客户端要求非空,固定占位值 */
+		presetApiKey: 'ollama'
 	},
 	{
 		provider: 'ernie',
