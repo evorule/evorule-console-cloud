@@ -9,6 +9,9 @@
 -->
 
 <script lang="ts">
+  import type { User } from "$lib/stores/auth";
+  import type { PermissionAction } from "$lib/stores/permission-matrix";
+
   interface JumpTarget {
     id: string;
     label: string;
@@ -16,6 +19,8 @@
     path: string;
     /** 需要登录才能访问 */
     loginRequired: boolean;
+    /** 平台权限门控(UV-021 W1e):声明后无权限用户直接隐藏该入口 */
+    permission?: PermissionAction;
     /** 未登录时的锁定原因说明(UV-014 前置引导) */
     lockHint?: string;
   }
@@ -28,16 +33,31 @@
     { id: "timetravel", label: "时间旅行", icon: "⏱", path: "/view/timetravel", loginRequired: false },
     { id: "marketplace", label: "市场", icon: "🛒", path: "/marketplace", loginRequired: false },
     { id: "export", label: "导出", icon: "📤", path: "/export", loginRequired: true },
-    { id: "publish-queue", label: "发布队列", icon: "📥", path: "/publish-queue", loginRequired: true },
+    {
+      id: "publish-queue",
+      label: "发布队列",
+      icon: "📥",
+      path: "/publish-queue",
+      loginRequired: true,
+      permission: "view_publish_queue",
+    },
     { id: "governance", label: "治理中心", icon: "🗂️", path: "/governance", loginRequired: true },
   ];
 
   interface Props {
     loggedIn: boolean;
+    /** 当前用户(平台/演示双轨;权限判定经 hasPermission) */
+    user: User | null;
+    hasPermission: (u: User | null, action: PermissionAction) => boolean;
     onNav: (path: string, loginRequired: boolean) => void;
   }
 
-  let { loggedIn, onNav }: Props = $props();
+  let { loggedIn, user, hasPermission, onNav }: Props = $props();
+
+  /** 权限门控:声明了 permission 且当前用户无权 → 该入口不渲染(UV-021) */
+  const visibleTargets = $derived(
+    JUMP_TARGETS.filter((t) => t.permission === undefined || hasPermission(user, t.permission))
+  );
 
   /** 悬停说明:语义澄清 + 未登录锁定前置引导(UV-014) */
   function hintOf(t: JumpTarget, loggedIn: boolean): string {
@@ -60,7 +80,7 @@
 <div class="region-jump">
   <h2 class="region-title"><span class="icon">↗</span>快速跳单页</h2>
   <div class="jump-grid">
-    {#each JUMP_TARGETS as target (target.id)}
+    {#each visibleTargets as target (target.id)}
       <button
         class="jump-btn"
         class:disabled={target.loginRequired && !loggedIn}
