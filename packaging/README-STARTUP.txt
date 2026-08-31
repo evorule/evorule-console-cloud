@@ -40,6 +40,26 @@ API Key,在页面右上角「设置 → LLM 配置」中填写:
 
 Key 只保存在你本机浏览器中,不会上传到任何第三方。
 
+体验服务调用(可选,离线可跑)
+------------------------------
+本包内置一个「工具调用」演示:规则通过 call_service 指令调用
+server 内置的原生服务 inverse_kinematics_solver(六关节机械臂
+逆运动学求解),进程内确定性执行,不需要联网、不需要任何外部服务。
+
+1. 打开「执行台」(或规则试运行入口),提交 call_service 指令,
+   参数示例(service_name 与 args 从指令透传):
+   {"type":"call_service","params":{
+    "service_name":"inverse_kinematics_solver",
+    "args":{"target_pose":{"x":"0.5","y":"0.3","z":"0.2"},
+            "tolerance":"0.001","max_iterations":100}}}
+2. 引擎自动完成:命令 → 调用求解服务 → 求解结果写回会话
+   (converged=true 与三关节位置 joint_positions)
+3. 打开「审计」页可看到本次调用的完整审计链
+   (请求与求解结果全文入链)
+
+内置服务还包括 rule_sandbox(规则沙箱)等;服务声明见
+service_registry.json,可自行扩展为真实 HTTP 服务端点。
+
 数据与隐私
 ----------
 - 一切都在本机运行:服务只监听 127.0.0.1(仅本机可访问)
@@ -56,7 +76,8 @@ Key 只保存在你本机浏览器中,不会上传到任何第三方。
 - evorule-server.exe       主服务(evorule-server,运行时 :18080)
 - evorule-rule-serve.exe   治理服务(evorule-rule,规则资产库 :18081)
 - web\                     前端页面(evorule-console-cloud)
-- rules\                   运行规则集(LLM 审计桥剧本)
+- rules\                   运行规则集(LLM 审计桥 + 服务调用演示剧本)
+- service_registry.json    服务声明(call_service 的 service_name→服务映射)
 - resources\               引擎宪法(core_eval.json)
 - data\                    首次启动后生成:wal\ 为会话/审计链 WAL,
                            其余为规则/工作区 SQLite 库文件
