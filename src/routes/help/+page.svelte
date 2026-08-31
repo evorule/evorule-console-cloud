@@ -24,6 +24,17 @@
     const url = `https://gitee.com/evorule/evorule-console-cloud/blob/main/${path}`;
     window.open(url, "_blank", "noopener");
   }
+
+  function openFeedback() {
+    const url = "https://gitee.com/evorule/evorule-console-cloud/issues";
+    window.open(url, "_blank", "noopener");
+  }
+
+  function openMail() {
+    window.location.href =
+      "mailto:evorulelab@gmail.com?subject=" +
+      encodeURIComponent("[evorule-console-cloud] 反馈与建议");
+  }
 </script>
 
 <div class="help">
@@ -111,6 +122,30 @@
         — 仓根目录 README
       </li>
     </ul>
+
+    <!-- 反馈入口(UV-010) -->
+    <div class="feedback-entry">
+      <h2>💬 反馈与建议</h2>
+      <p>使用中遇到问题、或有改进想法?我们认真对待每一条反馈,两种方式任选:</p>
+      <ul>
+        <li>
+          <button class="link-btn" onclick={openFeedback}>
+            Gitee Issues
+          </button>
+          — 提交问题/建议(推荐,可跟踪处理进度)
+        </li>
+        <li>
+          <button class="link-btn" onclick={openMail}>
+            evorulelab@gmail.com
+          </button>
+          — 邮件反馈(离线环境或不想注册 Gitee 时用)
+        </li>
+      </ul>
+      <p class="feedback-note">
+        提反馈时若方便,请附上:做了什么操作、期望结果、实际结果(截图更佳);
+        请勿在反馈中粘贴你的 LLM API Key 或其他凭据。
+      </p>
+    </div>
   </div>
 </div>
 
@@ -197,5 +232,15 @@
   }
   .link-btn:hover {
     color: #1d4ed8;
+  }
+  .feedback-entry {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+  .feedback-note {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
   }
 </style>
