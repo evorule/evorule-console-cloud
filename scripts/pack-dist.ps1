@@ -48,6 +48,7 @@ Copy-Item "$root\build\*" "$stage\web" -Recurse -Force
 Copy-Item "$root\assets\evorule-rules\*" "$stage\rules" -Force
 Copy-Item $CoreEval "$stage\resources\core_eval.json"
 Copy-Item "$root\assets\service_registry.json" "$stage\service_registry.json"
+Copy-Item "$root\assets\plugin_manifest.json" "$stage\plugin_manifest.json"
 Copy-Item "$root\packaging\start-evorule.bat" "$stage\start-evorule.bat"
 Copy-Item "$root\packaging\README-STARTUP.txt" "$stage\README-STARTUP.txt"
 
