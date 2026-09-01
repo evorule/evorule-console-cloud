@@ -1,6 +1,6 @@
 {
   "name": "@evorule/console-cloud",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "evorule-console-cloud — evorule 大众版(内核 + 联网 + 云 LLM),面向大众/中小企业,开箱即用",
   "license": "AGPL-3.0-or-later",
   "type": "module",
