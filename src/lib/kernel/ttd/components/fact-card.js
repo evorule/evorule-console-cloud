@@ -68,9 +68,9 @@ function renderBody(fact) {
             h('pre', { class: 'json-block' }, safeJson(fact.result))
           ];
     case 'Stable':
+      // CR-20260901-001: Stable 瘦身为版本号(不再内嵌 final_snapshot 全量快照)
       return [
-        h('div', { class: 'tooltip' }, 'final_snapshot:'),
-        h('pre', { class: 'json-block' }, safeJson(fact.final_snapshot))
+        h('div', { class: 'tooltip' }, `stable version: ${fact.version ?? '?'}`)
       ];
     case 'PayloadUpdate':
       return [
