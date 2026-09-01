@@ -6,6 +6,9 @@ evorule 体验版(单机一键启动)
 - Windows 10/11 64 位,或 macOS 12+(Apple Silicon/Intel),或主流
   Linux x86_64 发行版
 - 无需安装任何运行时(Node/Rust/数据库都不需要)
+- Linux 依赖系统库:OpenSSL 3.0 / libz / libzstd(Debian 12、
+  Ubuntu 22.04、RHEL 9 等近年发行版默认自带;老系统报错缺库时
+  用包管理器安装 libssl3、libzstd1 即可)
 - 注意:三个平台的包各自独立(二进制不通用),按你的系统下载
   对应压缩包(win64 / macos64 / linux64)
 
