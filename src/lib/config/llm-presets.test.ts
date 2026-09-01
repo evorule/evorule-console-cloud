@@ -29,11 +29,24 @@ describe('LLM_PRESETS 覆盖面(UV-004 DoD)', () => {
 		expect(ollama!.helpUrl).toBeTruthy();
 	});
 
-	test('除 ernie(needsAdapter)外全部为 OpenAI 兼容 chat/completions 端点', () => {
+	test('除 ernie(needsAdapter)外全部为 OpenAI 兼容端点', () => {
 		for (const p of LLM_PRESETS) {
 			if (p.needsAdapter || p.provider === 'custom') continue;
-			expect(p.apiEndpoint, p.provider).toMatch(/\/chat\/completions$/);
+			// MiniMax 现网端点为 /v1/text/chatcompletion_v2(2026-09-01 UV-030 实测),
+			// 其余厂商为 /chat/completions —— 两种 OpenAI 兼容形态均合法
+			const ok =
+				/\/chat\/completions$/.test(p.apiEndpoint) ||
+				/\/text\/chatcompletion_v2$/.test(p.apiEndpoint);
+			expect(ok, `${p.provider}: ${p.apiEndpoint}`).toBe(true);
 		}
+	});
+
+	test('MiniMax 预设:现网端点(api.minimaxi.com,实测可达)+ 平台指引一致', () => {
+		const minimax = findPreset('minimax');
+		expect(minimax).toBeDefined();
+		expect(minimax!.apiEndpoint).toBe('https://api.minimaxi.com/v1/text/chatcompletion_v2');
+		expect(minimax!.defaultModel).toBe('MiniMax-Text-01');
+		expect(minimax!.helpUrl).toContain('platform.minimaxi.com');
 	});
 
 	test('全部非 custom 预设有默认模型与备选列表', () => {

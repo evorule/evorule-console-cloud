@@ -250,6 +250,27 @@ export async function callChatApi(params: ChatApiParams): Promise<string> {
 		);
 	}
 
+	// MiniMax 形态(2026-09-01 UV-030 实测):业务错误(如 2049 invalid api key)返回
+	// 200 + { base_resp: { status_code != 0, status_msg } } —— 无 error 字段、无 choices。
+	// 不识别会把鉴权失败误报成"响应结构异常: 无 choices[0].message.content",违反如实报错。
+	const baseResp = (data as { base_resp?: { status_code?: unknown; status_msg?: unknown } })
+		?.base_resp;
+	if (
+		baseResp &&
+		typeof baseResp === 'object' &&
+		typeof baseResp.status_code === 'number' &&
+		baseResp.status_code !== 0
+	) {
+		const msg =
+			typeof baseResp.status_msg === 'string' && baseResp.status_msg.length > 0
+				? baseResp.status_msg
+				: '未知错误(厂商未返回 status_msg)';
+		throw new LlmApiError(
+			`LLM 返回错误(MiniMax status_code=${baseResp.status_code}): ${redactSecret(msg, apiKey).slice(0, 300)}`,
+			r.status
+		);
+	}
+
 	if (
 		!data ||
 		!Array.isArray(data.choices) ||
