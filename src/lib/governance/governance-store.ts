@@ -23,6 +23,7 @@ import type {
 	GovernanceDataset,
 	GovernanceEntry,
 	KnowledgeEntry,
+	LawRef,
 	VersioningInfo
 } from './types';
 
@@ -228,6 +229,14 @@ export async function unpublish(): Promise<void> {
 	if (!s.selectedId) throw new GovernanceError('未选中数据集', 'no_selection');
 	const updated = await backend().unpublishDataset(s.selectedId);
 	await afterDatasetChanged(updated);
+}
+
+/** 更新法规锚（PATCH /datasets/{id} 元数据通道；UV-051 部署闸门的 UI 修复路径） */
+export async function updateLawRef(lawRef: LawRef): Promise<void> {
+    const s = get(governanceStore);
+    if (!s.selectedId) throw new GovernanceError('未选中数据集', 'no_selection');
+    const updated = await backend().updateDatasetMeta(s.selectedId, { law_ref: lawRef });
+    await afterDatasetChanged(updated);
 }
 
 /** 版本迁移:major(法规条款级) / patch(内部小改) */

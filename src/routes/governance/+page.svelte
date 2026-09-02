@@ -24,7 +24,8 @@
     transition,
     publish,
     unpublish,
-    createVersion
+    createVersion,
+    updateLawRef
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
   import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
@@ -221,6 +222,46 @@
   let dryRunResult = $state<BundleDryRunResult | null>(null);
   /** 当前执行域激活 bundle(按 dataset_id 匹配选中数据集,部署徽标数据源) */
   let activeBundles = $state<ActiveBundleInfo[]>([]);
+
+  // ===== 法规锚编辑(UV-051:生效基准 UI 编辑通道——发布闸门 400 的产品内修复路径) =====
+  let showLawEdit = $state(false);
+  let lawSaving = $state(false);
+  let lawForm = $state({ document_id: '', law_version: '', effective_from: '', effective_to: '' });
+
+  /** 打开编辑器:表单预填当前法规锚(未设置则空表单) */
+  function openLawEdit(): void {
+    const lr = selected?.law_ref ?? null;
+    lawForm = {
+      document_id: lr?.document_id ?? '',
+      law_version: lr?.law_version ?? '',
+      effective_from: lr?.effective_from ?? '',
+      effective_to: lr?.effective_to ?? ''
+    };
+    showLawEdit = true;
+  }
+
+  async function handleSaveLawRef(): Promise<void> {
+    if (!lawForm.document_id.trim()) {
+      toastError('document_id 必填(法规文件唯一标识)', '法规锚');
+      return;
+    }
+    lawSaving = true;
+    try {
+      await updateLawRef({
+        document_id: lawForm.document_id.trim(),
+        law_version: lawForm.law_version.trim() || null,
+        effective_from: lawForm.effective_from.trim() || null,
+        effective_to: lawForm.effective_to.trim() || null
+      });
+      toastSuccess('法规锚已更新', '治理');
+      showLawEdit = false;
+    } catch (e) {
+      // 后端 UV-051 前置校验/租户校验错误原文透出,不静默
+      toastError(e instanceof Error ? e.message : String(e), '法规锚');
+    } finally {
+      lawSaving = false;
+    }
+  }
 
   function selectedActiveBundle(): ActiveBundleInfo | null {
     const s = get(governanceStore);
@@ -837,6 +878,66 @@
           </div>
         {/if}
 
+        <!-- 法规锚(UV-051:生效基准编辑通道;auto_by_effective_date 模式发布/部署需 effective_from) -->
+        <div class="sec">
+          <div class="sec-head">
+            <span>法规锚(law_ref)</span>
+            <button class="btn btn-sm" onclick={openLawEdit}>
+              {selected.law_ref ? '编辑' : '设置'}
+            </button>
+          </div>
+          {#if selected.law_ref}
+            <div class="chip-row">
+              <span class="chip">{selected.law_ref.document_id}</span>
+              {#if selected.law_ref.law_version}
+                <span class="chip">版本 {selected.law_ref.law_version}</span>
+              {/if}
+              {#if selected.law_ref.effective_from}
+                <span class="chip">生效 {selected.law_ref.effective_from}</span>
+              {:else}
+                <span class="chip chip-warn">⚠ 缺生效基准 — 发布将被前置校验拦截</span>
+              {/if}
+              {#if selected.law_ref.effective_to}
+                <span class="chip">失效 {selected.law_ref.effective_to}</span>
+              {/if}
+            </div>
+          {:else}
+            <p class="muted">
+              未设置 —— 版本选择缺省为 auto_by_effective_date 模式,发布与部署需
+              law_ref.effective_from 作为生效基准(UV-051 前置校验)。建议发布前先设置。
+            </p>
+          {/if}
+
+          {#if showLawEdit}
+            <div class="law-edit">
+              <div class="law-grid">
+                <label>
+                  document_id *
+                  <input type="text" bind:value={lawForm.document_id} placeholder="如 com.example.policy.v2" />
+                </label>
+                <label>
+                  law_version
+                  <input type="text" bind:value={lawForm.law_version} placeholder="如 1.0.0" />
+                </label>
+                <label>
+                  effective_from(生效日,ISO YYYY-MM-DD)
+                  <input type="text" bind:value={lawForm.effective_from} placeholder="如 2026-01-01" />
+                </label>
+                <label>
+                  effective_to(失效日,可空 = 长期生效)
+                  <input type="text" bind:value={lawForm.effective_to} placeholder="如 2027-01-01" />
+                </label>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-sm btn-primary" onclick={handleSaveLawRef} disabled={lawSaving}>
+                  {lawSaving ? '保存中…' : '保存法规锚'}
+                </button>
+                <button class="btn btn-sm btn-ghost" onclick={() => (showLawEdit = false)}>取消</button>
+              </div>
+            </div>
+          {/if}
+        </div>
+
         <!-- 版本链 -->
         <div class="sec">
           <div class="sec-head">
@@ -1238,6 +1339,34 @@
     border-radius: var(--radius-full);
     background: var(--border);
     font-size: var(--text-xs);
+    font-family: monospace;
+  }
+  .chip-warn {
+    background: var(--warn-bg, #fff3e0);
+    color: var(--warn, #b26a00);
+    font-family: inherit;
+  }
+  .law-edit {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 6px);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .law-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--spacing-sm);
+  }
+  .law-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    font-size: var(--text-xs);
+    color: var(--text-muted, #888);
+  }
+  .law-grid input {
     font-family: monospace;
   }
   .deploy-box {
