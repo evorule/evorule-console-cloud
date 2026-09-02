@@ -98,6 +98,12 @@
         — 5 分钟 0→1 详细 step-by-step
       </li>
       <li>
+        <button class="link-btn" onclick={() => jumpDocs("docs/scenarios/README.md")}>
+          docs/scenarios/README.md
+        </button>
+        — 4 条真实业务场景规则(合同/报销/巡检/AI 门禁),附对照输入与预期输出
+      </li>
+      <li>
         <button class="link-btn" onclick={() => jumpDocs("docs/how-to/navigate-workbench.md")}>
           docs/how-to/navigate-workbench.md
         </button>
