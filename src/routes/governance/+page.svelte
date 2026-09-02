@@ -29,8 +29,15 @@
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
   import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
+  import { useWorkspaceBackendOrNull } from '$lib/kernel';
+  import type { ActiveBundleInfo, BundleDryRunResult, BundleImportResult } from '$lib/kernel';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import JsonViewer from '$lib/views/Dataset/JsonViewer.svelte';
+
+  // WorkspaceBackend 必须在组件初始化期从 context 取出并缓存——
+  // getContext/hasContext 只能在组件初始化期间调用,异步回调(部署/预检/刷新)中调用
+  // 会抛 Svelte lifecycle_outside_component 错误(32 号 UI 实测发现)。
+  const workspaceBackend = useWorkspaceBackendOrNull();
 
   // ===== 连接面板 =====
   let connecting = $state(false);
@@ -201,6 +208,101 @@
       toastSuccess(`版本 ${label} 已创建`, '治理');
     } catch (e) {
       toastError(e instanceof Error ? e.message : String(e), label);
+    }
+  }
+
+  // ===== 部署到执行域(32 号 UI 接线:治理 Published → 导出 bundle → 执行域导入激活) =====
+  let showDeploy = $state(false);
+  let deployConfirmed = $state(false);
+  let deploying = $state(false);
+  let dryRunning = $state(false);
+  let deployError = $state<string | null>(null);
+  let deployResult = $state<BundleImportResult | null>(null);
+  let dryRunResult = $state<BundleDryRunResult | null>(null);
+  /** 当前执行域激活 bundle(按 dataset_id 匹配选中数据集,部署徽标数据源) */
+  let activeBundles = $state<ActiveBundleInfo[]>([]);
+
+  function selectedActiveBundle(): ActiveBundleInfo | null {
+    const s = get(governanceStore);
+    if (!s.selectedId) return null;
+    return activeBundles.find((b) => b.dataset_id === s.selectedId) ?? null;
+  }
+
+  /** 拉取执行域当前激活 bundle(失败不静默:console.warn 可观测,徽标显示"未知") */
+  async function refreshActiveBundles(): Promise<void> {
+    const wb = workspaceBackend;
+    if (!wb) return;
+    try {
+      activeBundles = await wb.listActiveBundles();
+    } catch (e) {
+      console.warn('[governance] 拉取执行域激活 bundle 失败:', e);
+    }
+  }
+
+  function openDeploy(): void {
+    showDeploy = true;
+    deployConfirmed = false;
+    deployError = null;
+    deployResult = null;
+    dryRunResult = null;
+    void refreshActiveBundles();
+  }
+
+  /**
+   * 导出带人工确认证据的 bundle(闸门一:verdict=pass 由操作者背书,32 号 §3 方案 B)。
+   * 仅在 deployConfirmed 勾选后可调用 — 证据声明先于一切部署动作。
+   */
+  async function exportBundleForDeploy(): Promise<unknown> {
+    const s = get(governanceStore);
+    const bk = s.backend;
+    if (!bk || !s.selectedId) throw new Error('未连接治理服务或未选中数据集');
+    const version = s.versioning?.current
+      ?? s.datasets.find((d) => d.dataset_id === s.selectedId)?.versioning.current;
+    if (!version) throw new Error('无法确定数据集当前版本');
+    return bk.exportBundle(s.selectedId, version, true);
+  }
+
+  /** 预检:导出 → dry-run 导入(校验链全跑,不落盘不 reload) */
+  async function handleDeployDryRun(): Promise<void> {
+    if (!deployConfirmed) return;
+    dryRunning = true;
+    dryRunResult = null;
+    deployError = null;
+    try {
+      const bundle = await exportBundleForDeploy();
+      const wb = workspaceBackend;
+      if (!wb) throw new Error('执行域通道不可用:请连接 evorule-server');
+      dryRunResult = await wb.dryRunImportBundle(bundle);
+      toastSuccess('预检通过(校验链全绿,未落盘)', '部署预检');
+    } catch (e) {
+      deployError = e instanceof Error ? e.message : String(e);
+      toastError(deployError, '部署预检');
+    } finally {
+      dryRunning = false;
+    }
+  }
+
+  /** 确认部署:导出(带人工确认证据) → 导入执行域 → 激活反馈 */
+  async function handleDeploy(): Promise<void> {
+    if (!deployConfirmed) return;
+    deploying = true;
+    deployError = null;
+    deployResult = null;
+    try {
+      const bundle = await exportBundleForDeploy();
+      const wb = workspaceBackend;
+      if (!wb) throw new Error('执行域通道不可用:请连接 evorule-server');
+      deployResult = await wb.importBundle(bundle);
+      toastSuccess(
+        `已激活 ${deployResult.activated_version} · ${deployResult.entry_count} 条规则 · 新会话即生效`,
+        '部署到执行域'
+      );
+      await refreshActiveBundles();
+    } catch (e) {
+      deployError = e instanceof Error ? e.message : String(e);
+      toastError(deployError, '部署到执行域');
+    } finally {
+      deploying = false;
     }
   }
 
@@ -660,11 +762,80 @@
               <button class="btn btn-sm btn-primary" onclick={handlePublish}>发布(Published)</button>
             </div>
           {:else if selectedStatus === 'Published'}
+            <button class="btn btn-sm btn-primary" onclick={openDeploy}>🚀 部署到执行域</button>
             <button class="btn btn-sm btn-danger" onclick={handleUnpublish}>撤销发布(Rejected,需管理员)</button>
           {:else if selectedStatus === 'Rejected'}
             <button class="btn btn-sm" onclick={() => handleTransition('candidate')}>重新提交候选</button>
           {/if}
         </div>
+
+        <!-- 部署到执行域(32 号 UI 接线:Published 数据集 → 导出 bundle → 执行域导入激活) -->
+        {#if selectedStatus === 'Published' && showDeploy}
+          <div class="deploy-box">
+            <div class="deploy-head">
+              <strong>🚀 部署到执行域</strong>
+              <button class="btn btn-sm btn-ghost" onclick={() => (showDeploy = false)}>收起</button>
+            </div>
+            <p class="muted">
+              数据集 <strong>{selected.name}</strong>({selected.dataset_id})
+              · 版本 <strong>{$governanceStore.versioning?.current ?? selected.versioning.current}</strong>
+              · 规则条目 {$governanceStore.entries.length} 条
+              · 目标:执行域 evorule-server(规则落盘激活,新会话即生效,已有会话不受影响)
+            </p>
+
+            {#if selectedActiveBundle() !== null}
+              {@const ab = selectedActiveBundle()!}
+              <p class="deploy-active">
+                当前执行域激活:{ab.source_version} · {ab.entry_count} 条 ·
+                <span class="chip" title="BLAKE3 内容哈希">{ab.content_hash.slice(0, 14)}…</span>
+              </p>
+            {/if}
+
+            <label class="check">
+              <input type="checkbox" bind:checked={deployConfirmed} />
+              <span>
+                <strong>证据声明(闸门一)</strong>
+                本数据集未关联沙箱自动验证证据。部署即声明:该版本已经过验证,可进入生产。
+                我确认该版本已完成验证。
+              </span>
+            </label>
+
+            <div class="btn-row">
+              <button
+                class="btn btn-sm"
+                onclick={handleDeployDryRun}
+                disabled={!deployConfirmed || dryRunning || deploying}
+              >
+                {dryRunning ? '预检中…' : '预检(dry-run,不落盘)'}
+              </button>
+              <button
+                class="btn btn-sm btn-primary"
+                onclick={handleDeploy}
+                disabled={!deployConfirmed || deploying || dryRunning}
+              >
+                {deploying ? '部署中…' : '确认部署'}
+              </button>
+            </div>
+
+            {#if dryRunResult}
+              <p class="deploy-ok">
+                ✅ 预检通过:{dryRunResult.entry_count} 条 · 版本 {dryRunResult.source_version}
+                · 校验链全绿(未落盘)
+              </p>
+            {/if}
+
+            {#if deployResult}
+              <p class="deploy-ok">
+                ✅ 已激活 {deployResult.activated_version} · {deployResult.entry_count} 条规则
+                · 新会话即生效
+              </p>
+            {/if}
+
+            {#if deployError}
+              <div class="err-box">{deployError}</div>
+            {/if}
+          </div>
+        {/if}
 
         <!-- 版本链 -->
         <div class="sec">
@@ -1068,6 +1239,29 @@
     background: var(--border);
     font-size: var(--text-xs);
     font-family: monospace;
+  }
+  .deploy-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 6px);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .deploy-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .deploy-active {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--text-muted, #888);
+  }
+  .deploy-ok {
+    margin: 0;
+    color: var(--ok, #2e7d32);
+    font-size: var(--text-xs);
   }
   .btn-row {
     display: flex;

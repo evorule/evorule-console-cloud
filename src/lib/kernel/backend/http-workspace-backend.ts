@@ -46,7 +46,10 @@ import type {
   UpdateVerdictContractRequest,
   EvaluateVerdictRequest,
   EvaluateVerdictResult,
-  RecordClockRequest
+  RecordClockRequest,
+  BundleImportResult,
+  BundleDryRunResult,
+  ActiveBundleInfo
 } from './workspace-types';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:18080';
@@ -629,5 +632,39 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
       VersionClockMapRecord[] | { clocks: VersionClockMapRecord[] }
     >(`/api/sessions/${sessionId}/clock/lookup${q}`, { headers: this.headers() });
     return Array.isArray(j) ? j : j?.clocks ?? [];
+  }
+
+  // ------------------------------------------------------------------------
+  // === 快照包导入 (治理→执行域部署通道,evorule-server /api/bundles/*) ===
+  // ------------------------------------------------------------------------
+
+  /**
+   * POST /api/bundles/import — 导入快照包并激活(6 项校验+原子落盘+reload)。
+   *
+   * 请求体 `{"bundle": DatasetBundle}`(契约复刻治理侧 evorule-rule ImportReq);
+   * bundle 参数为治理侧导出的 DatasetBundle JSON(前端不解析其内部结构,原样透传)。
+   * 失败 → 400 显式错误(HttpWorkspaceBackendError 携带 server error 原文,不静默)。
+   */
+  async importBundle(bundle: unknown): Promise<BundleImportResult> {
+    return this.fetchJson<BundleImportResult>(
+      '/api/bundles/import',
+      this.postJson({ bundle })
+    );
+  }
+
+  /** POST /api/bundles/import/dry-run — 导入预检(校验链全跑,不落盘不 reload) */
+  async dryRunImportBundle(bundle: unknown): Promise<BundleDryRunResult> {
+    return this.fetchJson<BundleDryRunResult>(
+      '/api/bundles/import/dry-run',
+      this.postJson({ bundle })
+    );
+  }
+
+  /** GET /api/bundles/active — 当前激活 bundle 列表 */
+  async listActiveBundles(): Promise<ActiveBundleInfo[]> {
+    const j = await this.fetchJson<
+      ActiveBundleInfo[] | { bundles: ActiveBundleInfo[] }
+    >('/api/bundles/active', { headers: this.headers() });
+    return Array.isArray(j) ? j : j?.bundles ?? [];
   }
 }
