@@ -19,6 +19,7 @@
 
 ## 补充目录
 
+- [developer-guide.md](./developer-guide.md) — 开发者指南：架构、启动、产品主流程走读、代码地图、坑表（新人与 LLM 协作者先读这份）
 - [adr/](./adr/) — 架构决策记录（ADR），记录重要技术决策与历史
 - [operations/](./operations/) — 构建、部署、测试、运维
 
