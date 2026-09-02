@@ -1,8 +1,8 @@
 # --- 构建产物 ---
 node_modules/
-build/
+/build/
 .svelte-kit/
-dist/
+/dist/
 *.tgz
 
 # --- Playwright / 测试 ---
