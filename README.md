@@ -5,9 +5,9 @@
 
 > evorule 规则引擎面板 · **联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM）
 
-[![version](https://img.shields.io/badge/version-0.1.0-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.2.0-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
-[![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evo-rule-lab/evorule-console)
+[![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
 
 `evorule-console-cloud` 基于 evorule-console 内核快照（`src/lib/kernel/`，取自内核 v0.2.0）扩展：
 
@@ -43,7 +43,7 @@
 
 ### 在线体验
 
-**[在线 demo](https://evo-rule-lab.github.io/evorule-console-cloud/)**（无需注册，医疗 + 财务两套场景，浏览器内 MockBackend 零网络依赖）
+**[在线 demo](https://evorule.github.io/evorule-console-cloud/)**（无需注册，医疗 + 财务两套场景，浏览器内 MockBackend 零网络依赖）
 
 ### 4 个引导任务（2-3 分钟体验完整链路）
 
@@ -65,7 +65,7 @@
 
 ## 定位
 
-evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
+evorule-console-cloud 是 **evorule 全生态的唯一用户入口**（2026-08-30 生态裁定）：浏览器用户对 evorule 的一切操作——规则库、执行、审计、回放、审批——都收敛于此面板。同时它也是面向**二次开发者**的专业起点工具：开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
 
 | 层级 | 仓 | 定位 | LLM | 网络 | 内核关系 |
 | --- | --- | --- | --- | --- | --- |
@@ -79,7 +79,7 @@ evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发
 
 ## 当前版本边界与 Roadmap
 
-### v0.1.0 已支持
+### 当前版本已支持（v0.2.0）
 
 - 规则库视图离线可用（内置 demo 数据集 + 4 个引导任务）
 - 执行台 / 状态 / 审计 / 时间旅行：连接 evorule-server 运行（支持本地 / 远程地址）
@@ -114,7 +114,7 @@ evorule-console-cloud 是面向**二次开发者**的专业起点工具。开发
 git clone https://gitee.com/evorule/evorule-console-cloud.git
 cd evorule-console-cloud
 npm install
-npm run dev    # 访问 http://localhost:5174
+npm run dev    # 开发者模式：http://localhost:5174（日常体验请用一键启动包，见下文）
 ```
 
 > 规则库视图不需要后端，可离线试用；执行台/状态/审计/时间旅行需要 evorule-server 跑在 `localhost:18080`（联网模式可配远程）。
