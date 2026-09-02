@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 EvoRule Project
 # evorule 一键启动(macOS / Linux)
+# 注:macOS 体验包规划中,当前发布 win64/linux64 与 Docker 单镜像;
+#     本脚本随 linux64 包分发,macOS 包发布后同样适用
 # 用法: sh start-evorule.sh   (或 macOS 双击 start-evorule.command)
 # 停止: sh stop-evorule.sh
 # 中文说明见 README-STARTUP.txt

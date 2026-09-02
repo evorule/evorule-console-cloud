@@ -3,20 +3,21 @@ evorule 体验版(单机一键启动)
 
 环境要求
 --------
-- Windows 10/11 64 位,或 macOS 12+(Apple Silicon/Intel),或主流
-  Linux x86_64 发行版
+- Windows 10/11 64 位,或主流 Linux x86_64 发行版(macOS 12+
+  规划中,当前提供 win64/linux64,另有 Docker 单镜像)
 - 无需安装任何运行时(Node/Rust/数据库都不需要)
 - Linux 依赖系统库:OpenSSL 3.0 / libz / libzstd(Debian 12、
   Ubuntu 22.04、RHEL 9 等近年发行版默认自带;老系统报错缺库时
   用包管理器安装 libssl3、libzstd1 即可)
-- 注意:三个平台的包各自独立(二进制不通用),按你的系统下载
-  对应压缩包(win64 / macos64 / linux64)
+- 注意:各平台的包各自独立(二进制不通用),按你的系统下载
+  对应压缩包(win64 / linux64)
 
 启动
 ----
 1. 解压本压缩包到任意目录(路径建议不含空格)
 2. 双击 start-evorule.bat (Windows)
-   macOS: 终端执行 sh start-evorule.sh,或双击 start-evorule.command
+   macOS(包规划中,发布后适用): 终端执行 sh start-evorule.sh,
+   或双击 start-evorule.command
    Linux: 终端执行 sh start-evorule.sh
    (macOS/Linux 首次使用需先执行:
     chmod +x evorule-server evorule-rule-serve)
