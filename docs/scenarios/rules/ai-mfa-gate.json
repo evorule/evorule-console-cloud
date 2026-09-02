@@ -1,0 +1,68 @@
+{
+  "id": "scenario.ai_mfa_gate",
+  "version": 2,
+  "description": "AI 合规门禁 — 提交业务指令 ai_mfa_gate_check：AI Agent 发起资金操作但未通过 MFA → 阻断 + 审计留痕",
+  "instruction_type": "ai_mfa_gate_check",
+  "example_instruction": {
+    "type": "ai_mfa_gate_check",
+    "params": {
+      "request": { "action": "transfer", "mfa_verified": false }
+    }
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "ai_mfa_gate_check" },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "data",
+              "operation": "set",
+              "value": "__exec__.instruction.params"
+            }
+          },
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "eq",
+                "path": "__exec__.payload.data.request.mfa_verified",
+                "value": true
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.request.gate_decision",
+                    "operation": "set",
+                    "value": "allowed"
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.request.gate_decision",
+                    "operation": "set",
+                    "value": "blocked"
+                  }
+                },
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.request.gate_note",
+                    "operation": "set",
+                    "value": "等保 2.0 三级 §8.1.4.1.d：资金类操作需先通过 MFA 验证，已阻断并留痕"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

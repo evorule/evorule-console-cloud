@@ -1,0 +1,99 @@
+{
+  "id": "scenario.expense_compliance",
+  "version": 2,
+  "description": "报销合规判定 — 提交业务指令 expense_compliance_check：复审印发票拒绝；低于 5000 自动通过；否则需主管审批",
+  "instruction_type": "expense_compliance_check",
+  "example_instruction": {
+    "type": "expense_compliance_check",
+    "params": {
+      "expense": { "amount": 4320, "category": "travel" },
+      "invoice": { "duplicate": false }
+    }
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "expense_compliance_check" },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "data",
+              "operation": "set",
+              "value": "__exec__.instruction.params"
+            }
+          },
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "eq",
+                "path": "__exec__.payload.data.invoice.duplicate",
+                "value": true
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.expense.decision",
+                    "operation": "set",
+                    "value": "rejected"
+                  }
+                },
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.expense.reject_reason",
+                    "operation": "set",
+                    "value": "发票重复：同一发票号已存在报销记录"
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "branch",
+                  "params": {
+                    "domain": {
+                      "type": "lt",
+                      "path": "__exec__.payload.data.expense.amount",
+                      "value": 5000
+                    },
+                    "on_true": [
+                      {
+                        "type": "set",
+                        "params": {
+                          "attr": "__exec__.payload.data.expense.decision",
+                          "operation": "set",
+                          "value": "auto_approved"
+                        }
+                      }
+                    ],
+                    "on_false": [
+                      {
+                        "type": "set",
+                        "params": {
+                          "attr": "__exec__.payload.data.expense.decision",
+                          "operation": "set",
+                          "value": "manager_approval_needed"
+                        }
+                      },
+                      {
+                        "type": "set",
+                        "params": {
+                          "attr": "__exec__.payload.data.expense.escalate_to",
+                          "operation": "set",
+                          "value": "部门主管审批队列"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

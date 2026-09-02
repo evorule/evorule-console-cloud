@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 EvoRule Project
 # evorule-console-cloud 一键启动分发包打包脚本
 #
@@ -59,6 +59,10 @@ $expect = @{
     "$stage\resources\core_eval.json"    = (Get-Item $CoreEval).Length
     "$stage\rules\llm-audit-bridge.json" = (Get-Item "$root\assets\evorule-rules\llm-audit-bridge.json").Length
     "$stage\rules\demo-svc.json"         = (Get-Item "$root\assets\evorule-rules\demo-svc.json").Length
+    "$stage\rules\scenario-contract-payment-guard.json" = (Get-Item "$root\assets\evorule-rules\scenario-contract-payment-guard.json").Length
+    "$stage\rules\scenario-expense-compliance.json"     = (Get-Item "$root\assets\evorule-rules\scenario-expense-compliance.json").Length
+    "$stage\rules\scenario-equipment-inspection.json"   = (Get-Item "$root\assets\evorule-rules\scenario-equipment-inspection.json").Length
+    "$stage\rules\scenario-ai-mfa-gate.json"            = (Get-Item "$root\assets\evorule-rules\scenario-ai-mfa-gate.json").Length
     "$stage\service_registry.json"       = (Get-Item "$root\assets\service_registry.json").Length
     "$stage\plugin_manifest.json"        = (Get-Item "$root\assets\plugin_manifest.json").Length
     "$stage\web\index.html"              = (Get-Item "$root\build\index.html").Length
@@ -69,7 +73,7 @@ foreach ($k in $expect.Keys) {
     if (-not (Test-Path $k)) { throw "复制核验失败(目标缺失): $k" }
     if ((Get-Item $k).Length -ne $expect[$k]) { throw "复制核验失败(大小不一致): $k" }
 }
-Write-Host "[OK] 10 项关键文件复制核验通过"
+Write-Host "[OK] 14 项关键文件复制核验通过"
 
 # ---- 打 zip ----
 $zip = "$root\dist\$stageName.zip"

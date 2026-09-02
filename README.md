@@ -22,7 +22,8 @@
 
 ## 🚀 新用户从这里开始
 
-- **[5 分钟上手](./docs/tutorial/01-quickstart.md)** — 从 0 到跑通第一条规则
+- **[5 分钟跑起来（体验包路径）](./docs/tutorial/02-quickstart-package.md)** — 下载压缩包，解压即用，全截图跟做
+- **[5 分钟上手（开发者路径）](./docs/tutorial/01-quickstart.md)** — 克隆仓 + dev 环境，从 0 到跑通第一条规则
 - **[❓ 浏览器内帮助页](http://127.0.0.1:5174/help)** — 启服务后侧栏底部"❓ 帮助"按钮
 - **[一键启停指南](./README-STARTUP.md)** — 桌面双击 / 命令行两种方式
 
@@ -51,6 +52,15 @@
 2. **查问题**（1 分钟）：定位病人 P-1283 为何触发异常告警
 3. **改规则**（3 分钟）：把发烧阈值从 38°C 改为 37.5°C
 4. **合规门禁**（2 分钟）：AI Agent 调用转账但未 MFA → 门禁阻断 + BLAKE3 留痕
+
+### 场景示例规则（真实业务语义，可实测复现）
+
+- **[合同条款校验](./docs/scenarios/01-contract-payment-guard.md)** — 付款前提缺失即阻断
+- **[报销合规检查](./docs/scenarios/02-expense-compliance.md)** — 重复发票驳回；超标升级审批链
+- **[设备巡检告警](./docs/scenarios/03-equipment-inspection.md)** — 阈值联动告警与升级上报
+- **[AI 合规门禁](./docs/scenarios/04-ai-mfa-gate.md)** — AI Agent 未过 MFA 发起转账 → 阻断留痕
+
+每条规则附两组对照输入与逐字段预期输出，3 分钟可复现一条。见 [场景示例总览](./docs/scenarios/README.md)。
 
 ### 核心能力
 

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "app.consolecloud.scenario_ai_gate",
+  "rule_id": "scenario.ai_mfa_gate",
+  "version": "0.1.0",
+  "description": "AI 合规门禁 — 提交业务指令 ai_mfa_gate_check：AI Agent 发起资金操作但未通过 MFA → 阻断 + 审计留痕",
+  "metadata": {
+    "author": "EvoRule Project",
+    "license": "CC0-1.0 Universal (Public Domain)",
+    "spdx_license_id": "CC0-1.0",
+    "provenance": {
+      "derived_from": [
+        "evorule-console-cloud docs/scenarios/rules (UV-045 社区点火 W2.2)"
+      ],
+      "date": "2026-09-02",
+      "workstream": "UV-045 W2.2 场景示例规则",
+      "note": "与 docs/scenarios/rules 中的内核格式同 transform;本文件为 --rules-dir 可装载的 rule_set v1.0 封装"
+    },
+    "deployment": {
+      "method": "evorule-server 启动参数 --rules-dir <本目录>;变更后 POST /api/rules/reload 生效"
+    },
+    "sections": [
+      "1. 业务分支规则:按 payload.data 业务字段分支,set 写入决策字段",
+      "2. noop 收尾规则(镜像 demo-svc 收敛模式)"
+    ],
+    "constraints": [
+      "TCB 数据模型无 Float:金额等数值以整数或字符串形态表达",
+      "写路径统一走 __exec__.payload.data 前缀"
+    ]
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": {
+          "type": "instruction",
+          "instruction_type": "ai_mfa_gate_check"
+        },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "data",
+              "operation": "set",
+              "value": "__exec__.instruction.params"
+            }
+          },
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "eq",
+                "path": "__exec__.payload.data.request.mfa_verified",
+                "value": true
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.request.gate_decision",
+                    "operation": "set",
+                    "value": "allowed"
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.request.gate_decision",
+                    "operation": "set",
+                    "value": "blocked"
+                  }
+                },
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.request.gate_note",
+                    "operation": "set",
+                    "value": "等保 2.0 三级 §8.1.4.1.d：资金类操作需先通过 MFA 验证，已阻断并留痕"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
