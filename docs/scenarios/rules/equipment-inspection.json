@@ -1,0 +1,98 @@
+{
+  "id": "scenario.equipment_inspection",
+  "version": 2,
+  "description": "设备巡检分级 — 提交业务指令 equipment_inspection_check：温度 ≥ 80 升级告警；振动 ≥ 5 判异常",
+  "instruction_type": "equipment_inspection_check",
+  "example_instruction": {
+    "type": "equipment_inspection_check",
+    "params": {
+      "sensor": { "temperature": 83, "vibration": 5 }
+    }
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": { "type": "instruction", "instruction_type": "equipment_inspection_check" },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "data",
+              "operation": "set",
+              "value": "__exec__.instruction.params"
+            }
+          },
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "lt",
+                "path": "__exec__.payload.data.sensor.temperature",
+                "value": 80
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.inspection.alarm_level",
+                    "operation": "set",
+                    "value": "normal"
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.inspection.alarm_level",
+                    "operation": "set",
+                    "value": "escalate"
+                  }
+                },
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.inspection.escalate_to",
+                    "operation": "set",
+                    "value": "值班主管工单队列"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "lt",
+                "path": "__exec__.payload.data.sensor.vibration",
+                "value": 5
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.inspection.vibration_status",
+                    "operation": "set",
+                    "value": "normal"
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.inspection.vibration_status",
+                    "operation": "set",
+                    "value": "abnormal"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
