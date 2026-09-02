@@ -13,11 +13,12 @@
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libsqlite3-0 \
     ca-certificates \
     tini \
     bash \
     && rm -rf /var/lib/apt/lists/*
+# 注:不装 libsqlite3-0——双二进制经 rusqlite bundled 特性静态内嵌 SQLite,
+# ldd 实证无 libsqlite3 动态依赖(UV-041,2026-09-02 清理)
 
 COPY evorule-server /usr/local/bin/evorule-server
 COPY evorule-rule-serve /usr/local/bin/evorule-rule-serve
