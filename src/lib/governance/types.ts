@@ -30,6 +30,24 @@ export interface LifecycleStateChange {
 	published_as?: string;
 }
 
+/** 法规锚（合规数据集核心锚；UV-051：auto_by_effective_date 模式须含 effective_from） */
+export interface LawRef {
+    document_id: string;
+    law_version?: string | null;
+    effective_from?: string | null;
+    effective_to?: string | null;
+}
+
+/** 更新数据集元数据请求体（PATCH /v1/datasets/{id}；字段缺省 = 不修改） */
+export interface UpdateDatasetMetaRequest {
+    name?: string;
+    description?: string;
+    domain?: string[];
+    tags?: string[];
+    visibility?: 'private' | 'public';
+    law_ref?: LawRef;
+}
+
 /** 数据集（RuleDataset）—— 治理单元 / 版本单元 */
 export interface GovernanceDataset {
 	/** 租户内唯一 */
@@ -53,7 +71,7 @@ export interface GovernanceDataset {
 		chain: string[];
 	};
 	/** 法规锚（可选） */
-	law_ref?: unknown;
+	law_ref?: LawRef | null;
 	/** 版本选择双模式（可选） */
 	version_selection?: unknown;
 	/** 数据依赖声明（可选） */

@@ -22,6 +22,7 @@ import type {
 	KnowledgeEntry,
 	LifecycleStatus,
 	Page,
+	UpdateDatasetMetaRequest,
 	VersioningInfo
 } from './types';
 
@@ -169,6 +170,15 @@ export class GovernanceBackend {
 		return this.request<GovernanceDataset>({
 			method: 'POST',
 			path: `/v1/datasets/${encodeURIComponent(id)}/unpublish`
+		});
+	}
+
+	/** 更新数据集元数据（PATCH /v1/datasets/{id}；字段缺省 = 不修改，UV-051 法规锚编辑通道） */
+	async updateDatasetMeta(id: string, req: UpdateDatasetMetaRequest): Promise<GovernanceDataset> {
+		return this.request<GovernanceDataset>({
+			method: 'PATCH',
+			path: `/v1/datasets/${encodeURIComponent(id)}`,
+			body: req
 		});
 	}
 
