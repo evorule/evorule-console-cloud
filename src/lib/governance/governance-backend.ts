@@ -266,6 +266,41 @@ export class GovernanceBackend {
 		});
 	}
 
+	// ====================================================================
+	// 快照包导出（治理→执行域部署通道；36 号集成契约）
+	// ====================================================================
+
+	/**
+	 * 带证据导出快照包（POST /v1/bundles/export）。
+	 *
+	 * 部署到执行域必须走本端点（带证据）：GET 导出固定 unverified()
+	 * （verdict=fail），执行侧闸门一会拒绝导入（T0 决策：未验证不得默认 Pass）。
+	 *
+	 * 证据语义（32 号设计方案 §3 方案 B）：verdict 由操作者人工确认背书，
+	 * 本客户端如实按调用方传入值构造，不伪造沙箱自动验证产出；
+	 * 证据真实性责任在操作者（与"LLM 只到 Draft、人工确认过闸二"治理哲学同构）。
+	 *
+	 * @param datasetId 数据集 ID
+	 * @param version 要导出的版本（如 "V1"）
+	 * @param humanConfirmed 操作者已人工确认该版本验证通过 → verdict="pass"；
+	 *                        false 时导出 unverified 包（仅供预览，不可导入执行域）
+	 */
+	async exportBundle(
+		datasetId: string,
+		version: string,
+		humanConfirmed: boolean
+	): Promise<unknown> {
+		return this.request<unknown>({
+			method: 'POST',
+			path: '/v1/bundles/export',
+			body: {
+				dataset_id: datasetId,
+				version,
+				tests: { verdict: humanConfirmed ? 'pass' : 'fail' }
+			}
+		});
+	}
+
 	/** 创建新版本（major=法规条款级升版 / patch=内部小改） */
 	async createVersion(datasetId: string, kind: 'major' | 'patch'): Promise<{ new_version: string; current: string; chain: string[] }> {
 		return this.request<{ new_version: string; current: string; chain: string[] }>({

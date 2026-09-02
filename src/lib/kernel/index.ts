@@ -92,7 +92,10 @@ export type {
   UpdateVerdictContractRequest,
   EvaluateVerdictRequest,
   EvaluateVerdictResult,
-  RecordClockRequest
+  RecordClockRequest,
+  BundleImportResult,
+  BundleDryRunResult,
+  ActiveBundleInfo
 } from './backend/workspace-types';
 
 // ============================================================================

@@ -52,7 +52,10 @@ import {
 	type UpdateVerdictContractRequest,
 	type EvaluateVerdictRequest,
 	type EvaluateVerdictResult,
-	type RecordClockRequest
+	type RecordClockRequest,
+	type BundleImportResult,
+	type BundleDryRunResult,
+	type ActiveBundleInfo
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type CloudBackendConfig } from './types';
 import { MockWorkspaceBackend } from './mock-workspace-backend';
@@ -306,5 +309,16 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 	}
 	lookupClock(sessionId: number, fromVersion?: number, toVersion?: number): Promise<VersionClockMapRecord[]> {
 		return this.backend.lookupClock(sessionId, fromVersion, toVersion);
+	}
+
+	// === 快照包导入(治理→执行域部署通道,委托内部 backend) ===
+	importBundle(bundle: unknown): Promise<BundleImportResult> {
+		return this.backend.importBundle(bundle);
+	}
+	dryRunImportBundle(bundle: unknown): Promise<BundleDryRunResult> {
+		return this.backend.dryRunImportBundle(bundle);
+	}
+	listActiveBundles(): Promise<ActiveBundleInfo[]> {
+		return this.backend.listActiveBundles();
 	}
 }

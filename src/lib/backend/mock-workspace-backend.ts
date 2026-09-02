@@ -46,7 +46,10 @@ import type {
 	UpdateVerdictContractRequest,
 	EvaluateVerdictRequest,
 	EvaluateVerdictResult,
-	RecordClockRequest
+	RecordClockRequest,
+	BundleImportResult,
+	BundleDryRunResult,
+	ActiveBundleInfo
 } from '$lib/kernel';
 
 /** 离线演示模式不支持的操作的统一错误(fail-fast,不静默掩盖) */
@@ -393,6 +396,20 @@ export class MockWorkspaceBackend implements WorkspaceBackend {
 	}
 
 	async lookupClock(_sessionId: number, _fromVersion?: number, _toVersion?: number): Promise<VersionClockMapRecord[]> {
+		return [];
+	}
+
+	// === 快照包导入(治理→执行域部署通道) ===
+
+	async importBundle(_bundle: unknown): Promise<BundleImportResult> {
+		unsupported('importBundle');
+	}
+
+	async dryRunImportBundle(_bundle: unknown): Promise<BundleDryRunResult> {
+		unsupported('dryRunImportBundle');
+	}
+
+	async listActiveBundles(): Promise<ActiveBundleInfo[]> {
 		return [];
 	}
 }

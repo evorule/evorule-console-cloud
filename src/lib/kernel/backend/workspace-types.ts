@@ -412,6 +412,44 @@ export interface RecordClockRequest {
   source?: string;
 }
 
+// --- 快照包导入 (evorule-server /api/bundles/*,治理→执行域部署通道) ---
+
+/** POST /api/bundles/import 201 响应(对齐 evorule-server api/bundles.rs ImportResponse) */
+export interface BundleImportResult {
+  imported: boolean;
+  bundle_id: string;
+  dataset_id: string;
+  activated_version: string;
+  entry_count: number;
+  /** 硬失败原则:校验链已拦截缺失服务,成功导入即空数组 */
+  missing_services: string[];
+}
+
+/** POST /api/bundles/import/dry-run 200 响应(校验链全跑,不落盘不 reload) */
+export interface BundleDryRunResult {
+  valid: boolean;
+  bundle_id: string;
+  dataset_id: string;
+  source_version: string;
+  selection_mode: string;
+  resolved_version: string | null;
+  entry_count: number;
+  verdict: string;
+  missing_services: string[];
+}
+
+/** GET /api/bundles/active 单项(rules/bundles manifest 精简视图) */
+export interface ActiveBundleInfo {
+  bundle_id: string;
+  dataset_id: string;
+  source_version: string;
+  selection_mode: string;
+  resolved_version: string | null;
+  effective_from: string | null;
+  content_hash: string;
+  entry_count: number;
+}
+
 // ============================================================================
 // 4. WorkspaceBackend 抽象接口 (~35 方法,对齐 api.rs build_workspace_router 全部路由)
 // ============================================================================
@@ -436,6 +474,7 @@ export interface RecordClockRequest {
  *   - 规则转译(2): translateToTransform/translateToConditional
  *   - 判定契约(6): listVerdictContracts/createVerdictContract/getVerdictContract/updateVerdictContract/deleteVerdictContract/evaluateVerdict
  *   - wall-clock 旁路(2): recordClock/lookupClock
+ *   - 快照包导入(3): importBundle/dryRunImportBundle/listActiveBundles (evorule-server /api/bundles/*)
  */
 export interface WorkspaceBackend {
   // === Workspace 管理 ===
@@ -531,4 +570,12 @@ export interface WorkspaceBackend {
     fromVersion?: number,
     toVersion?: number
   ): Promise<VersionClockMapRecord[]>;
+
+  // === 快照包导入 (治理→执行域部署通道,evorule-server /api/bundles/*) ===
+  /** POST /api/bundles/import — 6 项校验+原子落盘+reload;失败 400 显式错误 */
+  importBundle(bundle: unknown): Promise<BundleImportResult>;
+  /** POST /api/bundles/import/dry-run — 校验链全跑,不落盘不 reload */
+  dryRunImportBundle(bundle: unknown): Promise<BundleDryRunResult>;
+  /** GET /api/bundles/active — 当前激活 bundle 列表(部署徽标数据源) */
+  listActiveBundles(): Promise<ActiveBundleInfo[]>;
 }
