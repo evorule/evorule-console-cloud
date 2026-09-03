@@ -22,8 +22,11 @@
   let loadError = $state<string | null>(null);
   let timer: ReturnType<typeof setInterval> | undefined;
 
+  // P2-02(Mavis 01):「离线」与顶栏「已连接」语义重叠致新手困惑。
+  // 生产状态 status=offline 实指「无活跃生产 session」(见 production-views.ts:
+  // current_session_id == null → offline),非系统掉线,故改标「未运行」。
   const statusLabel = $derived(
-    prod.status === "running" ? "运行中" : prod.status === "switching" ? "切换中" : "离线"
+    prod.status === "running" ? "运行中" : prod.status === "switching" ? "切换中" : "未运行"
   );
   const statusClass = $derived(
     prod.status === "running" ? "ok" : prod.status === "switching" ? "warn" : "off"

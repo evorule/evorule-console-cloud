@@ -44,7 +44,15 @@ export const load: LayoutLoad = ({ url }) => {
 	}
 
 	// /runtime(L1) / /workspace(L2) / /view/[id] / /export / /import-export / /marketplace 守卫:
-	// 未登录或库空时跳回 /(向导未完成,不允许直接访问运行时 / 编辑台 / 视图 / 导出 / 导入导出 / 市场)
+	// 仅拦截未登录(需登录才能访问视图)。
+	// 移除了 "|| emptyDb" 阻却原因(Mavis 01 号 P0-01/P0-02 复盘,2026-09-03):
+	//   emptyDb = 内核 rules store 是否为空,而 rules 在首屏/直载时必为空、
+	//   只在 workbench refresh() 异步水合后方有数据 —— 守卫在布局 load 同步求值,
+	//   对直连 /view/* 或刚进工作台即点卡片时必然命中 emptyDb → 被 307 弹回 /,
+	//   这正是"打开规则库卡跳回首页 / 直接访问单页视图被弹回"的根因(与报告猜的
+	//   click target / in-memory 登录态均不符)。已登录用户进视图后由各自视图
+	//   自行加载规则,不再被空库初始态误拦。
+	// 注:emptyDb 仍用于 /onboarding 的向导守卫,故保留上方派生。
 	if (
 		url.pathname === '/runtime' ||
 		url.pathname === '/workspace' ||
@@ -53,7 +61,7 @@ export const load: LayoutLoad = ({ url }) => {
 		url.pathname === '/marketplace' ||
 		url.pathname.startsWith('/view/')
 	) {
-		if (!session.loggedIn || emptyDb) {
+		if (!session.loggedIn) {
 			throw redirect(307, '/');
 		}
 	}

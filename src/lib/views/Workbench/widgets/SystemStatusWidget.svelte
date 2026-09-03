@@ -27,6 +27,7 @@
   {ws}
   {mode}
   consoleVersion={CONSOLE_VERSION}
+  ruleVersion={st.ruleVersion}
   refreshing={st.refreshing}
   lastRefreshAt={st.lastRefreshAt}
   onRefresh={workbenchRefreshNow}
