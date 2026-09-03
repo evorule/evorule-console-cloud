@@ -29,6 +29,15 @@ import type {
 	CausalChain,
 	CommandResult,
 	InterruptResult,
+	AutoVerifyStatus,
+	AutoVerifyConfigResult,
+	StepInfo,
+	SessionSnapshot,
+	DebugPhaseInfo,
+	DebugQueueInfo,
+	DebugPendingIoInfo,
+	PendingIoCountInfo,
+	CausalDepthInfo,
 } from "$lib/kernel";
 import { get } from "svelte/store";
 import { demoDatasetStore, type DemoDataset } from "$lib/stores/demo-dataset";
@@ -93,6 +102,8 @@ interface MockSession {
 export class MockBackend implements ExecutionBackend {
 	private sessions: Map<SessionId, MockSession> = new Map();
 	private nextSessionId: SessionId = 6; // 1-5 预填,6+ 动态创建
+	/** UV-062 W2:auto_verify 开关内存态(session → enabled;默认 false,对齐 server clap 默认) */
+	private autoVerifyBySession: Map<SessionId, boolean> = new Map();
 
 	constructor() {
 		// 预填 5 个 session
@@ -206,6 +217,18 @@ export class MockBackend implements ExecutionBackend {
 		if (dataset === "medical") return MEDICAL_DIFF;
 		if (dataset === "finance") return FINANCE_DIFF;
 		return AGENT_DIFF;
+	}
+
+	/**
+	 * UV-062 W2:取 session 对应数据集的 SessionState。
+	 * 不存在 → 抛错(与 server 404 对齐;mock 读路径不静默返回空)。
+	 */
+	private requireState(id: SessionId): SessionState {
+		const session = this.sessions.get(id);
+		if (!session) {
+			throw new Error(`MockBackend: session ${id} 不存在`);
+		}
+		return this.sessionStateForDataset(session.dataset);
 	}
 
 	// === ExecutionBackend 15 方法 ===
@@ -362,6 +385,137 @@ export class MockBackend implements ExecutionBackend {
 			throw new Error(`MockBackend: session ${id} 不存在`);
 		}
 		return { session_id: id, success: true, message: "Session aborted" };
+	}
+
+	// === UV-062 W2:审计导出 / 自动验证 / 调试只读 / 因果深度 ===
+
+	/** 审计链 JSON 导出(mock:预填审计链组装导出对象,含完整 entries) */
+	async exportAudit(id: SessionId): Promise<unknown> {
+		const session = this.sessions.get(id);
+		if (!session) {
+			throw new Error(`MockBackend: session ${id} 不存在`);
+		}
+		const audit = this.getAuditForSession(id);
+		return {
+			session_id: id,
+			fact_count: audit.fact_count,
+			verified: audit.verified,
+			last_hash: audit.last_hash ?? null,
+			entries: audit.entries,
+		};
+	}
+
+	/**
+	 * 压缩审计链导出(mock:CompressionStream 现场 gzip,与 server
+	 * application/gzip 行为一致);环境不支持 CompressionStream 时显式抛错,
+	 * 不静默降级为空文件。
+	 */
+	async exportAuditCompressed(id: SessionId): Promise<Blob> {
+		const data = await this.exportAudit(id);
+		if (typeof CompressionStream === "undefined") {
+			throw new Error(
+				"MockBackend: 当前环境无 CompressionStream,压缩导出未实现(请用 JSON 导出)",
+			);
+		}
+		const stream = new Blob([JSON.stringify(data)]).stream().pipeThrough(
+			new CompressionStream("gzip"),
+		);
+		return await new Response(stream).blob();
+	}
+
+	/** 查询实时验证开关(mock:内存态,默认 false) */
+	async getAutoVerify(id: SessionId): Promise<AutoVerifyStatus> {
+		if (!this.sessions.has(id)) {
+			throw new Error(`MockBackend: session ${id} 不存在`);
+		}
+		return {
+			session_id: id,
+			auto_verify: this.autoVerifyBySession.get(id) ?? false,
+		};
+	}
+
+	/**
+	 * 设置实时验证开关(mock:写内存并回显)。
+	 * interval 语义与核心一致:0 归一为 1(每次验证);threshold 原样回显(0 = 不限制)。
+	 */
+	async setAutoVerify(
+		id: SessionId,
+		enabled: boolean,
+		threshold?: number,
+		interval?: number,
+	): Promise<AutoVerifyConfigResult> {
+		if (!this.sessions.has(id)) {
+			throw new Error(`MockBackend: session ${id} 不存在`);
+		}
+		this.autoVerifyBySession.set(id, enabled);
+		return {
+			session_id: id,
+			success: true,
+			auto_verify: enabled,
+			threshold: threshold ?? 0,
+			interval: interval === undefined ? 1 : Math.max(1, interval),
+			message: `Auto-verify ${enabled ? "enabled" : "disabled"}`,
+		};
+	}
+
+	/** 当前执行步数(mock:数据集 SessionState.reactor.current_step) */
+	async getStep(id: SessionId): Promise<StepInfo> {
+		return {
+			session_id: id,
+			current_step: this.requireState(id).reactor.current_step,
+		};
+	}
+
+	/** 反应器完整状态快照(mock:由数据集 SessionState 映射,恒成功无 error) */
+	async getSessionSnapshot(id: SessionId): Promise<SessionSnapshot> {
+		const s = this.requireState(id);
+		return {
+			session_id: id,
+			finished: false,
+			phase: s.reactor.phase,
+			version: s.version,
+			steps: s.reactor.current_step,
+			pending_io_count: s.reactor.pending_io_count,
+			structural_invariant_violations:
+				s.reactor.structural_invariant_violations,
+		};
+	}
+
+	/** 调试:当前执行阶段(mock:数据集 reactor.phase,demo 场景恒 stable) */
+	async getDebugPhase(id: SessionId): Promise<DebugPhaseInfo> {
+		return { session_id: id, phase: this.requireState(id).reactor.phase };
+	}
+
+	/** 调试:待执行队列(mock:与 server 同语义,恒为空数组) */
+	async getDebugQueue(id: SessionId): Promise<DebugQueueInfo> {
+		this.requireState(id); // 校验 session 存在(404 语义)
+		return { session_id: id, queue: [] };
+	}
+
+	/** 调试:悬挂 I/O(mock:计数取 reactor.pending_io_count,列表恒空) */
+	async getDebugPendingIo(id: SessionId): Promise<DebugPendingIoInfo> {
+		const s = this.requireState(id);
+		return {
+			session_id: id,
+			pending_io_count: s.reactor.pending_io_count,
+			pending_io: [],
+		};
+	}
+
+	/** 悬挂 I/O 计数(mock:reactor.pending_io_count) */
+	async getPendingIoCount(id: SessionId): Promise<PendingIoCountInfo> {
+		return {
+			session_id: id,
+			pending_io_count: this.requireState(id).reactor.pending_io_count,
+		};
+	}
+
+	/** 因果链深度(mock:reactor.causal_depth) */
+	async getCausalDepth(id: SessionId): Promise<CausalDepthInfo> {
+		return {
+			session_id: id,
+			causal_depth: this.requireState(id).reactor.causal_depth,
+		};
 	}
 
 	// === Cloud 专属方法(与 CloudHttpBackend 同名,视图层 instanceof 判断) ===

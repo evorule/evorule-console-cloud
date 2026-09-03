@@ -36,6 +36,7 @@
     BundleDryRunResult,
     BundleImportResult,
     MemberRole,
+    RuleRecord,
     SandboxSession,
     SandboxTestReport,
     SessionRecord,
@@ -521,9 +522,9 @@
     return h.length > 14 ? `${h.slice(0, 14)}…` : h;
   }
 
-  // ===== 执行域工作空间区(UV-062 接线②⑤⑥:沙盒测试报告/会话清单/成员管理) =====
+  // ===== 执行域工作空间区(UV-062 接线②⑤⑥ + Wave 2 补充:规则 fork) =====
   // 数据来自 evorule-server(:18080) workspace API,与左侧规则资产库(evorule-rule :18081)解耦。
-  // 三区均按需加载(首次展开拉取),失败显式报错(toast + 区内错误框),不静默。
+  // 各区均按需加载(首次展开拉取),失败显式报错(toast + 区内错误框),不静默。
 
   // --- 沙盒测试(接线②) ---
   let sandboxOpen = $state(false);
@@ -705,6 +706,88 @@
     } catch (e) {
       toastError(e instanceof Error ? e.message : String(e), '移除成员');
     }
+  }
+
+  // --- 工作空间规则 fork(UV-062 Wave 2 补充项) ---
+  // 数据来自 evorule-server workspace 规则表(listRules);fork 调
+  // POST /api/workspaces/{id}/rules/{rule_id}/fork(server 复制当前版本内容为新规则,
+  // state=draft + 独立版本历史)。失败显式报错含 server 错误文本,不静默。
+  let wsRulesOpen = $state(false);
+  let wsRulesLoading = $state(false);
+  let wsRules = $state<RuleRecord[]>([]);
+  let wsRulesError = $state<string | null>(null);
+  /** 正在 fork 的规则 id(每条规则一个内联 fork 表单) */
+  let forkTargetId = $state<string | null>(null);
+  let forkName = $state('');
+  let forking = $state(false);
+
+  async function toggleWsRulesZone(): Promise<void> {
+    wsRulesOpen = !wsRulesOpen;
+    if (wsRulesOpen) await loadWsRules();
+  }
+
+  async function loadWsRules(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      wsRulesError = '执行域工作空间未初始化(无 workspace 或 server 通道不可用)';
+      return;
+    }
+    wsRulesLoading = true;
+    wsRulesError = null;
+    try {
+      wsRules = await wb.listRules(ws.id);
+    } catch (e) {
+      wsRules = [];
+      wsRulesError = e instanceof Error ? e.message : String(e);
+      toastError(`拉取工作空间规则失败:${wsRulesError}`, '工作空间规则');
+    } finally {
+      wsRulesLoading = false;
+    }
+  }
+
+  /** 打开内联 fork 表单(新名称缺省 = 源规则名-fork) */
+  function startFork(rule: RuleRecord): void {
+    forkTargetId = rule.id;
+    forkName = `${rule.name}-fork`;
+  }
+
+  async function handleForkRule(rule: RuleRecord): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      toastError('执行域通道不可用,无法 fork 规则', '规则 fork');
+      return;
+    }
+    const newName = forkName.trim();
+    if (!newName) {
+      toastError('new_name 必填(fork 出的新规则名称)', '规则 fork');
+      return;
+    }
+    forking = true;
+    try {
+      // created_by 由后端 actor 注入(server ForkRuleRequest = {new_name, created_by})
+      const forked = await wb.forkRule(ws.id, rule.id, { new_name: newName });
+      toastSuccess(
+        `已 fork 为新规则 ${forked.id}(Draft,独立版本历史 v1)`,
+        '规则 fork'
+      );
+      forkTargetId = null;
+      forkName = '';
+      await loadWsRules();
+    } catch (e) {
+      // HttpWorkspaceBackendError.message = "HTTP <status>: <server 错误原文>",如实透出
+      toastError(e instanceof Error ? e.message : String(e), '规则 fork');
+    } finally {
+      forking = false;
+    }
+  }
+
+  /** 规则状态徽标类(RuleState → 既有 status-* 样式;blocked→rejected 红,archived→draft 灰) */
+  function ruleStateClass(s: RuleRecord['state']): string {
+    if (s === 'blocked') return 'status-rejected';
+    if (s === 'archived') return 'status-draft';
+    return `status-${s}`;
   }
 
   // ===== 派生 =====
@@ -1311,7 +1394,7 @@
     </section>
   </div>
 
-  <!-- 执行域工作空间(UV-062 接线②⑤⑥:沙盒测试报告/会话清单/成员管理,数据来自 evorule-server :18080) -->
+  <!-- 执行域工作空间(UV-062 接线②⑤⑥ + Wave 2 补充:规则 fork;数据来自 evorule-server :18080) -->
   <div class="ws-zone-wrap">
     <div class="card ws-zone">
       <div class="sec-head">
@@ -1328,6 +1411,71 @@
       {#if !$currentWorkspace}
         <p class="muted empty">执行域工作空间未初始化 —— 请确认 evorule-server 已连接(主系统配置)。</p>
       {:else}
+        <!-- 工作空间规则 fork(Wave 2 补充项:server POST /rules/{rule_id}/fork) -->
+        <div class="sec">
+          <div class="sec-head">
+            <button class="btn btn-sm" onclick={toggleWsRulesZone}>
+              {wsRulesOpen ? '▾ 收起' : '▸ 工作空间规则'}({wsRules.length})
+            </button>
+            {#if wsRulesOpen}
+              <button class="btn btn-sm btn-ghost" onclick={loadWsRules}>⟳ 刷新</button>
+            {/if}
+          </div>
+          {#if wsRulesOpen}
+            {#if wsRulesLoading}
+              <p class="muted">加载中…</p>
+            {:else if wsRulesError}
+              <div class="err-box">{wsRulesError}</div>
+            {:else if wsRules.length === 0}
+              <p class="muted">无规则记录。</p>
+            {:else}
+              <ul class="ws-list">
+                {#each wsRules as r (r.id)}
+                  <li>
+                    <div class="ws-item-top">
+                      <span class="entry-id" title={r.id}>{r.name}</span>
+                      <span class="badge {ruleStateClass(r.state)}">{r.state}</span>
+                      <button class="btn btn-sm" onclick={() => startFork(r)}>fork</button>
+                    </div>
+                    <p class="ws-item-sub">
+                      id {r.id} · 创建 {fmtTime(r.created_at)} · 更新 {fmtTime(r.updated_at)}
+                      · 创建者 {r.created_by || '-'}
+                    </p>
+                    {#if forkTargetId === r.id}
+                      <div class="member-form">
+                        <input
+                          type="text"
+                          bind:value={forkName}
+                          placeholder="新规则名称(new_name)"
+                          aria-label="fork 新规则名称"
+                        />
+                        <button
+                          class="btn btn-sm btn-primary"
+                          onclick={() => handleForkRule(r)}
+                          disabled={forking}
+                        >
+                          {forking ? 'fork 中…' : `确认 fork「${r.name}」`}
+                        </button>
+                        <button
+                          class="btn btn-sm btn-ghost"
+                          onclick={() => (forkTargetId = null)}
+                          disabled={forking}
+                        >
+                          取消
+                        </button>
+                      </div>
+                    {/if}
+                  </li>
+                {/each}
+              </ul>
+              <p class="ws-item-sub">
+                fork 语义(server):复制源规则当前版本内容为新规则(state=draft,独立版本历史 v1);
+                created_by 由登录身份注入(server ForkRuleRequest)。
+              </p>
+            {/if}
+          {/if}
+        </div>
+
         <!-- 沙盒测试(接线②:查看报告) -->
         <div class="sec">
           <div class="sec-head">

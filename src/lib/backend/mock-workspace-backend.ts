@@ -3,7 +3,7 @@
 // evorule-console-cloud — MockWorkspaceBackend:离线内存版 workspace 后端
 //
 // 设计:
-//   - 实现 kernel WorkspaceBackend 全部 36 方法,供离线模式/单元测试注入
+//   - 实现 kernel WorkspaceBackend 全部 37 方法,供离线模式/单元测试注入
 //   - 数据纯内存,刷新即失 — 头部明示:离线演示数据不持久化(决策 2026-08-27)
 //   - 规则/版本语义对齐 evorule-server rule_meta_service.rs(权威):
 //       createRule → state=draft, version=1(current), current_version_id 指向 v1
@@ -33,6 +33,7 @@ import type {
 	AddMemberRequest,
 	CreateRuleRequest,
 	UpdateRuleContentRequest,
+	ForkRuleRequest,
 	CreateSessionRequest,
 	StartSandboxRequest,
 	StartSandboxResponse,
@@ -253,6 +254,19 @@ export class MockWorkspaceBackend implements WorkspaceBackend {
 
 	async archiveRule(workspaceId: string, ruleId: string): Promise<RuleRecord> {
 		return this.transition(workspaceId, ruleId, 'archived');
+	}
+
+	/**
+	 * Fork 规则 — 离线不支持,如实抛错。
+	 * server fork 语义(复制当前版本内容为新规则 + 独立版本历史)不在 mock 复制,
+	 * 静默返回假数据或静默缺省均被禁止。
+	 */
+	async forkRule(
+		_workspaceId: string,
+		_ruleId: string,
+		_req: ForkRuleRequest
+	): Promise<RuleRecord> {
+		unsupported('forkRule');
 	}
 
 	// === 规则版本 ===

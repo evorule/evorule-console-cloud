@@ -38,6 +38,7 @@ import {
 	type AddMemberRequest,
 	type CreateRuleRequest,
 	type UpdateRuleContentRequest,
+	type ForkRuleRequest,
 	type CreateSessionRequest,
 	type StartSandboxRequest,
 	type StartSandboxResponse,
@@ -225,6 +226,9 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 	}
 	archiveRule(workspaceId: string, ruleId: string): Promise<RuleRecord> {
 		return this.backend.archiveRule(workspaceId, ruleId);
+	}
+	forkRule(workspaceId: string, ruleId: string, req: ForkRuleRequest): Promise<RuleRecord> {
+		return this.backend.forkRule(workspaceId, ruleId, req);
 	}
 	listRuleVersions(workspaceId: string, ruleId: string): Promise<RuleVersionRecord[]> {
 		return this.backend.listRuleVersions(workspaceId, ruleId);

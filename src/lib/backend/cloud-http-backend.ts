@@ -35,6 +35,15 @@ import {
 	type CausalChain,
 	type CommandResult,
 	type InterruptResult,
+	type AutoVerifyStatus,
+	type AutoVerifyConfigResult,
+	type StepInfo,
+	type SessionSnapshot,
+	type DebugPhaseInfo,
+	type DebugQueueInfo,
+	type DebugPendingIoInfo,
+	type PendingIoCountInfo,
+	type CausalDepthInfo,
 	type WorkspaceBackend
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
@@ -274,6 +283,46 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 	abortSession(id: SessionId): Promise<InterruptResult> {
 		return this.backend.abortSession(id);
+	}
+	// UV-062 W2:审计导出 / 自动验证(代理内核 HttpBackend,统一带 Bearer)
+	exportAudit(id: SessionId): Promise<unknown> {
+		return this.backend.exportAudit(id);
+	}
+	exportAuditCompressed(id: SessionId): Promise<Blob> {
+		return this.backend.exportAuditCompressed(id);
+	}
+	getAutoVerify(id: SessionId): Promise<AutoVerifyStatus> {
+		return this.backend.getAutoVerify(id);
+	}
+	setAutoVerify(
+		id: SessionId,
+		enabled: boolean,
+		threshold?: number,
+		interval?: number
+	): Promise<AutoVerifyConfigResult> {
+		return this.backend.setAutoVerify(id, enabled, threshold, interval);
+	}
+	// UV-062 W2:调试只读六路 + 因果深度(代理内核 HttpBackend)
+	getStep(id: SessionId): Promise<StepInfo> {
+		return this.backend.getStep(id);
+	}
+	getSessionSnapshot(id: SessionId): Promise<SessionSnapshot> {
+		return this.backend.getSessionSnapshot(id);
+	}
+	getDebugPhase(id: SessionId): Promise<DebugPhaseInfo> {
+		return this.backend.getDebugPhase(id);
+	}
+	getDebugQueue(id: SessionId): Promise<DebugQueueInfo> {
+		return this.backend.getDebugQueue(id);
+	}
+	getDebugPendingIo(id: SessionId): Promise<DebugPendingIoInfo> {
+		return this.backend.getDebugPendingIo(id);
+	}
+	getPendingIoCount(id: SessionId): Promise<PendingIoCountInfo> {
+		return this.backend.getPendingIoCount(id);
+	}
+	getCausalDepth(id: SessionId): Promise<CausalDepthInfo> {
+		return this.backend.getCausalDepth(id);
 	}
 
 	// === Cloud 专属方法(不在内核 ExecutionBackend 接口内) ===

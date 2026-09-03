@@ -31,6 +31,7 @@ import type {
   AddMemberRequest,
   CreateRuleRequest,
   UpdateRuleContentRequest,
+  ForkRuleRequest,
   CreateSessionRequest,
   StartSandboxRequest,
   StartSandboxResponse,
@@ -343,6 +344,22 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
     return this.fetchJson<RuleRecord>(
       `/api/workspaces/${encodeURIComponent(workspaceId)}/rules/${encodeURIComponent(ruleId)}/archive`,
       this.postJson()
+    );
+  }
+
+  /**
+   * POST /api/workspaces/{id}/rules/{rule_id}/fork — fork 规则 → 201 RuleRecord。
+   * server ForkRuleRequest = {new_name, created_by};created_by 由 actor 注入
+   * (审计归属 = 真实登录用户;未配置 actor 时回落 "console" 并 warn,同沙盒/发布链路口径)。
+   */
+  async forkRule(
+    workspaceId: string,
+    ruleId: string,
+    req: ForkRuleRequest
+  ): Promise<RuleRecord> {
+    return this.fetchJson<RuleRecord>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/rules/${encodeURIComponent(ruleId)}/fork`,
+      this.postJson({ ...req, created_by: this.requesterName() })
     );
   }
 
