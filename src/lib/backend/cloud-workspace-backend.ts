@@ -35,6 +35,7 @@ import {
 	type VersionClockMapRecord,
 	type CreateWorkspaceRequest,
 	type UpdateWorkspaceRequest,
+	type AddMemberRequest,
 	type CreateRuleRequest,
 	type UpdateRuleContentRequest,
 	type CreateSessionRequest,
@@ -55,7 +56,10 @@ import {
 	type RecordClockRequest,
 	type BundleImportResult,
 	type BundleDryRunResult,
-	type ActiveBundleInfo
+	type ActiveBundleInfo,
+	type ValidateRulesResult,
+	type SandboxTestReport,
+	type ExecutionRulesResult
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type CloudBackendConfig } from './types';
 import { MockWorkspaceBackend } from './mock-workspace-backend';
@@ -320,5 +324,25 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 	}
 	listActiveBundles(): Promise<ActiveBundleInfo[]> {
 		return this.backend.listActiveBundles();
+	}
+
+	// === 治理域 API 接线(UV-062:执行域 server 直连端点,委托内部 backend) ===
+	validateRules(content: string): Promise<ValidateRulesResult> {
+		return this.backend.validateRules(content);
+	}
+	getSandboxReport(workspaceId: string, sandboxId: number): Promise<SandboxTestReport> {
+		return this.backend.getSandboxReport(workspaceId, sandboxId);
+	}
+	getExecutionRules(): Promise<ExecutionRulesResult> {
+		return this.backend.getExecutionRules();
+	}
+	getPublishQueueItem(queueId: number): Promise<PublishQueueItem> {
+		return this.backend.getPublishQueueItem(queueId);
+	}
+	addMember(workspaceId: string, req: AddMemberRequest): Promise<WorkspaceMemberRecord> {
+		return this.backend.addMember(workspaceId, req);
+	}
+	removeMember(workspaceId: string, userId: string): Promise<void> {
+		return this.backend.removeMember(workspaceId, userId);
 	}
 }

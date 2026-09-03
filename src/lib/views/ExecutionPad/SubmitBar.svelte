@@ -1,10 +1,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:提交栏(底部:提交结果状态 + 提交按钮 + 重新翻译 + 清空)
+  职责:提交栏(底部:提交结果状态 + 提交按钮 + 重新翻译 + 清空 + 停止/强制中止)
     - 提交结果:lastResult 摘要(Fact ID + 触发规则数 + 耗时)
     - [提交到 session]按钮(需要 instruction translated 状态)
     - [重新翻译] / [清空] 辅助按钮
+    - [停止] / [强制中止] 会话控制(UV-062;仅存在活跃 sessionId 时可用)
   关联设计:P04_BUSINESS_EXECUTION_PAD_DESIGN.md §6.3(底部操作栏) + §7.1(提交流)
 -->
 
@@ -17,10 +18,16 @@
     hasInstruction: boolean;
     lastResult: CommandResult | null;
     lastSubmittedAt: string | null;
+    /** 当前活跃 sessionId(0 表示无活跃会话,停止/中止按钮禁用) */
+    sessionId: number;
     submitting?: boolean;
+    stopping?: boolean;
+    aborting?: boolean;
     onSubmit: () => void;
     onRetranslate: () => void;
     onClear: () => void;
+    onInterrupt: () => void;
+    onAbort: () => void;
     disabled?: boolean;
   }
 
@@ -29,10 +36,15 @@
     hasInstruction,
     lastResult,
     lastSubmittedAt,
+    sessionId,
     submitting = false,
+    stopping = false,
+    aborting = false,
     onSubmit,
     onRetranslate,
     onClear,
+    onInterrupt,
+    onAbort,
     disabled = false,
   }: Props = $props();
 
@@ -42,6 +54,9 @@
       hasInstruction &&
       (translateStatus === "translated" || translateStatus === "error"),
   );
+
+  // UV-062:仅存在活跃 sessionId 时可停止/中止;任一操作进行中互斥
+  const canStop = $derived(sessionId > 0 && !disabled && !submitting && !stopping && !aborting);
 </script>
 
 <div class="submit-bar">
@@ -93,6 +108,40 @@
       title="清空当前事件"
     >
       🗑 清空
+    </button>
+    <!-- UV-062:停止(温和中断,下一检查点生效) -->
+    <button
+      type="button"
+      class="btn btn-secondary"
+      onclick={onInterrupt}
+      disabled={!canStop}
+      title={sessionId > 0
+        ? "温和中断:请求停止,下一检查点生效"
+        : "无活跃 session,无法停止"}
+    >
+      {#if stopping}
+        <span class="spinner spinner-dark"></span>
+        停止中...
+      {:else}
+        ⏹ 停止
+      {/if}
+    </button>
+    <!-- UV-062:强制中止(破坏性,确认对话框由父视图处理) -->
+    <button
+      type="button"
+      class="btn btn-danger"
+      onclick={onAbort}
+      disabled={!canStop}
+      title={sessionId > 0
+        ? "强制中止:立即终止反应器任务(破坏性,需 server 启用 --allow-abort)"
+        : "无活跃 session,无法中止"}
+    >
+      {#if aborting}
+        <span class="spinner"></span>
+        中止中...
+      {:else}
+        ⛔ 强制中止
+      {/if}
     </button>
     <button
       type="button"
@@ -239,6 +288,16 @@
     background: var(--brand-hover, var(--brand, #1d4ed8));
     border-color: var(--brand-hover, var(--brand, #1d4ed8));
   }
+  /* UV-062:强制中止 = 破坏性操作,红色醒目 */
+  .btn-danger {
+    background: var(--danger, #dc2626);
+    border-color: var(--danger, #dc2626);
+    color: white;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: #b91c1c;
+    border-color: #b91c1c;
+  }
   .btn-submit {
     font-weight: 600;
     min-width: 140px;
@@ -256,5 +315,10 @@
     to {
       transform: rotate(360deg);
     }
+  }
+  /* 停止按钮在浅色底上的 spinner(白色版用于 primary/danger 深底) */
+  .spinner-dark {
+    border-color: rgba(100, 116, 139, 0.4);
+    border-top-color: var(--text-secondary, #475569);
   }
 </style>

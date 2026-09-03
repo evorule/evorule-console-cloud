@@ -26,9 +26,13 @@
     currentWorkspace,
     isRuleReadonly,
   } from "$lib/kernel";
+  import type {
+    ActiveBundleInfo,
+    ExecutionRulesResult,
+  } from "$lib/kernel";
   import { get } from "svelte/store";
   import { dbStore } from "$lib/stores/db";
-  import { toastWarning } from "$lib/stores/toast";
+  import { toastWarning, toastError } from "$lib/stores/toast";
   import { getMeta, setMeta } from "$lib/stores/rule-business-meta";
   import {
     businessFormSchemaStore,
@@ -153,6 +157,60 @@
       });
     }
   }
+
+  // === 执行域生效规则(UV-062 接线③:只读,数据来自 evorule-server GET /api/rules) ===
+  // 与本地规则库(工作区 draft/active 规则)区分:此处展示执行域当前实际生效的
+  // 合并规则集(宪法 + 已落地 bundle),用于核对"运行中到底在用什么规则"。
+  let execRulesOpen = $state(false);
+  let execRulesLoading = $state(false);
+  let execRulesError = $state<string | null>(null);
+  let execRules: ExecutionRulesResult | null = $state(null);
+  /** 当前激活 bundle(来源归属展示;"仅宪法生效"时为空) */
+  let activeBundles: ActiveBundleInfo[] = $state([]);
+
+  async function toggleExecRules(): Promise<void> {
+    execRulesOpen = !execRulesOpen;
+    if (execRulesOpen && !execRules) await loadExecRules();
+  }
+
+  async function loadExecRules(): Promise<void> {
+    execRulesLoading = true;
+    execRulesError = null;
+    try {
+      const [rulesResult, bundles] = await Promise.all([
+        wb.getExecutionRules(),
+        wb.listActiveBundles(),
+      ]);
+      execRules = rulesResult;
+      activeBundles = bundles;
+    } catch (e) {
+      execRules = null;
+      activeBundles = [];
+      execRulesError = e instanceof Error ? e.message : String(e);
+      // 加载失败显式报错,不静默降级为"0 条规则"
+      toastError(`加载执行域生效规则失败:${execRulesError}`, "执行域规则");
+    } finally {
+      execRulesLoading = false;
+    }
+  }
+
+  /** transform 原始结构无规则名字段,展示名按结构派生(rule_id/id/name/type → 序号兜底) */
+  function execRuleName(t: unknown, idx: number): string {
+    if (t && typeof t === "object") {
+      const o = t as Record<string, unknown>;
+      for (const k of ["rule_id", "id", "name", "type"]) {
+        const v = o[k];
+        if (typeof v === "string" && v) return v;
+      }
+    }
+    return `transform-${idx + 1}`;
+  }
+
+  /** 内容摘要:JSON 序列化截断 */
+  function execRuleSummary(t: unknown): string {
+    const s = JSON.stringify(t);
+    return s && s.length > 120 ? `${s.slice(0, 120)}…` : (s ?? "");
+  }
 </script>
 
 {#if devMode}
@@ -263,6 +321,58 @@
         {/if}
       </main>
     </div>
+
+    <!-- 执行域生效规则(UV-062 接线③:只读;数据来自 evorule-server :18080) -->
+    <section class="exec-rules">
+      <header class="exec-head">
+        <button class="btn exec-toggle" onclick={toggleExecRules}>
+          {execRulesOpen ? "▾" : "▸"} 执行域生效规则({execRules?.count ?? 0})
+        </button>
+        <span class="exec-src" title="数据来自执行域 evorule-server(:18080) GET /api/rules">
+          数据来自执行域 evorule-server · 只读
+        </span>
+        {#if execRulesOpen}
+          <button class="btn exec-toggle" onclick={loadExecRules} disabled={execRulesLoading}>
+            ⟳ 刷新
+          </button>
+        {/if}
+      </header>
+      {#if execRulesOpen}
+        {#if execRulesLoading}
+          <p class="exec-hint">加载中…</p>
+        {:else if execRulesError}
+          <div class="exec-error">⚠️ {execRulesError}</div>
+        {:else}
+          {#if activeBundles.length > 0}
+            <div class="exec-bundles">
+              <span class="exec-bundle-label">来源 bundle:</span>
+              {#each activeBundles as b (b.bundle_id)}
+                <span
+                  class="exec-bundle-chip"
+                  title={`bundle_id: ${b.bundle_id}\n内容哈希: ${b.content_hash}\n条目数: ${b.entry_count}`}
+                >
+                  {b.dataset_id} · v{b.source_version} · {b.entry_count} 条
+                </span>
+              {/each}
+            </div>
+          {:else}
+            <p class="exec-hint">当前无激活 bundle(仅宪法规则生效)。</p>
+          {/if}
+          {#if (execRules?.count ?? 0) === 0}
+            <p class="exec-hint">执行域当前无生效规则。</p>
+          {:else}
+            <ul class="exec-list">
+              {#each execRules?.core_eval ?? [] as t, i (i)}
+                <li class="exec-item">
+                  <span class="exec-name">{execRuleName(t, i)}</span>
+                  <code class="exec-summary">{execRuleSummary(t)}</code>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        {/if}
+      {/if}
+    </section>
   </div>
 {/if}
 
@@ -414,5 +524,95 @@
     .lib-sidebar {
       max-height: 240px;
     }
+  }
+
+  /* === 执行域生效规则(UV-062 接线③) === */
+  .exec-rules {
+    border-top: 1px solid var(--border, #e2e8f0);
+    background: var(--bg-page, #f8fafc);
+    padding: 8px 20px 12px;
+    min-height: 40px;
+  }
+  .exec-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .exec-toggle {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+  .exec-src {
+    font-size: 11px;
+    color: var(--text-secondary, #64748b);
+  }
+  .exec-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--text-secondary, #64748b);
+  }
+  .exec-error {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--danger, #dc2626);
+    padding: 8px 10px;
+    border: 1px solid var(--danger, #dc2626);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--danger, #dc2626) 6%, transparent);
+  }
+  .exec-bundles {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    font-size: 11px;
+  }
+  .exec-bundle-label {
+    color: var(--text-secondary, #64748b);
+  }
+  .exec-bundle-chip {
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: var(--bg-hover, #f1f5f9);
+    font-family: monospace;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .exec-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0 0 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .exec-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 4px 8px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    border: 1px solid var(--border, #e2e8f0);
+  }
+  .exec-name {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary, #1e293b);
+    white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .exec-summary {
+    font-size: 11px;
+    color: var(--text-secondary, #64748b);
+    word-break: break-all;
   }
 </style>

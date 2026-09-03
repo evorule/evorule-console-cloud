@@ -12,7 +12,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
-  import { toastSuccess, toastError, toastInfo } from '$lib/stores/toast';
+  import { toastSuccess, toastError, toastInfo, toastWarning } from '$lib/stores/toast';
   import {
     governanceStore,
     connect,
@@ -30,8 +30,18 @@
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
   import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
-  import { useWorkspaceBackendOrNull } from '$lib/kernel';
-  import type { ActiveBundleInfo, BundleDryRunResult, BundleImportResult } from '$lib/kernel';
+  import { useWorkspaceBackendOrNull, currentWorkspace, HttpWorkspaceBackendError } from '$lib/kernel';
+  import type {
+    ActiveBundleInfo,
+    BundleDryRunResult,
+    BundleImportResult,
+    MemberRole,
+    SandboxSession,
+    SandboxTestReport,
+    SessionRecord,
+    ValidateRulesResult,
+    WorkspaceMemberRecord
+  } from '$lib/kernel';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import JsonViewer from '$lib/views/Dataset/JsonViewer.svelte';
 
@@ -348,6 +358,29 @@
   }
 
   // ===== 条目 =====
+  /** 规则体预检失败详情格式化(UV-062 接线①:server 错误原文透出,不静默) */
+  function formatValidateFailure(r: ValidateRulesResult): string {
+    const lines: string[] = [];
+    if (r.error) lines.push(`JSON 解析失败:${r.error}`);
+    if (r.schema_gate === 'failed') {
+      lines.push(`Schema 门禁未通过${r.message ? `:${r.message}` : ''}`);
+      for (const e of r.schema_errors ?? []) lines.push(`  · ${e}`);
+    }
+    const failed = [
+      ...(r.static_validation?.checks ?? []),
+      ...(r.security_analysis?.checks ?? [])
+    ].filter((c) => !c.passed);
+    for (const c of failed) {
+      lines.push(`[${c.level}] ${c.name}:${c.message}(transform #${c.transform_index})`);
+    }
+    if (r.summary) {
+      lines.push(
+        `汇总:${r.summary.total_transforms} 条 transform · ${r.summary.total_errors} 错误 · ${r.summary.total_warnings} 警告 · ${r.summary.total_risks} 风险`
+      );
+    }
+    return lines.length > 0 ? lines.join('\n') : '校验未通过(server 未返回明细)';
+  }
+
   async function handleAddEntry(): Promise<void> {
     const s = get(governanceStore);
     if (!s.selectedId) return;
@@ -362,6 +395,27 @@
     } catch {
       entryError = 'rule_body 不是合法 JSON(规则体须为 evorule 原生 JSON)';
       return;
+    }
+    // UV-062 接线①:入库前规则体预检(执行域 POST /api/rules/validate)。
+    // 校验失败 → 透出 server 错误详情并阻断保存;
+    // 服务不可达 → 诚实降级:toast 警示后放行(禁止静默跳过)。
+    if (!workspaceBackend) {
+      toastWarning('执行域通道不可用,已跳过预检(无法调用规则体校验)', '规则体预检');
+    } else {
+      try {
+        const result = await workspaceBackend.validateRules(newEntry.rule_body);
+        if (!result.passed) {
+          const detail = formatValidateFailure(result);
+          entryError = detail;
+          toastError(`规则体校验未通过,已阻断保存:${detail.split('\n')[0]}`, '规则体预检');
+          return;
+        }
+      } catch (e) {
+        toastWarning(
+          `校验服务不可达,已跳过预检(${e instanceof Error ? e.message : String(e)})`,
+          '规则体预检'
+        );
+      }
     }
     try {
       await addEntry(s.selectedId, {
@@ -465,6 +519,192 @@
   function shortHash(h?: string): string {
     if (!h) return '-';
     return h.length > 14 ? `${h.slice(0, 14)}…` : h;
+  }
+
+  // ===== 执行域工作空间区(UV-062 接线②⑤⑥:沙盒测试报告/会话清单/成员管理) =====
+  // 数据来自 evorule-server(:18080) workspace API,与左侧规则资产库(evorule-rule :18081)解耦。
+  // 三区均按需加载(首次展开拉取),失败显式报错(toast + 区内错误框),不静默。
+
+  // --- 沙盒测试(接线②) ---
+  let sandboxOpen = $state(false);
+  let sandboxLoading = $state(false);
+  let sandboxes = $state<SandboxSession[]>([]);
+  let sandboxError = $state<string | null>(null);
+  /** 报告缓存(key = sandbox id;报告生成后不可变,可安全缓存) */
+  let reportCache = $state<Record<number, SandboxTestReport>>({});
+  let reportOpen = $state<Record<number, boolean>>({});
+  let reportLoading = $state<Record<number, boolean>>({});
+  let reportError = $state<Record<number, string | null>>({});
+
+  async function toggleSandboxZone(): Promise<void> {
+    sandboxOpen = !sandboxOpen;
+    if (sandboxOpen) await loadSandboxes();
+  }
+
+  async function loadSandboxes(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      sandboxError = '执行域工作空间未初始化(无 workspace 或 server 通道不可用)';
+      return;
+    }
+    sandboxLoading = true;
+    sandboxError = null;
+    try {
+      sandboxes = await wb.listSandboxes(ws.id);
+    } catch (e) {
+      sandboxes = [];
+      sandboxError = e instanceof Error ? e.message : String(e);
+      toastError(`拉取沙盒列表失败:${sandboxError}`, '沙盒测试');
+    } finally {
+      sandboxLoading = false;
+    }
+  }
+
+  /** 查看沙盒测试报告(接线②;404 = 报告不存在,显式提示) */
+  async function viewReport(sb: SandboxSession): Promise<void> {
+    reportOpen[sb.id] = !reportOpen[sb.id];
+    if (!reportOpen[sb.id] || reportCache[sb.id]) return;
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      reportError[sb.id] = '执行域通道不可用,无法获取报告';
+      toastError(reportError[sb.id]!, '沙盒报告');
+      return;
+    }
+    reportLoading[sb.id] = true;
+    reportError[sb.id] = null;
+    try {
+      reportCache[sb.id] = await wb.getSandboxReport(ws.id, sb.id);
+    } catch (e) {
+      reportError[sb.id] =
+        e instanceof HttpWorkspaceBackendError && e.status === 404
+          ? '报告不存在(沙盒尚未生成测试报告,或报告已被清理)'
+          : e instanceof Error
+            ? e.message
+            : String(e);
+      toastError(reportError[sb.id]!, '沙盒报告');
+    } finally {
+      reportLoading[sb.id] = false;
+    }
+  }
+
+  /** 测试结论(server 无显式 verdict 字段,按 summary 派生:failed===0 → PASS) */
+  function reportVerdict(r: SandboxTestReport): { label: string; cls: string } {
+    const s = r.summary;
+    if (s.total_cases === 0) return { label: '无用例', cls: 'diff-same' };
+    return s.failed === 0
+      ? { label: 'PASS', cls: 'diff-same' }
+      : { label: `FAIL(${s.failed} 失败)`, cls: 'diff-changed' };
+  }
+
+  // --- 会话清单(接线⑤,只读) ---
+  let sessionsOpen = $state(false);
+  let sessionsLoading = $state(false);
+  let wsSessions = $state<SessionRecord[]>([]);
+  let sessionsError = $state<string | null>(null);
+
+  async function toggleSessionsZone(): Promise<void> {
+    sessionsOpen = !sessionsOpen;
+    if (sessionsOpen) await loadWsSessions();
+  }
+
+  async function loadWsSessions(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      sessionsError = '执行域工作空间未初始化(无 workspace 或 server 通道不可用)';
+      return;
+    }
+    sessionsLoading = true;
+    sessionsError = null;
+    try {
+      wsSessions = await wb.listWorkspaceSessions(ws.id);
+    } catch (e) {
+      wsSessions = [];
+      sessionsError = e instanceof Error ? e.message : String(e);
+      toastError(`拉取会话清单失败:${sessionsError}`, '工作空间会话');
+    } finally {
+      sessionsLoading = false;
+    }
+  }
+
+  // --- 成员管理(接线⑥:增删) ---
+  let membersOpen = $state(false);
+  let membersLoading = $state(false);
+  let members = $state<WorkspaceMemberRecord[]>([]);
+  let membersError = $state<string | null>(null);
+  let newMember = $state<{ user_id: string; role: MemberRole }>({ user_id: '', role: 'editor' });
+  let memberSaving = $state(false);
+
+  async function toggleMembersZone(): Promise<void> {
+    membersOpen = !membersOpen;
+    if (membersOpen) await loadMembers();
+  }
+
+  async function loadMembers(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      membersError = '执行域工作空间未初始化(无 workspace 或 server 通道不可用)';
+      return;
+    }
+    membersLoading = true;
+    membersError = null;
+    try {
+      members = await wb.listMembers(ws.id);
+    } catch (e) {
+      members = [];
+      membersError = e instanceof Error ? e.message : String(e);
+      toastError(`拉取成员列表失败:${membersError}`, '工作空间成员');
+    } finally {
+      membersLoading = false;
+    }
+  }
+
+  /** 添加成员(接线⑥;角色形状以 server models.rs MemberRole 为准:owner/admin/editor/viewer) */
+  async function handleAddMember(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      toastError('执行域通道不可用,无法添加成员', '添加成员');
+      return;
+    }
+    if (!newMember.user_id.trim()) {
+      toastError('user_id 必填', '添加成员');
+      return;
+    }
+    memberSaving = true;
+    try {
+      const m = await wb.addMember(ws.id, {
+        user_id: newMember.user_id.trim(),
+        role: newMember.role
+      });
+      toastSuccess(`成员 ${m.user_id}(${m.role})已加入`, '添加成员');
+      newMember = { user_id: '', role: 'editor' };
+      await loadMembers();
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '添加成员');
+    } finally {
+      memberSaving = false;
+    }
+  }
+
+  async function handleRemoveMember(userId: string): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      toastError('执行域通道不可用,无法移除成员', '移除成员');
+      return;
+    }
+    if (!confirm(`确认移除成员「${userId}」?移除后该用户立即失去此工作空间访问权。`)) return;
+    try {
+      await wb.removeMember(ws.id, userId);
+      toastSuccess(`成员 ${userId} 已移除`, '移除成员');
+      await loadMembers();
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '移除成员');
+    }
   }
 
   // ===== 派生 =====
@@ -1070,6 +1310,218 @@
       {/if}
     </section>
   </div>
+
+  <!-- 执行域工作空间(UV-062 接线②⑤⑥:沙盒测试报告/会话清单/成员管理,数据来自 evorule-server :18080) -->
+  <div class="ws-zone-wrap">
+    <div class="card ws-zone">
+      <div class="sec-head">
+        <span>执行域工作空间(evorule-server)</span>
+        {#if $currentWorkspace}
+          <span class="muted">{$currentWorkspace.name} · {$currentWorkspace.id}</span>
+        {/if}
+      </div>
+      <p class="hint">
+        本区数据来自执行域 evorule-server(:18080),与上方规则资产库(evorule-rule :18081)相互独立;
+        区块按需展开加载,加载失败显式报错(不静默)。
+      </p>
+
+      {#if !$currentWorkspace}
+        <p class="muted empty">执行域工作空间未初始化 —— 请确认 evorule-server 已连接(主系统配置)。</p>
+      {:else}
+        <!-- 沙盒测试(接线②:查看报告) -->
+        <div class="sec">
+          <div class="sec-head">
+            <button class="btn btn-sm" onclick={toggleSandboxZone}>
+              {sandboxOpen ? '▾ 收起' : '▸ 沙盒测试'}({sandboxes.length})
+            </button>
+            {#if sandboxOpen}
+              <button class="btn btn-sm btn-ghost" onclick={loadSandboxes}>⟳ 刷新</button>
+            {/if}
+          </div>
+          {#if sandboxOpen}
+            {#if sandboxLoading}
+              <p class="muted">加载中…</p>
+            {:else if sandboxError}
+              <div class="err-box">{sandboxError}</div>
+            {:else if sandboxes.length === 0}
+              <p class="muted">
+                无沙盒记录。沙盒由执行域沙盒编排 API 启动(POST /api/workspaces/&lt;id&gt;/sandboxes),
+                启动后在此列出并可查看测试报告。
+              </p>
+            {:else}
+              <ul class="ws-list">
+                {#each sandboxes as sb (sb.id)}
+                  <li>
+                    <div class="ws-item-top">
+                      <span class="entry-id">#{sb.id}</span>
+                      <span class="badge {sb.status === 'running' ? 'status-active' : 'status-draft'}">{sb.status}</span>
+                      <span class="muted">TCB 会话 {sb.tcb_session_id ?? '-'} · 测试数据集 #{sb.test_dataset_id}</span>
+                      <button class="btn btn-sm" onclick={() => viewReport(sb)}>
+                        {reportOpen[sb.id] ? '收起报告' : '查看报告'}
+                      </button>
+                    </div>
+                    <p class="ws-item-sub">
+                      启动 {fmtTime(sb.started_at)} · {sb.started_by}
+                      {#if sb.closed_at} · 关闭 {fmtTime(sb.closed_at)}{/if}
+                      · 规则集哈希 <span class="chip" title={sb.draft_ruleset_hash ?? ''}>{shortHash(sb.draft_ruleset_hash ?? undefined)}</span>
+                    </p>
+                    {#if reportOpen[sb.id]}
+                      {#if reportLoading[sb.id]}
+                        <p class="muted">报告加载中…</p>
+                      {:else if reportError[sb.id]}
+                        <div class="err-box">{reportError[sb.id]}</div>
+                      {:else if reportCache[sb.id]}
+                        {@const rep = reportCache[sb.id]}
+                        {@const verdict = reportVerdict(rep)}
+                        <div class="report-box">
+                          <div class="report-summary">
+                            <span class="badge {verdict.cls}">{verdict.label}</span>
+                            <span>用例 {rep.summary.total_cases}</span>
+                            <span class="rep-ok">通过 {rep.summary.passed}</span>
+                            <span class="rep-fail">失败 {rep.summary.failed}</span>
+                            <span>跳过 {rep.summary.skipped}</span>
+                            <span>通过率 {(rep.summary.pass_rate * 100).toFixed(1)}%</span>
+                            <span>耗时 {rep.summary.total_duration_ms}ms</span>
+                            <span>fact {rep.summary.fact_count}</span>
+                          </div>
+                          {#if rep.anomalies.length > 0}
+                            <ul class="anomaly-list">
+                              {#each rep.anomalies as a, i (i)}
+                                <li>
+                                  <span class="badge status-rejected">{a.severity}</span>
+                                  {a.anomaly_type} — {a.description}
+                                </li>
+                              {/each}
+                            </ul>
+                          {/if}
+                          {#if rep.cases.length > 0}
+                            <div class="table-scroll">
+                              <table class="case-table">
+                                <thead>
+                                  <tr><th>case</th><th>状态</th><th>耗时</th><th>fact</th><th>错误</th></tr>
+                                </thead>
+                                <tbody>
+                                  {#each rep.cases as c (c.case_id)}
+                                    <tr class:case-failed={c.status === 'failed'}>
+                                      <td title={c.case_name}>{c.case_id}</td>
+                                      <td>
+                                        <span class="badge {c.status === 'passed' ? 'diff-same' : c.status === 'failed' ? 'diff-changed' : 'status-draft'}">{c.status}</span>
+                                      </td>
+                                      <td>{c.duration_ms}ms</td>
+                                      <td>{c.fact_id ?? '-'}</td>
+                                      <td class="case-err">{c.error_message ?? ''}</td>
+                                    </tr>
+                                  {/each}
+                                </tbody>
+                              </table>
+                            </div>
+                          {/if}
+                          <p class="ws-item-sub">
+                            审计链:长度 {rep.audit_info.audit_chain_length}
+                            · {rep.audit_info.audit_chain_verified ? '已验证 ✅' : '未通过 ⚠'}
+                            · 导出 {rep.audit_info.audit_export_path ?? '无'}
+                            · 报告哈希 <span class="chip" title={rep.report_hash}>{rep.report_hash.slice(0, 14)}…</span>
+                            · 生成于 {fmtTime(rep.generated_at)}
+                          </p>
+                        </div>
+                      {/if}
+                    {/if}
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          {/if}
+        </div>
+
+        <!-- 会话清单(接线⑤,只读) -->
+        <div class="sec">
+          <div class="sec-head">
+            <button class="btn btn-sm" onclick={toggleSessionsZone}>
+              {sessionsOpen ? '▾ 收起' : '▸ 会话清单(只读)'}({wsSessions.length})
+            </button>
+            {#if sessionsOpen}
+              <button class="btn btn-sm btn-ghost" onclick={loadWsSessions}>⟳ 刷新</button>
+            {/if}
+          </div>
+          {#if sessionsOpen}
+            {#if sessionsLoading}
+              <p class="muted">加载中…</p>
+            {:else if sessionsError}
+              <div class="err-box">{sessionsError}</div>
+            {:else if wsSessions.length === 0}
+              <p class="muted">无会话记录。</p>
+            {:else}
+              <div class="table-scroll">
+                <table class="case-table">
+                  <thead>
+                    <tr><th>会话</th><th>规则</th><th>规则版本</th><th>创建者</th><th>创建时间</th><th>关闭时间</th></tr>
+                  </thead>
+                  <tbody>
+                    {#each wsSessions as s (s.id)}
+                      <tr>
+                        <td>#{s.id}</td>
+                        <td>{s.rule_id ?? '-'}</td>
+                        <td>{s.rule_version_id ?? '-'}</td>
+                        <td>{s.created_by}</td>
+                        <td>{fmtTime(s.created_at)}</td>
+                        <td>{s.closed_at ? fmtTime(s.closed_at) : '开放中'}</td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+          {/if}
+        </div>
+
+        <!-- 成员管理(接线⑥:增删) -->
+        <div class="sec">
+          <div class="sec-head">
+            <button class="btn btn-sm" onclick={toggleMembersZone}>
+              {membersOpen ? '▾ 收起' : '▸ 成员管理'}({members.length})
+            </button>
+            {#if membersOpen}
+              <button class="btn btn-sm btn-ghost" onclick={loadMembers}>⟳ 刷新</button>
+            {/if}
+          </div>
+          {#if membersOpen}
+            {#if membersLoading}
+              <p class="muted">加载中…</p>
+            {:else if membersError}
+              <div class="err-box">{membersError}</div>
+            {:else}
+              <ul class="ws-list">
+                {#each members as m (m.user_id)}
+                  <li class="member-row">
+                    <span class="entry-id">{m.user_id}</span>
+                    <span class="badge {m.role === 'owner' ? 'status-published' : 'status-draft'}">{m.role}</span>
+                    <span class="muted">加入于 {fmtTime(m.joined_at)}</span>
+                    {#if m.role !== 'owner'}
+                      <button class="btn btn-sm btn-danger" onclick={() => handleRemoveMember(m.user_id)}>移除</button>
+                    {/if}
+                  </li>
+                {/each}
+              </ul>
+              <div class="member-form">
+                <input type="text" bind:value={newMember.user_id} placeholder="用户 ID(如 zhang.san)" />
+                <select bind:value={newMember.role} aria-label="成员角色">
+                  <option value="admin">admin(可写可管理)</option>
+                  <option value="editor">editor(可写)</option>
+                  <option value="viewer">viewer(只读)</option>
+                </select>
+                <button class="btn btn-sm btn-primary" onclick={handleAddMember} disabled={memberSaving}>
+                  {memberSaving ? '添加中…' : '+ 添加成员'}
+                </button>
+              </div>
+              <p class="ws-item-sub">
+                角色口径(server MemberRole):owner 由创建时固定,不可添加/移除;admin=可写可管理,editor=可写,viewer=只读。
+              </p>
+            {/if}
+          {/if}
+        </div>
+      {/if}
+    </div>
+  </div>
 {/if}
 
 <style>
@@ -1598,5 +2050,124 @@
       position: static;
       max-height: none;
     }
+  }
+
+  /* === 执行域工作空间区(UV-062 接线②⑤⑥) === */
+  .ws-zone-wrap {
+    padding: 0 var(--spacing-xl) var(--spacing-2xl);
+  }
+  .ws-zone {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .ws-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .ws-list li {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  .ws-item-top {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+  }
+  .ws-item-sub {
+    margin: var(--spacing-xs) 0 0;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .report-box {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .report-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    font-size: var(--text-xs);
+  }
+  .rep-ok {
+    color: var(--ok, #2e7d32);
+  }
+  .rep-fail {
+    color: var(--danger);
+  }
+  .anomaly-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    font-size: var(--text-xs);
+  }
+  .table-scroll {
+    overflow-x: auto;
+  }
+  .case-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-xs);
+  }
+  .case-table th,
+  .case-table td {
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .case-table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  .case-table td.case-err {
+    white-space: normal;
+    word-break: break-all;
+    color: var(--danger);
+    max-width: 360px;
+  }
+  tr.case-failed td {
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
+  }
+  .member-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+  }
+  .member-form {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: var(--spacing-sm);
+  }
+  .member-form input,
+  .member-form select {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-page);
+    color: inherit;
+    font-size: var(--text-sm);
   }
 </style>

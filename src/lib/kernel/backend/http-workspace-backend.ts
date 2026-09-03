@@ -28,6 +28,7 @@ import type {
   VersionClockMapRecord,
   CreateWorkspaceRequest,
   UpdateWorkspaceRequest,
+  AddMemberRequest,
   CreateRuleRequest,
   UpdateRuleContentRequest,
   CreateSessionRequest,
@@ -49,7 +50,10 @@ import type {
   RecordClockRequest,
   BundleImportResult,
   BundleDryRunResult,
-  ActiveBundleInfo
+  ActiveBundleInfo,
+  ValidateRulesResult,
+  SandboxTestReport,
+  ExecutionRulesResult
 } from './workspace-types';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:18080';
@@ -666,5 +670,100 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
       ActiveBundleInfo[] | { bundles: ActiveBundleInfo[] }
     >('/api/bundles/active', { headers: this.headers() });
     return Array.isArray(j) ? j : j?.bundles ?? [];
+  }
+
+  // ------------------------------------------------------------------------
+  // === 治理域 API 接线 (UV-062:执行域 server 直连端点) ===
+  // ------------------------------------------------------------------------
+
+  /**
+   * POST /api/rules/validate — 规则体校验(静态校验+安全分析)。
+   *
+   * 响应形态(以 evorule-server api/server.rs validate_rules_handler 为准):
+   *   - 200 passed=true / 422 passed=false(校验详情) / 400 passed=false(JSON 解析失败)
+   *   — 三者都是结构化业务结果,不走 fetchJson 的 !ok 抛错路径(422 正是
+   *     "校验失败"的详情载体,吞掉它就是静默通过)。
+   *   - 仅网络不可达抛 HttpWorkspaceBackendError(status=0),调用方诚实降级。
+   */
+  async validateRules(content: string): Promise<ValidateRulesResult> {
+    const path = '/api/rules/validate';
+    let r: Response;
+    try {
+      r = await fetch(this.baseUrl + path, this.postJson({ rules: content }));
+    } catch (e) {
+      throw new HttpWorkspaceBackendError(
+        `network error: ${(e as Error).message}`,
+        0,
+        path
+      );
+    }
+    const text = await r.text().catch(() => '');
+    if (r.status === 200 || r.status === 422 || r.status === 400) {
+      let parsed: ValidateRulesResult | null = null;
+      try {
+        parsed = JSON.parse(text) as ValidateRulesResult;
+      } catch {
+        parsed = null;
+      }
+      if (parsed && typeof parsed.passed === 'boolean') {
+        return parsed;
+      }
+      // 响应形态异常(非 JSON / 缺 passed):不静默,如实抛错携带原文
+      throw new HttpWorkspaceBackendError(
+        `HTTP ${r.status}: 校验响应形态异常(非 JSON 或缺 passed 字段): ${text.slice(0, 200)}`,
+        r.status,
+        path
+      );
+    }
+    throw new HttpWorkspaceBackendError(
+      `HTTP ${r.status}: ${text.slice(0, 200)}`,
+      r.status,
+      path
+    );
+  }
+
+  /** GET /api/workspaces/{id}/sandboxes/{sandbox_id}/report — 沙盒测试报告(404=报告不存在) */
+  async getSandboxReport(
+    workspaceId: string,
+    sandboxId: number
+  ): Promise<SandboxTestReport> {
+    return this.fetchJson<SandboxTestReport>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/sandboxes/${sandboxId}/report`,
+      { headers: this.headers() }
+    );
+  }
+
+  /** GET /api/rules — 执行域当前生效规则集(宪法+已落地 bundle 合并 transform 集) */
+  async getExecutionRules(): Promise<ExecutionRulesResult> {
+    return this.fetchJson<ExecutionRulesResult>('/api/rules', {
+      headers: this.headers()
+    });
+  }
+
+  /** GET /api/publish/queue/{queue_id} — 发布队列项详情(含完整请求体 final_candidate_rules) */
+  async getPublishQueueItem(queueId: number): Promise<PublishQueueItem> {
+    return this.fetchJson<PublishQueueItem>(
+      `/api/publish/queue/${queueId}`,
+      { headers: this.headers() }
+    );
+  }
+
+  /** POST /api/workspaces/{id}/members(body {user_id, role}) — 添加成员 → 201 */
+  async addMember(
+    workspaceId: string,
+    req: AddMemberRequest
+  ): Promise<WorkspaceMemberRecord> {
+    return this.fetchJson<WorkspaceMemberRecord>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/members`,
+      this.postJson(req)
+    );
+  }
+
+  /** DELETE /api/workspaces/{id}/members/{user_id} — 移除成员 → 204 */
+  async removeMember(workspaceId: string, userId: string): Promise<void> {
+    await this.fetchJson<void>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}`,
+      this.delete()
+    );
   }
 }

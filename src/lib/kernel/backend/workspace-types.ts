@@ -450,6 +450,120 @@ export interface ActiveBundleInfo {
   entry_count: number;
 }
 
+// --- 治理域 API 接线(UV-062:执行域 server 直连端点,形状以 evorule-server utoipa 注解为准) ---
+
+/** POST /api/rules/validate 单条校验项(对齐 evorule-server api/server.rs ValidationCheckResponse) */
+export interface ValidationCheckItem {
+  /** 校验项名称 */
+  name: string;
+  /** 是否通过 */
+  passed: boolean;
+  /** 严重级别: 'error' | 'warn' | 'info' */
+  level: string;
+  /** 详细描述 */
+  message: string;
+  /** 关联 transform 索引(-1 = 全局) */
+  transform_index: number;
+}
+
+/**
+ * POST /api/rules/validate 响应(对齐 api/server.rs ValidationResultResponse)。
+ *
+ * server 三种业务形态均为结构化结果(不抛错):
+ *   - 200:passed=true(校验通过,含静态校验+安全分析明细)
+ *   - 422:passed=false(校验失败,checks 携带错误详情;或 Schema 门禁形态
+ *          schema_gate='failed' + schema_errors)
+ *   - 400:passed=false + error(JSON 无法解析原文)
+ * 仅网络不可达等传输层失败由实现抛 HttpWorkspaceBackendError(status=0)。
+ */
+export interface ValidateRulesResult {
+  /** 是否通过(所有校验项均无 error) */
+  passed: boolean;
+  /** 静态校验结果(200/422 常规形态) */
+  static_validation?: {
+    checks: ValidationCheckItem[];
+    error_count: number;
+    warn_count: number;
+  };
+  /** 安全分析结果(200/422 常规形态) */
+  security_analysis?: {
+    checks: ValidationCheckItem[];
+    risk_count: number;
+    /** 整体风险等级: low / medium / high */
+    risk_level: string;
+  };
+  /** 汇总(200/422 常规形态) */
+  summary?: {
+    total_transforms: number;
+    total_errors: number;
+    total_warnings: number;
+    total_risks: number;
+  };
+  /** 422 Schema 门禁形态(rule_set v1.0 结构非法) */
+  schema_gate?: string;
+  /** Schema 门禁失败明细(每条含实例路径+原因) */
+  schema_errors?: string[];
+  /** Schema 门禁失败说明 */
+  message?: string;
+  /** 400 形态:JSON 解析失败错误原文 */
+  error?: string;
+}
+
+/**
+ * GET /api/workspaces/{id}/sandboxes/{sandbox_id}/report 响应
+ * (对齐 core/workspace/src/test_report.rs TestReport)。
+ * 注意:server 无显式 verdict 字段,测试结论由 summary 派生(failed===0 → PASS)。
+ */
+export interface SandboxTestReport {
+  sandbox_id: string;
+  workspace_id: string;
+  tcb_session_id: number;
+  parent_session_id: number | null;
+  draft_ruleset_hash: string;
+  summary: {
+    total_cases: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+    pass_rate: number;
+    total_duration_ms: number;
+    fact_count: number;
+  };
+  cases: Array<{
+    case_id: string;
+    case_name: string;
+    status: 'passed' | 'failed' | 'skipped';
+    fact_id: number | null;
+    error_message: string | null;
+    duration_ms: number;
+  }>;
+  anomalies: Array<{
+    anomaly_type: string;
+    description: string;
+    fact_id: number | null;
+    severity: string;
+  }>;
+  audit_info: {
+    audit_chain_length: number;
+    audit_chain_verified: boolean;
+    audit_export_path: string | null;
+  };
+  /** 报告签名(BLAKE3,防篡改) */
+  report_hash: string;
+  /** 生成时间(RFC3339) */
+  generated_at: string;
+}
+
+/**
+ * GET /api/rules 响应(对齐 evorule-server api/server.rs RulesResponse)。
+ * 执行域当前生效规则集(宪法+已落地 bundle 合并为单一顺序 transform 集);
+ * 原始 transform 无规则名字段,展示名由前端按结构派生。
+ */
+export interface ExecutionRulesResult {
+  count: number;
+  core_eval: unknown[];
+}
+
 // ============================================================================
 // 4. WorkspaceBackend 抽象接口 (~35 方法,对齐 api.rs build_workspace_router 全部路由)
 // ============================================================================
@@ -475,6 +589,7 @@ export interface ActiveBundleInfo {
  *   - 判定契约(6): listVerdictContracts/createVerdictContract/getVerdictContract/updateVerdictContract/deleteVerdictContract/evaluateVerdict
  *   - wall-clock 旁路(2): recordClock/lookupClock
  *   - 快照包导入(3): importBundle/dryRunImportBundle/listActiveBundles (evorule-server /api/bundles/*)
+ *   - 治理域 API 接线(6): validateRules/getSandboxReport/getExecutionRules/getPublishQueueItem/addMember/removeMember (UV-062)
  */
 export interface WorkspaceBackend {
   // === Workspace 管理 ===
@@ -578,4 +693,22 @@ export interface WorkspaceBackend {
   dryRunImportBundle(bundle: unknown): Promise<BundleDryRunResult>;
   /** GET /api/bundles/active — 当前激活 bundle 列表(部署徽标数据源) */
   listActiveBundles(): Promise<ActiveBundleInfo[]>;
+
+  // === 治理域 API 接线 (UV-062:执行域 server 直连端点) ===
+  /**
+   * POST /api/rules/validate — 规则体校验(静态校验+安全分析,保存前预检)。
+   * 200/422/400 均返回结构化结果(passed=false 携带 server 错误详情);
+   * 仅网络不可达抛错(status=0),调用方据此诚实降级(警示后放行)。
+   */
+  validateRules(content: string): Promise<ValidateRulesResult>;
+  /** GET /api/workspaces/{id}/sandboxes/{sandbox_id}/report — 沙盒测试报告(404=报告不存在) */
+  getSandboxReport(workspaceId: string, sandboxId: number): Promise<SandboxTestReport>;
+  /** GET /api/rules — 执行域当前生效规则集(宪法+已落地 bundle 合并 transform 集) */
+  getExecutionRules(): Promise<ExecutionRulesResult>;
+  /** GET /api/publish/queue/{queue_id} — 发布队列项详情(含完整请求体 final_candidate_rules) */
+  getPublishQueueItem(queueId: number): Promise<PublishQueueItem>;
+  /** POST /api/workspaces/{id}/members(body {user_id, role}) — 添加成员 → 201 WorkspaceMemberRecord */
+  addMember(workspaceId: string, req: AddMemberRequest): Promise<WorkspaceMemberRecord>;
+  /** DELETE /api/workspaces/{id}/members/{user_id} — 移除成员 → 204 */
+  removeMember(workspaceId: string, userId: string): Promise<void>;
 }

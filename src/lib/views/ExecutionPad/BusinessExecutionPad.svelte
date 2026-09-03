@@ -11,7 +11,7 @@
 
 <script lang="ts">
   import { get } from "svelte/store";
-  import type { ExecutionBackend } from "$lib/kernel";
+  import { HttpBackendError, type ExecutionBackend } from "$lib/kernel";
   import {
     createEventFromTemplate,
     currentEvent,
@@ -55,6 +55,9 @@
 
   let developerMode = $state(false);
   let submitting = $state(false);
+  // UV-062:停止/强制中止进行中标志(与提交互斥,由 SubmitBar canStop 消费)
+  let stopping = $state(false);
+  let aborting = $state(false);
 
   // 派生:当前事件($ 前缀订阅;get() 快照读在 $derived 中不追踪,事件更新会失明)
   const ev = $derived($currentEvent);
@@ -149,6 +152,77 @@
     void handleTranslate();
   }
 
+  /**
+   * UV-062:把 backend 异常映射为含可操作指引的 toast 文案。
+   * fail-fast 诚实原则:任何失败都显式提示,拒绝静默吞错。
+   */
+  function stopActionErrorMessage(err: unknown, action: string): string {
+    if (err instanceof HttpBackendError) {
+      // status 0 = fetch 层网络错误(连接拒绝 / DNS / CORS)
+      if (err.status === 0) {
+        return `${action}失败:无法连接 evorule-server,请检查服务是否启动或网络/代理配置`;
+      }
+      if (err.status === 404 && action === "强制中止") {
+        // abort 条件挂载:404 可能是未启用 --allow-abort,也可能 会话不存在
+        return `${action}失败:server 未启用强制中止:启动参数需 --allow-abort(或环境变量 EVORULE_ALLOW_ABORT=1);若已启用则为会话不存在`;
+      }
+      if (err.status === 404) {
+        return `${action}失败:会话不存在(可能已被关闭)`;
+      }
+      return `${action}失败:HTTP ${err.status} — ${err.message}`;
+    }
+    return `${action}失败:${err instanceof Error ? err.message : String(err)}`;
+  }
+
+  /** UV-062:停止 — 温和中断,下一检查点生效(无条件可用) */
+  async function handleInterrupt(): Promise<void> {
+    if (!(sessionId > 0)) {
+      pushToast("无活跃 session,无法停止", "warning");
+      return;
+    }
+    stopping = true;
+    try {
+      const r = await backend.interruptSession(sessionId);
+      if (r.success) {
+        pushToast(`已请求中断 session ${r.session_id}:${r.message}`, "success");
+      } else {
+        pushToast(`中断请求被拒绝:${r.message}`, "warning");
+      }
+    } catch (err) {
+      pushToast(stopActionErrorMessage(err, "中断"), "error");
+    } finally {
+      stopping = false;
+    }
+  }
+
+  /** UV-062:强制中止 — 破坏性操作,确认对话框二次确认后才调用 */
+  async function handleAbort(): Promise<void> {
+    if (!(sessionId > 0)) {
+      pushToast("无活跃 session,无法中止", "warning");
+      return;
+    }
+    if (
+      !confirm(
+        "强制中止将立即终止反应器任务(破坏性操作,不等待检查点,不可撤销)。\n确认继续?",
+      )
+    ) {
+      return;
+    }
+    aborting = true;
+    try {
+      const r = await backend.abortSession(sessionId);
+      if (r.success) {
+        pushToast(`已强制中止 session ${r.session_id}:${r.message}`, "success");
+      } else {
+        pushToast(`中止请求被拒绝:${r.message}`, "warning");
+      }
+    } catch (err) {
+      pushToast(stopActionErrorMessage(err, "强制中止"), "error");
+    } finally {
+      aborting = false;
+    }
+  }
+
   function handleClear(): void {
     const id = get(currentEventId);
     if (!id) return;
@@ -235,10 +309,15 @@
       hasInstruction={!!ev?.instruction}
       lastResult={ev?.lastResult ?? null}
       lastSubmittedAt={ev?.lastSubmittedAt ?? null}
+      {sessionId}
       {submitting}
+      {stopping}
+      {aborting}
       onSubmit={handleSubmit}
       onRetranslate={handleRetranslate}
       onClear={handleClear}
+      onInterrupt={handleInterrupt}
+      onAbort={handleAbort}
       disabled={!ev}
     />
   </div>

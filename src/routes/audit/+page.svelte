@@ -9,6 +9,7 @@
   import BusinessAuditView from '$lib/views/Audit/BusinessAuditView.svelte';
   import ArchiveSessionsPanel from '$lib/views/Audit/ArchiveSessionsPanel.svelte';
   import PlatformEventsPanel from '$lib/views/Audit/PlatformEventsPanel.svelte';
+  import BundleImportsPanel from '$lib/views/Audit/BundleImportsPanel.svelte';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import Term from '$lib/views/Help/Term.svelte';
 
@@ -42,6 +43,8 @@
     <ArchiveSessionsPanel />
     <!-- UV-018:平台认证事件报表(登录/用户/角色管理事件,prev_hash 链) -->
     <PlatformEventsPanel />
+    <!-- UV-062 ④:部署历史(bundle 导入溯源,GET /api/bundles/imports) -->
+    <BundleImportsPanel />
   </div>
 {:else}
   <div class="loading">检查权限中...</div>

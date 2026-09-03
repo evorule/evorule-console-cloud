@@ -26,10 +26,11 @@ export type {
   CausalChain,
   CausalEntry,
   CommandResult,
+  InterruptResult,
   ExecutionBackend
 } from './backend/types';
 
-export { HttpBackend } from './backend/http-backend';
+export { HttpBackend, HttpBackendError } from './backend/http-backend';
 export {
   provideBackend,
   useBackend,
@@ -95,7 +96,11 @@ export type {
   RecordClockRequest,
   BundleImportResult,
   BundleDryRunResult,
-  ActiveBundleInfo
+  ActiveBundleInfo,
+  ValidationCheckItem,
+  ValidateRulesResult,
+  SandboxTestReport,
+  ExecutionRulesResult
 } from './backend/workspace-types';
 
 // ============================================================================

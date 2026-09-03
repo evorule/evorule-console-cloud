@@ -28,6 +28,7 @@ import type {
 	DiffResult,
 	CausalChain,
 	CommandResult,
+	InterruptResult,
 } from "$lib/kernel";
 import { get } from "svelte/store";
 import { demoDatasetStore, type DemoDataset } from "$lib/stores/demo-dataset";
@@ -341,6 +342,26 @@ export class MockBackend implements ExecutionBackend {
 			createdAt: new Date().toISOString(),
 		});
 		return id;
+	}
+
+	// === 停止 / 中止(UV-062;mock 与 submitCommand 同语义:接受请求,校验 session 存在) ===
+
+	async interruptSession(id: SessionId): Promise<InterruptResult> {
+		if (!this.sessions.has(id)) {
+			throw new Error(`MockBackend: session ${id} 不存在`);
+		}
+		return {
+			session_id: id,
+			success: true,
+			message: "Interrupt requested, reactor will respond at next checkpoint",
+		};
+	}
+
+	async abortSession(id: SessionId): Promise<InterruptResult> {
+		if (!this.sessions.has(id)) {
+			throw new Error(`MockBackend: session ${id} 不存在`);
+		}
+		return { session_id: id, success: true, message: "Session aborted" };
 	}
 
 	// === Cloud 专属方法(与 CloudHttpBackend 同名,视图层 instanceof 判断) ===
