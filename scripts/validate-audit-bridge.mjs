@@ -2,12 +2,13 @@
 // Copyright (C) 2026 EvoRule Project
 // LLM 审计桥端到端验证脚本(02-约束总表 K 族验收工具)
 //
-// 验证目标:server 侧规则集(app.consolecloud.llm_audit)+ IoSubscriber skip 谓词 +
+// 验证目标:server 桥接规则(core_eval) + IoSubscriber skip 谓词 +
 // 协议回路在真实 server 上走通。不调用任何 LLM —— IoRequest 到达后直接回写
 // 固定 io_response,验证引擎侧回路完整性与审计链落链。
+// 注(UV-054):llm-audit-bridge 自持剧本已退役,单发桥接归引擎 core_eval 单一权威。
 //
 // 前置条件:
-//   evorule-server 以 --rules-dir 指向 assets/evorule-rules(或分发包内 rules/)启动:
+//   evorule-server 以 --rules-dir 指向 assets/evorule-rules(仅含 scenario-*,无重复桥接)
 //     cargo run -p evorule-server -- --rules-dir assets/evorule-rules
 //
 // 运行:node scripts/validate-audit-bridge.mjs [baseUrl]
