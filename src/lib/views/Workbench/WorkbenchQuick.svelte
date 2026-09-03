@@ -37,6 +37,18 @@
 }`);
   let ruleId = $state("rule.user.demo");
 
+  // P1-01(Mavis 01):一键插入一个完整可提交的示例(P2-03 同类:inline JSON 校验)
+  const EXAMPLE_RULE_ID = "rule.medical.triage";
+  const EXAMPLE_RULE_JSON = `{
+  "type": "set",
+  "params": {
+    "attr": "__exec__.payload.priority",
+    "operation": "set",
+    "value": 1
+  }
+}`;
+  let ruleError = $state<string | null>(null);
+
   // Tab 2 state
   let selectedSession = $state<number | "">("");
   let payloadJson = $state('{"order_id": 12345}');
@@ -48,9 +60,24 @@
     }
   });
 
-  function handleAddRule() {
+  function loadExample(): void {
+    ruleId = EXAMPLE_RULE_ID;
+    ruleJson = EXAMPLE_RULE_JSON;
+    ruleError = null;
+  }
+
+  function handleAddRule(): void {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(ruleJson);
+    } catch (e) {
+      // P2-03:inline JSON 校验,非法时导向可诊断错误,不静默闪断
+      ruleError = `规则 JSON 非法,请修正后再提交 — ${(e as Error).message}`;
+      return;
+    }
+    ruleError = null;
     const full = JSON.stringify(
-      { rule_id: ruleId, ...JSON.parse(ruleJson) },
+      { rule_id: ruleId, ...(parsed as Record<string, unknown>) },
       null,
       2,
     );
@@ -103,6 +130,9 @@
         <label for="quick-rule-json">规则 JSON(type + params)</label>
         <textarea id="quick-rule-json" bind:value={ruleJson}></textarea>
       </div>
+      {#if ruleError}
+        <div class="json-error" role="alert">{ruleError}</div>
+      {/if}
       <div class="btn-row">
         <button
           class="btn btn-primary"
@@ -111,6 +141,9 @@
           title={loggedIn ? "提交到当前 workspace" : "请先登录"}
         >
           ➕ 提交
+        </button>
+        <button class="btn btn-secondary" type="button" onclick={loadExample}>
+          📋 插入完整示例
         </button>
         <a class="btn btn-secondary" href="/view/rules">🧙 走向导</a>
         <a class="btn btn-secondary" href="/view/rules">📁 看 demo</a>
@@ -162,6 +195,23 @@
         <div class="llm-disabled">
           ⚠ LLM 尚未配置 · 请在「设置 → LLM 配置」填写 API key 后使用
         </div>
+        <!-- P1-02(Mavis 01):无 Key 也可预览 LLM 将产出的结果形态,降低配置焦虑 -->
+        <details class="llm-sample">
+          <summary>💡 查看 LLM 样例输出(无需 Key)</summary>
+          <p class="llm-sample-note">
+            配置 Key 后,LLM 会按带外协议自动<b>起草</b>与<b>解释</b>规则。下方为未接入时的静态示意:
+          </p>
+          <pre class="llm-sample-pre">{`拟定规则 rule.medical.triage:
+{
+  "type": "set",
+  "params": {
+    "attr": "__exec__.payload.triage_level",
+    "operation": "set",
+    "value": "normal"
+  }
+}
+→ 该规则将轻症患者标记为 normal 分诊级别。`}</pre>
+        </details>
         <div class="btn-row">
           <a class="btn btn-secondary" href="/?openSettings=llm">⚙️ 打开设置</a>
         </div>
@@ -297,6 +347,45 @@
     font-size: 13px;
     background: var(--bg-input);
     border-radius: 4px;
+  }
+  .json-error {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--danger, #dc2626);
+    background: rgba(220, 38, 38, 0.08);
+    border-left: 3px solid var(--danger, #dc2626);
+    border-radius: 4px;
+    font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+    word-break: break-all;
+  }
+  .llm-sample {
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .llm-sample summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+  }
+  .llm-sample-note {
+    margin: 8px 0 6px;
+    line-height: 1.6;
+  }
+  .llm-sample-pre {
+    margin: 0;
+    padding: 8px 10px;
+    background: var(--bg-input);
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+    font-size: 12px;
+    color: var(--text-primary);
   }
   .llm-ready {
     padding: 16px;
