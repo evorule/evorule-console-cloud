@@ -28,6 +28,15 @@ import type {
   CausalChain,
   CommandResult,
   InterruptResult,
+  AutoVerifyStatus,
+  AutoVerifyConfigResult,
+  StepInfo,
+  SessionSnapshot,
+  DebugPhaseInfo,
+  DebugQueueInfo,
+  DebugPendingIoInfo,
+  PendingIoCountInfo,
+  CausalDepthInfo,
   ExecutionBackend
 } from './types';
 
@@ -130,6 +139,37 @@ export class HttpBackend implements ExecutionBackend {
       headers: { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body)
     };
+  }
+
+  /**
+   * 统一 fetch + Blob 解析(二进制端点用,如 gzip 审计链导出)。
+   * 错误处理与 fetchJson 一致(网络错误 status=0;非 2xx 抛 HttpBackendError,
+   * 含响应体前 200 字符摘要,不静默)。
+   */
+  private async fetchBlob(path: string, opts: RequestInit = {}): Promise<Blob> {
+    const url = this.baseUrl + path;
+    let r: Response;
+    try {
+      r = await fetch(url, {
+        ...opts,
+        headers: this.headers(opts.headers as Record<string, string> | undefined)
+      });
+    } catch (e) {
+      throw new HttpBackendError(
+        `network error: ${(e as Error).message}`,
+        0,
+        path
+      );
+    }
+    if (!r.ok) {
+      const text = await r.text().catch(() => '');
+      throw new HttpBackendError(
+        `HTTP ${r.status}: ${text.slice(0, 200)}`,
+        r.status,
+        path
+      );
+    }
+    return r.blob();
   }
 
   // ------------------------------------------------------------------------
@@ -336,6 +376,56 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
+   * GET /api/sessions/{id}/audit/export — 审计链 JSON 导出(UV-062 W2)。
+   * server 返回完整哈希链 JSON(serde_json::Value),以 unknown 透传,
+   * 由视图层序列化下载;失败(404 会话不存在 / 500 导出失败)抛 HttpBackendError。
+   */
+  async exportAudit(id: SessionId): Promise<unknown> {
+    return this.fetchJson<unknown>(`/api/sessions/${id}/audit/export`);
+  }
+
+  /**
+   * GET /api/sessions/{id}/audit/export/compressed — gzip 压缩审计链导出
+   * (UV-062 W2)。server 返回 application/gzip 二进制(Content-Disposition
+   * 文件名 audit_chain.json.gz,体积约为 JSON 的 5-10%),以 Blob 返回,
+   * Blob.type 携带实际 content-type,由视图层决定扩展名(.json.gz)。
+   */
+  async exportAuditCompressed(id: SessionId): Promise<Blob> {
+    return this.fetchBlob(`/api/sessions/${id}/audit/export/compressed`);
+  }
+
+  /**
+   * GET /api/sessions/{id}/audit/auto_verify — 查询实时验证开关(UV-062 W2)。
+   * 返回 { session_id, auto_verify }。
+   */
+  async getAutoVerify(id: SessionId): Promise<AutoVerifyStatus> {
+    return this.fetchJson<AutoVerifyStatus>(
+      `/api/sessions/${id}/audit/auto_verify`
+    );
+  }
+
+  /**
+   * POST /api/sessions/{id}/audit/auto_verify — 设置实时验证开关(UV-062 W2)。
+   * threshold / interval 缺省不传(server serde default:threshold=0 不限制,
+   * interval=0 被核心归一为 1 = 每次验证);返回配置结果,调用方须检查
+   * success 并显式提示失败(不静默)。
+   */
+  async setAutoVerify(
+    id: SessionId,
+    enabled: boolean,
+    threshold?: number,
+    interval?: number
+  ): Promise<AutoVerifyConfigResult> {
+    const body: Record<string, unknown> = { enabled };
+    if (threshold !== undefined) body.threshold = threshold;
+    if (interval !== undefined) body.interval = interval;
+    return this.fetchJson<AutoVerifyConfigResult>(
+      `/api/sessions/${id}/audit/auto_verify`,
+      this.postJson(body)
+    );
+  }
+
+  /**
    * 公开只读 GET JSON(UV-016 审计档案等 server 扩展端点使用)。
    * 复用统一 headers(Bearer)与错误处理,供 Cloud 层组合调用。
    */
@@ -415,5 +505,52 @@ export class HttpBackend implements ExecutionBackend {
       200,
       `/api/sessions/fork/${parentId}`
     );
+  }
+
+  // ------------------------------------------------------------------------
+  // === 调试只读查询(UV-062 W2,六路独立) ===
+  // ------------------------------------------------------------------------
+
+  /** GET /api/sessions/{id}/step — 当前执行步数({ session_id, current_step }) */
+  async getStep(id: SessionId): Promise<StepInfo> {
+    return this.fetchJson<StepInfo>(`/api/sessions/${id}/step`);
+  }
+
+  /**
+   * GET /api/sessions/{id}/snapshot — 反应器完整状态快照。
+   * server 在反应器结束/锁中毒时返回 200 + 仅 { session_id, error }
+   * (数据字段缺失 ≠ 隐式 0),此处透传,由调用方检查 error 字段展示失败态。
+   */
+  async getSessionSnapshot(id: SessionId): Promise<SessionSnapshot> {
+    return this.fetchJson<SessionSnapshot>(`/api/sessions/${id}/snapshot`);
+  }
+
+  /** GET /api/sessions/{id}/debug/phase — 当前执行阶段(null = 未启动) */
+  async getDebugPhase(id: SessionId): Promise<DebugPhaseInfo> {
+    return this.fetchJson<DebugPhaseInfo>(`/api/sessions/${id}/debug/phase`);
+  }
+
+  /** GET /api/sessions/{id}/debug/queue — 待执行队列(server 当前恒为空数组) */
+  async getDebugQueue(id: SessionId): Promise<DebugQueueInfo> {
+    return this.fetchJson<DebugQueueInfo>(`/api/sessions/${id}/debug/queue`);
+  }
+
+  /** GET /api/sessions/{id}/debug/pending_io — 悬挂 I/O 计数与列表 */
+  async getDebugPendingIo(id: SessionId): Promise<DebugPendingIoInfo> {
+    return this.fetchJson<DebugPendingIoInfo>(
+      `/api/sessions/${id}/debug/pending_io`
+    );
+  }
+
+  /** GET /api/sessions/{id}/pending_io_count — 悬挂 I/O 计数 */
+  async getPendingIoCount(id: SessionId): Promise<PendingIoCountInfo> {
+    return this.fetchJson<PendingIoCountInfo>(
+      `/api/sessions/${id}/pending_io_count`
+    );
+  }
+
+  /** GET /api/sessions/{id}/causal_depth — 因果链深度({ session_id, causal_depth }) */
+  async getCausalDepth(id: SessionId): Promise<CausalDepthInfo> {
+    return this.fetchJson<CausalDepthInfo>(`/api/sessions/${id}/causal_depth`);
   }
 }

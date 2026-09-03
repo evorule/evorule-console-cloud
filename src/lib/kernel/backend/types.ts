@@ -153,7 +153,88 @@ export interface InterruptResult {
 }
 
 // ============================================================================
-// 2. ExecutionBackend 抽象接口(SPEC §1.2,15 方法)
+// 1.W Wave 2 数据契约(UV-062 W2,对齐 evorule-server 审计导出/自动验证/调试端点)
+// ============================================================================
+
+/** 审计链自动验证状态(GET /audit/auto_verify,对齐 server AutoVerifyResponse) */
+export interface AutoVerifyStatus {
+  session_id: SessionId;
+  /** 自动验证是否启用 */
+  auto_verify: boolean;
+}
+
+/**
+ * 审计链自动验证配置结果(POST /audit/auto_verify,
+ * 对齐 server AutoVerifyConfigureResponse)。
+ */
+export interface AutoVerifyConfigResult {
+  session_id: SessionId;
+  success: boolean;
+  auto_verify: boolean;
+  /** 验证阈值(0 = 不限制) */
+  threshold: number;
+  /** 验证间隔(1 = 每次 audit_new 都验证;核心将 0 归一为 1) */
+  interval: number;
+  message: string;
+}
+
+/** 当前执行步数(GET /step,对齐 server StepResponse) */
+export interface StepInfo {
+  session_id: SessionId;
+  current_step: number;
+}
+
+/**
+ * 反应器完整状态快照(GET /snapshot,对齐 server SnapshotResponse)。
+ * server 在反应器已结束/锁中毒时返回 200 + 仅含 { session_id, error },
+ * 此时数据字段缺失(缺失 ≠ 隐式 0),调用方须检查 error 展示失败态。
+ */
+export interface SessionSnapshot {
+  session_id: SessionId;
+  finished?: boolean;
+  phase?: string;
+  /** FactsLog 版本号 */
+  version?: number;
+  steps?: number;
+  pending_io_count?: number;
+  structural_invariant_violations?: number;
+  /** 快照获取失败原因(成功时无此字段) */
+  error?: string;
+}
+
+/** 调试:当前执行阶段(GET /debug/phase;null = 反应器未启动) */
+export interface DebugPhaseInfo {
+  session_id: SessionId;
+  phase: string | null;
+}
+
+/** 调试:待执行队列(GET /debug/queue;server 当前恒返回空数组) */
+export interface DebugQueueInfo {
+  session_id: SessionId;
+  queue: unknown[];
+}
+
+/** 调试:悬挂 I/O(GET /debug/pending_io;server 当前恒返回空列表) */
+export interface DebugPendingIoInfo {
+  session_id: SessionId;
+  pending_io_count: number;
+  pending_io: unknown[];
+}
+
+/** 悬挂 I/O 计数(GET /pending_io_count,对齐 server PendingIoCountResponse) */
+export interface PendingIoCountInfo {
+  session_id: SessionId;
+  pending_io_count: number;
+}
+
+/** 因果链深度(GET /causal_depth,对齐 server CausalDepthResponse) */
+export interface CausalDepthInfo {
+  session_id: SessionId;
+  causal_depth: number;
+}
+
+// ============================================================================
+// 2. ExecutionBackend 抽象接口(SPEC §1.2,28 方法)
 // ============================================================================
 
 /**
@@ -163,14 +244,19 @@ export interface InterruptResult {
  * - 大众版: HttpBackend (调 evorule-server HTTP)
  * - 高级版: EmbeddedBackend (Tauri + Rust 直接 link evorule crate,不联网)
  *
- * 17 方法分组:
+ * 28 方法分组:
  *   - 会话管理(5):health / createSession / listSessions / closeSession / getSessionState
  *   - 命令执行(1):submitCommand
  *   - 历史 / 回放(3):getHistory / getReplay / getFacts
  *   - 审计(3):getAudit / verifyAudit / getCausalChain
+ *   - 审计导出 / 自动验证(4,UV-062 W2):exportAudit / exportAuditCompressed /
+ *     getAutoVerify / setAutoVerify
  *   - 时间旅行(2):getStateAtVersion / getDiff
  *   - What-If(1):forkSession
  *   - 停止 / 中止(2,UV-062):interruptSession / abortSession(abort 条件挂载,见方法注释)
+ *   - 调试只读(6,UV-062 W2):getStep / getSessionSnapshot / getDebugPhase /
+ *     getDebugQueue / getDebugPendingIo / getPendingIoCount
+ *   - 因果深度(1,UV-062 W2):getCausalDepth
  */
 export interface ExecutionBackend {
   // === 会话管理 ===
@@ -193,6 +279,38 @@ export interface ExecutionBackend {
   verifyAudit(id: SessionId): Promise<VerifyResult>;
   getCausalChain(id: SessionId, factId: number): Promise<CausalChain>;
 
+  // === 审计导出 / 自动验证(UV-062 W2) ===
+  /**
+   * GET /api/sessions/{id}/audit/export — 导出完整审计链 JSON
+   * (含完整哈希链,用于跨实例迁移 / 离线分析 / 备份)。
+   * server 返回 JSON Value,形状由 audit_export 决定,故以 unknown 透传,
+   * 由视图层序列化下载。
+   */
+  exportAudit(id: SessionId): Promise<unknown>;
+  /**
+   * GET /api/sessions/{id}/audit/export/compressed — 导出 gzip 压缩审计链。
+   * server 返回 application/gzip 二进制(体积约为 JSON 的 5-10%,
+   * Content-Disposition 文件名 audit_chain.json.gz),以 Blob 返回,
+   * Blob.type 携带实际 content-type;实现必须带 Bearer 请求。
+   */
+  exportAuditCompressed(id: SessionId): Promise<Blob>;
+  /**
+   * GET /api/sessions/{id}/audit/auto_verify — 查询审计链实时验证开关状态。
+   */
+  getAutoVerify(id: SessionId): Promise<AutoVerifyStatus>;
+  /**
+   * POST /api/sessions/{id}/audit/auto_verify — 设置审计链实时验证开关。
+   * threshold / interval 可选:缺省不传(server serde default → threshold=0
+   * 不限制,interval=0 被核心归一为 1 即每次验证)。
+   * 返回配置结果;success=false 或抛错时调用方必须显式提示(不静默)。
+   */
+  setAutoVerify(
+    id: SessionId,
+    enabled: boolean,
+    threshold?: number,
+    interval?: number
+  ): Promise<AutoVerifyConfigResult>;
+
   // === 时间旅行(展现"可回放"的回溯能力) ===
   getStateAtVersion(id: SessionId, version: number): Promise<HistoricalState>;
   getDiff(id: SessionId, a: number, b: number): Promise<DiffResult>;
@@ -212,4 +330,26 @@ export interface ExecutionBackend {
    *   端点未挂载 → 404,调用方必须显式提示启用方法(拒绝静默)。
    */
   abortSession(id: SessionId): Promise<InterruptResult>;
+
+  // === 调试只读查询(UV-062 W2,六路独立,一路失败不拖垮其他路) ===
+  /** GET /api/sessions/{id}/step — 当前执行步数 */
+  getStep(id: SessionId): Promise<StepInfo>;
+  /**
+   * GET /api/sessions/{id}/snapshot — 反应器完整状态快照。
+   * server 在反应器结束/锁中毒时返回 200 + 仅 { session_id, error },
+   * 调用方须检查 snapshot.error 展示失败态(不静默)。
+   */
+  getSessionSnapshot(id: SessionId): Promise<SessionSnapshot>;
+  /** GET /api/sessions/{id}/debug/phase — 当前执行阶段(null = 未启动) */
+  getDebugPhase(id: SessionId): Promise<DebugPhaseInfo>;
+  /** GET /api/sessions/{id}/debug/queue — 待执行队列(server 当前恒为空) */
+  getDebugQueue(id: SessionId): Promise<DebugQueueInfo>;
+  /** GET /api/sessions/{id}/debug/pending_io — 悬挂 I/O 计数与列表 */
+  getDebugPendingIo(id: SessionId): Promise<DebugPendingIoInfo>;
+  /** GET /api/sessions/{id}/pending_io_count — 悬挂 I/O 计数 */
+  getPendingIoCount(id: SessionId): Promise<PendingIoCountInfo>;
+
+  // === 因果深度(UV-062 W2) ===
+  /** GET /api/sessions/{id}/causal_depth — 因果链深度 */
+  getCausalDepth(id: SessionId): Promise<CausalDepthInfo>;
 }

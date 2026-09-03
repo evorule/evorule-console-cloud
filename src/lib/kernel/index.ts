@@ -27,6 +27,15 @@ export type {
   CausalEntry,
   CommandResult,
   InterruptResult,
+  AutoVerifyStatus,
+  AutoVerifyConfigResult,
+  StepInfo,
+  SessionSnapshot,
+  DebugPhaseInfo,
+  DebugQueueInfo,
+  DebugPendingIoInfo,
+  PendingIoCountInfo,
+  CausalDepthInfo,
   ExecutionBackend
 } from './backend/types';
 
@@ -78,6 +87,7 @@ export type {
   AddMemberRequest,
   CreateRuleRequest,
   UpdateRuleContentRequest,
+  ForkRuleRequest,
   CreateSessionRequest,
   StartSandboxRequest,
   StartSandboxResponse,

@@ -274,6 +274,16 @@ export interface UpdateRuleContentRequest {
   updated_by: string;
 }
 
+/**
+ * Fork 规则请求 (api.rs ForkRuleRequest)。
+ * server 请求体为 {new_name, created_by};created_by 属操作者审计归属字段,
+ * 由 HttpWorkspaceBackend 从构造参数 actor 注入(与沙盒 started_by/发布 submitted_by 同模式),
+ * 调用方只需给出 new_name。
+ */
+export interface ForkRuleRequest {
+  new_name: string;
+}
+
 /** 创建会话请求 */
 export interface CreateSessionRequest {
   rule_id?: string;
@@ -578,7 +588,7 @@ export interface ExecutionRulesResult {
  * 方法分组(对齐 api.rs 路由表):
  *   - Workspace 管理(5): listWorkspaces/createWorkspace/getWorkspace/updateWorkspace/archiveWorkspace
  *   - 成员(1): listMembers
- *   - 规则(8): listRules/createRule/getRule/updateRuleContent/activateRule/submitRule/blockRule/archiveRule
+ *   - 规则(9): listRules/createRule/getRule/updateRuleContent/activateRule/submitRule/blockRule/archiveRule/forkRule
  *   - 规则版本(2): listRuleVersions/getRuleVersion (阶段 D 新增,暴露规则内容)
  *   - 会话(2): createWorkspaceSession/listWorkspaceSessions
  *   - 沙盒(4): startSandbox/listSandboxes/getSandbox/closeSandbox
@@ -615,6 +625,11 @@ export interface WorkspaceBackend {
   submitRule(workspaceId: string, ruleId: string): Promise<RuleRecord>;
   blockRule(workspaceId: string, ruleId: string): Promise<RuleRecord>;
   archiveRule(workspaceId: string, ruleId: string): Promise<RuleRecord>;
+  /**
+   * POST /api/workspaces/{id}/rules/{rule_id}/fork — fork 规则 → 201 RuleRecord。
+   * 复制源规则当前版本内容为新规则(name=new_name,state=draft,独立版本历史 v1)。
+   */
+  forkRule(workspaceId: string, ruleId: string, req: ForkRuleRequest): Promise<RuleRecord>;
 
   // === 规则版本查询 (阶段 D 新增, RuleRecord 不含 content, content 在 rule_versions 表) ===
   /** GET /api/workspaces/{id}/rules/{rule_id}/versions — 列出规则全部版本(含 content, 按 version 降序) */

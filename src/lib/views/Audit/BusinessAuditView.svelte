@@ -87,6 +87,17 @@
   let showRollbackConfirm = $state(false);
   let rollbackTarget = $state<number | null>(null);
 
+  // === UV-062 W2 接线1+2:审计设置(auto_verify 开关 + 双格式导出) ===
+  /** auto_verify 当前状态(null = 未知:无 session / 读取中 / 读取失败) */
+  let autoVerifyEnabled = $state<boolean | null>(null);
+  let autoVerifyToggling = $state(false);
+  let autoVerifyError = $state<string | null>(null);
+  let exportingFormat = $state<"json" | "compressed" | null>(null);
+
+  // === UV-062 W2 接线4:因果深度(null = 未知:无 session / 读取中 / 读取失败) ===
+  let causalDepth = $state<number | null>(null);
+  let causalDepthError = $state<string | null>(null);
+
   // === 派生:store 订阅(用 $ 自动订阅,确保响应式) ===
   let auditEntries = $derived($businessAuditStore);
   let summary = $derived($businessAuditSummary);
@@ -113,16 +124,104 @@
     void loadAudit();
   });
 
-  // session 变化时重新拉取审计链
+  // session 变化时重新拉取审计链 + auto_verify 状态 + 因果深度
   $effect(() => {
     if (sessionId !== null) {
       void loadAudit();
+      void loadAutoVerify();
+      void loadCausalDepth();
     }
   });
 
   async function loadAudit(): Promise<void> {
     if (sessionId === null) return;
     await refreshAudit(backend, sessionId);
+  }
+
+  // === UV-062 W2 接线2:auto_verify 开关 ===
+  /** 读取当前会话的审计链自动验证状态(失败显式错误态,不静默) */
+  async function loadAutoVerify(): Promise<void> {
+    if (sessionId === null) return;
+    autoVerifyError = null;
+    try {
+      const status = await backend.getAutoVerify(sessionId);
+      autoVerifyEnabled = status.auto_verify;
+    } catch (e) {
+      autoVerifyEnabled = null;
+      autoVerifyError = `读取失败: ${(e as Error).message}`;
+    }
+  }
+
+  /** 切换 auto_verify:乐观更新 → POST;失败回滚显示 + toast 报错 */
+  async function handleToggleAutoVerify(): Promise<void> {
+    if (sessionId === null || autoVerifyEnabled === null || autoVerifyToggling) {
+      return;
+    }
+    const prev = autoVerifyEnabled;
+    const next = !prev;
+    autoVerifyToggling = true;
+    autoVerifyError = null;
+    autoVerifyEnabled = next; // 乐观更新
+    try {
+      const result = await backend.setAutoVerify(sessionId, next);
+      if (!result.success) {
+        // server 显式拒绝:回滚 + 报错
+        autoVerifyEnabled = prev;
+        autoVerifyError = result.message || "server 拒绝";
+        toastError(`自动验证设置失败: ${autoVerifyError}`);
+      } else {
+        autoVerifyEnabled = result.auto_verify;
+        toastSuccess(
+          `自动验证已${result.auto_verify ? "开启" : "关闭"}`,
+        );
+      }
+    } catch (e) {
+      // 网络/HTTP 错误:回滚 + toast
+      autoVerifyEnabled = prev;
+      autoVerifyError = (e as Error).message;
+      toastError(`自动验证设置失败: ${(e as Error).message}`);
+    } finally {
+      autoVerifyToggling = false;
+    }
+  }
+
+  // === UV-062 W2 接线4:因果深度 ===
+  /** 读取当前会话因果深度(GET /causal_depth;失败显式错误态,不静默) */
+  async function loadCausalDepth(): Promise<void> {
+    if (sessionId === null) return;
+    causalDepthError = null;
+    try {
+      const info = await backend.getCausalDepth(sessionId);
+      causalDepth = info.causal_depth;
+    } catch (e) {
+      causalDepth = null;
+      causalDepthError = `读取失败: ${(e as Error).message}`;
+    }
+  }
+
+  // === UV-062 W2 接线1:审计链双格式导出 ===
+  /**
+   * 导出审计链(JSON / 压缩)。复用 audit-export store:
+   * fetch blob + Bearer(backend 层注入)+ URL.createObjectURL 下载;
+   * store 内部捕获错误置 error 态,此处读态显式 toast(不静默)。
+   */
+  async function handleExportChain(compressed: boolean): Promise<void> {
+    if (sessionId === null) {
+      toastError("无活动 session,无法导出审计链");
+      return;
+    }
+    exportingFormat = compressed ? "compressed" : "json";
+    try {
+      await exportAudit(sessionId, backend, compressed);
+      const state = get(auditExportStore);
+      if (state.status === "error") {
+        toastError(state.message);
+      } else if (state.status === "done") {
+        toastSuccess(state.message);
+      }
+    } finally {
+      exportingFormat = null;
+    }
   }
 
   // === 工具栏回调 ===
@@ -321,6 +420,65 @@ ${causalChain.nodes
       onCausalSummary={handleCausalSummary}
     />
 
+    <!-- UV-062 W2 接线1+2:审计设置区(auto_verify 开关 + 双格式审计链导出) -->
+    <div class="audit-settings">
+      <div class="setting-item">
+        <span class="setting-label">⚙️ 自动验证</span>
+        {#if sessionId === null}
+          <span class="setting-hint">无活动 session</span>
+        {:else if autoVerifyError}
+          <span class="setting-error" title={autoVerifyError}
+            >⚠️ {autoVerifyError}</span
+          >
+          <button
+            class="setting-retry"
+            onclick={() => void loadAutoVerify()}
+            title="重试读取自动验证状态">↻ 重试</button
+          >
+        {:else if autoVerifyEnabled === null}
+          <span class="setting-hint">读取中…</span>
+        {:else}
+          <button
+            class="av-switch"
+            class:on={autoVerifyEnabled}
+            role="switch"
+            aria-checked={autoVerifyEnabled}
+            aria-label="审计链自动验证开关"
+            disabled={autoVerifyToggling}
+            onclick={() => void handleToggleAutoVerify()}
+            title="审计链实时验证:开启后 server 每次写入审计事实即自动校验 BLAKE3 链"
+          >
+            <span class="av-track"><span class="av-knob"></span></span>
+            <span class="av-text"
+              >{autoVerifyToggling ? "…" : autoVerifyEnabled ? "已开启" : "已关闭"}</span
+            >
+          </button>
+        {/if}
+      </div>
+
+      <div class="setting-divider"></div>
+
+      <div class="setting-item">
+        <span class="setting-label">📥 导出审计链</span>
+        <button
+          class="export-btn"
+          onclick={() => void handleExportChain(false)}
+          disabled={exportingFormat !== null}
+          title="下载完整审计链 JSON(含完整哈希链)"
+        >
+          {exportingFormat === "json" ? "⏳ 导出中…" : "JSON"}
+        </button>
+        <button
+          class="export-btn"
+          onclick={() => void handleExportChain(true)}
+          disabled={exportingFormat !== null}
+          title="下载 gzip 压缩审计链(体积约为 JSON 的 5-10%)"
+        >
+          {exportingFormat === "compressed" ? "⏳ 导出中…" : "压缩 (.gz)"}
+        </button>
+      </div>
+    </div>
+
     {#if auditErr}
       <div class="audit-error">⚠️ {auditErr}</div>
     {/if}
@@ -341,6 +499,35 @@ ${causalChain.nodes
         />
       </div>
       <div class="causal-col">
+        <!-- UV-062 W2 接线4:当前会话因果深度 -->
+        <div class="causal-depth-bar">
+          <span class="cd-label">🌊 因果深度</span>
+          {#if sessionId === null}
+            <span class="setting-hint">无活动 session</span>
+          {:else if causalDepthError}
+            <span class="setting-error" title={causalDepthError}
+              >⚠️ {causalDepthError}</span
+            >
+            <button
+              class="setting-retry"
+              onclick={() => void loadCausalDepth()}
+              title="重试读取因果深度">↻ 重试</button
+            >
+          {:else if causalDepth === null}
+            <span class="setting-hint">读取中…</span>
+          {:else}
+            <span class="cd-value" title="当前会话因果链深度(最长因果链层数)"
+              >{causalDepth}</span
+            >
+          {/if}
+          {#if sessionId !== null && !causalDepthError}
+            <button
+              class="cd-refresh"
+              onclick={() => void loadCausalDepth()}
+              title="刷新因果深度">↻</button
+            >
+          {/if}
+        </div>
         <CausalGraph
           chain={causalChain}
           loading={causalLoading && !causalChain}
@@ -475,6 +662,170 @@ ${causalChain.nodes
     border-radius: 6px;
     color: var(--success, #166534);
     font-size: 12px;
+  }
+
+  /* === UV-062 W2 接线1+2:审计设置区 === */
+  .audit-settings {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .setting-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .setting-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #4b5563);
+    white-space: nowrap;
+  }
+  .setting-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border, #e5e7eb);
+  }
+  .setting-hint {
+    font-size: 11px;
+    color: var(--text-secondary, #9ca3af);
+  }
+  .setting-error {
+    font-size: 11px;
+    color: var(--danger, #991b1b);
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .setting-retry {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border, #d1d5db);
+    background: var(--bg-card);
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+  }
+  .setting-retry:hover {
+    background: var(--bg-page, #f9fafb);
+  }
+  .av-switch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-family: inherit;
+  }
+  .av-switch:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+  .av-track {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--border, #d1d5db);
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+  }
+  .av-switch.on .av-track {
+    background: var(--success, #10b981);
+  }
+  .av-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  .av-switch.on .av-knob {
+    transform: translateX(16px);
+  }
+  .av-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+    white-space: nowrap;
+  }
+  .av-switch.on .av-text {
+    color: var(--success, #059669);
+  }
+  .export-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border, #d1d5db);
+    background: var(--bg-card);
+    color: var(--text-secondary, #4b5563);
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .export-btn:hover:not(:disabled) {
+    background: var(--bg-page, #f9fafb);
+  }
+  .export-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* === UV-062 W2 接线4:因果深度显示条 === */
+  .causal-depth-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .cd-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #4b5563);
+    white-space: nowrap;
+  }
+  .cd-value {
+    font-family: var(--font-mono, monospace);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brand, #7c3aed);
+    background: var(--info-bg, #f5f3ff);
+    padding: 0 8px;
+    border-radius: 4px;
+  }
+  .cd-refresh {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--text-secondary, #6b7280);
+  }
+  .cd-refresh:hover {
+    background: var(--bg-page, #f9fafb);
   }
 
   @media (max-width: 1024px) {

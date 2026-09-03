@@ -244,3 +244,140 @@ describe("P10 MockBackend - 错误处理", () => {
 		);
 	});
 });
+
+// ============================================================================
+// UV-062 W2:审计导出 / 自动验证 / 调试只读 / 因果深度(mock 扩充)
+// ============================================================================
+
+describe("UV-062 W2 MockBackend - 审计导出", () => {
+	test("exportAudit(1) 返回含完整审计链的导出对象", async () => {
+		const data = (await backend.exportAudit(1)) as {
+			session_id: number;
+			fact_count: number;
+			entries: unknown[];
+		};
+		expect(data.session_id).toBe(1);
+		expect(data.fact_count).toBe(6);
+		expect(data.entries).toHaveLength(6);
+	});
+
+	test("exportAudit 不存在的 session 抛错(不静默返回空)", async () => {
+		await expect(backend.exportAudit(999)).rejects.toThrow(/不存在/);
+	});
+
+	test("exportAuditCompressed(1) 返回 gzip Blob(CompressionStream 可用时)", async () => {
+		if (typeof CompressionStream === "undefined") {
+			// 环境不支持时显式抛错也是契约的一部分(不静默降级为空文件)
+			await expect(backend.exportAuditCompressed(1)).rejects.toThrow(
+				/CompressionStream/,
+			);
+			return;
+		}
+		const blob = await backend.exportAuditCompressed(1);
+		expect(blob).toBeInstanceOf(Blob);
+		expect(blob.size).toBeGreaterThan(0);
+	});
+
+	test("exportAuditCompressed 不存在的 session 抛错", async () => {
+		await expect(backend.exportAuditCompressed(999)).rejects.toThrow(/不存在/);
+	});
+});
+
+describe("UV-062 W2 MockBackend - auto_verify 开关", () => {
+	test("getAutoVerify 默认关闭", async () => {
+		const status = await backend.getAutoVerify(1);
+		expect(status).toEqual({ session_id: 1, auto_verify: false });
+	});
+
+	test("setAutoVerify(true) 后 getAutoVerify 反映新状态", async () => {
+		const result = await backend.setAutoVerify(1, true);
+		expect(result.success).toBe(true);
+		expect(result.auto_verify).toBe(true);
+
+		const status = await backend.getAutoVerify(1);
+		expect(status.auto_verify).toBe(true);
+	});
+
+	test("setAutoVerify interval 语义:未传归一为 1,传 0 归一为 1(与核心一致)", async () => {
+		const r1 = await backend.setAutoVerify(1, true);
+		expect(r1.interval).toBe(1);
+		const r2 = await backend.setAutoVerify(1, true, undefined, 0);
+		expect(r2.interval).toBe(1);
+	});
+
+	test("setAutoVerify threshold 缺省回显 0(不限制)", async () => {
+		const result = await backend.setAutoVerify(1, false);
+		expect(result.threshold).toBe(0);
+	});
+
+	test("auto_verify 状态按 session 隔离", async () => {
+		await backend.setAutoVerify(1, true);
+		const status2 = await backend.getAutoVerify(2);
+		expect(status2.auto_verify).toBe(false);
+	});
+
+	test("getAutoVerify / setAutoVerify 不存在的 session 抛错", async () => {
+		await expect(backend.getAutoVerify(999)).rejects.toThrow(/不存在/);
+		await expect(backend.setAutoVerify(999, true)).rejects.toThrow(/不存在/);
+	});
+});
+
+describe("UV-062 W2 MockBackend - 调试只读六路", () => {
+	test("getStep(1) 返回数据集 reactor.current_step", async () => {
+		const step = await backend.getStep(1);
+		expect(step).toEqual({ session_id: 1, current_step: 6 });
+	});
+
+	test("getSessionSnapshot(1) 返回完整快照字段", async () => {
+		const snapshot = await backend.getSessionSnapshot(1);
+		expect(snapshot.session_id).toBe(1);
+		expect(snapshot.finished).toBe(false);
+		expect(snapshot.phase).toBe("stable");
+		expect(snapshot.version).toBe(6);
+		expect(snapshot.steps).toBe(6);
+		expect(snapshot.pending_io_count).toBe(0);
+		expect(snapshot.structural_invariant_violations).toBe(0);
+		expect(snapshot.error).toBeUndefined();
+	});
+
+	test("getDebugPhase(1) 返回数据集 reactor.phase", async () => {
+		const info = await backend.getDebugPhase(1);
+		expect(info).toEqual({ session_id: 1, phase: "stable" });
+	});
+
+	test("getDebugQueue(1) 恒为空数组(与 server 同语义)", async () => {
+		const q = await backend.getDebugQueue(1);
+		expect(q).toEqual({ session_id: 1, queue: [] });
+	});
+
+	test("getDebugPendingIo(1) 计数取 reactor,列表恒空", async () => {
+		const p = await backend.getDebugPendingIo(1);
+		expect(p.pending_io_count).toBe(0);
+		expect(p.pending_io).toEqual([]);
+	});
+
+	test("getPendingIoCount(1) 返回计数", async () => {
+		const c = await backend.getPendingIoCount(1);
+		expect(c).toEqual({ session_id: 1, pending_io_count: 0 });
+	});
+
+	test("六路对不存在的 session 全部抛错(与 server 404 对齐)", async () => {
+		await expect(backend.getStep(999)).rejects.toThrow(/不存在/);
+		await expect(backend.getSessionSnapshot(999)).rejects.toThrow(/不存在/);
+		await expect(backend.getDebugPhase(999)).rejects.toThrow(/不存在/);
+		await expect(backend.getDebugQueue(999)).rejects.toThrow(/不存在/);
+		await expect(backend.getDebugPendingIo(999)).rejects.toThrow(/不存在/);
+		await expect(backend.getPendingIoCount(999)).rejects.toThrow(/不存在/);
+	});
+});
+
+describe("UV-062 W2 MockBackend - 因果深度", () => {
+	test("getCausalDepth(1) 返回数据集 reactor.causal_depth", async () => {
+		const info = await backend.getCausalDepth(1);
+		expect(info).toEqual({ session_id: 1, causal_depth: 6 });
+	});
+
+	test("getCausalDepth 不存在的 session 抛错", async () => {
+		await expect(backend.getCausalDepth(999)).rejects.toThrow(/不存在/);
+	});
+});
