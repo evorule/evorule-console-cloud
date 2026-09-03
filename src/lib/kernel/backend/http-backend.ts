@@ -27,6 +27,7 @@ import type {
   DiffResult,
   CausalChain,
   CommandResult,
+  InterruptResult,
   ExecutionBackend
 } from './types';
 
@@ -190,6 +191,31 @@ export class HttpBackend implements ExecutionBackend {
   /** GET /api/sessions/{id}/state — 当前 session 快照 */
   async getSessionState(id: SessionId): Promise<SessionState> {
     return this.fetchJson<SessionState>(`/api/sessions/${id}/state`);
+  }
+
+  /**
+   * POST /api/sessions/{id}/interrupt — 温和中断(UV-062)。
+   * 下一检查点生效,无条件可用;会话不存在 → 404(HttpBackendError)。
+   * 返回对齐 server InterruptResponse:{ session_id, success, message }。
+   */
+  async interruptSession(id: SessionId): Promise<InterruptResult> {
+    return this.fetchJson<InterruptResult>(
+      `/api/sessions/${id}/interrupt`,
+      this.postJson()
+    );
+  }
+
+  /**
+   * POST /api/sessions/{id}/abort — 强制中止反应器任务(UV-062,破坏性)。
+   * 不等待 checkpoint,直接中止;条件挂载:server 未以 --allow-abort
+   * (或 EVORULE_ALLOW_ABORT=1)启动时端点未挂载 → 404,由调用方
+   * 显式提示启用方法(fail-fast,不静默)。
+   */
+  async abortSession(id: SessionId): Promise<InterruptResult> {
+    return this.fetchJson<InterruptResult>(
+      `/api/sessions/${id}/abort`,
+      this.postJson()
+    );
   }
 
   // ------------------------------------------------------------------------

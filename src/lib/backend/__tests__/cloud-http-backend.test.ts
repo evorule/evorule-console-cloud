@@ -397,3 +397,161 @@ describe('CloudHttpBackend 平台认证事件(UV-018)', () => {
     vi.unstubAllGlobals();
   });
 });
+
+// ============================================================================
+// bundle 导入溯源(UV-062 ④):部署历史端点 /api/bundles/imports
+// ============================================================================
+
+describe('CloudHttpBackend bundle 导入溯源(UV-062 ④)', () => {
+  /** mock 全局 fetch 返回 JSON 响应,并捕获请求参数 */
+  function mockFetchJson(payload: unknown): ReturnType<typeof vi.fn> {
+    const fn = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fn);
+    return fn;
+  }
+
+  const IMPORTS = {
+    imports: [
+      {
+        id: 2,
+        bundle_id: 'bundle-ds-tax-2024-v2',
+        dataset_id: 'ds-tax-2024',
+        source_version: 'v2',
+        selection_mode: 'pinned',
+        resolved_version: 'v2',
+        content_hash: 'blake3:aaaabbbbccccdddd',
+        entry_count: 5,
+        imported_at: '2026-09-01T08:00:00Z',
+        imported_by: 'publisher-01',
+      },
+      {
+        id: 1,
+        bundle_id: 'bundle-ds-tax-2024-v1',
+        dataset_id: 'ds-tax-2024',
+        source_version: 'v1',
+        selection_mode: 'auto_by_effective_date',
+        resolved_version: null,
+        content_hash: 'blake3:1111222233334444',
+        entry_count: 3,
+        imported_at: '2026-08-24T12:00:00Z',
+        imported_by: 'system',
+      },
+    ],
+    count: 2,
+  };
+
+  test('listBundleImports:GET /api/bundles/imports + Bearer 头 + 响应解析', async () => {
+    const fetchMock = mockFetchJson(IMPORTS);
+    const backend = new CloudHttpBackend({
+      mode: 'offline',
+      localBaseUrl: 'http://127.0.0.1:18080',
+      authToken: 'tok-1',
+    });
+
+    const resp = await backend.listBundleImports();
+
+    expect(resp.count).toBe(2);
+    expect(resp.imports[0].bundle_id).toBe('bundle-ds-tax-2024-v2');
+    expect(resp.imports[1].resolved_version).toBeNull();
+    expect(resp.imports[1].content_hash).toMatch(/^blake3:/);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://127.0.0.1:18080/api/bundles/imports');
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      'Bearer tok-1',
+    );
+    vi.unstubAllGlobals();
+  });
+
+  test('listBundleImports:limit 追加查询参数', async () => {
+    const fetchMock = mockFetchJson({ imports: [], count: 0 });
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await backend.listBundleImports(50);
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://localhost:18080/api/bundles/imports?limit=50');
+    vi.unstubAllGlobals();
+  });
+
+  test('listBundleImports:不传 limit 时不带查询串(server 默认 100)', async () => {
+    const fetchMock = mockFetchJson({ imports: [], count: 0 });
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await backend.listBundleImports();
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://localhost:18080/api/bundles/imports');
+    vi.unstubAllGlobals();
+  });
+
+  test('溯源查询失败(500)→ 如实抛 HttpBackendError(不静默返回空列表)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('溯源查询失败', { status: 500 })),
+    );
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await expect(backend.listBundleImports()).rejects.toThrow('HTTP 500');
+    vi.unstubAllGlobals();
+  });
+});
+
+// ============================================================================
+// 服务清单(UV-062 ⑨):能力对账端点 /api/services
+// ============================================================================
+
+describe('CloudHttpBackend 服务清单(UV-062 ⑨)', () => {
+  const SERVICES = [
+    { name: 'http_request', source: 'native', version: '1.0.0' },
+    {
+      name: 'payroll_svc',
+      source: 'registry',
+      version: '1.2.0',
+      description: 'payroll service',
+    },
+  ];
+
+  test('listServices:GET /api/services + Bearer 头,返回裸数组', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(SERVICES), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const backend = new CloudHttpBackend({
+      mode: 'offline',
+      localBaseUrl: 'http://127.0.0.1:18080',
+      authToken: 'tok-1',
+    });
+
+    const list = await backend.listServices();
+
+    expect(list).toHaveLength(2);
+    expect(list[0].source).toBe('native');
+    expect(list[1].name).toBe('payroll_svc');
+    expect(list[1].description).toBe('payroll service');
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('http://127.0.0.1:18080/api/services');
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      'Bearer tok-1',
+    );
+    vi.unstubAllGlobals();
+  });
+
+  test('服务清单失败(非 2xx)→ 如实抛 HttpBackendError(调用方展示不可用态)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('未认证', { status: 401 })),
+    );
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await expect(backend.listServices()).rejects.toThrow('HTTP 401');
+    vi.unstubAllGlobals();
+  });
+});

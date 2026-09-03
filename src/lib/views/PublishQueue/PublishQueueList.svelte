@@ -17,7 +17,8 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import { useBackend } from "$lib/kernel";
+  import { useBackend, useWorkspaceBackendOrNull } from "$lib/kernel";
+  import type { PublishQueueItem } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { netConfig } from "$lib/config/net-config";
@@ -37,6 +38,65 @@
   let reviewComment = $state<Record<string, string>>({});
   let rejectingId = $state<string | null>(null);
   let rejectComment = $state("");
+
+  // WorkspaceBackend 须在组件初始化期从 context 取出并缓存(Svelte 5 context
+  // 不支持事件处理器内调用);队列项详情走内核通道 GET /api/publish/queue/{id}。
+  const workspaceBackend = useWorkspaceBackendOrNull();
+
+  // ===== 队列项详情(UV-062 接线④:完整请求体查看) =====
+  let detailOpen = $state<Record<string, boolean>>({});
+  /** 详情缓存(队列项不可变历史记录,首次拉取后缓存) */
+  let detailCache = $state<Record<string, PublishQueueItem>>({});
+  let detailLoading = $state<Record<string, boolean>>({});
+  let detailError = $state<Record<string, string | null>>({});
+
+  async function toggleDetail(item: PublishQueueItemView): Promise<void> {
+    const id = item.id;
+    detailOpen[id] = !detailOpen[id];
+    if (!detailOpen[id] || detailCache[id]) return;
+    if (!workspaceBackend) {
+      detailError[id] = "执行域通道不可用,无法获取队列项详情";
+      toastError(detailError[id]!, "队列详情");
+      return;
+    }
+    detailLoading[id] = true;
+    detailError[id] = null;
+    try {
+      detailCache[id] = await workspaceBackend.getPublishQueueItem(Number(id));
+    } catch (e) {
+      detailError[id] = e instanceof Error ? e.message : String(e);
+      toastError(`获取队列项详情失败:${detailError[id]}`, "队列详情");
+    } finally {
+      detailLoading[id] = false;
+    }
+  }
+
+  /** final_candidate_rules 原文 → pretty JSON(解析失败时原样展示,不静默) */
+  function prettyRules(raw: string | null): string {
+    if (!raw) return "(空)";
+    try {
+      return JSON.stringify(JSON.parse(raw), null, 2);
+    } catch {
+      return raw;
+    }
+  }
+
+  /** final_candidate_rules 规则数(解析失败 = -1,展示为"—") */
+  function rulesCount(raw: string | null): number {
+    if (!raw) return 0;
+    try {
+      const v = JSON.parse(raw) as unknown;
+      return Array.isArray(v) ? v.length : -1;
+    } catch {
+      return -1;
+    }
+  }
+
+  function fmtTime(iso?: string | null): string {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? iso : d.toLocaleString("zh-CN");
+  }
 
   const canApprove = $derived(can("approve_publish"));
   const canRollback = $derived(can("rollback_ruleset"));
@@ -207,6 +267,76 @@
               <span class="item-comment">备注:{req.reviewComment}</span>
             {/if}
           </div>
+
+          <!-- 队列项详情(UV-062 接线④:GET /api/publish/queue/{id} 完整请求体) -->
+          <div class="item-actions detail-row">
+            <button class="btn btn-ghost" onclick={() => toggleDetail(req)}>
+              {detailOpen[req.id] ? "收起详情" : "📋 详情"}
+            </button>
+            {#if detailCache[req.id]}
+              <span class="detail-count">
+                规则 {rulesCount(detailCache[req.id].final_candidate_rules) >= 0
+                  ? rulesCount(detailCache[req.id].final_candidate_rules)
+                  : "—"}{" "}
+                条(来源:执行域 server)
+              </span>
+            {/if}
+          </div>
+          {#if detailOpen[req.id]}
+            {#if detailLoading[req.id]}
+              <p class="detail-hint">详情加载中…</p>
+            {:else if detailError[req.id]}
+              <div class="detail-error">⚠️ {detailError[req.id]}</div>
+            {:else if detailCache[req.id]}
+              {@const d = detailCache[req.id]}
+              <div class="detail-panel">
+                <dl class="detail-grid">
+                  <div>
+                    <dt>队列项 ID</dt>
+                    <dd>{d.id}</dd>
+                  </div>
+                  <div>
+                    <dt>workspace</dt>
+                    <dd>{d.workspace_id}</dd>
+                  </div>
+                  <div>
+                    <dt>状态</dt>
+                    <dd>{statusLabel(d.status)}</dd>
+                  </div>
+                  <div>
+                    <dt>规则集哈希</dt>
+                    <dd class="mono">{d.ruleset_hash}</dd>
+                  </div>
+                  <div>
+                    <dt>测试报告沙盒</dt>
+                    <dd>{d.test_report_sandbox_id ?? "未关联"}</dd>
+                  </div>
+                  <div>
+                    <dt>发布版本</dt>
+                    <dd>{d.published_version ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>描述</dt>
+                    <dd>{d.description ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>审核人</dt>
+                    <dd>
+                      {d.reviewed_by ?? "—"}{d.reviewed_at
+                        ? ` · ${fmtTime(d.reviewed_at)}`
+                        : ""}
+                    </dd>
+                  </div>
+                </dl>
+                <details class="detail-rules">
+                  <summary>
+                    完整请求体 final_candidate_rules(待发布规则集原文)
+                  </summary>
+                  <pre>{prettyRules(d.final_candidate_rules)}</pre>
+                </details>
+              </div>
+            {/if}
+          {/if}
 
           {#if req.status === "pending" && canApprove}
             <div class="item-actions">
@@ -477,5 +607,69 @@
     display: flex;
     gap: 8px;
     justify-content: flex-end;
+  }
+
+  /* === 队列项详情(UV-062 接线④) === */
+  .item-actions.detail-row {
+    justify-content: flex-start;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-top: none;
+    padding-top: 8px;
+  }
+  .detail-count {
+    font-size: 12px;
+    color: var(--text-secondary, #64748b);
+  }
+  .detail-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--text-secondary, #64748b);
+  }
+  .detail-error {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--danger, #dc2626);
+  }
+  .detail-panel {
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--bg-page, #f8fafc);
+    border-radius: 6px;
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 8px 16px;
+    margin: 0 0 10px;
+  }
+  .detail-grid div {
+    font-size: 12px;
+    min-width: 0;
+  }
+  .detail-grid dt {
+    color: var(--text-secondary, #64748b);
+  }
+  .detail-grid dd {
+    margin: 2px 0 0;
+    word-break: break-all;
+  }
+  .mono {
+    font-family: monospace;
+  }
+  .detail-rules summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary, #64748b);
+  }
+  .detail-rules pre {
+    max-height: 320px;
+    overflow: auto;
+    background: var(--bg-card, #fff);
+    padding: 8px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 4px;
+    font-size: 11px;
+    margin: 6px 0 0;
   }
 </style>

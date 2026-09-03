@@ -34,6 +34,7 @@ import {
 	type DiffResult,
 	type CausalChain,
 	type CommandResult,
+	type InterruptResult,
 	type WorkspaceBackend
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
@@ -111,6 +112,50 @@ export interface PlatformEventsResponse {
 	total: number;
 }
 
+// UV-062 ④:bundle 导入溯源(部署历史)响应类型
+// (对齐 evorule-server bundles.rs BundleImportsResponse + evorule-workspace models.rs BundleImportRecord)
+export interface BundleImportRecord {
+	/** 记录 ID(自增) */
+	id: number;
+	/** 快照包 ID */
+	bundle_id: string;
+	/** 数据集 ID */
+	dataset_id: string;
+	/** 快照源版本(v1 / v2 / v2.p1) */
+	source_version: string;
+	/** 版本选择模式(auto_by_effective_date | pinned) */
+	selection_mode: string;
+	/** pinned 已解析版本(auto 模式为 null) */
+	resolved_version: string | null;
+	/** 快照全包防篡改哈希(blake3: 前缀) */
+	content_hash: string;
+	/** 条目数 */
+	entry_count: number;
+	/** 导入时间(RFC3339;管理元数据,墙钟旁路,不入审计验证链) */
+	imported_at: string;
+	/** 溯源主体:治理侧导出者 exported_by(fallback "system") */
+	imported_by: string;
+}
+
+export interface BundleImportsResponse {
+	/** 溯源记录(按导入时间倒序) */
+	imports: BundleImportRecord[];
+	/** 本次返回条数 */
+	count: number;
+}
+
+// UV-062 ⑨:执行侧已绑定服务能力(对齐 evorule-server server.rs BoundServiceInfo,C5 能力对账)
+export interface BoundServiceInfo {
+	/** 服务名 */
+	name: string;
+	/** `native`(内嵌 demo-services 叶子能力)| `registry`(service_registry.json 显式绑定) */
+	source: string;
+	/** 服务版本(native 固定 1.0.0;registry 取配置,可能缺省) */
+	version?: string;
+	/** 服务描述(registry 配置,可能缺省) */
+	description?: string;
+}
+
 export class CloudHttpBackend implements ExecutionBackend {
 	private backend: HttpBackend;
 	/** 内核 WorkspaceBackend 引用(读方法委托;+layout 注入同一实例) */
@@ -174,7 +219,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 		return url.replace(/\/+$/, '');
 	}
 
-	// === 代理所有 15 方法到内部 HttpBackend ===
+	// === 代理所有 17 方法到内部 HttpBackend ===
 
 	health(): Promise<boolean> {
 		return this.backend.health();
@@ -222,6 +267,13 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 	forkSession(parentId: SessionId, version: number): Promise<SessionId> {
 		return this.backend.forkSession(parentId, version);
+	}
+	// UV-062:停止/中止(abort 为条件挂载端点,server 未启用 --allow-abort 时 404)
+	interruptSession(id: SessionId): Promise<InterruptResult> {
+		return this.backend.interruptSession(id);
+	}
+	abortSession(id: SessionId): Promise<InterruptResult> {
+		return this.backend.abortSession(id);
 	}
 
 	// === Cloud 专属方法(不在内核 ExecutionBackend 接口内) ===
@@ -379,5 +431,33 @@ export class CloudHttpBackend implements ExecutionBackend {
 		return this.backend.getJson<PlatformEventsResponse>(
 			`/api/audit/platform-events${qs ? `?${qs}` : ''}`
 		);
+	}
+
+	/**
+	 * 拉取 bundle 导入溯源历史(UV-062 ④,消费 `GET /api/bundles/imports`)。
+	 *
+	 * 部署溯源:每次治理侧快照包导入执行域的记录(bundle/dataset/版本/防篡改
+	 * 哈希/导入者/导入时间)。按导入时间倒序;workspace 元数据库未接线时
+	 * 返回 200 空列表(空 ≠ 失败)。查询失败(500)→ 抛 Error,由调用方
+	 * 展示错误状态(不静默返回空,空列表与失败必须可区分)。
+	 *
+	 * @param limit 返回条数上限(默认 100,server 侧 clamp 1..1000)
+	 */
+	async listBundleImports(limit?: number): Promise<BundleImportsResponse> {
+		const qs = limit !== undefined ? `?limit=${limit}` : '';
+		return this.backend.getJson<BundleImportsResponse>(
+			`/api/bundles/imports${qs}`
+		);
+	}
+
+	/**
+	 * 拉取执行侧已绑定服务清单(UV-062 ⑨,消费 `GET /api/services`)。
+	 *
+	 * 能力对账:原生叶子能力(native,version=1.0.0)+ service_registry.json
+	 * 显式绑定(registry)。失败(网络 / 401 / 非 2xx)→ 抛 Error,由调用方
+	 * 展示「服务清单不可用」态(不阻塞既有连接状态显示)。
+	 */
+	async listServices(): Promise<BoundServiceInfo[]> {
+		return this.backend.getJson<BoundServiceInfo[]>('/api/services');
 	}
 }

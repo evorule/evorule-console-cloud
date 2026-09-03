@@ -30,6 +30,7 @@ import type {
 	VersionClockMapRecord,
 	CreateWorkspaceRequest,
 	UpdateWorkspaceRequest,
+	AddMemberRequest,
 	CreateRuleRequest,
 	UpdateRuleContentRequest,
 	CreateSessionRequest,
@@ -49,7 +50,10 @@ import type {
 	RecordClockRequest,
 	BundleImportResult,
 	BundleDryRunResult,
-	ActiveBundleInfo
+	ActiveBundleInfo,
+	ValidateRulesResult,
+	SandboxTestReport,
+	ExecutionRulesResult
 } from '$lib/kernel';
 
 /** 离线演示模式不支持的操作的统一错误(fail-fast,不静默掩盖) */
@@ -411,5 +415,46 @@ export class MockWorkspaceBackend implements WorkspaceBackend {
 
 	async listActiveBundles(): Promise<ActiveBundleInfo[]> {
 		return [];
+	}
+
+	// === 治理域 API 接线(UV-062:执行域 server 直连端点) ===
+
+	/**
+	 * 规则体校验 — 离线不支持:server 校验语义(静态+安全分析)不在 mock 复制,
+	 * 如实抛错(fabricating passed=true 属静默通过,禁止)。
+	 */
+	async validateRules(_content: string): Promise<ValidateRulesResult> {
+		unsupported('validateRules');
+	}
+
+	/** 沙盒测试报告 — 离线无沙盒编排,如实抛错 */
+	async getSandboxReport(
+		_workspaceId: string,
+		_sandboxId: number
+	): Promise<SandboxTestReport> {
+		unsupported('getSandboxReport');
+	}
+
+	/** 执行域生效规则 — 离线演示为空(与 listSandboxes 等只读空集合同口径) */
+	async getExecutionRules(): Promise<ExecutionRulesResult> {
+		return { count: 0, core_eval: [] };
+	}
+
+	/** 发布队列项详情 — 离线队列为空,详情查询如实抛错 */
+	async getPublishQueueItem(_queueId: number): Promise<PublishQueueItem> {
+		unsupported('getPublishQueueItem');
+	}
+
+	/** 添加成员 — 写操作,离线不支持 */
+	async addMember(
+		_workspaceId: string,
+		_req: AddMemberRequest
+	): Promise<WorkspaceMemberRecord> {
+		unsupported('addMember');
+	}
+
+	/** 移除成员 — 写操作,离线不支持 */
+	async removeMember(_workspaceId: string, _userId: string): Promise<void> {
+		unsupported('removeMember');
 	}
 }

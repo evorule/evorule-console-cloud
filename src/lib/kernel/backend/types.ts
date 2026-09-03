@@ -141,6 +141,17 @@ export interface CommandResult {
   error?: string;
 }
 
+/**
+ * interruptSession / abortSession 返回值(UV-062)。
+ * 对齐 evorule-server InterruptResponse:POST interrupt/abort 均返回
+ *   { session_id, success, message }。
+ */
+export interface InterruptResult {
+  session_id: SessionId;
+  success: boolean;
+  message: string;
+}
+
 // ============================================================================
 // 2. ExecutionBackend 抽象接口(SPEC §1.2,15 方法)
 // ============================================================================
@@ -152,13 +163,14 @@ export interface CommandResult {
  * - 大众版: HttpBackend (调 evorule-server HTTP)
  * - 高级版: EmbeddedBackend (Tauri + Rust 直接 link evorule crate,不联网)
  *
- * 15 方法分组:
+ * 17 方法分组:
  *   - 会话管理(5):health / createSession / listSessions / closeSession / getSessionState
  *   - 命令执行(1):submitCommand
  *   - 历史 / 回放(3):getHistory / getReplay / getFacts
  *   - 审计(3):getAudit / verifyAudit / getCausalChain
  *   - 时间旅行(2):getStateAtVersion / getDiff
  *   - What-If(1):forkSession
+ *   - 停止 / 中止(2,UV-062):interruptSession / abortSession(abort 条件挂载,见方法注释)
  */
 export interface ExecutionBackend {
   // === 会话管理 ===
@@ -187,4 +199,17 @@ export interface ExecutionBackend {
 
   // === What-If 假设分析 ===
   forkSession(parentId: SessionId, version: number): Promise<SessionId>;
+
+  // === 会话停止 / 中止(UV-062) ===
+  /**
+   * POST /api/sessions/{id}/interrupt — 温和中断。
+   * 下一检查点生效,无条件可用;会话不存在 → 404。
+   */
+  interruptSession(id: SessionId): Promise<InterruptResult>;
+  /**
+   * POST /api/sessions/{id}/abort — 强制中止反应器任务(破坏性,不等待 checkpoint)。
+   * 条件挂载:server 未以 --allow-abort(或 EVORULE_ALLOW_ABORT=1)启动时
+   *   端点未挂载 → 404,调用方必须显式提示启用方法(拒绝静默)。
+   */
+  abortSession(id: SessionId): Promise<InterruptResult>;
 }
