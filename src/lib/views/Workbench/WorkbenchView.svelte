@@ -31,6 +31,23 @@
     refreshAudit,
   } from "$lib/kernel";
   import { workbenchStatus, patchWorkbenchStatus, setWorkbenchRefreshAction } from "$lib/stores/workbench-status";
+  import { governanceConfig } from "$lib/config/governance-config";
+
+  /**
+   * 读 rule-serve(18081)运行时版本(Mavis 01 号 P2-01)。
+   * /v1/health 返回形如 { version: "v0.3.0", ... };取不到如实返回 null(不静默造假)。
+   */
+  async function fetchRuleVersion(baseUrl: string): Promise<string | null> {
+    try {
+      const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/v1/health`);
+      if (!res.ok) return null;
+      const data = (await res.json()) as { version?: unknown };
+      if (typeof data.version !== "string" || data.version.length === 0) return null;
+      return data.version.startsWith("v") ? data.version : `v${data.version}`;
+    } catch {
+      return null;
+    }
+  }
 
   // === 后端注入 ===
   const backend = useBackend();
@@ -42,6 +59,7 @@
   async function checkHealth(): Promise<void> {
     let serverOk = false;
     let ruleOk = false;
+    let ruleVer: string | null = null;
     try {
       serverOk = (await backend.health()) === true;
     } catch {
@@ -55,7 +73,11 @@
         ruleOk = false;
       }
     }
-    patchWorkbenchStatus({ serverConnected: serverOk, ruleConnected: ruleOk });
+    // P2-01:rule 版本动态读(取不到回落 null,UI 层降级 consoleVersion,不阻塞健康检查)
+    if (ruleOk) {
+      ruleVer = await fetchRuleVersion($governanceConfig.baseUrl);
+    }
+    patchWorkbenchStatus({ serverConnected: serverOk, ruleConnected: ruleOk, ruleVersion: ruleVer });
   }
 
   // === 刷新(拉数据 + 健康检查) ===

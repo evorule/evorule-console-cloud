@@ -15,6 +15,7 @@
     ws: WorkspaceRecord | null;
     mode: NetMode;
     consoleVersion: string;
+    ruleVersion: string | null;
     refreshing: boolean;
     lastRefreshAt: Date | null;
     onRefresh: () => void;
@@ -27,6 +28,7 @@
     ws,
     mode,
     consoleVersion,
+    ruleVersion,
     refreshing,
     lastRefreshAt,
     onRefresh,
@@ -70,7 +72,7 @@
   </div>
   <div class="status-item">
     <span class="label">rule:</span>
-    <span class="value">evorule-rule v{consoleVersion} (18081)</span>
+    <span class="value">evorule-rule {ruleVersion ?? `v${consoleVersion}`} (18081)</span>
   </div>
 
   <div class="status-divider"></div>
