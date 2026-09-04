@@ -42,6 +42,12 @@ import type {
   PayloadUpdateResult,
   SharedFactEntry,
   SharedFactsVersionInfo,
+  PermissionEntryRecord,
+  PermissionListResult,
+  PermissionWriteResult,
+  PermissionVersionResult,
+  PermissionEvaluateRequest,
+  PermissionEvaluateResult,
   ExecutionBackend
 } from './types';
 
@@ -674,5 +680,85 @@ export class HttpBackend implements ExecutionBackend {
    */
   async getSharedFactsVersion(): Promise<SharedFactsVersionInfo> {
     return this.fetchJson<SharedFactsVersionInfo>('/api/shared/facts/version');
+  }
+
+  // === UV-084 W3:A-流权限策略族(对齐 server permissions.rs) ===
+  // 错误纪律:400/404/409/500 一律抛 HttpBackendError(消息含 server
+  // {"message": ...} 原文,LLM/用户可自诊断),拒绝静默。
+
+  /** GET /api/permissions — 全部权限条目 + 快照版本 */
+  async listPermissions(): Promise<PermissionListResult> {
+    return this.fetchJson<PermissionListResult>('/api/permissions');
+  }
+
+  /** GET /api/permissions/{id} — 单条查询(server 返回 {success, entry} 包装,解包) */
+  async getPermission(id: string): Promise<PermissionEntryRecord> {
+    const r = await this.fetchJson<{ success: boolean; entry: PermissionEntryRecord }>(
+      `/api/permissions/${encodeURIComponent(id)}`
+    );
+    return r.entry;
+  }
+
+  /** POST /api/permissions — 新建(强制 Draft;409 id 冲突抛错) */
+  async createPermission(entry: PermissionEntryRecord): Promise<PermissionWriteResult> {
+    return this.fetchJson<PermissionWriteResult>(
+      '/api/permissions',
+      this.postJson(entry)
+    );
+  }
+
+  /** PUT /api/permissions/{id} — 全量替换(幂等;已 Active 保持 Active) */
+  async updatePermission(
+    id: string,
+    entry: PermissionEntryRecord
+  ): Promise<PermissionWriteResult> {
+    return this.fetchJson<PermissionWriteResult>(
+      `/api/permissions/${encodeURIComponent(id)}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      }
+    );
+  }
+
+  /** DELETE /api/permissions/{id} — 删除(写墓碑,历史保留) */
+  async deletePermission(id: string): Promise<PermissionWriteResult> {
+    const r = await this.fetchJson<{ success: boolean; id: string }>(
+      `/api/permissions/${encodeURIComponent(id)}`,
+      { method: 'DELETE' }
+    );
+    return r;
+  }
+
+  /** POST /api/permissions/{id}/submit — 提交审批(Draft → Candidate) */
+  async submitPermission(id: string): Promise<PermissionWriteResult> {
+    return this.fetchJson<PermissionWriteResult>(
+      `/api/permissions/${encodeURIComponent(id)}/submit`,
+      this.postJson()
+    );
+  }
+
+  /** POST /api/permissions/{id}/review — 审批裁决(Candidate → Active/Rejected) */
+  async reviewPermission(id: string, approve: boolean): Promise<PermissionWriteResult> {
+    return this.fetchJson<PermissionWriteResult>(
+      `/api/permissions/${encodeURIComponent(id)}/review`,
+      this.postJson({ approve })
+    );
+  }
+
+  /** GET /api/permissions/version — 快照版本与条目数量 */
+  async getPermissionsVersion(): Promise<PermissionVersionResult> {
+    return this.fetchJson<PermissionVersionResult>('/api/permissions/version');
+  }
+
+  /** POST /api/permissions/evaluate — 只读判定测试(verdict: allow/deny/candidate) */
+  async evaluatePermission(
+    req: PermissionEvaluateRequest
+  ): Promise<PermissionEvaluateResult> {
+    return this.fetchJson<PermissionEvaluateResult>(
+      '/api/permissions/evaluate',
+      this.postJson(req)
+    );
   }
 }

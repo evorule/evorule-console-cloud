@@ -41,15 +41,15 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		await expect(page.locator('.brand-cloud')).toHaveText('console-cloud');
 	});
 
-	test('侧栏导航包含 15 项(home 2 + 分析视图 5 + discover 2 + 治理协作 5 + 设置),标签正确', async ({
+	test('侧栏导航包含 16 项(home 2 + 分析视图 5 + discover 2 + 治理协作 6 + 设置),标签正确', async ({
 		page
 	}) => {
-		// UV-022 侧栏分组重构后(UV-067 适配):
+		// UV-022 侧栏分组重构后(UV-067 适配,UV-084 W3 增权限策略):
 		// home 组(总览/监控) + 分析视图组(5 内核视图) + discover 组(市场/帮助)
-		// + 治理与协作组(导出/发布队列/版本历史/审计记录/治理中心;it 角色无 view_users/manage_roles → 用户/角色管理隐藏)
-		// + 设置 = 15 项
+		// + 治理与协作组(导出/发布队列/版本历史/审计记录/治理中心/权限策略;it 角色无 view_users/manage_roles → 用户/角色管理隐藏)
+		// + 设置 = 16 项
 		const items = page.locator('.sidebar-item .nav-label');
-		await expect(items).toHaveCount(15);
+		await expect(items).toHaveCount(16);
 		// home 组 2 项
 		await expect(items.nth(0)).toHaveText('总览');
 		await expect(items.nth(1)).toHaveText('监控');
@@ -60,14 +60,15 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		// discover 组 2 项
 		await expect(items.nth(7)).toHaveText('市场');
 		await expect(items.nth(8)).toHaveText('帮助');
-		// 治理与协作组 5 项
+		// 治理与协作组 6 项
 		await expect(items.nth(9)).toHaveText('导出');
 		await expect(items.nth(10)).toHaveText('发布队列');
 		await expect(items.nth(11)).toHaveText('版本历史');
 		await expect(items.nth(12)).toHaveText('审计记录');
 		await expect(items.nth(13)).toHaveText('治理中心');
+		await expect(items.nth(14)).toHaveText('权限策略');
 		// 设置
-		await expect(items.nth(14)).toHaveText('设置');
+		await expect(items.nth(15)).toHaveText('设置');
 	});
 
 	test('设置项在侧栏底部(独立 section,不属于内核 5 视图)', async ({ page }) => {

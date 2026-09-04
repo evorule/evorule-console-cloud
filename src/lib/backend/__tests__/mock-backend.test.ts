@@ -448,3 +448,195 @@ describe("UV-084 W1 MockBackend - A 组 5 项", () => {
                 expect(info.history_len).toBeGreaterThanOrEqual(3);
         });
 });
+
+describe("UV-084 W3 MockBackend - A-流权限策略族", () => {
+	test("listPermissions() 返回 3 条种子条目(含版本与计数)", async () => {
+		const r = await backend.listPermissions();
+		expect(r.success).toBe(true);
+		expect(r.count).toBe(3);
+		expect(r.version).toBeGreaterThan(0);
+		expect(r.entries.map((e) => e.id)).toEqual([
+			"demo-allow-shared-read",
+			"demo-deny-llm-write",
+			"demo-candidate-api-export",
+		]);
+	});
+
+	test("getPermission(存在) 返回单条;不存在抛错(与 server 404 对齐)", async () => {
+		const e = await backend.getPermission("demo-allow-shared-read");
+		expect(e.effect).toBe("allow");
+		expect(e.state).toBe("active");
+		await expect(backend.getPermission("nope")).rejects.toThrow(/not found/);
+	});
+
+	test("createPermission 强制 Draft 态 + 版本推进;重复 id 抛错(与 server 409 对齐)", async () => {
+		const r = await backend.createPermission({
+			id: "mock-new-entry",
+			version: 99,
+			state: "active",
+			subject: { subject_type: "user", id: "human" },
+			resource: { resource_type: "api", path: "/api/x" },
+			action: "*",
+			effect: "deny",
+			scope: {},
+			updated_by: "test",
+		});
+		// 状态强制 draft、version 重置(与 server create_permission 同口径)
+		expect(r.state).toBe("draft");
+		const list = await backend.listPermissions();
+		const created = list.entries.find((e) => e.id === "mock-new-entry");
+		expect(created?.state).toBe("draft");
+		expect(created?.version).toBe(0);
+		// 重复 id 冲突
+		await expect(
+			backend.createPermission({
+				id: "mock-new-entry",
+				version: 0,
+				state: "draft",
+				subject: { subject_type: "any", id: "" },
+				resource: { resource_type: "shared", path: "s.*" },
+				action: "*",
+				effect: "allow",
+				scope: {},
+				updated_by: "test",
+			}),
+		).rejects.toThrow(/duplicate/);
+	});
+
+	test("生命周期状态机:Draft → submit → Candidate → review(approve) → Active", async () => {
+		await backend.createPermission({
+			id: "lifecycle-test",
+			version: 0,
+			state: "draft",
+			subject: { subject_type: "any", id: "" },
+			resource: { resource_type: "shared", path: "shared.test.*" },
+			action: "*",
+			effect: "allow",
+			scope: {},
+			updated_by: "test",
+		});
+		const s1 = await backend.submitPermission("lifecycle-test");
+		expect(s1.state).toBe("candidate");
+		// 非 Draft 不可重复提交(与 server 400 对齐)
+		await expect(backend.submitPermission("lifecycle-test")).rejects.toThrow(
+			/only Draft can be submitted/,
+		);
+		// 非 Candidate 不可裁决的镜像:先拒绝路径
+		const r1 = await backend.reviewPermission("lifecycle-test", true);
+		expect(r1.state).toBe("active");
+		// Active 后不可再裁决
+		await expect(backend.reviewPermission("lifecycle-test", false)).rejects.toThrow(
+			/only Candidate can be reviewed/,
+		);
+	});
+
+	test("review(reject) → Rejected;不参与判定", async () => {
+		await backend.createPermission({
+			id: "reject-test",
+			version: 0,
+			state: "draft",
+			subject: { subject_type: "any", id: "" },
+			resource: { resource_type: "shared", path: "shared.reject.*" },
+			action: "*",
+			effect: "allow",
+			scope: {},
+			updated_by: "test",
+		});
+		await backend.submitPermission("reject-test");
+		const r = await backend.reviewPermission("reject-test", false);
+		expect(r.state).toBe("rejected");
+	});
+
+	test("updatePermission 幂等替换,已 Active 保持 Active", async () => {
+		const r = await backend.updatePermission("demo-allow-shared-read", {
+			id: "demo-allow-shared-read",
+			version: 0,
+			state: "draft",
+			subject: { subject_type: "any", id: "" },
+			resource: { resource_type: "shared", path: "shared.platform.*" },
+			action: "read",
+			effect: "allow",
+			scope: {},
+			updated_by: "test",
+		});
+		expect(r.success).toBe(true);
+		const e = await backend.getPermission("demo-allow-shared-read");
+		expect(e.state).toBe("active");
+		expect(e.action).toBe("read");
+		// path/body id 不一致抛错(与 server 400 对齐)
+		await expect(
+			backend.updatePermission("other-id", {
+				id: "mismatch",
+				version: 0,
+				state: "draft",
+				subject: { subject_type: "any", id: "" },
+				resource: { resource_type: "shared", path: "s" },
+				action: "*",
+				effect: "allow",
+				scope: {},
+				updated_by: "test",
+			}),
+		).rejects.toThrow(/mismatch/);
+	});
+
+	test("deletePermission 内存删除 + 版本推进;不存在抛错", async () => {
+		const r = await backend.deletePermission("demo-candidate-api-export");
+		expect(r.success).toBe(true);
+		const list = await backend.listPermissions();
+		expect(list.entries.find((e) => e.id === "demo-candidate-api-export")).toBeUndefined();
+		await expect(backend.deletePermission("nope")).rejects.toThrow(/not found/);
+	});
+
+	test("getPermissionsVersion() 返回版本与条目数", async () => {
+		const v = await backend.getPermissionsVersion();
+		expect(v.success).toBe(true);
+		expect(v.count).toBe(3);
+		expect(v.version).toBeGreaterThan(0);
+	});
+
+	test("evaluate:deny 即胜(种子 demo-deny-llm-write 命中 llm + db.users.* + write)", async () => {
+		const r = await backend.evaluatePermission({
+			resource: "db.users.table1",
+			action: "write",
+			caller_role: "llm",
+		});
+		expect(r.verdict).toBe("deny");
+		expect(r.caller_role).toBe("llm");
+	});
+
+	test("evaluate:通配 allow 命中(demo-allow-shared-read:any + shared.platform.*)", async () => {
+		const r = await backend.evaluatePermission({
+			resource: "shared.platform.anything",
+			action: "read",
+			caller_role: "unknown",
+		});
+		expect(r.verdict).toBe("allow");
+	});
+
+	test("evaluate:candidate 命中(待审批条目匹配,无 active 命中)", async () => {
+		const r = await backend.evaluatePermission({
+			resource: "/api/audit/export",
+			action: "*",
+			caller_role: "human",
+		});
+		expect(r.verdict).toBe("candidate");
+	});
+
+	test("evaluate:默认策略 fail-closed(无任何命中:human=allow,llm/unknown=deny)", async () => {
+		const human = await backend.evaluatePermission({
+			resource: "nowhere.matching",
+			caller_role: "human",
+		});
+		expect(human.verdict).toBe("allow");
+		const llm = await backend.evaluatePermission({
+			resource: "nowhere.matching",
+			caller_role: "llm",
+		});
+		expect(llm.verdict).toBe("deny");
+		const unknown = await backend.evaluatePermission({
+			resource: "nowhere.matching",
+			caller_role: "unknown",
+		});
+		expect(unknown.verdict).toBe("deny");
+	});
+});

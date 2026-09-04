@@ -110,7 +110,8 @@
       <span class="services-loading">⏳ 拉取中…</span>
     {:else if services && services.length > 0}
       <div class="services-list">
-        {#each services as s (s.name)}
+        <!-- 组合键:server /api/services 为能力对账面,native+registry 双来源,同名服务可并存(llm_advisor),单 name 键会 each_key_duplicate -->
+        {#each services as s (s.source + ":" + s.name)}
           <span
             class="svc"
             title="{s.name} · {SOURCE_LABELS[s.source] ?? s.source}{s.version ? ` · v${s.version}` : ''}{s.description ? ` · ${s.description}` : ''}"
