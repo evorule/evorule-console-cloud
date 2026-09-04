@@ -30,12 +30,17 @@
 
 <div class="reactor-state-bar" aria-live="polite">
   <!-- 左侧:Phase -->
+  <!-- UV-078 W1-A4:"未连接"→"待会话" — state 为 null 仅表示当前无选中会话可观测, -->
+  <!-- 并非连接故障;tooltip 说明数据来源与预期态,消除新用户困惑 -->
   <div class="phase-indicator"
-    style={`background: ${phase.bg}; border-color: ${phase.border}; color: ${phase.color};`}>
+    style={`background: ${phase.bg}; border-color: ${phase.border}; color: ${phase.color};`}
+    title={state
+      ? `Reactor 运行态来自当前选中会话(实时轮询)。Phase:${phase.label}`
+      : '当前无选中会话 — 在执行台创建或选择一个会话后,这里会实时显示其 Reactor 运行态(6 phase/因果深度/待处理 IO)。这是预期空态,不代表连接故障。'}>
     <span class="phase-icon">{phase.icon}</span>
     <div class="phase-texts">
       <span class="phase-label">Reactor</span>
-      <span class="phase-name">{state ? phase.label : "未连接"}</span>
+      <span class="phase-name">{state ? phase.label : "待会话"}</span>
     </div>
     {#if state?.phase === "executing"}
       <span class="pulse-dot" style={`background: ${phase.color};`}></span>
@@ -74,7 +79,7 @@
     </div>
   {:else}
     <div class="metrics muted">
-      <span class="metric-muted">连接后显示运行态指标</span>
+      <span class="metric-muted">选中会话后显示运行态指标</span>
     </div>
   {/if}
 </div>

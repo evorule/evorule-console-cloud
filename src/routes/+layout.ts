@@ -95,17 +95,19 @@ export const load: LayoutLoad = ({ url }) => {
 	}
 
 	// /users /roles 平台管理路由守卫(UV-017 W4):
-	// - 未登录跳 /login
-	// - 权限不足跳 /(demo 用户权限矩阵不含平台管理点,自然被拒)
-	// - /users 需 view_users 或 manage_users;/roles 需 manage_roles
+	// - 未登录跳 /login(布局层拦)
+	// - 权限不足交页面级守卫(/users /roles +page.svelte onMount:toast 引导 + 客户端 goto)
+	//   UV-078 W1-A1 修正(2026-09-04 e2e 取证):整页直连时,布局 load 的 throw redirect(307)
+	//   触发整页跳转(SvelteKit 初始加载期不走客户端 router),load 里的 toast 写入随页面
+	//   实例丢失 → toast 永不可见(it/demo 侧栏无入口,直连 URL 是唯一到达方式)。
+	//   页面 onMount 用 $app/navigation goto(客户端导航,store 保留)→ toast 真正可见。
+	//   /users 需 view_users 或 manage_users;/roles 需 manage_roles
 	if (url.pathname === '/users') {
 		if (!session.loggedIn) throw redirect(307, '/login');
-		if (!can('view_users') && !can('manage_users')) throw redirect(307, '/');
 	}
 
 	if (url.pathname === '/roles') {
 		if (!session.loggedIn) throw redirect(307, '/login');
-		if (!can('manage_roles')) throw redirect(307, '/');
 	}
 
 	// /login / /demo 不守卫

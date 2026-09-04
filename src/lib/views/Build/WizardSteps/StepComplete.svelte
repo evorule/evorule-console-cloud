@@ -27,9 +27,18 @@
 </script>
 
 <div class="step-complete">
-  <div class="complete-icon">🎉</div>
-  <h2>建库完成</h2>
-  <p class="complete-desc">你的第一个 evorule 规则库已就绪,可以开始正式使用了。</p>
+    <div class="complete-icon">🎉</div>
+    <h2>建库完成</h2>
+    <!-- UV-078 W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
+    <!-- 执行域(server)仅运行治理链发布的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
+    <!-- 诚实边界 + 下一跳引导(W3 方向 b 将补导出/跳转按钮,此处先明示路径)。 -->
+    <p class="complete-desc">本地规则库已就绪。</p>
+    <div class="boundary-note">
+      <strong>注意:</strong>规则目前存于<strong>浏览器本地</strong>,执行域(server)仅运行
+      <strong>治理链发布</strong>的规则——要让规则真正驱动执行台,需前往
+      <a href="/governance" class="gov-link">治理中心</a>走数据集→发布→导入链路
+      (完整导出引导即将上线)。
+    </div>
 
   <div class="summary-card">
     <h3>建库摘要</h3>
@@ -95,6 +104,21 @@
     font-size: 14px;
     color: var(--text-secondary, #64748b);
     margin: 0;
+  }
+  .boundary-note {
+    max-width: 480px;
+    padding: 12px 16px;
+    background: var(--warning-bg, #fef3c7);
+    border: 1px solid var(--warning, #f59e0b);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-primary, #1e293b);
+    text-align: left;
+  }
+  .gov-link {
+    color: var(--brand, #2563eb);
+    font-weight: 600;
   }
 
   .summary-card {

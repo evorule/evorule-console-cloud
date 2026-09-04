@@ -17,6 +17,7 @@
   import { sessionStore } from "$lib/stores/session";
   import { isLlmConfigured, llmConfig } from "$lib/config/llm-config";
   import { toastInfo, toastError } from "$lib/stores/toast";
+  import { translateJsonParseError } from "$lib/utils/json-error";
 
   const backend = useBackend();
   const wsBackend = useWorkspaceBackend();
@@ -54,7 +55,7 @@
         toastError("规则提交失败");
       }
     } catch (e) {
-      toastError(`规则提交失败: ${(e as Error).message}`);
+      toastError(`规则提交失败: ${translateJsonParseError(e, '{"type": "set", "params": {...}}')}`);
     }
   }
 
@@ -73,7 +74,7 @@
         toastError(`执行失败: ${res.error ?? "未知错误"}`);
       }
     } catch (e) {
-      toastError(`Payload 解析失败: ${(e as Error).message}`);
+      toastError(`Payload 解析失败: ${translateJsonParseError(e)}`);
     }
   }
 </script>

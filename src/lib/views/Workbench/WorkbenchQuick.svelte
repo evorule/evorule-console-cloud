@@ -166,7 +166,7 @@
         </div>
         <div class="form-field" style="flex: 2;">
           <label for="quick-payload">Payload (JSON)</label>
-          <input id="quick-payload" type="text" bind:value={payloadJson} placeholder={"{key: value}"} />
+          <input id="quick-payload" type="text" bind:value={payloadJson} placeholder={'{"amount": 50000}'} />
         </div>
       </div>
       <div class="btn-row">
