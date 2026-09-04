@@ -35,6 +35,7 @@ import type {
   CreateSessionRequest,
   StartSandboxRequest,
   StartSandboxResponse,
+  CreateTestDatasetRequest,
   SubmitPublishRequest,
   ReviewPublishRequest,
   RollbackRequest,
@@ -468,6 +469,17 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
       { headers: this.headers() }
     );
     return Array.isArray(j) ? j : j?.datasets ?? [];
+  }
+
+  /** POST /api/workspaces/{id}/test-datasets (body = CreateTestDatasetRequest, server 无额外 flatten 字段) */
+  async createTestDataset(
+    workspaceId: string,
+    req: CreateTestDatasetRequest
+  ): Promise<TestDatasetRecord> {
+    return this.fetchJson<TestDatasetRecord>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/test-datasets`,
+      this.postJson(req)
+    );
   }
 
   // ------------------------------------------------------------------------

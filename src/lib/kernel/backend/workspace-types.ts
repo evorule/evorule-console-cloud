@@ -656,6 +656,14 @@ export interface WorkspaceBackend {
 
   // === 测试数据集 ===
   listTestDatasets(workspaceId: string): Promise<TestDatasetRecord[]>;
+  /**
+   * POST /api/workspaces/{id}/test-datasets — 创建合成测试数据集 → 201 TestDatasetRecord。
+   * cases_json 为测试 case 列表的 JSON 数组字符串(沙盒启动时注入)。
+   */
+  createTestDataset(
+    workspaceId: string,
+    req: CreateTestDatasetRequest
+  ): Promise<TestDatasetRecord>;
 
   // === 发布队列 ===
   listPublishQueue(status?: string): Promise<PublishQueueItem[]>;

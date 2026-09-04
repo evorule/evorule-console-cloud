@@ -44,6 +44,22 @@ export interface GovernanceConnectionConfig {
 	password: string;
 }
 
+/**
+ * 导出证据三形态（UV-058 W1.3/W1.4，42 号方案 §1.3）。
+ *
+ * - sandbox-report：机器背书（首选路径）——verdict 从沙盒报告派生
+ *   （调用方以 reportVerdict() 从报告 summary 派生，不手填不伪造），
+ *   subset 引用沙盒 ID 使机器证据在 bundle 内可追溯；
+ * - human-confirmed：人工降级（显式路径）——操作者选择未经沙盒验证的人工
+ *   背书，subset 带 human:<actor> 标记，降级在 bundle 内可追溯（W1.4 阶段一）；
+ * - none：无证据 —— verdict=fail，执行侧闸门一硬拒导入（evorule-bundle
+ *   L359-363 enforcement，非 console 侧拦截）。
+ */
+export type ExportEvidence =
+	| { kind: 'sandbox-report'; sandboxId: number; verdict: 'pass' | 'fail' }
+	| { kind: 'human-confirmed'; actor: string }
+	| { kind: 'none' };
+
 interface RequestOptions {
 	method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 	path: string;
@@ -281,24 +297,49 @@ export class GovernanceBackend {
 	// ====================================================================
 
 	/**
+	 * 由 ExportEvidence 构造导出请求的 tests 段（BundleTests 形状：
+	 * subset: Vec<String> + verdict: pass|fail，evorule-bundle 0.3.0 SSOT）。
+	 */
+	static buildTestsForEvidence(ev: ExportEvidence): {
+		subset?: string[];
+		verdict: 'pass' | 'fail';
+	} {
+		switch (ev.kind) {
+			case 'sandbox-report':
+				// 机器背书:verdict 从报告派生传入;引用沙盒 ID 可追溯
+				return {
+					subset: [`sandbox:${ev.sandboxId}`],
+					verdict: ev.verdict
+				};
+			case 'human-confirmed':
+				// 人工降级:显式选择才可到达,actor 进 subset 使降级可追溯
+				return { subset: [`human:${ev.actor}`], verdict: 'pass' };
+			case 'none':
+				// 无证据:verdict=fail,导入侧硬拒(fail-fast,不静默)
+				return { verdict: 'fail' };
+		}
+	}
+
+	/**
 	 * 带证据导出快照包（POST /v1/bundles/export）。
 	 *
 	 * 部署到执行域必须走本端点（带证据）：GET 导出固定 unverified()
 	 * （verdict=fail），执行侧闸门一会拒绝导入（T0 决策：未验证不得默认 Pass）。
 	 *
-	 * 证据语义（32 号设计方案 §3 方案 B）：verdict 由操作者人工确认背书，
-	 * 本客户端如实按调用方传入值构造，不伪造沙箱自动验证产出；
-	 * 证据真实性责任在操作者（与"LLM 只到 Draft、人工确认过闸二"治理哲学同构）。
+	 * 证据语义（UV-058 W1.3 升级，取代 32 号方案 B 的单一人工背书）：
+	 * evidence 为结构化三形态（ExportEvidence）——sandbox-report 机器背书为
+	 * 默认路径，human-confirmed 为显式降级路径，none 导出不可导入的预览包。
+	 * 本客户端如实按 evidence 构造 tests 段（buildTestsForEvidence），
+	 * 不伪造沙箱验证产出；机器证据的 verdict 必须由调用方从真实报告派生。
 	 *
 	 * @param datasetId 数据集 ID
 	 * @param version 要导出的版本（如 "V1"）
-	 * @param humanConfirmed 操作者已人工确认该版本验证通过 → verdict="pass"；
-	 *                        false 时导出 unverified 包（仅供预览，不可导入执行域）
+	 * @param evidence 结构化导出证据（三形态见 ExportEvidence）
 	 */
 	async exportBundle(
 		datasetId: string,
 		version: string,
-		humanConfirmed: boolean
+		evidence: ExportEvidence
 	): Promise<unknown> {
 		return this.request<unknown>({
 			method: 'POST',
@@ -306,7 +347,7 @@ export class GovernanceBackend {
 			body: {
 				dataset_id: datasetId,
 				version,
-				tests: { verdict: humanConfirmed ? 'pass' : 'fail' }
+				tests: GovernanceBackend.buildTestsForEvidence(evidence)
 			}
 		});
 	}

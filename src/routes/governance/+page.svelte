@@ -28,6 +28,7 @@
     updateLawRef
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
+  import { GovernanceBackend, type ExportEvidence } from '$lib/governance/governance-backend';
   import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import { useWorkspaceBackendOrNull, currentWorkspace, HttpWorkspaceBackendError } from '$lib/kernel';
@@ -40,6 +41,7 @@
     SandboxSession,
     SandboxTestReport,
     SessionRecord,
+    TestDatasetRecord,
     ValidateRulesResult,
     WorkspaceMemberRecord
   } from '$lib/kernel';
@@ -298,11 +300,14 @@
     deployResult = null;
     dryRunResult = null;
     void refreshActiveBundles();
+    // W1.4:打开面板即初始化证据状态(默认机器背书路径,异步找最近 PASS 沙盒报告)
+    initDeployEvidence();
   }
 
   /**
-   * 导出带人工确认证据的 bundle(闸门一:verdict=pass 由操作者背书,32 号 §3 方案 B)。
-   * 仅在 deployConfirmed 勾选后可调用 — 证据声明先于一切部署动作。
+   * 导出带结构化证据的 bundle(W1.3:ExportEvidence 三形态,取代 32 号单一人工背书)。
+   * 仅在 deployConfirmed 勾选后可调用 — 证据声明先于一切部署动作;
+   * 证据形态由 evidenceSource 决定(机器背书默认/人工降级显式)。
    */
   async function exportBundleForDeploy(): Promise<unknown> {
     const s = get(governanceStore);
@@ -311,7 +316,7 @@
     const version = s.versioning?.current
       ?? s.datasets.find((d) => d.dataset_id === s.selectedId)?.versioning.current;
     if (!version) throw new Error('无法确定数据集当前版本');
-    return bk.exportBundle(s.selectedId, version, true);
+    return bk.exportBundle(s.selectedId, version, currentEvidence());
   }
 
   /** 预检:导出 → dry-run 导入(校验链全跑,不落盘不 reload) */
@@ -539,7 +544,12 @@
 
   async function toggleSandboxZone(): Promise<void> {
     sandboxOpen = !sandboxOpen;
-    if (sandboxOpen) await loadSandboxes();
+    if (sandboxOpen) {
+      await loadSandboxes();
+      // W1.2 测试工作台:展开时同步加载数据集与工作空间规则(启动沙盒的两类输入)
+      await loadTestDatasets();
+      if (!wsRulesOpen && wsRules.length === 0) await loadWsRules();
+    }
   }
 
   async function loadSandboxes(): Promise<void> {
@@ -559,6 +569,28 @@
       toastError(`拉取沙盒列表失败:${sandboxError}`, '沙盒测试');
     } finally {
       sandboxLoading = false;
+    }
+  }
+
+  /**
+   * 关闭沙盒(W1.2 补接线):running → closed。
+   * 关闭是机器证据的前置(findLatestMachineEvidence 只认 closed 沙盒,
+   * verdict 从关闭时落盘的报告 summary 派生)——没有关闭动作,
+   * 沙盒报告就无法成为部署证据,整条"机器背书"链在 UI 断头。
+   */
+  async function closeSandboxAction(sb: SandboxSession): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      toastError('执行域通道不可用,无法关闭沙盒', '沙盒测试');
+      return;
+    }
+    try {
+      await wb.closeSandbox(ws.id, sb.id);
+      toastSuccess(`沙盒 #${sb.id} 已关闭,测试报告已生成`, '沙盒测试');
+      await loadSandboxes();
+    } catch (e) {
+      toastError(`关闭沙盒 #${sb.id} 失败:${e instanceof Error ? e.message : String(e)}`, '沙盒测试');
     }
   }
 
@@ -597,6 +629,195 @@
     return s.failed === 0
       ? { label: 'PASS', cls: 'diff-same' }
       : { label: `FAIL(${s.failed} 失败)`, cls: 'diff-changed' };
+  }
+
+  // --- 合成测试数据集管理(UV-058 W1.2:测试工作台数据源) ---
+  let testDatasets = $state<TestDatasetRecord[]>([]);
+  let testDatasetsLoading = $state(false);
+  let testDatasetsError = $state<string | null>(null);
+  let showNewDataset = $state(false);
+  let newDatasetSaving = $state(false);
+  let newDataset = $state({ name: '', cases_json: '[\n  { "input": { "amount": 100 }, "expect": "approve" }\n]' });
+  let newDatasetError = $state<string | null>(null);
+
+  async function loadTestDatasets(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      testDatasetsError = '执行域工作空间未初始化(无 workspace 或 server 通道不可用)';
+      return;
+    }
+    testDatasetsLoading = true;
+    testDatasetsError = null;
+    try {
+      testDatasets = await wb.listTestDatasets(ws.id);
+    } catch (e) {
+      testDatasets = [];
+      testDatasetsError = e instanceof Error ? e.message : String(e);
+      toastError(`拉取测试数据集失败:${testDatasetsError}`, '测试工作台');
+    } finally {
+      testDatasetsLoading = false;
+    }
+  }
+
+  /** 创建合成测试数据集(W1.2:cases_json 客户端预校验 JSON.parse,不把解析错误推给 server) */
+  async function handleCreateTestDataset(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      newDatasetError = '执行域通道不可用,无法创建测试数据集';
+      return;
+    }
+    if (!newDataset.name.trim()) {
+      newDatasetError = '数据集名称必填';
+      return;
+    }
+    let cases: unknown;
+    try {
+      cases = JSON.parse(newDataset.cases_json);
+    } catch (e) {
+      newDatasetError = `cases_json 不是合法 JSON:${e instanceof Error ? e.message : String(e)}`;
+      return;
+    }
+    if (!Array.isArray(cases)) {
+      newDatasetError = 'cases_json 顶层必须是 JSON 数组(每个元素为一个测试 case)';
+      return;
+    }
+    newDatasetSaving = true;
+    newDatasetError = null;
+    try {
+      const rec = await wb.createTestDataset(ws.id, {
+        name: newDataset.name.trim(),
+        cases_json: newDataset.cases_json,
+        created_by: get(governanceStore).username || 'console'
+      });
+      toastSuccess(`测试数据集已创建:${rec.name}(${rec.case_count} case)`, '测试工作台');
+      showNewDataset = false;
+      newDataset = { name: '', cases_json: '[\n  { "input": { "amount": 100 }, "expect": "approve" }\n]' };
+      await loadTestDatasets();
+    } catch (e) {
+      newDatasetError = e instanceof Error ? e.message : String(e);
+      toastError(newDatasetError!, '测试工作台');
+    } finally {
+      newDatasetSaving = false;
+    }
+  }
+
+  // --- 沙盒启动编排(UV-058 W1.2:规则多选 × 数据集单选 → startSandbox) ---
+  /** 待测规则选择(key = rule_version_id;来源 = 工作空间规则表,须先展开"工作空间规则"加载) */
+  let sandboxRuleIds = $state<string[]>([]);
+  let sandboxDatasetId = $state<number | null>(null);
+  let sandboxStarting = $state(false);
+  let sandboxStartError = $state<string | null>(null);
+
+  /** 工作空间规则里可选为待测的(Draft/Candidate 态且已有版本;server 启动时按 rule_version_ids 查询) */
+  function selectableTestRules(): RuleRecord[] {
+    return wsRules.filter(
+      (r) =>
+        (r.state === 'draft' || r.state === 'candidate') && r.current_version_id != null
+    );
+  }
+
+  /** 启动沙盒(W1.2:前置校验显式禁用+提示;成功后刷新沙盒列表;失败原文透出) */
+  async function handleStartSandbox(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      sandboxStartError = '执行域工作空间未初始化(无 workspace 或 server 通道不可用)';
+      return;
+    }
+    if (sandboxRuleIds.length === 0) {
+      sandboxStartError = '请至少选择 1 条 Draft/Candidate 规则(在"工作空间规则"区加载并勾选)';
+      return;
+    }
+    if (sandboxDatasetId == null) {
+      sandboxStartError = '请选择合成测试数据集(无则先新建)';
+      return;
+    }
+    sandboxStarting = true;
+    sandboxStartError = null;
+    try {
+      const r = await wb.startSandbox(ws.id, {
+        rule_version_ids: sandboxRuleIds,
+        test_dataset_id: sandboxDatasetId
+      });
+      toastSuccess(
+        `沙盒 #${r.sandbox_id} 已启动:${r.test_case_count} case · Draft 规则集 ${r.draft_ruleset_hash.slice(0, 10)}…`,
+        '测试工作台'
+      );
+      sandboxRuleIds = [];
+      await loadSandboxes();
+    } catch (e) {
+      sandboxStartError = e instanceof Error ? e.message : String(e);
+      toastError(sandboxStartError, '测试工作台');
+    } finally {
+      sandboxStarting = false;
+    }
+  }
+
+  // --- 部署证据(UV-058 W1.3/W1.4:ExportEvidence 三形态,机器背书默认+人工降级显式) ---
+  /** 证据源选择:勾选证据声明后二选一(sandbox=机器背书默认/human=人工降级显式) */
+  let evidenceSource = $state<'sandbox' | 'human'>('sandbox');
+  /** 最近可用机器证据(最近一次 completed 沙盒的 PASS 报告;null=无) */
+  let latestMachineEvidence = $state<{ sandboxId: number; report: SandboxTestReport } | null>(null);
+  let evidenceChecking = $state(false);
+
+  /**
+   * 找最近可用机器证据:按 started_at 降序遍历已完成的沙盒,拉报告验证 PASS
+   * (verdict 从报告 summary 派生,不手填不伪造——W1.4 客户端不伪造原则)。
+   * 找到即停(最近优先);全部非 PASS → null(机器路径禁用,只能人工降级)。
+   */
+  async function findLatestMachineEvidence(): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    latestMachineEvidence = null;
+    if (!ws || !wb) return;
+    evidenceChecking = true;
+    try {
+      const done = [...sandboxes]
+        .filter((s) => s.status === 'closed')
+        .sort((a, b) => (a.started_at < b.started_at ? 1 : -1));
+      for (const sb of done) {
+        try {
+          const rep = reportCache[sb.id] ?? (await wb.getSandboxReport(ws.id, sb.id));
+          reportCache[sb.id] = rep;
+          if (rep.summary.total_cases > 0 && rep.summary.failed === 0) {
+            latestMachineEvidence = { sandboxId: sb.id, report: rep };
+            return;
+          }
+        } catch {
+          // 单个报告拉取失败继续找次新(全部失败 → 无机器证据,如实降级)
+        }
+      }
+    } finally {
+      evidenceChecking = false;
+    }
+  }
+
+  /** 打开部署面板时初始化证据状态:默认机器路径,先找机器证据(W1.4 默认背书) */
+  function initDeployEvidence(): void {
+    evidenceSource = 'sandbox';
+    latestMachineEvidence = null;
+    void findLatestMachineEvidence();
+  }
+
+  /**
+   * 构造当前选择的导出证据(W1.3:三形态)。
+   * 机器路径无可用报告时禁用(UI 已拦),此处防御性回落 none——verdict=fail,
+   * 执行侧闸门一硬拒,绝不静默伪造 pass。
+   */
+  function currentEvidence(): ExportEvidence {
+    if (evidenceSource === 'sandbox') {
+      if (latestMachineEvidence) {
+        return {
+          kind: 'sandbox-report',
+          sandboxId: latestMachineEvidence.sandboxId,
+          verdict: 'pass' // 由 findLatestMachineEvidence 从报告 summary 派生(failed===0)
+        };
+      }
+      return { kind: 'none' };
+    }
+    return { kind: 'human-confirmed', actor: get(governanceStore).username || 'console' };
   }
 
   // --- 会话清单(接线⑤,只读) ---
@@ -1159,23 +1380,74 @@
               <input type="checkbox" bind:checked={deployConfirmed} />
               <span>
                 <strong>证据声明(闸门一)</strong>
-                本数据集未关联沙箱自动验证证据。部署即声明:该版本已经过验证,可进入生产。
-                我确认该版本已完成验证。
+                部署需要验证证据。选择证据来源(机器背书优先,人工背书为显式降级):
               </span>
             </label>
+
+            {#if deployConfirmed}
+              <!-- W1.4 证据源二选一:机器背书(默认)/人工降级(显式选择) -->
+              <div class="evidence-picker">
+                <label class="check">
+                  <input
+                    type="radio"
+                    name="evidence-source"
+                    value="sandbox"
+                    bind:group={evidenceSource}
+                    disabled={!latestMachineEvidence && !evidenceChecking}
+                  />
+                  <span>
+                    <strong>🤖 沙盒报告(机器背书)</strong>
+                    {#if evidenceChecking}
+                      正在查找最近通过的沙盒报告…
+                    {:else if latestMachineEvidence}
+                      {@const v = reportVerdict(latestMachineEvidence.report)}
+                      沙盒 #{latestMachineEvidence.sandboxId} ·
+                      <span class="badge {v.cls}">{v.label}</span> ·
+                      {latestMachineEvidence.report.summary.total_cases} case 全过
+                      (证据引用 sandbox:{latestMachineEvidence.sandboxId})
+                    {:else}
+                      无可用沙盒报告——请先在「测试工作台」运行沙盒并得到 PASS,
+                      或改用人工背书
+                    {/if}
+                  </span>
+                </label>
+                <label class="check">
+                  <input
+                    type="radio"
+                    name="evidence-source"
+                    value="human"
+                    bind:group={evidenceSource}
+                    disabled={evidenceSource === 'sandbox' && latestMachineEvidence ? false : evidenceChecking}
+                  />
+                  <span>
+                    <strong>👤 人工背书(降级)</strong>
+                    {#if evidenceSource === 'human'}
+                      <span class="warn-text">
+                        ⚠ 未经沙盒验证,人工背书责任自负——本版本将标记
+                        human:{$governanceStore.username || 'console'}(降级可追溯)
+                      </span>
+                    {:else}
+                      显式选择以跳过沙盒报告(降级路径)
+                    {/if}
+                  </span>
+                </label>
+              </div>
+            {/if}
 
             <div class="btn-row">
               <button
                 class="btn btn-sm"
                 onclick={handleDeployDryRun}
                 disabled={!deployConfirmed || dryRunning || deploying}
+                title={!deployConfirmed ? '先勾选证据声明' : 'dry-run 跑全校验链;无证据包会被闸门一如实拒绝(不落盘)'}
               >
                 {dryRunning ? '预检中…' : '预检(dry-run,不落盘)'}
               </button>
               <button
                 class="btn btn-sm btn-primary"
                 onclick={handleDeploy}
-                disabled={!deployConfirmed || deploying || dryRunning}
+                disabled={!deployConfirmed || deploying || dryRunning || (evidenceSource === 'sandbox' && !latestMachineEvidence && !evidenceChecking)}
+                title={evidenceSource === 'sandbox' && !latestMachineEvidence && !evidenceChecking ? '机器路径无可用沙盒报告(verdict=fail 必被闸门一拒绝);请先跑沙盒或改人工背书' : ''}
               >
                 {deploying ? '部署中…' : '确认部署'}
               </button>
@@ -1476,27 +1748,138 @@
           {/if}
         </div>
 
-        <!-- 沙盒测试(接线②:查看报告) -->
+        <!-- 测试工作台(UV-058 W1.2:数据集管理 + 沙盒编排 + 报告查看;接线②为其中报告区) -->
         <div class="sec">
           <div class="sec-head">
             <button class="btn btn-sm" onclick={toggleSandboxZone}>
-              {sandboxOpen ? '▾ 收起' : '▸ 沙盒测试'}({sandboxes.length})
+              {sandboxOpen ? '▾ 收起' : '▸ 测试工作台'}(沙盒 {sandboxes.length} · 数据集 {testDatasets.length})
             </button>
             {#if sandboxOpen}
               <button class="btn btn-sm btn-ghost" onclick={loadSandboxes}>⟳ 刷新</button>
             {/if}
           </div>
           {#if sandboxOpen}
-            {#if sandboxLoading}
-              <p class="muted">加载中…</p>
-            {:else if sandboxError}
-              <div class="err-box">{sandboxError}</div>
-            {:else if sandboxes.length === 0}
-              <p class="muted">
-                无沙盒记录。沙盒由执行域沙盒编排 API 启动(POST /api/workspaces/&lt;id&gt;/sandboxes),
-                启动后在此列出并可查看测试报告。
-              </p>
-            {:else}
+            <!-- ① 合成测试数据集管理 -->
+            <div class="tw-sub">
+              <div class="sec-head">
+                <span class="muted">① 合成测试数据集(沙盒注入的测试 case 来源)</span>
+                <button class="btn btn-sm" onclick={() => (showNewDataset = !showNewDataset)}>
+                  {showNewDataset ? '取消新建' : '＋ 新建数据集'}
+                </button>
+              </div>
+              {#if testDatasetsLoading}
+                <p class="muted">数据集加载中…</p>
+              {:else if testDatasetsError}
+                <div class="err-box">{testDatasetsError}</div>
+              {:else if testDatasets.length === 0}
+                <p class="muted">无测试数据集。新建一个以启动沙盒(每个元素为一个测试 case,形状由被测规则决定)。</p>
+              {:else}
+                <ul class="ws-list">
+                  {#each testDatasets as td (td.id)}
+                    <li>
+                      <label class="check">
+                        <input
+                          type="radio"
+                          name="sandbox-dataset"
+                          value={td.id}
+                          bind:group={sandboxDatasetId}
+                        />
+                        <span>
+                          <span class="entry-id">#{td.id}</span> {td.name}
+                          <span class="badge status-draft">{td.case_count} case</span>
+                          <span class="muted">· 建 {fmtTime(td.created_at)} · {td.created_by}</span>
+                        </span>
+                      </label>
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
+              {#if showNewDataset}
+                <div class="tw-form">
+                  <div class="form-row">
+                    <label>名称<input class="input" bind:value={newDataset.name} placeholder="如:报销单-边界值集" /></label>
+                  </div>
+                  <div class="form-row">
+                    <label>
+                      测试 case(JSON 数组,每元素一个 case)
+                      <textarea class="input mono" rows="5" bind:value={newDataset.cases_json}></textarea>
+                    </label>
+                  </div>
+                  {#if newDatasetError}
+                    <div class="err-box">{newDatasetError}</div>
+                  {/if}
+                  <div class="btn-row">
+                    <button class="btn btn-sm btn-primary" onclick={handleCreateTestDataset} disabled={newDatasetSaving}>
+                      {newDatasetSaving ? '创建中…' : '创建'}
+                    </button>
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <!-- ② 沙盒编排:选规则(多选) × 选数据集(上方单选) → 启动 -->
+            <div class="tw-sub">
+              <div class="sec-head">
+                <span class="muted">② 启动沙盒(Draft/Candidate 规则 × 合成数据 → fork 生产会话上跑验证)</span>
+              </div>
+              {#if selectableTestRules().length === 0}
+                <p class="muted">
+                  无 Draft/Candidate 规则可选——先在「工作空间规则」区 fork 一条规则(或创建新规则)。
+                </p>
+              {:else}
+                <ul class="ws-list">
+                  {#each selectableTestRules() as r (r.id)}
+                    <li>
+                      <label class="check">
+                        <input
+                          type="checkbox"
+                          value={r.current_version_id ?? ''}
+                          checked={sandboxRuleIds.includes(r.current_version_id ?? '')}
+                          onchange={(e) => {
+                            const v = e.currentTarget.value;
+                            sandboxRuleIds = e.currentTarget.checked
+                              ? [...sandboxRuleIds, v]
+                              : sandboxRuleIds.filter((x) => x !== v);
+                          }}
+                        />
+                        <span>
+                          {r.name}
+                          <span class="badge {r.state === 'candidate' ? 'status-active' : 'status-draft'}">{r.state}</span>
+                          <span class="muted">· 版本 <span class="chip" title={r.current_version_id ?? ''}>{(r.current_version_id ?? '').slice(0, 8)}…</span></span>
+                        </span>
+                      </label>
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
+              {#if sandboxStartError}
+                <div class="err-box">{sandboxStartError}</div>
+              {/if}
+              <div class="btn-row">
+                <button
+                  class="btn btn-sm btn-primary"
+                  onclick={handleStartSandbox}
+                  disabled={sandboxStarting || sandboxRuleIds.length === 0 || sandboxDatasetId == null}
+                  title={sandboxRuleIds.length === 0 ? '至少选 1 条规则' : sandboxDatasetId == null ? '先选择测试数据集' : ''}
+                >
+                  {sandboxStarting ? '启动中…' : `🚀 启动沙盒(${sandboxRuleIds.length} 规则 × ${sandboxDatasetId != null ? `数据集#${sandboxDatasetId}` : '?'})`}
+                </button>
+                <span class="muted">已选 {sandboxRuleIds.length} 规则 · 数据集 {sandboxDatasetId != null ? `#${sandboxDatasetId}` : '未选'}</span>
+              </div>
+            </div>
+
+            <!-- ③ 沙盒记录与报告 -->
+            <div class="tw-sub">
+              <div class="sec-head">
+                <span class="muted">③ 沙盒记录与测试报告</span>
+              </div>
+              {#if sandboxLoading}
+                <p class="muted">加载中…</p>
+              {:else if sandboxError}
+                <div class="err-box">{sandboxError}</div>
+              {:else if sandboxes.length === 0}
+                <p class="muted">无沙盒记录。上方选择规则与数据集后启动,启动后在此列出并可查看测试报告。</p>
+              {:else}
               <ul class="ws-list">
                 {#each sandboxes as sb (sb.id)}
                   <li>
@@ -1507,6 +1890,11 @@
                       <button class="btn btn-sm" onclick={() => viewReport(sb)}>
                         {reportOpen[sb.id] ? '收起报告' : '查看报告'}
                       </button>
+                      {#if sb.status === 'running'}
+                        <button class="btn btn-sm" onclick={() => closeSandboxAction(sb)}>
+                          ⏹ 关闭并出报告
+                        </button>
+                      {/if}
                     </div>
                     <p class="ws-item-sub">
                       启动 {fmtTime(sb.started_at)} · {sb.started_by}
@@ -1577,7 +1965,8 @@
                   </li>
                 {/each}
               </ul>
-            {/if}
+              {/if}
+            </div>
           {/if}
         </div>
 
@@ -1995,6 +2384,46 @@
   .btn-row {
     display: flex;
     gap: var(--spacing-sm);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  /* UV-058 W1.2 测试工作台/ W1.4 证据选择 */
+  .tw-sub {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+  }
+  .tw-form {
+    margin-top: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .tw-form .form-row label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+  }
+  .tw-form textarea.mono {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-xs);
+    min-height: 7rem;
+  }
+  .evidence-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: var(--spacing-xs) 0 var(--spacing-sm);
+  }
+  .warn-text {
+    color: var(--warn, #b45309);
+    font-size: var(--text-sm);
   }
   .hist {
     list-style: none;
