@@ -1594,6 +1594,8 @@
                       <span class="badge {v.cls}">{v.label}</span> ·
                       {latestMachineEvidence.report.summary.total_cases} case 全过
                       (证据引用 sandbox:{latestMachineEvidence.sandboxId})
+                      <!-- UV-080 A: 机器背书边界提示(合成 IO 应答不等价于生产 IO) -->
+                      <span class="warn-text">合成 IO 背书:报告应答由 MockIoResponder 提供,依赖外部 LLM/服务的规则不等价于生产行为</span>
                     {:else}
                       无可用沙盒报告——请先在「测试工作台」运行沙盒并得到 PASS,
                       或改用人工背书
@@ -2205,6 +2207,13 @@
                             · 报告哈希 <span class="chip" title={rep.report_hash}>{rep.report_hash.slice(0, 14)}…</span>
                             · 生成于 {fmtTime(rep.generated_at)}
                           </p>
+                          <!-- UV-080 A: 合成 IO 背书边界标注(40 号 §3.3.3/裁定项 4)——
+                               如实告知该 PASS 的 io_request 应答来自 MockIoResponder 全合成应答,
+                               对依赖外部 LLM/服务的规则不等价于生产行为 -->
+                          <p class="ws-item-sub evidence-note">
+                            ⚠ 合成 IO 背书:本报告 io_request 应答由 MockIoResponder 合成提供——
+                            纯规则逻辑的 PASS 为真实背书;依赖外部 LLM/服务的规则,PASS 不等价于生产行为
+                          </p>
                         </div>
                       {/if}
                     {/if}
@@ -2746,6 +2755,12 @@
   .warn-text {
     color: var(--warn, #b45309);
     font-size: var(--text-sm);
+  }
+  /* UV-080 A: 报告区合成 IO 背书边界标注(醒目但不喧宾夺主) */
+  .evidence-note {
+    color: var(--warn, #b45309);
+    border-top: 1px dashed var(--border, #d4a72c66);
+    padding-top: var(--spacing-xs);
   }
   .hist {
     list-style: none;
