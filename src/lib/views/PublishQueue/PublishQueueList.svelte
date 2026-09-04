@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:发布队列列表 + 状态徽标 + approve/reject 按钮(权限守卫)
-  依赖:publish-queue-api.ts / auth.ts / activity-log.ts / notifications.ts / toast.ts / net-config.ts
+  依赖:publish-queue-api.ts / auth.ts / notifications.ts / toast.ts / net-config.ts
   关联设计:P08_COLLAB_WORKFLOW_DESIGN.md §7.5(PublishQueueList)
 
   F3 接线(2026-08-24,偏差修正):
@@ -25,8 +25,7 @@
   import {
     type PublishQueueItemView,
   } from "$lib/backend/production-views";
-  import { can, getCurrentUser } from "$lib/stores/auth";
-  import { logActivity } from "$lib/stores/activity-log";
+  import { can } from "$lib/stores/auth";
   import { pushNotification } from "$lib/stores/notifications";
   import { toastSuccess, toastError } from "$lib/stores/toast";
 
@@ -141,42 +140,24 @@
   });
 
   async function handleApprove(item: PublishQueueItemView): Promise<void> {
-    const user = getCurrentUser();
-    if (!user) return;
     const comment = reviewComment[item.id] ?? "通过";
     const res = await backend.reviewPublishRequest(Number(item.id), "approved", comment);
     if (!res.ok) {
       toastError(res.error ?? "审批失败", "发布队列");
       return;
     }
-    logActivity({
-      userId: user.id,
-      username: user.displayName,
-      action: "approve_publish",
-      target: item.id,
-      detail: `已批准发布`,
-    });
     toastSuccess("已批准发布", "发布队列");
     await reloadQueue();
   }
 
   async function handleRejectConfirm(): Promise<void> {
     if (!rejectingId) return;
-    const user = getCurrentUser();
-    if (!user) return;
     const id = rejectingId;
     const res = await backend.reviewPublishRequest(Number(id), "rejected", rejectComment || "驳回");
     if (!res.ok) {
       toastError(res.error ?? "驳回失败", "发布队列");
       return;
     }
-    logActivity({
-      userId: user.id,
-      username: user.displayName,
-      action: "reject_publish",
-      target: id,
-      detail: rejectComment,
-    });
     toastSuccess("已驳回发布请求", "发布队列");
     rejectingId = null;
     rejectComment = "";
@@ -184,8 +165,6 @@
   }
 
   async function handleRollback(item: PublishQueueItemView): Promise<void> {
-    const user = getCurrentUser();
-    if (!user) return;
     if (!confirm("确认紧急回滚?此操作将立即生效。")) return;
     // 后端回滚按"目标版本"操作:回滚到该发布项的发布版本(rulesetVersion = published_version)
     const targetVersion = item.rulesetVersion;
@@ -203,12 +182,6 @@
       title: "⚠️ 紧急回滚",
       body: `已回滚到 v${targetVersion} (新版本号递增)`,
       link: "/version-history",
-    });
-    logActivity({
-      userId: user.id,
-      username: user.displayName,
-      action: "rollback",
-      target: item.id,
     });
     toastSuccess("已紧急回滚", "发布队列");
     await reloadQueue();
