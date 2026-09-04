@@ -8,7 +8,7 @@
 #   evorule-rule-serve       <- evorule-rule release 构建(治理 :18081)
 #   web/                     <- 本仓 adapter-static 产物(build/)
 #   rules/                   <- 本仓 assets/evorule-rules/
-#   resources/core_eval.json <- evorule-server 仓 TCB 宪法
+#   resources/server_eval.json <- evorule-server 仓 TCB 宪法·server 业务规则集(UV-044 更名,旧名 core_eval.json)
 #   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,UV-033)
 #   start-evorule.sh / stop-evorule.sh / README-STARTUP.txt
 #
@@ -99,7 +99,7 @@ check() {
 }
 check "$SERVER_BIN" "$STAGE/evorule-server"
 check "$RULE_BIN" "$STAGE/evorule-rule-serve"
-check "$CORE_EVAL" "$STAGE/resources/core_eval.json"
+check "$CORE_EVAL" "$STAGE/resources/server_eval.json"
 check "$ROOT/assets/evorule-rules/llm-audit-bridge.json" "$STAGE/rules/llm-audit-bridge.json"
 check "$ROOT/assets/evorule-rules/demo-svc.json" "$STAGE/rules/demo-svc.json"
 check "$ROOT/assets/evorule-rules/scenario-contract-payment-guard.json" "$STAGE/rules/scenario-contract-payment-guard.json"

@@ -110,7 +110,11 @@ service_registry.json,可自行扩展为真实 HTTP 服务端点。
 - web\                     前端页面(evorule-console-cloud)
 - rules\                   运行规则集(LLM 审计桥 + 服务调用演示剧本)
 - service_registry.json    服务声明(call_service 的 service_name→服务映射)
-- resources\               引擎宪法(core_eval.json)
+- resources\               引擎宪法·server 业务规则集
+                           (v0.2.0 起为 server_eval.json;v0.1.0 旧包为
+                           core_eval.json —— 同一职责文件,仅文件名不同。
+                           新版 server 默认读取 server_eval.json,详见
+                           "升级换包"一节的迁移说明)
 - data\                    首次启动后生成:wal\ 为会话/审计链 WAL,
                            其余为规则/工作区 SQLite 库文件
 
@@ -124,6 +128,11 @@ service_registry.json,可自行扩展为真实 HTTP 服务端点。
    service_registry.json 会被新包覆盖,请对照新旧文件把你的
    自定义内容合并回来(建议:自定义规则/宪法放独立目录,避免
    每次升级手工合并)
+   宪法文件名迁移:v0.1.0 旧包的 resources\core_eval.json 在
+   新版更名为 resources\server_eval.json。若你在旧包自定义过
+   宪法内容,请把自定义内容合并进新包的 server_eval.json;
+   直接复制旧文件时须同时重命名为 server_eval.json(或编辑
+   启动脚本用 --core-eval 显式指向旧名文件)
 5. 重新编辑启动脚本改回你的自定义凭据(默认凭据是公开值,
    参见上方安全提示;治理库已存在时改密码不生效,见上文幂等说明)
 6. 启动并验证:登录正常、规则可执行、审计页「历史会话审计档案」

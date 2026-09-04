@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 EvoRule Project
 # start-all.ps1 - 一键启动 evorule 全栈
 #
@@ -66,7 +66,7 @@ if ($env:EVORULE_SERVER_ARGS) {
     # 18080 与前端 DEFAULT_LOCAL_BASE_URL(src/lib/backend/types.ts)保持一致
     $SERVER_ARGS = "--addr 127.0.0.1:$PORT_SERVER " +
         "--rules-dir `"$(Join-Path $SRV_DIR 'rules')`" " +
-        "--core-eval `"$(Join-Path $SRV_DIR 'resources\core_eval.json')`" " +
+        "--core-eval `"$(Join-Path $SRV_DIR 'resources\server_eval.json')`" " +
         "--service-registry `"$(Join-Path $SRV_DIR 'service_registry.json')`" " +
         "--allowed-origins http://localhost:$PORT_WEB,http://127.0.0.1:$PORT_WEB,http://localhost:4173,http://127.0.0.1:4173 " +
         "--log-level info"

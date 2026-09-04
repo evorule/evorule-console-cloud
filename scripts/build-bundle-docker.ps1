@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 EvoRule Project
 <#
 .SYNOPSIS
@@ -52,7 +52,7 @@ foreach ($f in @("$root\build\index.html",
                  "$root\assets\evorule-rules\demo-svc.json",
                  "$root\assets\service_registry.json",
                  "$root\assets\plugin_manifest.json",
-                 "$ServerRepo\resources\core_eval.json",
+                 "$ServerRepo\resources\server_eval.json",
                  "$ServerRepo\Cargo.lock",
                  "$RuleRepo\Cargo.lock")) {
     if (-not (Test-Path $f)) { throw "缺少前置文件: $f" }
@@ -100,7 +100,7 @@ New-Item -ItemType Directory -Path "$stage\web", "$stage\rules", "$stage\resourc
 Copy-Item "$root\packaging\docker\start-bundle.sh" "$stage\start-bundle.sh"
 Copy-Item "$root\build\*" "$stage\web" -Recurse -Force
 Copy-Item "$root\assets\evorule-rules\*" "$stage\rules" -Force
-Copy-Item "$ServerRepo\resources\core_eval.json" "$stage\resources\core_eval.json"
+Copy-Item "$ServerRepo\resources\server_eval.json" "$stage\resources\server_eval.json"
 Copy-Item "$root\assets\service_registry.json" "$stage\service_registry.json"
 Copy-Item "$root\assets\plugin_manifest.json" "$stage\plugin_manifest.json"
 
@@ -125,7 +125,7 @@ if ($shText -match "`r") {
 $expect = @{
     "$stage\evorule-server"        = 1
     "$stage\evorule-rule-serve"    = 1
-    "$stage\resources\core_eval.json" = (Get-Item "$ServerRepo\resources\core_eval.json").Length
+    "$stage\resources\server_eval.json" = (Get-Item "$ServerRepo\resources\server_eval.json").Length
     "$stage\rules\llm-audit-bridge.json" = (Get-Item "$root\assets\evorule-rules\llm-audit-bridge.json").Length
     "$stage\rules\demo-svc.json"   = (Get-Item "$root\assets\evorule-rules\demo-svc.json").Length
     "$stage\service_registry.json" = (Get-Item "$root\assets\service_registry.json").Length
