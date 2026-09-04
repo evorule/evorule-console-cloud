@@ -46,7 +46,7 @@ function mockChatResponse(content: string) {
 	};
 }
 
-/** 一份合法的 evorule 规则草案(通过 G1-G7) */
+/** 一份合法的 evorule 规则草案(通过 G1-G7;对齐 _shared/v1.0.json:set 用 attr/operation,嵌套域用 inner) */
 const VALID_RULE_DRAFT = JSON.stringify({
 	transform: [
 		{
@@ -56,7 +56,7 @@ const VALID_RULE_DRAFT = JSON.stringify({
 				on_true: [
 					{
 						type: 'set',
-						params: { path: '__exec__.payload.status', value: 'ok' }
+						params: { attr: '__exec__.payload.status', operation: 'set', value: 'ok' }
 					}
 				],
 				on_false: []
@@ -65,11 +65,11 @@ const VALID_RULE_DRAFT = JSON.stringify({
 		{
 			type: 'branch',
 			params: {
-				domain: { type: 'all', domains: [] },
+				domain: { type: 'all', inner: [] },
 				on_true: [
 					{
 						type: 'set',
-						params: { path: '__exec__.payload.result', value: '未匹配指令' }
+						params: { attr: '__exec__.payload.result', operation: 'set', value: '未匹配指令' }
 					}
 				],
 				on_false: []

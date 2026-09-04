@@ -79,8 +79,9 @@ function checkPathOrLiteral(v: unknown): boolean {
 }
 
 /** 输入归一化(对齐 server validate_rules_handler 口径):
- *  {transform:[...]} → transform 数组;顶层数组 → 该数组;单条 {type:...} 对象 → 包装为数组 */
-function extractTransforms(parsed: unknown): unknown[] | null {
+ *  {transform:[...]} → transform 数组;顶层数组 → 该数组;单条 {type:...} 对象 → 包装为数组
+ * W2.2 起导出供治理页摘要预览消费(单一权威,禁止他处复制此归一化) */
+export function extractTransforms(parsed: unknown): unknown[] | null {
   if (Array.isArray(parsed)) return parsed;
   if (parsed && typeof parsed === 'object') {
     const obj = parsed as Record<string, unknown>;
