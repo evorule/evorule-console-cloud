@@ -98,6 +98,21 @@ function actionToSteps(action: BusinessAction): KernelTransformStep[] {
     action.meta &&
     ["set", "push", "branch"].includes(action.meta)
   ) {
+    // set 归一化(W2.1 对齐 _shared/v1.0.json 后暴露的历史债务):
+    // 业务表单/explainer 口径用 key(或 attr),内核 schema 要求 attr+operation+value 三件套;
+    // 旧版直传 {key,value} 缺 attr/operation,曾被不查 params 完备性的旧校验器静默放行。
+    if (action.meta === "set") {
+      const p = (action.params ?? {}) as Record<string, unknown>;
+      const attr = p.attr ?? p.key;
+      if (attr !== undefined) {
+        const normalized: Record<string, unknown> = {
+          attr,
+          operation: typeof p.operation === "string" ? p.operation : "set",
+        };
+        if (p.value !== undefined) normalized.value = p.value;
+        return [{ type: "set", params: normalized }];
+      }
+    }
     return [
       {
         type: action.meta as KernelTransformStep["type"],

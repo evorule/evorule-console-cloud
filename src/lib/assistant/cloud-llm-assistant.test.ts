@@ -175,7 +175,7 @@ describe('generateRuleDraft happy path', () => {
 					params: {
 						domain: { type: 'eq', path: '__exec__.instruction.type', value: 'register' },
 						on_true: [
-							{ type: 'set', params: { path: '__exec__.payload.status', value: 'ok' } }
+							{ type: 'set', params: { attr: '__exec__.payload.status', operation: 'set', value: 'ok' } }
 						],
 						on_false: []
 					}
@@ -183,11 +183,11 @@ describe('generateRuleDraft happy path', () => {
 				{
 					type: 'branch',
 					params: {
-						domain: { type: 'all', domains: [] },
+						domain: { type: 'all', inner: [] },
 						on_true: [
 							{
 								type: 'set',
-								params: { path: '__exec__.payload.result', value: '未匹配' }
+								params: { attr: '__exec__.payload.result', operation: 'set', value: '未匹配' }
 							}
 						],
 						on_false: []
@@ -211,11 +211,11 @@ describe('generateRuleDraft happy path', () => {
 				{
 					type: 'branch',
 					params: {
-						domain: { type: 'all', domains: [] },
+						domain: { type: 'all', inner: [] },
 						on_true: [
 							{
 								type: 'set',
-								params: { path: '__exec__.payload.result', value: '默认' }
+								params: { attr: '__exec__.payload.result', operation: 'set', value: '默认' }
 							}
 						],
 						on_false: []
@@ -237,11 +237,11 @@ describe('generateRuleDraft happy path', () => {
 				{
 					type: 'branch',
 					params: {
-						domain: { type: 'all', domains: [] },
+						domain: { type: 'all', inner: [] },
 						on_true: [
 							{
 								type: 'set',
-								params: { path: '__exec__.payload.result', value: '默认' }
+								params: { attr: '__exec__.payload.result', operation: 'set', value: '默认' }
 							}
 						],
 						on_false: []
@@ -261,20 +261,23 @@ describe('generateRuleDraft happy path', () => {
 describe('generateRuleDraft 校验失败', () => {
 	test('校验失败 → confidence=0.3 + _validationErrors', async () => {
 		const a = makeAssistant();
-		// 缺兜底规则(G6)
+		// 非法域类型(G4 error 级;注意 G6 缺兜底在 W2.1 后降为 warning,不再构成校验失败)
 		const invalidRuleJson = JSON.stringify({
 			transform: [
 				{
 					type: 'branch',
 					params: {
-						domain: { type: 'eq', path: '__exec__.instruction.type', value: 'register' },
+						domain: { type: 'greater_than', path: '__exec__.payload.amount', value: 100 },
 						on_true: [
-							{ type: 'set', params: { path: '__exec__.payload.status', value: 'ok' } }
+							{ type: 'set', params: { attr: '__exec__.payload.status', operation: 'set', value: 'ok' } }
 						],
 						on_false: []
 					}
+				},
+				{
+					type: 'branch',
+					params: { domain: { type: 'all', inner: [] }, on_true: [] }
 				}
-				// 缺最后一条兜底规则
 			]
 		});
 		mockFetch.mockResolvedValue(mockOkResponse(invalidRuleJson));

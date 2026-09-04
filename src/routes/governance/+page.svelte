@@ -29,7 +29,7 @@
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
   import { GovernanceBackend, type ExportEvidence } from '$lib/governance/governance-backend';
-  import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, LifecycleStatus } from '$lib/governance/types';
+  import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, GovernanceEntry, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import { useWorkspaceBackendOrNull, currentWorkspace, HttpWorkspaceBackendError } from '$lib/kernel';
   import type {
@@ -47,6 +47,9 @@
   } from '$lib/kernel';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import JsonViewer from '$lib/views/Dataset/JsonViewer.svelte';
+  import { RuleValidator, type ValidationResult } from '$lib/kernel/validators/ruleValidator';
+  import { localSaveGate, summarizeTransformSteps, type TransformStepSummary } from '$lib/governance/rule-form';
+  import { RULE_TEMPLATES, shouldConfirmTemplateOverwrite, prefillFromEntry } from '$lib/governance/rule-templates';
 
   // WorkspaceBackend 必须在组件初始化期从 context 取出并缓存——
   // getContext/hasContext 只能在组件初始化期间调用,异步回调(部署/预检/刷新)中调用
@@ -78,12 +81,84 @@
   });
   let entryError = $state<string | null>(null);
 
+  // ===== W2.2 即时校验 + 摘要预览(debounce 300ms,43 号方案) =====
+  /** null = 未校验(空输入/表单未展开),不显示面板 */
+  let liveValidation = $state<ValidationResult | null>(null);
+  /** 合法 JSON 后的 transform 步骤只读摘要;null = 不显示 */
+  let stepSummaries = $state<TransformStepSummary[] | null>(null);
+
+  // 输入防抖 300ms → RuleValidator 本地校验(非权威,权威 = server validateRules 保存第 2 层)
+  $effect(() => {
+    if (!showAddEntry) return;
+    const body = newEntry.rule_body;
+    const timer = setTimeout(() => {
+      if (body.trim() === '') {
+        liveValidation = null;
+        stepSummaries = null;
+        return;
+      }
+      liveValidation = RuleValidator.validate(body);
+      stepSummaries = liveValidation.valid ? summarizeTransformSteps(body) : null;
+    }, 300);
+    return () => clearTimeout(timer);
+  });
+
+  /** 格式化 rule_body(2 空格缩进);JSON 非法时黄字提示不覆盖 */
+  function formatRuleBody(): void {
+    try {
+      newEntry.rule_body = JSON.stringify(JSON.parse(newEntry.rule_body), null, 2);
+    } catch (e) {
+      toastWarning(`暂不格式化:JSON 非法(${e instanceof Error ? e.message : String(e)})`, '格式化');
+    }
+  }
+
+  // ===== W2.3 模板脚手架 =====
+  let templateSelect = $state('');
+
+  /** 应用模板:填充 rule_body(精简形状)+ 预填 entry_id/领域;已手改内容时显式确认覆盖 */
+  function applyTemplate(id: string): void {
+    templateSelect = '';
+    const t = RULE_TEMPLATES.find((x) => x.id === id);
+    if (!t) return;
+    if (shouldConfirmTemplateOverwrite(newEntry.rule_body)) {
+      if (!confirm(`rule_body 已有内容,应用模板「${t.label}」将覆盖当前输入。继续?`)) return;
+    }
+    newEntry.rule_body = t.ruleBody;
+    if (t.entryId) newEntry.entry_id = t.entryId;
+    if (t.domain) newEntry.domain = t.domain;
+    toastInfo(`已应用模板「${t.label}」,可在此基础上修改(${t.description})`, '模板填充');
+  }
+
+  // ===== W2.4 编辑新版本入口 =====
+  /** 以当前条目为底稿预填表单:entry_id 原值 / version+1 / rule_body pretty-print;
+   *  入库走既有 addEntry(同 entry_id 新版本),版本链/diff 自然承接 */
+  function startEditNewVersion(e: GovernanceEntry): void {
+    const p = prefillFromEntry(e);
+    newEntry = { entry_id: p.entry_id, version: p.version, domain: p.domain, rule_body: p.rule_body };
+    entryError = null;
+    showAddEntry = true;
+    toastInfo(`已预填 ${p.entry_id} → v${p.version}(编辑新版本,入库后形成版本链)`, '编辑新版本');
+  }
+
   // ===== 发布确认 =====
   let publishConfirm = $state(false);
   let publishReason = $state('');
 
   // 文本域占位(Svelte 不解析单引号属性内的花括号表达式,故用变量)
-  const RULE_BODY_PLACEHOLDER = '{ "rule_id": "...", "transform": [ ... ] }';
+  // W2.2:含 inner 口径的最小示例(域嵌套一律 inner,I/O 结果复数 __io_results__)
+  const RULE_BODY_PLACEHOLDER = `{
+  "rule_id": "my-rule",
+  "transform": [
+    { "type": "branch", "params": {
+        "domain": { "type": "instruction", "instruction_type": "my_command" },
+        "on_true":  [{ "type": "set", "params": { "attr": "data.ok", "operation": "set", "value": true } }],
+        "on_false": [] } },
+    { "type": "branch", "params": {
+        "domain": { "type": "all", "inner": [] },
+        "on_true":  [{ "type": "set", "params": { "attr": "data.result", "operation": "set", "value": "未匹配" } }],
+        "on_false": [] } }
+  ]
+}`;
 
   onMount(() => {
     // 已连接(刷新后内存 token 丢失)则不自动重连;仅清空过期状态
@@ -395,13 +470,15 @@
       entryError = 'entry_id 必填';
       return;
     }
-    let ruleBody: unknown;
-    try {
-      ruleBody = JSON.parse(newEntry.rule_body);
-    } catch {
-      entryError = 'rule_body 不是合法 JSON(规则体须为 evorule 原生 JSON)';
+    // W2.2 保存分层第 1 层:本地 error 阻断(RuleValidator,不发起网络请求)。
+    // 覆盖原 JSON.parse 必检(G1)——本地过则 JSON 必然可解析;warning 不阻断(面板黄字)。
+    const gate = localSaveGate(newEntry.rule_body);
+    if (gate.blocked) {
+      entryError = gate.message ?? '本地校验未通过';
+      toastError('本地校验存在 error,已阻断保存(详见表单下方明细)', '本地校验');
       return;
     }
+    const ruleBody: unknown = JSON.parse(newEntry.rule_body);
     // UV-062 接线①:入库前规则体预检(执行域 POST /api/rules/validate)。
     // 校验失败 → 透出 server 错误详情并阻断保存;
     // 服务不可达 → 诚实降级:toast 警示后放行(禁止静默跳过)。
@@ -1585,6 +1662,16 @@
 
           {#if showAddEntry && !selectedIsKnowledge}
             <div class="entry-form">
+              <!-- W2.3 模板脚手架:空白骨架 + 4 场景(源 assets/evorule-rules/,静态内嵌副本) -->
+              <label class="field">
+                <span>模板(填充 rule_body + 预填 entry_id/领域)</span>
+                <select bind:value={templateSelect} onchange={(e) => applyTemplate(e.currentTarget.value)}>
+                  <option value="" disabled>选择模板…</option>
+                  {#each RULE_TEMPLATES as t (t.id)}
+                    <option value={t.id} title={t.description}>{t.label}</option>
+                  {/each}
+                </select>
+              </label>
               <div class="field-row">
                 <label class="field">
                   <span>entry_id *</span>
@@ -1601,8 +1688,39 @@
               </div>
               <label class="field">
                 <span>rule_body(evorule 原生 JSON,零转译)</span>
-                <textarea bind:value={newEntry.rule_body} rows="6" placeholder={RULE_BODY_PLACEHOLDER}></textarea>
+                <div class="rule-body-tools">
+                  <button class="btn btn-sm" onclick={formatRuleBody} title="JSON.stringify 2 空格缩进">格式化</button>
+                </div>
+                <textarea bind:value={newEntry.rule_body} rows="14" placeholder={RULE_BODY_PLACEHOLDER}></textarea>
               </label>
+
+              {#if liveValidation}
+                <div class="val-panel" class:val-panel-error={!liveValidation.valid}>
+                  {#if liveValidation.valid && liveValidation.warnings.length === 0}
+                    <div class="val-ok">✓ 本地校验通过(error 0 · warning 0;权威校验在保存时由 server 执行)</div>
+                  {:else}
+                    {#each liveValidation.errors as err (err.gate + err.message)}
+                      <div class="val-err">✗ [{err.gate}]{err.path ? ` ${err.path}:` : ':'} {err.message}</div>
+                    {/each}
+                    {#if liveValidation.valid}
+                      <div class="val-ok">✓ 无 error(可保存;以下为建议项)</div>
+                    {/if}
+                    {#each liveValidation.warnings as w (w.gate + w.message)}
+                      <div class="val-warn">△ [{w.gate}]{w.path ? ` ${w.path}:` : ':'} {w.message}</div>
+                    {/each}
+                  {/if}
+                </div>
+              {/if}
+
+              {#if stepSummaries && stepSummaries.length > 0}
+                <div class="step-summary">
+                  <div class="step-summary-title">transform 步骤摘要(只读预览,{stepSummaries.length} 步)</div>
+                  {#each stepSummaries as s (s.index)}
+                    <div class="step-line"><span class="step-no">{s.index}</span> {s.text}</div>
+                  {/each}
+                </div>
+              {/if}
+
               {#if entryError}<div class="err-box">{entryError}</div>{/if}
               <button class="btn btn-sm btn-primary" onclick={handleAddEntry}>入库</button>
             </div>
@@ -1651,6 +1769,14 @@
                       {#if e.status && e.status !== 'Active'}
                         <span class="badge {statusClass(e.status)}">{statusLabel[e.status] ?? e.status}</span>
                       {/if}
+                      <!-- W2.4 编辑新版本:以当前条目为底稿预填表单 -->
+                      <span class="entry-actions">
+                        <button
+                          class="btn btn-sm"
+                          onclick={() => startEditNewVersion(e)}
+                          title="以当前条目为底稿,预填表单创建新版本(version+1,入库后形成版本链)"
+                        >✎ 编辑新版本</button>
+                      </span>
                     </div>
                     <pre class="entry-body">{rulePreview(e.rule_body)}</pre>
                     {@render entryDiff(e.entry_id)}
@@ -2129,6 +2255,62 @@
     margin-bottom: var(--spacing-md);
     white-space: pre-wrap;
   }
+  /* W2.2 即时校验面板 + 摘要预览 */
+  .rule-body-tools {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--spacing-xs);
+  }
+  .val-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-md);
+    font-family: var(--font-mono, monospace);
+    white-space: pre-wrap;
+  }
+  .val-panel-error {
+    border-color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 6%, transparent);
+  }
+  .val-ok {
+    color: var(--success, #2e7d32);
+  }
+  .val-err {
+    color: var(--danger);
+  }
+  .val-warn {
+    color: var(--warning, #b26a00);
+  }
+  .step-summary {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--text-sm);
+  }
+  .step-summary-title {
+    color: var(--text-muted, inherit);
+    margin-bottom: var(--spacing-xs);
+  }
+  .step-line {
+    font-family: var(--font-mono, monospace);
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: baseline;
+  }
+  .step-no {
+    flex: none;
+    display: inline-flex;
+    width: 1.4em;
+    height: 1.4em;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    font-size: var(--text-xs, 0.75rem);
+  }
   .btn {
     padding: var(--spacing-sm) var(--spacing-lg);
     border: 1px solid var(--border);
@@ -2468,6 +2650,12 @@
     align-items: center;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-xs);
+  }
+  /* W2.4 编辑新版本按钮:推到条目行右端 */
+  .entry-actions {
+    margin-left: auto;
+    display: inline-flex;
+    gap: var(--spacing-xs);
   }
   .entry-id {
     font-weight: 600;

@@ -29,14 +29,14 @@ import {
   type KernelTransformStep,
 } from "../kernel-rule-adapter";
 
-// === 辅助:断言"末条 step 是 G6 兜底 branch + all([])" ===
+// === 辅助:断言"末条 step 是 G6 兜底 branch + all(inner:[])"(UV-074:inner 口径) ===
 function expectG6Fallback(kernel: KernelRuleJson): void {
   const last = kernel.transform[kernel.transform.length - 1];
   expect(last).toBeDefined();
   expect(last.type).toBe("branch");
   const domain = last.params.domain as Record<string, unknown>;
   expect(domain.type).toBe("all");
-  expect(domain.domains).toEqual([]);
+  expect(domain.inner).toEqual([]);
 }
 
 // === 辅助:用内核 RuleValidator 校验,断言全部门禁通过 ===
@@ -113,18 +113,18 @@ describe("kernel-rule-adapter — wrapAsKernelTransform 单条件 + 单动作", 
     expect(domain.type).toBe("exists");
   });
 
-  test("业务动作 type 不是元指令 → 包成 exists(__io_result__) 内层 branch(G3 合规)", () => {
+  test("业务动作 type 不是元指令 → 包成 exists(__io_results__.<io_type>) 内层 branch(G3 合规)", () => {
     const business: BusinessRuleShape = {
       condition: { domain: "exists", path: "x" },
       action: { type: "require_approval", params: { role: "CFO" } },
     };
     const kernel = wrapAsKernelTransform(business);
     const onTrue = kernel.transform[0].params.on_true as KernelTransformStep[];
-    // on_true[0] 应是包装 branch(exists __io_result__),不是裸 io_request
+    // on_true[0] 应是包装 branch(exists __io_results__ 复数),不是裸 io_request
     expect(onTrue[0].type).toBe("branch");
     const wrapDomain = onTrue[0].params.domain as Record<string, unknown>;
     expect(wrapDomain.type).toBe("exists");
-    expect(wrapDomain.path).toBe("__exec__.payload.__io_result__");
+    expect(wrapDomain.path).toBe("__exec__.payload.__io_results__.call_external");
     // 内层 io_request 在 on_false
     const innerOnFalse = onTrue[0].params.on_false as KernelTransformStep[];
     expect(innerOnFalse[0].type).toBe("io_request");
@@ -132,7 +132,7 @@ describe("kernel-rule-adapter — wrapAsKernelTransform 单条件 + 单动作", 
     expect(innerOnFalse[0].params.role).toBe("CFO");
   });
 
-  test("业务动作 meta=set(非 io_request)→ 直接用,不包 branch", () => {
+  test("业务动作 meta=set(非 io_request)→ 归一化为内核三件套 attr/operation/value,不包 branch", () => {
     const business: BusinessRuleShape = {
       condition: { domain: "exists", path: "x" },
       action: { meta: "set", params: { key: "flag", value: true } },
@@ -140,10 +140,11 @@ describe("kernel-rule-adapter — wrapAsKernelTransform 单条件 + 单动作", 
     const kernel = wrapAsKernelTransform(business);
     const onTrue = kernel.transform[0].params.on_true as KernelTransformStep[];
     expect(onTrue[0].type).toBe("set");
-    expect(onTrue[0].params).toEqual({ key: "flag", value: true });
+    // 业务口径 key → 内核 attr;operation 缺省补 set(W2.1 params 完备性对齐)
+    expect(onTrue[0].params).toEqual({ attr: "flag", operation: "set", value: true });
   });
 
-  test("业务动作 meta=io_request → 也包成 exists(__io_result__) branch", () => {
+  test("业务动作 meta=io_request → 也包成 exists(__io_results__.<io_type>) branch", () => {
     const business: BusinessRuleShape = {
       condition: { domain: "exists", path: "x" },
       action: { meta: "io_request", params: { prompt: "notify" } },
@@ -152,7 +153,7 @@ describe("kernel-rule-adapter — wrapAsKernelTransform 单条件 + 单动作", 
     const onTrue = kernel.transform[0].params.on_true as KernelTransformStep[];
     expect(onTrue[0].type).toBe("branch");
     const wrapDomain = onTrue[0].params.domain as Record<string, unknown>;
-    expect(wrapDomain.path).toBe("__exec__.payload.__io_result__");
+    expect(wrapDomain.path).toBe("__exec__.payload.__io_results__.call_external");
   });
 });
 
@@ -197,7 +198,7 @@ describe("kernel-rule-adapter — wrapAsKernelTransform 多分支", () => {
 });
 
 describe("kernel-rule-adapter — wrapAsKernelTransform 边界情况", () => {
-  test("无条件有动作(业务 type)→ 包成 exists(__io_result__) branch + 兜底", () => {
+  test("无条件有动作(业务 type)→ 包成 exists(__io_results__.<io_type>) branch + 兜底", () => {
     const business: BusinessRuleShape = {
       action: { type: "log", params: { msg: "hello" } },
     };
@@ -209,11 +210,11 @@ describe("kernel-rule-adapter — wrapAsKernelTransform 边界情况", () => {
       string,
       unknown
     >;
-    expect(wrapDomain.path).toBe("__exec__.payload.__io_result__");
+    expect(wrapDomain.path).toBe("__exec__.payload.__io_results__.call_external");
     expectG6Fallback(kernel);
   });
 
-  test("无条件有动作(meta=set)→ 直接 set step + 兜底", () => {
+  test("无条件有动作(meta=set)→ 归一化 set step + 兜底", () => {
     const business: BusinessRuleShape = {
       action: { meta: "set", params: { key: "k", value: 1 } },
     };
@@ -296,7 +297,7 @@ describe("kernel-rule-adapter — 与内核 RuleValidator 兼容性", () => {
 });
 
 describe("kernel-rule-adapter — unwrapKernelTransform 反向解析", () => {
-  test("单 branch + 兜底(含 G3 io_result 包装)→ 提取 condition + action", () => {
+  test("单 branch + 兜底(含 G3 io_results 包装)→ 提取 condition + action", () => {
     // 这是 wrapAsKernelTransform 产出的典型结构
     const kernel: KernelRuleJson = {
       transform: [
@@ -309,13 +310,13 @@ describe("kernel-rule-adapter — unwrapKernelTransform 反向解析", () => {
               value: 10000,
             },
             on_true: [
-              // G3 包装 branch
+              // G3 包装 branch(复数 __io_results__ 口径)
               {
                 type: "branch",
                 params: {
                   domain: {
                     type: "exists",
-                    path: "__exec__.payload.__io_result__",
+                    path: "__exec__.payload.__io_results__.call_external",
                   },
                   on_true: [],
                   on_false: [
@@ -336,7 +337,7 @@ describe("kernel-rule-adapter — unwrapKernelTransform 反向解析", () => {
         },
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     };
@@ -356,7 +357,7 @@ describe("kernel-rule-adapter — unwrapKernelTransform 反向解析", () => {
       transform: [
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     };
@@ -376,7 +377,7 @@ describe("kernel-rule-adapter — unwrapKernelTransform 反向解析", () => {
       transform: [
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     };
@@ -388,10 +389,10 @@ describe("kernel-rule-adapter — unwrapKernelTransform 反向解析", () => {
   test("裸 set step(无 branch 包装)→ 提取为 action", () => {
     const kernel: KernelRuleJson = {
       transform: [
-        { type: "set", params: { key: "flag", value: true } },
+        { type: "set", params: { attr: "flag", operation: "set", value: true } },
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     };
