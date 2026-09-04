@@ -37,6 +37,11 @@ import type {
   DebugPendingIoInfo,
   PendingIoCountInfo,
   CausalDepthInfo,
+  AuditImportResult,
+  ReapResult,
+  PayloadUpdateResult,
+  SharedFactEntry,
+  SharedFactsVersionInfo,
   ExecutionBackend
 } from './types';
 
@@ -552,5 +557,122 @@ export class HttpBackend implements ExecutionBackend {
   /** GET /api/sessions/{id}/causal_depth — 因果链深度({ session_id, causal_depth }) */
   async getCausalDepth(id: SessionId): Promise<CausalDepthInfo> {
     return this.fetchJson<CausalDepthInfo>(`/api/sessions/${id}/causal_depth`);
+  }
+
+  // ------------------------------------------------------------------------
+  // === A 组 5 项(UV-084 W1:审计导入/会话派生/会话回收/payload 注入/共享事实) ===
+  // ------------------------------------------------------------------------
+
+  /**
+   * POST /api/sessions/{id}/audit/import — 导入外部审计链 JSON(UV-084 W1)。
+   * 破坏性:完全覆盖当前会话审计链,调用方须二次确认。
+   * server 导入后自动 verify,verify_ok=false 时 status="verify_failed"
+   * (HTTP 仍 200,数据可能损坏,如实呈现,不静默);400 JSON 解析失败 / 404 会话
+   * 不存在由 fetchJson 抛 HttpBackendError。
+   */
+  async importAudit(id: SessionId, data: unknown): Promise<AuditImportResult> {
+    return this.fetchJson<AuditImportResult>(
+      `/api/sessions/${id}/audit/import`,
+      this.postJson(data)
+    );
+  }
+
+  /**
+   * POST /api/sessions/{id}/audit/import/compressed — 导入 gzip 压缩审计链
+   * (UV-084 W1)。请求体 application/gzip 二进制(与 exportAuditCompressed
+   * 的导出互逆:导出的 .json.gz 可直接回灌);响应含 format:"gzip",
+   * 其余字段与 importAudit 一致。
+   */
+  async importAuditCompressed(
+    id: SessionId,
+    blob: Blob
+  ): Promise<AuditImportResult> {
+    return this.fetchJson<AuditImportResult>(
+      `/api/sessions/${id}/audit/import/compressed`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/gzip' },
+        body: blob
+      }
+    );
+  }
+
+  /**
+   * POST /api/sessions/from/{parent_id}?version= — 从父会话派生新会话
+   * (UV-084 W1)。记录跨会话因果(父会话 ID + 初始内容哈希);version 缺省 =
+   * 父最新版本。server 返回 { session_id, parent_session_id, ... },
+   * 取 session_id;404 父会话不存在 / 429 超最大会话数 / 400 版本无效
+   * 由 fetchJson 抛 HttpBackendError。
+   */
+  async createSessionFrom(
+    parentId: SessionId,
+    version?: number
+  ): Promise<SessionId> {
+    const q = version !== undefined ? `?version=${version}` : '';
+    const j = await this.fetchJson<Record<string, unknown>>(
+      `/api/sessions/from/${parentId}${q}`,
+      this.postJson()
+    );
+    if (j && typeof j.session_id === 'number') return j.session_id;
+    if (typeof j === 'number') return j; // 兜底
+    throw new HttpBackendError(
+      `createSessionFrom: unexpected response shape: ${JSON.stringify(j).slice(0, 200)}`,
+      200,
+      `/api/sessions/from/${parentId}`
+    );
+  }
+
+  /**
+   * POST /api/sessions/reap — 手动回收已结束/已过期会话(UV-084 W1)。
+   * 与后台 reaper 走同一 reap_once:生产会话保活 + 失忆自愈(UV-079),
+   * 不会误回收生产会话。返回 { finished, expired, total } 计数。
+   */
+  async reapSessions(): Promise<ReapResult> {
+    return this.fetchJson<ReapResult>('/api/sessions/reap', this.postJson());
+  }
+
+  /**
+   * POST /api/sessions/{id}/payload — 向指定会话注入 payload 字段
+   * (UV-084 W1,body: { path, value })。path 以 "shared." 开头时 server
+   * 同步写入共享事实日志(跨会话广播)。
+   * 错误纪律:403 受保护域(stable.llm/stable.system 需 service 身份)与
+   * 404 会话不存在抛 HttpBackendError(消息含 server 指引原文);
+   * HTTP 200 + success=false = 命令通道关闭(反应器已退出),如实返回,
+   * 由调用方检查 success 显式提示(不静默)。
+   */
+  async updatePayload(
+    id: SessionId,
+    path: string,
+    value: unknown
+  ): Promise<PayloadUpdateResult> {
+    return this.fetchJson<PayloadUpdateResult>(
+      `/api/sessions/${id}/payload`,
+      this.postJson({ path, value })
+    );
+  }
+
+  /**
+   * GET /api/shared/facts?prefix= — 共享事实查询(UV-084 W1,跨会话广播
+   * 事实,前缀过滤,缺省全部)。server 返回裸数组 [{ fact_id, path, value,
+   * source_session_id, version }]。
+   */
+  async getSharedFacts(prefix?: string): Promise<SharedFactEntry[]> {
+    const q = prefix ? `?prefix=${encodeURIComponent(prefix)}` : '';
+    const j = await this.fetchJson<SharedFactEntry[] | { facts: SharedFactEntry[] }>(
+      `/api/shared/facts${q}`
+    );
+    if (Array.isArray(j)) return j;
+    if (j && Array.isArray((j as { facts: SharedFactEntry[] }).facts)) {
+      return (j as { facts: SharedFactEntry[] }).facts;
+    }
+    return [];
+  }
+
+  /**
+   * GET /api/shared/facts/version — 共享事实日志版本与历史长度
+   * (UV-084 W1)。返回 { version, history_len }。
+   */
+  async getSharedFactsVersion(): Promise<SharedFactsVersionInfo> {
+    return this.fetchJson<SharedFactsVersionInfo>('/api/shared/facts/version');
   }
 }

@@ -119,6 +119,36 @@
   background: var(--danger, #dc2626); color: #fff;
 }
 .ttd-root .session-item .session-del-error { color: var(--danger, #dc2626); cursor: default; }
+/* UV-084 W1-A2:会话派生按钮 — 悬停显示,与删除按钮并排 */
+.ttd-root .session-item .session-derive {
+  display: none; position: absolute; top: 6px; right: 30px;
+  width: 20px; height: 20px; padding: 0; line-height: 1;
+  border: none; border-radius: 4px; cursor: pointer;
+  background: transparent; color: var(--text-dim); font-size: 13px;
+}
+.ttd-root .session-item:hover .session-derive { display: inline-block; }
+.ttd-root .session-item .session-derive:hover {
+  background: var(--accent, #2563eb); color: #fff;
+}
+/* UV-084 W1-A3:回收结果提示(3s 自动消失) */
+.ttd-root .session-item .session-reap-info,
+.ttd-root .session-item.session-reap-info {
+  color: var(--text-dim); cursor: default; font-size: 11px;
+}
+/* UV-084 W1-A3:侧栏头部(标题 + 回收按钮) */
+.ttd-root .sidebar .sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 8px;
+}
+.ttd-root .sidebar .sidebar-header h2 { padding: 0; }
+.ttd-root .sidebar .session-reap-btn {
+  font-size: 11px; padding: 2px 8px;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: transparent; color: var(--text-dim); cursor: pointer;
+}
+.ttd-root .sidebar .session-reap-btn:hover {
+  color: var(--accent, #2563eb); border-color: var(--accent, #2563eb);
+}
 
 .ttd-root .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .ttd-root .tabs {

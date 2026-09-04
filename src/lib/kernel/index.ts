@@ -36,6 +36,11 @@ export type {
   DebugPendingIoInfo,
   PendingIoCountInfo,
   CausalDepthInfo,
+  AuditImportResult,
+  ReapResult,
+  PayloadUpdateResult,
+  SharedFactEntry,
+  SharedFactsVersionInfo,
   ExecutionBackend
 } from './backend/types';
 

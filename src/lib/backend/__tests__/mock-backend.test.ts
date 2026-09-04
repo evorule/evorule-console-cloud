@@ -381,3 +381,70 @@ describe("UV-062 W2 MockBackend - 因果深度", () => {
 		await expect(backend.getCausalDepth(999)).rejects.toThrow(/不存在/);
 	});
 });
+
+describe("UV-084 W1 MockBackend - A 组 5 项", () => {
+        test("importAudit(1) demo 只读,返回导入成功形状", async () => {
+                const r = await backend.importAudit(1, { entries: [] });
+                expect(r).toEqual({
+                        session_id: 1,
+                        imported: true,
+                        verify_ok: true,
+                        status: "ok",
+                });
+        });
+
+        test("importAuditCompressed(1) 同 importAudit 语义", async () => {
+                const r = await backend.importAuditCompressed(1, new Blob([new Uint8Array([0x1f, 0x8b])]));
+                expect(r.imported).toBe(true);
+                expect(r.status).toBe("ok");
+        });
+
+        test("importAudit 不存在的 session 抛错(与 server 404 对齐)", async () => {
+                await expect(backend.importAudit(999, {})).rejects.toThrow(/不存在/);
+        });
+
+        test("createSessionFrom(1) 继承父数据集,id 从 6 开始", async () => {
+                const id = await backend.createSessionFrom(1);
+                expect(id).toBe(6);
+                // 继承医疗数据集:派生会话状态可查
+                const state = await backend.getSessionState(6);
+                expect(state.reactor.phase).toBe("stable");
+        });
+
+        test("createSessionFrom 不存在的父会话抛错", async () => {
+                await expect(backend.createSessionFrom(999)).rejects.toThrow(/不存在/);
+        });
+
+        test("reapSessions() demo 会话均活跃,如实返回 0 计数", async () => {
+                const r = await backend.reapSessions();
+                expect(r).toEqual({ finished: 0, expired: 0, total: 0 });
+        });
+
+        test("updatePayload(1) demo 只读,返回提交成功形状", async () => {
+                const r = await backend.updatePayload(1, "shared.tenant.quota", 42);
+                expect(r.success).toBe(true);
+                expect(r.fact_id).toBeNull();
+        });
+
+        test("updatePayload 不存在的 session 抛错", async () => {
+                await expect(backend.updatePayload(999, "p", 1)).rejects.toThrow(/不存在/);
+        });
+
+        test("getSharedFacts() 缺省返回全部演示数据", async () => {
+                const facts = await backend.getSharedFacts();
+                expect(facts.length).toBeGreaterThanOrEqual(3);
+                expect(facts[0].path).toContain("shared.");
+        });
+
+        test("getSharedFacts(prefix) 前缀过滤", async () => {
+                const facts = await backend.getSharedFacts("shared.platform.");
+                expect(facts).toHaveLength(2);
+                facts.forEach((f) => expect(f.path.startsWith("shared.platform.")).toBe(true));
+        });
+
+        test("getSharedFactsVersion() 返回版本与历史长度", async () => {
+                const info = await backend.getSharedFactsVersion();
+                expect(info.version).toBeGreaterThan(0);
+                expect(info.history_len).toBeGreaterThanOrEqual(3);
+        });
+});

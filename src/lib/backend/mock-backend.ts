@@ -38,6 +38,11 @@ import type {
 	DebugPendingIoInfo,
 	PendingIoCountInfo,
 	CausalDepthInfo,
+	AuditImportResult,
+	ReapResult,
+	PayloadUpdateResult,
+	SharedFactEntry,
+	SharedFactsVersionInfo,
 } from "$lib/kernel";
 import { get } from "svelte/store";
 import { demoDatasetStore, type DemoDataset } from "$lib/stores/demo-dataset";
@@ -104,6 +109,37 @@ export class MockBackend implements ExecutionBackend {
 	private nextSessionId: SessionId = 6; // 1-5 预填,6+ 动态创建
 	/** UV-062 W2:auto_verify 开关内存态(session → enabled;默认 false,对齐 server clap 默认) */
 	private autoVerifyBySession: Map<SessionId, boolean> = new Map();
+
+	/**
+	 * UV-084 W1:共享事实演示数据(跨会话广播形态示例:
+	 * 平台事件类 + 租户配额类,source_session_id 指向预填 session)。
+	 */
+	private static readonly SHARED_FACTS_DEMO: readonly SharedFactEntry[] = [
+		{
+			fact_id: 9101,
+			path: "shared.platform.last_login.username",
+			value: "demo-user",
+			source_session_id: 1,
+			version: 3,
+		},
+		{
+			fact_id: 9102,
+			path: "shared.platform.last_login.ts_ms",
+			value: 1759971200000,
+			source_session_id: 1,
+			version: 3,
+		},
+		{
+			fact_id: 9103,
+			path: "shared.tenant.quota.remaining",
+			value: 42,
+			source_session_id: 2,
+			version: 6,
+		},
+	];
+
+	/** 共享事实日志版本(mock;任意单调值,演示形状用) */
+	private static readonly SHARED_FACTS_VERSION = 9;
 
 	constructor() {
 		// 预填 5 个 session
@@ -229,6 +265,18 @@ export class MockBackend implements ExecutionBackend {
 			throw new Error(`MockBackend: session ${id} 不存在`);
 		}
 		return this.sessionStateForDataset(session.dataset);
+	}
+
+	/**
+	 * UV-084 W1:校验 session 存在,返回其元数据。
+	 * 不存在 → 抛错(与 server 404 对齐)。
+	 */
+	private requireSession(id: SessionId): MockSession {
+		const session = this.sessions.get(id);
+		if (!session) {
+			throw new Error(`MockBackend: session ${id} 不存在`);
+		}
+		return session;
 	}
 
 	// === ExecutionBackend 15 方法 ===
@@ -515,6 +563,95 @@ export class MockBackend implements ExecutionBackend {
 		return {
 			session_id: id,
 			causal_depth: this.requireState(id).reactor.causal_depth,
+		};
+	}
+
+	// === UV-084 W1:A 组 5 项(mock;对齐 server 端点形状,demo 只读语义) ===
+
+	/**
+	 * 导入审计链(mock)。demo 只读:不真正覆盖预填数据(保护演示场景),
+	 * 校验 session 存在后返回导入成功形状(status="ok")。
+	 */
+	async importAudit(id: SessionId, _data: unknown): Promise<AuditImportResult> {
+		this.requireSession(id);
+		return {
+			session_id: id,
+			imported: true,
+			verify_ok: true,
+			status: "ok",
+		};
+	}
+
+	/**
+	 * 导入 gzip 压缩审计链(mock)。同 importAudit 语义,demo 不解压不覆盖。
+	 */
+	async importAuditCompressed(
+		id: SessionId,
+		_blob: Blob,
+	): Promise<AuditImportResult> {
+		this.requireSession(id);
+		return {
+			session_id: id,
+			imported: true,
+			verify_ok: true,
+			status: "ok",
+		};
+	}
+
+	/**
+	 * 从父会话派生新会话(mock)。继承父 session 的数据集(与 forkSession 同
+	 * 语义),不校验 version(demo 预填数据无版本分支)。
+	 */
+	async createSessionFrom(
+		parentId: SessionId,
+		_version?: number,
+	): Promise<SessionId> {
+		const parent = this.requireSession(parentId);
+		const id = this.nextSessionId++;
+		this.sessions.set(id, {
+			id,
+			dataset: parent.dataset,
+			isCompliance: parent.isCompliance,
+			createdAt: new Date().toISOString(),
+		});
+		return id;
+	}
+
+	/**
+	 * 手动回收会话(mock)。demo 预填 session 均为活跃态(reap 语义只回收
+	 * 已结束/已过期),如实返回 0 计数,不静默假装回收。
+	 */
+	async reapSessions(): Promise<ReapResult> {
+		return { finished: 0, expired: 0, total: 0 };
+	}
+
+	/**
+	 * payload 注入(mock)。demo 只读:不修改预填 payload,返回提交成功形状。
+	 */
+	async updatePayload(
+		id: SessionId,
+		_path: string,
+		_value: unknown,
+	): Promise<PayloadUpdateResult> {
+		this.requireSession(id);
+		return {
+			success: true,
+			message: "PayloadUpdate submitted (mock)",
+			fact_id: null,
+		};
+	}
+
+	/** 共享事实查询(mock;前缀过滤,缺省全部) */
+	async getSharedFacts(prefix?: string): Promise<SharedFactEntry[]> {
+		const all = MockBackend.SHARED_FACTS_DEMO;
+		return prefix ? all.filter((f) => f.path.startsWith(prefix)) : [...all];
+	}
+
+	/** 共享事实日志版本(mock;与 SHARED_FACTS_DEMO 条数一致) */
+	async getSharedFactsVersion(): Promise<SharedFactsVersionInfo> {
+		return {
+			version: MockBackend.SHARED_FACTS_VERSION,
+			history_len: MockBackend.SHARED_FACTS_DEMO.length,
 		};
 	}
 

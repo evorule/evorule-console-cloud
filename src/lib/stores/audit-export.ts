@@ -16,7 +16,7 @@
 // 但 P07 也支持其他 5 种内容 + 4 种格式,由 export-engine.ts 统一调度。
 
 import { writable } from "svelte/store";
-import type { ExecutionBackend } from "$lib/kernel";
+import type { AuditImportResult, ExecutionBackend } from "$lib/kernel";
 
 // ============================================================================
 // 类型
@@ -45,16 +45,13 @@ export const auditExportStore = writable<AuditExportState>({
  * 导出审计链(JSON 或压缩 JSON)。
  *
  * @param sessionId  当前 session id
- * @param backend    ExecutionBackend
+ * @param backend    ExecutionBackend(UV-062 W2 起 exportAudit/exportAuditCompressed 为接口必选方法)
  * @param compressed 是否压缩(P06 §5.4,false=JSON,true=JSON.gz)
  * @param filename   自定义文件名(默认 audit-session-{id}.json)
  */
 export async function exportAudit(
   sessionId: number,
-  backend: ExecutionBackend & {
-    exportAudit?: (id: number) => Promise<unknown>;
-    exportAuditCompressed?: (id: number) => Promise<Blob>;
-  },
+  backend: ExecutionBackend,
   compressed = false,
   filename?: string,
 ): Promise<void> {
@@ -70,13 +67,11 @@ export async function exportAudit(
 
     if (compressed) {
       // 压缩格式:返回 Blob,直接下载
-      const blob = await (backend.exportAuditCompressed?.(sessionId) ??
-        Promise.reject(new Error("后端不支持 audit/export/compressed 端点")));
+      const blob = await backend.exportAuditCompressed(sessionId);
       downloadBlob(blob, finalName);
     } else {
       // JSON 格式:返回对象,序列化后下载
-      const data = await (backend.exportAudit?.(sessionId) ??
-        Promise.reject(new Error("后端不支持 audit/export 端点")));
+      const data = await backend.exportAudit(sessionId);
       const jsonStr = JSON.stringify(data, null, 2);
       const blob = new Blob([jsonStr], { type: "application/json" });
       downloadBlob(blob, finalName);
@@ -97,19 +92,19 @@ export async function exportAudit(
 }
 
 /**
- * 导入审计链(验证 BLAKE3 链完整性)。
+ * 导入审计链(server 导入后自动 verify,响应携带 verify_ok / status)。
+ *
+ * ⚠ 破坏性操作:server 端 import 会**完全覆盖**当前会话的审计链,
+ * 调用方(UI 层)必须先经用户二次确认再调用本函数。
  *
  * @param sessionId  当前 session id
- * @param backend    ExecutionBackend
+ * @param backend    ExecutionBackend(UV-084 W1 起 importAudit/importAuditCompressed 为接口必选方法)
  * @param data       导入的数据(JSON 对象或 Blob)
  * @param compressed 是否压缩
  */
 export async function importAudit(
   sessionId: number,
-  backend: ExecutionBackend & {
-    importAudit?: (id: number, data: unknown) => Promise<{ verified: boolean }>;
-    importAuditCompressed?: (id: number, blob: Blob) => Promise<{ verified: boolean }>;
-  },
+  backend: ExecutionBackend,
   data: unknown,
   compressed = false,
 ): Promise<void> {
@@ -120,24 +115,22 @@ export async function importAudit(
   });
 
   try {
-    let result: { verified: boolean };
+    let result: AuditImportResult;
 
     if (compressed) {
       if (!(data instanceof Blob)) {
         throw new Error("压缩导入需要 Blob 类型数据");
       }
-      result = await (backend.importAuditCompressed?.(sessionId, data) ??
-        Promise.reject(new Error("后端不支持 audit/import/compressed 端点")));
+      result = await backend.importAuditCompressed(sessionId, data);
     } else {
-      result = await (backend.importAudit?.(sessionId, data) ??
-        Promise.reject(new Error("后端不支持 audit/import 端点")));
+      result = await backend.importAudit(sessionId, data);
     }
 
     auditExportStore.set({
       status: "done",
-      message: result.verified
+      message: result.verify_ok
         ? "审计链导入验证成功(BLAKE3 链完整)"
-        : "审计链导入验证失败:链断裂或不完整",
+        : "审计链导入成功但验证失败:数据可能损坏(链断裂或不完整)",
       data: result,
     });
   } catch (e) {

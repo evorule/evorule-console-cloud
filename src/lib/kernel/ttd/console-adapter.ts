@@ -126,6 +126,19 @@ export function injectBackend(backend: ExecutionBackend): void {
     const id = await backend.forkSession(parentId, version);
     return { session_id: id };
   };
+
+  // === UV-084 W1:会话派生 / 会话回收(走 console backend,统一 Bearer/错误处理) ===
+
+  // ttd 期望 { session_id: number }; console createSessionFrom 返回 SessionId(number)
+  ttdApi.createSessionFrom = async (parentId: SessionId, version?: number) => {
+    const id = await backend.createSessionFrom(parentId, version);
+    return { session_id: id };
+  };
+
+  // ttd 期望 { finished, expired, total }(server ReapResponse,透传)
+  ttdApi.reap = async () => {
+    return backend.reapSessions();
+  };
 }
 
 /**

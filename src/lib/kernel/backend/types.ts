@@ -234,7 +234,58 @@ export interface CausalDepthInfo {
 }
 
 // ============================================================================
-// 2. ExecutionBackend 抽象接口(SPEC §1.2,28 方法)
+// 1.W2 UV-084 W1 数据契约(A 组 5 项:审计导入/会话派生/会话回收/payload 注入/共享事实)
+// ============================================================================
+
+/**
+ * 审计链导入结果(POST /audit/import(+compressed),对齐 server
+ * session_audit_import 响应)。status:"ok" = 导入且验证通过;
+ * "verify_failed" = 导入成功但 BLAKE3 链验证失败(数据可能损坏,如实呈现)。
+ */
+export interface AuditImportResult {
+  session_id: SessionId;
+  imported: boolean;
+  verify_ok: boolean;
+  status: 'ok' | 'verify_failed';
+}
+
+/** 会话回收结果(POST /api/sessions/reap,对齐 server ReapResponse) */
+export interface ReapResult {
+  /** 回收的已结束会话数 */
+  finished: number;
+  /** 回收的已过期会话数 */
+  expired: number;
+  total: number;
+}
+
+/**
+ * payload 注入结果(POST /api/sessions/{id}/payload,对齐 server ApiResponse)。
+ * success=false 且 HTTP 200 = 命令通道关闭(反应器已退出);
+ * 403(受保护域)/404 由实现层抛 HttpBackendError(错误消息含 server 指引)。
+ */
+export interface PayloadUpdateResult {
+  success: boolean;
+  message: string;
+  fact_id?: number | null;
+}
+
+/** 共享事实条目(GET /api/shared/facts,对齐 server shared_facts_by_prefix) */
+export interface SharedFactEntry {
+  fact_id: number;
+  path: string;
+  value: unknown;
+  source_session_id: number;
+  version: number;
+}
+
+/** 共享事实日志版本(GET /api/shared/facts/version,对齐 server SharedFactsVersionResponse) */
+export interface SharedFactsVersionInfo {
+  version: number;
+  history_len: number;
+}
+
+// ============================================================================
+// 2. ExecutionBackend 抽象接口(SPEC §1.2,35 方法)
 // ============================================================================
 
 /**
@@ -244,7 +295,7 @@ export interface CausalDepthInfo {
  * - 大众版: HttpBackend (调 evorule-server HTTP)
  * - 高级版: EmbeddedBackend (Tauri + Rust 直接 link evorule crate,不联网)
  *
- * 28 方法分组:
+ * 35 方法分组:
  *   - 会话管理(5):health / createSession / listSessions / closeSession / getSessionState
  *   - 命令执行(1):submitCommand
  *   - 历史 / 回放(3):getHistory / getReplay / getFacts
@@ -257,6 +308,9 @@ export interface CausalDepthInfo {
  *   - 调试只读(6,UV-062 W2):getStep / getSessionSnapshot / getDebugPhase /
  *     getDebugQueue / getDebugPendingIo / getPendingIoCount
  *   - 因果深度(1,UV-062 W2):getCausalDepth
+ *   - A 组 5 项(7,UV-084 W1):importAudit / importAuditCompressed /
+ *     createSessionFrom / reapSessions / updatePayload / getSharedFacts /
+ *     getSharedFactsVersion
  */
 export interface ExecutionBackend {
   // === 会话管理 ===
@@ -352,4 +406,43 @@ export interface ExecutionBackend {
   // === 因果深度(UV-062 W2) ===
   /** GET /api/sessions/{id}/causal_depth — 因果链深度 */
   getCausalDepth(id: SessionId): Promise<CausalDepthInfo>;
+
+  // === UV-084 W1:A 组 5 项(审计导入/会话派生/会话回收/payload 注入/共享事实) ===
+  /**
+   * POST /api/sessions/{id}/audit/import — 导入外部审计链 JSON(破坏性:
+   * 完全覆盖当前会话审计链,调用方须二次确认)。导入后 server 自动 verify,
+   * verify_ok=false 时如实返回 status="verify_failed"(不静默)。
+   */
+  importAudit(id: SessionId, data: unknown): Promise<AuditImportResult>;
+  /**
+   * POST /api/sessions/{id}/audit/import/compressed — 导入 gzip 压缩审计链
+   * (请求体 application/gzip 二进制,与 exportAuditCompressed 的导出互逆)。
+   */
+  importAuditCompressed(id: SessionId, blob: Blob): Promise<AuditImportResult>;
+  /**
+   * POST /api/sessions/from/{parent_id}?version= — 从父会话派生新会话
+   * (记录跨会话因果:父会话 ID + 初始内容哈希;version 缺省 = 父最新版本)。
+   * 返回新会话 ID。
+   */
+  createSessionFrom(parentId: SessionId, version?: number): Promise<SessionId>;
+  /**
+   * POST /api/sessions/reap — 手动回收已结束/已过期会话(与后台 reaper
+   * 同一 reap_once,生产会话保活不受影响,UV-079)。返回回收计数。
+   */
+  reapSessions(): Promise<ReapResult>;
+  /**
+   * POST /api/sessions/{id}/payload — 向指定会话注入 payload 字段
+   * (body: { path, value })。path 以 "shared." 开头时 server 同步写入
+   * 共享事实日志(跨会话广播)。受保护域(stable.llm/stable.system)
+   * 需 service 身份 → 403;调用方须检查 success(命令通道关闭时为 false)。
+   */
+  updatePayload(
+    id: SessionId,
+    path: string,
+    value: unknown
+  ): Promise<PayloadUpdateResult>;
+  /** GET /api/shared/facts?prefix= — 共享事实查询(跨会话广播事实,前缀过滤,缺省全部) */
+  getSharedFacts(prefix?: string): Promise<SharedFactEntry[]>;
+  /** GET /api/shared/facts/version — 共享事实日志版本与历史长度 */
+  getSharedFactsVersion(): Promise<SharedFactsVersionInfo>;
 }
