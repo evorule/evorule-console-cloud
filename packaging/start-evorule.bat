@@ -10,7 +10,10 @@ echo [1/3] Starting governance service (evorule-rule-serve, port 18081)...
 if not exist data\logs mkdir data\logs
 start "evorule-rule" /min cmd /c "evorule-rule-serve.exe --db .\data\rule.db --port 18081 --secret evorule-demo-secret-2026 --admin-user admin --admin-password evorule-demo --allowed-origins http://localhost:18080,http://127.0.0.1:18080 >> data\logs\evorule-rule.log 2>&1"
 echo [2/3] Starting main service (evorule-server, port 18080)...
-start "evorule-server" /min evorule-server.exe --addr 127.0.0.1:18080 --web-dir web --rules-dir rules --service-registry service_registry.json --plugins plugin_manifest.json --wal-dir .\data\wal --wal-fsync --log-file data\logs\evorule-server.log
+rem UV-056: stderr collected to data\logs\evorule-server-stderr.log so that
+rem startup failures (e.g. port already in use) leave a user-visible trace.
+rem Normal app logs go to data\logs\evorule-server.log via --log-file.
+start "evorule-server" /min cmd /c "evorule-server.exe --addr 127.0.0.1:18080 --web-dir web --rules-dir rules --service-registry service_registry.json --plugins plugin_manifest.json --wal-dir .\data\wal --wal-fsync --log-file data\logs\evorule-server.log 2>>data\logs\evorule-server-stderr.log"
 timeout /t 2 /nobreak >nul
 echo [3/3] Opening browser...
 start "" "http://localhost:18080"

@@ -27,14 +27,19 @@ export const SessionList = {
 
       const currentId = store.getState().currentSessionId;
       sessions.forEach(s => {
-        const isActive = currentId === s.id;
-        const ver = s.version !== undefined ? `v${s.version}` : '';
-        const phase = s.phase || '';
+        // UV-055:/api/sessions 响应为纯 id 数组(u64),非对象 —— 直接按 id 渲染;
+        // 归一化兼容对象形态(带 version/phase 的富元数据)以备未来扩展
+        const isObj = typeof s === 'object' && s !== null;
+        const sid = isObj ? s.id : s;
+        const meta = isObj ? s : {};
+        const isActive = currentId === sid;
+        const ver = meta.version !== undefined ? `v${meta.version}` : '';
+        const phase = meta.phase || '';
         const li = h('li', {
           class: `session-item${isActive ? ' active' : ''}`,
-          onclick: () => this.select(s.id)
+          onclick: () => this.select(sid)
         }, [
-          h('div', { class: 'id' }, `#${s.id}`),
+          h('div', { class: 'id' }, `#${sid}`),
           h('div', { class: 'meta' }, `${ver} ${esc(phase)}`.trim())
         ]);
         listEl.appendChild(li);
