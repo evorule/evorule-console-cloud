@@ -27,6 +27,7 @@
 		refreshSessions,
 		createSession,
 		selectSession,
+		closeSession,
 		submitCommand
 	} from '$lib/kernel/stores/session';
 	import { selectedRule } from '$lib/kernel/stores/rules';
@@ -151,6 +152,22 @@
 		isComparing = false;
 	}
 
+	// UV-078 W1-A2:会话删除(执行台主路径)。A2 初版只改了 ttd session-list.js
+	// (时间旅行页的列表),漏了执行台这份内联列表 —— 浏览器实测 FAIL 后补齐。
+	// 交互对齐 ttd 版:悬停显示 × 、二次 confirm 同文案、失败走 lastError 显式呈现。
+	async function handleDeleteSession(id: number) {
+		if (!backend) return;
+		if (!confirm(`确认删除会话 #${id}?其审计链与 WAL 将一并移除,不可恢复。`)) return;
+		const wasCurrent = $currentSessionId === id;
+		await closeSession(backend, id); // store 层处理列表移除 + 当前会话自动切换/清空
+		if (wasCurrent) {
+			// 会话上下文已变,清空本地对比状态
+			lastResult = null;
+			repeatResult = null;
+			isComparing = false;
+		}
+	}
+
 	function formatTime(ts: number): string {
 		return new Date(ts).toLocaleTimeString('zh-CN');
 	}
@@ -191,13 +208,21 @@
 				{:else}
 					<ul class="session-list">
 						{#each $sessions as id (id)}
-							<li>
+							<li class="session-row">
 								<button
 									class="session-item"
 									class:selected={$currentSessionId === id}
 									onclick={() => handleSelectSession(id)}
 								>
 									#{id}
+								</button>
+								<button
+									class="session-del"
+									title="删除此会话"
+									aria-label="删除会话 {id}"
+									onclick={() => handleDeleteSession(id)}
+								>
+									×
 								</button>
 							</li>
 						{/each}
@@ -420,6 +445,41 @@
 
 	.session-list li {
 		margin-bottom: 2px;
+	}
+
+	/* UV-078 W1-A2:会话行 = 选择按钮 + 删除按钮(悬停显示) */
+	.session-row {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+	}
+	.session-row .session-item {
+		flex: 1;
+		min-width: 0;
+		width: auto; /* 覆盖下方 .session-item 的 width:100%(行内与删除按钮共存) */
+	}
+	.session-del {
+		display: none;
+		flex-shrink: 0;
+		width: 20px;
+		height: 20px;
+		line-height: 1;
+		padding: 0;
+		border: none;
+		border-radius: var(--radius-sm);
+		background: transparent;
+		color: var(--text-secondary);
+		font-size: 14px;
+		cursor: pointer;
+	}
+	.session-row:hover .session-del {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.session-del:hover {
+		background: var(--danger-bg, #fee2e2);
+		color: var(--danger, #dc2626);
 	}
 
 	.session-item {

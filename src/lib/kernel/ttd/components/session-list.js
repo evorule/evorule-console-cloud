@@ -40,7 +40,17 @@ export const SessionList = {
           onclick: () => this.select(sid)
         }, [
           h('div', { class: 'id' }, `#${sid}`),
-          h('div', { class: 'meta' }, `${ver} ${esc(phase)}`.trim())
+          h('div', { class: 'meta' }, `${ver} ${esc(phase)}`.trim()),
+          // UV-078 W1-A2:会话删除按钮(悬停显示,阻止冒泡避免触发选中)
+          h('button', {
+            class: 'session-del',
+            title: '删除此会话',
+            'aria-label': `删除会话 ${sid}`,
+            onclick: (e) => {
+              e.stopPropagation();
+              this.remove(sid);
+            }
+          }, '×')
         ]);
         listEl.appendChild(li);
       });
@@ -57,5 +67,31 @@ export const SessionList = {
     store.dispatch({ currentSessionId: id, selectedVersion: 0 });
     eventbus.emit(EVENTS.SESSION_SELECT, id);
     this.refresh();
+  },
+
+  /**
+   * 删除会话(UV-078 W1-A2)。
+   * 二次确认 → DELETE /api/sessions/{id} → 刷新列表;
+   * 若删除的是当前选中会话,清空选中态并广播 SESSION_DELETED(null) 通知视图退出会话上下文。
+   * 删除失败如实呈现(err item),不静默。
+   */
+  async remove(id) {
+    if (!window.confirm(`确认删除会话 #${id}?其审计链与 WAL 将一并移除,不可恢复。`)) return;
+    try {
+      await api.closeSession(id);
+      const state = store.getState();
+      if (state.currentSessionId === id) {
+        store.dispatch({ currentSessionId: null, selectedVersion: 0 });
+        eventbus.emit(EVENTS.SESSION_DELETED, null);
+      }
+      await this.refresh();
+    } catch (e) {
+      const listEl = document.getElementById('sessionList');
+      if (listEl) {
+        listEl.appendChild(
+          h('li', { class: 'session-item session-del-error' }, `删除 #${id} 失败: ${esc(e.message)}`)
+        );
+      }
+    }
   }
 };

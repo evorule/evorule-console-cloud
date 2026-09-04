@@ -68,7 +68,7 @@ export const WhatIfView = {
       commands = JSON.parse(commandsJson);
       if (!Array.isArray(commands)) commands = [commands];
     } catch (e) {
-      store.setView('whatif', { status: 'error', error: `JSON 解析失败: ${e.message}` });
+      store.setView('whatif', { status: 'error', error: `JSON 解析失败: 指令须为合法 JSON 对象,如 {"type": "set", "path": "x", "value": 1}(浏览器原始报错:${e.message})` });
       this.render();
       return;
     }

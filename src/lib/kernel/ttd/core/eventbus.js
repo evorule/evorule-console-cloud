@@ -26,6 +26,7 @@ export const EVENTS = {
   FACT_SELECT: 'fact:select',
   VERSION_SELECT: 'version:select',
   SESSION_SELECT: 'session:select',
+  SESSION_DELETED: 'session:deleted', // UV-078 W1-A2:会话删除(当前会话被删时 id=null)
   API_URL_CHANGE: 'api:url-change',
   STATE_UPDATE: 'state:update'
 };

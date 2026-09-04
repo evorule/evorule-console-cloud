@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import type { TranslateStatus } from "$lib/stores/business-event";
+  import { translateJsonParseError } from "$lib/utils/json-error";
 
   interface Props {
     instruction: object | null;
@@ -62,7 +63,7 @@
         parseError = null;
       }
     } catch (err) {
-      parseError = err instanceof Error ? err.message : "JSON 解析失败";
+      parseError = translateJsonParseError(err);
     }
   }
 

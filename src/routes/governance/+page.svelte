@@ -275,6 +275,17 @@
       toastError('独立发布需二次确认:请勾选确认框', '发布审批');
       return;
     }
+    // UV-078 W1-A6:生效基准前置显式化——版本选择缺省为 auto_by_effective_date,
+    // 缺 law_ref.effective_from 的发布必被 server UV-051 前置校验 400 拦截;
+    // 与其事后撞墙,不如事前拦截并一步引导到法规锚编辑器补齐(不替代 server 权威闸门)
+    if (!selected?.law_ref?.effective_from) {
+      toastError(
+        '缺生效基准(law_ref.effective_from):发布与部署必需 — 已打开法规锚编辑,补齐生效日后再发布',
+        '发布前置校验'
+      );
+      openLawEdit();
+      return;
+    }
     try {
       await publish(publishReason.trim() || undefined);
       toastSuccess('已发布(Published)', '治理');
@@ -1505,6 +1516,13 @@
             <button class="btn btn-sm btn-danger" onclick={() => handleTransition('rejected')}>驳回(Rejected)</button>
           {:else if selectedStatus === 'Active'}
             <div class="publish-box">
+              {#if !selected.law_ref?.effective_from}
+                <!-- UV-078 W1-A6:把缺基准警示放在发布动作发生处,而非只留在法规锚区块 -->
+                <p class="law-missing">
+                  ⚠ 缺生效基准(law_ref.effective_from)— 发布将被前置校验拦截,
+                  <button class="link-btn" onclick={openLawEdit}>立即设置</button>
+                </p>
+              {/if}
               <label class="check">
                 <input type="checkbox" bind:checked={publishConfirm} />
                 <span>我确认已完成独立发布审批(发布后对外可见可拉取)</span>
@@ -1687,11 +1705,11 @@
                 </label>
                 <label>
                   effective_from(生效日,ISO YYYY-MM-DD)
-                  <input type="text" bind:value={lawForm.effective_from} placeholder="如 2026-01-01" />
+                  <input type="date" bind:value={lawForm.effective_from} />
                 </label>
                 <label>
                   effective_to(失效日,可空 = 长期生效)
-                  <input type="text" bind:value={lawForm.effective_to} placeholder="如 2027-01-01" />
+                  <input type="date" bind:value={lawForm.effective_to} />
                 </label>
               </div>
               <div class="btn-row">
@@ -2584,6 +2602,26 @@
     gap: var(--spacing-sm);
     width: 100%;
     max-width: 460px;
+  }
+  .law-missing {
+    margin: 0;
+    padding: 6px 10px;
+    border-radius: var(--radius-md, 6px);
+    background: var(--warn-bg, #fff3e0);
+    border: 1px solid var(--warn, #b26a00);
+    color: var(--warn, #b26a00);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
   }
   .check {
     display: flex;

@@ -106,6 +106,19 @@
 }
 .ttd-root .session-item .id { font-weight: 600; color: var(--accent); font-size: 13px; }
 .ttd-root .session-item .meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+/* UV-078 W1-A2:会话删除按钮 — 悬停显示 */
+.ttd-root .session-item { position: relative; }
+.ttd-root .session-item .session-del {
+  display: none; position: absolute; top: 6px; right: 6px;
+  width: 20px; height: 20px; padding: 0; line-height: 1;
+  border: none; border-radius: 4px; cursor: pointer;
+  background: transparent; color: var(--text-dim); font-size: 14px;
+}
+.ttd-root .session-item:hover .session-del { display: inline-block; }
+.ttd-root .session-item .session-del:hover {
+  background: var(--danger, #dc2626); color: #fff;
+}
+.ttd-root .session-item .session-del-error { color: var(--danger, #dc2626); cursor: default; }
 
 .ttd-root .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .ttd-root .tabs {
