@@ -26,29 +26,48 @@
   };
 
   const phase = $derived(state ? phaseMap[state.phase] : phaseMap.idle);
+
+  // UV-079 ②: 会话失效(404)态——phase 指示器切警示样式,指标区换提示文案
+  const missing = $derived(state?.sessionMissing === true);
 </script>
 
 <div class="reactor-state-bar" aria-live="polite">
   <!-- 左侧:Phase -->
   <!-- UV-078 W1-A4:"未连接"→"待会话" — state 为 null 仅表示当前无选中会话可观测, -->
   <!-- 并非连接故障;tooltip 说明数据来源与预期态,消除新用户困惑 -->
-  <div class="phase-indicator"
-    style={`background: ${phase.bg}; border-color: ${phase.border}; color: ${phase.color};`}
-    title={state
-      ? `Reactor 运行态来自当前选中会话(实时轮询)。Phase:${phase.label}`
-      : '当前无选中会话 — 在执行台创建或选择一个会话后,这里会实时显示其 Reactor 运行态(6 phase/因果深度/待处理 IO)。这是预期空态,不代表连接故障。'}>
-    <span class="phase-icon">{phase.icon}</span>
-    <div class="phase-texts">
-      <span class="phase-label">Reactor</span>
-      <span class="phase-name">{state ? phase.label : "待会话"}</span>
+  {#if missing}
+    <!-- UV-079 ②: 幻影会话警示——轮询 404 已停止,提示刷新重新同步 -->
+    <div class="phase-indicator missing"
+      title="轮询的生产会话已不存在(可能被回收或切换)。服务端 reaper 会自动重建生产会话——刷新页面即可重新同步;若刷新后仍失效,请检查 evorule-server 日志中的 UV-079 报警。">
+      <span class="phase-icon">⚠</span>
+      <div class="phase-texts">
+        <span class="phase-label">Reactor</span>
+        <span class="phase-name">会话失效</span>
+      </div>
     </div>
-    {#if state?.phase === "executing"}
-      <span class="pulse-dot" style={`background: ${phase.color};`}></span>
-    {/if}
-  </div>
+  {:else}
+    <div class="phase-indicator"
+      style={`background: ${phase.bg}; border-color: ${phase.border}; color: ${phase.color};`}
+      title={state
+        ? `Reactor 运行态来自当前选中会话(实时轮询)。Phase:${phase.label}`
+        : '当前无选中会话 — 在执行台创建或选择一个会话后,这里会实时显示其 Reactor 运行态(6 phase/因果深度/待处理 IO)。这是预期空态,不代表连接故障。'}>
+      <span class="phase-icon">{phase.icon}</span>
+      <div class="phase-texts">
+        <span class="phase-label">Reactor</span>
+        <span class="phase-name">{state ? phase.label : "待会话"}</span>
+      </div>
+      {#if state?.phase === "executing"}
+        <span class="pulse-dot" style={`background: ${phase.color};`}></span>
+      {/if}
+    </div>
+  {/if}
 
   <!-- 右侧:指标 -->
-  {#if state}
+  {#if missing}
+    <div class="metrics muted">
+      <span class="metric-muted missing-hint">生产会话已不存在(轮询已停止)— 服务端会自动重建,请刷新页面重新同步生产状态</span>
+    </div>
+  {:else if state}
     <div class="metrics">
       <div class="metric">
         <span class="metric-label">因果深度</span>
@@ -178,6 +197,16 @@
   }
   .metric.done .metric-value {
     color: var(--text-secondary, #6b7280);
+  }
+  /* UV-079 ②: 会话失效警示样式(幻影引用报警面) */
+  .phase-indicator.missing {
+    background: #fffbeb;
+    border-color: #fcd34d;
+    color: #b45309;
+  }
+  .metric-muted.missing-hint {
+    color: #b45309;
+    font-weight: 600;
   }
   @keyframes flash {
     0%, 100% { opacity: 1; }
