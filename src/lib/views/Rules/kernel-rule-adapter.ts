@@ -85,7 +85,7 @@ function mapDomain(domain: string | undefined): string {
  * 业务动作 type(如 require_approval)不是内核元指令,
  * 映射为 io_request(调用外部审批/通知系统),prompt 携带业务语义。
  *
- * G3 合规:io_request 必须在 exists(__io_result__) 分支内(双路径 IO 模式)。
+ * G3 双路径模式(UV-074 修正:单数 __io_result__ → 复数 __io_results__.<io_type>,P1-03):
  *   - on_true:结果已存在 → 处理结果(此处为空,由后续规则处理)
  *   - on_false:结果不存在 → 发起 io_request
  * 故 io_request 动作会被包成一个内层 branch,而非裸 io_request step。
@@ -106,7 +106,7 @@ function actionToSteps(action: BusinessAction): KernelTransformStep[] {
     ];
   }
 
-  // io_request 或业务动作 → 包成 exists(__io_result__) 双路径 branch(G3 合规)
+  // io_request 或业务动作 → 包成 exists(__io_results__.<io_type>) 双路径 branch(G3 双路径模式)
   const ioParams: Record<string, unknown> = {
     io_type: "call_external",
     prompt: action.type ?? "执行业务动作",
@@ -123,7 +123,8 @@ function actionToSteps(action: BusinessAction): KernelTransformStep[] {
       params: {
         domain: {
           type: "exists",
-          path: "__exec__.payload.__io_result__",
+          // I/O 结果按 io_type 隔离写入复数 __io_results__(P1-03;与 ioParams.io_type 对应)
+          path: "__exec__.payload.__io_results__.call_external",
         },
         on_true: [], // 结果已存在 → 此规则不处理(由后续规则消费)
         on_false: [{ type: "io_request", params: ioParams }],
@@ -135,7 +136,7 @@ function actionToSteps(action: BusinessAction): KernelTransformStep[] {
 /**
  * 把业务视图条件转换为内核 branch 的 domain。
  *
- * 内核 domain 形状:{ type, path?, value?, domains? }
+ * 内核 domain 形状(_shared/v1.0.json 权威):{ type, path?, value?, inner? }(嵌套一律 inner,P0-03)
  */
 function conditionToDomain(
   cond: BusinessCondition,
@@ -154,16 +155,18 @@ function conditionToDomain(
 }
 
 /**
- * wrapAsKernelTransform:业务视图 → 内核 transform 数组(含 G6 兜底)。
+ * wrapAsKernelTransform:业务视图 → 内核 transform 数组(含兜底)。
  *
  * 转换规则:
- *   - 单条件 + 单动作 → 一个 branch(on_true 放动作)+ 末条 all([]) 兜底
- *   - branch 数组 → 逐分支转 branch step + 末条 all([]) 兜底
- *   - 无 condition 只有 action → 直接放 action step(s)+ 末条 all([]) 兜底
- *   - 空业务视图 → 仅 all([]) 兜底(最简合法规则)
+ *   - 单条件 + 单动作 → 一个 branch(on_true 放动作)+ 末条 all(inner:[]) 兜底
+ *   - branch 数组 → 逐分支转 branch step + 末条 all(inner:[]) 兜底
+ *   - 无 condition 只有 action → 直接放 action step(s)+ 末条 all(inner:[]) 兜底
+ *   - 空业务视图 → 仅 all(inner:[]) 兜底(最简合法规则)
  *
- * G3 合规:io_request 类动作会被 actionToSteps 包成 exists(__io_result__) 内层 branch,
- *          不会出现裸 io_request step。
+ * G3 双路径:io_request 类动作会被 actionToSteps 包成 exists(__io_results__.<io_type>) 内层 branch,
+ *           不会出现裸 io_request step。
+ * G6 兜底(UV-074 修正:domains → inner,P0-03):末条 all(inner:[]) 空域匹配所有未识别指令,
+ *           避免未匹配指令产生 Error fact。
  */
 export function wrapAsKernelTransform(
   business: BusinessRuleShape,
@@ -175,7 +178,7 @@ export function wrapAsKernelTransform(
     for (const br of business.branch) {
       const domain = br.condition
         ? conditionToDomain(br.condition)
-        : { type: "all", domains: [] };
+        : { type: "all", inner: [] };
       const onTrue = br.action ? actionToSteps(br.action) : [];
       transform.push({
         type: "branch",
@@ -205,10 +208,10 @@ export function wrapAsKernelTransform(
     });
   }
 
-  // G6 兜底:末条必须是 branch + all([])
+  // G6 兜底:末条 branch + all(inner:[])(空域匹配所有未识别指令)
   transform.push({
     type: "branch",
-    params: { domain: { type: "all", domains: [] }, on_true: [] },
+    params: { domain: { type: "all", inner: [] }, on_true: [] },
   });
 
   return { transform };
@@ -218,9 +221,9 @@ export function wrapAsKernelTransform(
  * unwrapKernelTransform:内核 transform 数组 → 业务视图(用于反向解析回表单)。
  *
  * 提取策略(简化):
- *   - 找第一个 branch(非兜底、非 __io_result__ 检查)→ condition + action
- *   - 兜底 branch(all([]))忽略
- *   - __io_result__ 包装 branch(由 actionToSteps 产生)→ 提取内层 io_request 作为 action
+ *   - 找第一个 branch(非兜底、非 __io_results__ 检查)→ condition + action
+ *   - 兜底 branch(all(inner:[]))忽略
+ *   - __io_results__ 包装 branch(由 actionToSteps 产生)→ 提取内层 io_request 作为 action
  *   - 非 branch step 作为独立 action
  *
  * 未识别的复杂结构保留在 rawTransform 中,供开发者模式查看。
@@ -238,7 +241,7 @@ export function unwrapKernelTransform(
   const transform = kernel.transform;
   result.rawTransform = transform;
 
-  // 找第一个非兜底 branch(且非 __io_result__ 检查 branch)
+  // 找第一个非兜底 branch(且非 __io_results__ 检查 branch)
   const firstBranch = transform.find(
     (step) =>
       step.type === "branch" && !isFallbackBranch(step) && !isIoResultCheckBranch(step),
@@ -268,23 +271,23 @@ export function unwrapKernelTransform(
   return result;
 }
 
-/** 判断是否为 G6 兜底 branch(all([])) */
+/** 判断是否为兜底 branch(all(inner:[]) 空域;UV-074 修正:domains → inner,P0-03) */
 function isFallbackBranch(step: KernelTransformStep): boolean {
   if (step.type !== "branch") return false;
   const domain = step.params.domain as Record<string, unknown> | undefined;
   return (
     domain?.type === "all" &&
-    (!domain.domains || (domain.domains as unknown[]).length === 0)
+    (!domain.inner || (domain.inner as unknown[]).length === 0)
   );
 }
 
-/** 判断是否为 G3 __io_result__ 检查 branch(由 actionToSteps 产生) */
+/** 判断是否为 G3 __io_results__ 检查 branch(由 actionToSteps 产生;P1-03 复数口径) */
 function isIoResultCheckBranch(step: KernelTransformStep): boolean {
   if (step.type !== "branch") return false;
   const domain = step.params.domain as Record<string, unknown> | undefined;
   return (
     domain?.type === "exists" &&
-    domain?.path === "__exec__.payload.__io_result__"
+    domain?.path === "__exec__.payload.__io_results__.call_external"
   );
 }
 

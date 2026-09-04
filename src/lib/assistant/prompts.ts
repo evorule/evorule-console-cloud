@@ -13,56 +13,77 @@
  *
  * 这份说明让 LLM 知道规则 schema,产出的草案更可能通过 RuleValidator。
  * 注意:这只是引导,不替代 RuleValidator 的硬性校验。
+ *
+ * 对齐源(UV-074 / UV-058 W2.5,2026-09-04 重写):evorule-server
+ * core/rule_schema/schemas/_shared/v1.0.json(固化版,$defs SSOT)——
+ * 6 元指令 params 形状、7 域类型、inner 嵌套、复数 __io_results__.<io_type>。
  */
 export const EVORULE_RULE_SPEC = `evorule 规则格式(JSON):
 
 顶层结构: { "transform": [规则1, 规则2, ..., 兜底规则] }
 
 每条规则是一个对象,字段:
-  - type: 元指令,取值 "set" | "push" | "branch" | "io_request"
+  - type: 元指令,取值 "set" | "push" | "branch" | "io_request" | "collect" | "merge"
   - params: 参数对象,因 type 而异
-  - comment?: 可选注释字符串
 
 各 type 的 params:
-  - set:    { path: "__exec__.payload.<字段>", value: <值> }
-            (路径必须以 __exec__.payload. 或 __exec__.instruction. 开头)
-  - push:   { path: "__exec__.queue", value: <指令对象> }
+  - set:    { attr: "<payload 路径>", operation: "set" | "add" | "sub", value: <字面量或 __ 路径引用> }
+            (attr 三字段全必填;可为相对路径 "data.status" 或全路径 "__exec__.payload.data.status")
+  - push:   { instructions: [<指令对象数组>] 或 "__ 路径引用" }
+            (指令对象:{ type: <指令层类型>, params: {...} })
   - branch: { domain: <域>, on_true: [子规则数组], on_false: [子规则数组] }
-  - io_request: { request: <IO请求对象>, on_result: [子规则数组] }
-                (io_request 必须放在 type='branch' 且 domain 检查 __io_result__ 的子规则中)
+  - io_request: { io_type: "<IO 类型>", ...其他参数 }
+            (如 "call_external";I/O 结果按 io_type 隔离写入 __exec__.payload.__io_results__.<io_type>)
+  - collect: { from: "<源数组路径>", each: <指令模板> }
+  - merge:  { messages: "<消息历史路径>", tool_result 或 tool_results: "<工具结果路径>", next_instruction: <指令模板> }
 
-域(domain)类型:
-  - eq:        { type: "eq", path: "__exec__.instruction.<字段>", value: <值> }
-  - lt:        { type: "lt", path: "__exec__.instruction.<字段>", value: <值> }
-  - exists:    { type: "exists", path: "<__前缀路径>" }
-  - instruction: { type: "instruction" }  (匹配任何指令)
-  - all:       { type: "all", domains: [<域数组>] }    (全部满足)
-  - not:       { type: "not", domain: <域> }            (取反)
+域(domain)形态: { type: ..., ... } 对象,或 "__ 路径引用" 字符串(动态域)
+  - eq:       { type: "eq", path: "<路径>", value: <值> }
+  - lt:       { type: "lt", path: "<路径>", value: <值> }
+  - exists:   { type: "exists", path: "<路径>" }
+  - instruction: { type: "instruction", instruction_type: "<业务指令类型>" }
+  - has_fields:  { type: "has_fields", path: "<路径>", fields: ["<字段名>", ...] }
+  - all:      { type: "all", inner: [<域数组>] }    (全部满足;嵌套一律用 inner)
+  - not:      { type: "not", inner: [<域>] }        (取反;嵌套一律用 inner)
+
+路径规则:
+  - __ 前缀字符串必须是合法路径(如 __exec__.payload.<字段> / __exec__.instruction.<字段>)
+  - 相对路径直接写(如 data.sensor.temperature);数组索引用 [0]
+  - I/O 结果是复数 __io_results__.<io_type>(禁止单数 __io_result__)
 
 硬约束(违反将无法通过校验):
   G1: 必须是合法 JSON
-  G2: type 必须是 set/push/branch/io_request 之一
-  G3: io_request 必须在 exists(__io_result__) 的 branch.on_true 内
-  G4: domain.type 必须是 eq/lt/exists/instruction/all/not 之一
-  G5: __ 前缀路径必须以 __exec__.payload. / __exec__.instruction. / __exec__.queue 开头,
-      或字面量 __io_result__
-  G6: transform 数组最后一条必须是 branch + all([]) 兜底规则
+  G2: type 必须是 6 种元指令之一;params 必填字段齐全
+      (set: attr/operation/value;branch: domain/on_true;io_request: io_type;collect: from/each;merge: messages/next_instruction+tool_result[s];push: instructions)
+  G3: 建议 io_request 包在 exists(__exec__.payload.__io_results__.<io_type>) 双路径分支内
+      (已有结果走读取分支,无结果才发起请求)
+  G4: domain.type 必须是 7 种之一;域嵌套一律用 inner(禁止 domains/domain 字段)
+  G5: __ 前缀字符串必须是合法路径;单数 __io_result__ 会被拒绝
+  G6: 建议 transform 末条为 branch + all(inner:[]) 兜底规则(否则未匹配指令产生 Error fact)
   G7: 递归深度 ≤ 64 层
 
-兜底规则示例(必须放在 transform 最后一条):
-  { "type": "branch", "params": { "domain": { "type": "all", "domains": [] },
-    "on_true": [{ "type": "set", "params": { "path": "__exec__.payload.result", "value": "未匹配" } }],
+兜底规则示例(建议放 transform 最后一条):
+  { "type": "branch", "params": { "domain": { "type": "all", "inner": [] },
+    "on_true": [{ "type": "set", "params": { "attr": "data.result", "operation": "set", "value": "未匹配" } }],
     "on_false": [] } }
 
-完整示例(匹配指令 type=register,给 user 字段赋值):
+完整示例(匹配业务指令 equipment_inspection_check,温度 ≥ 80 升级告警):
   {
     "transform": [
       {
         "type": "branch",
         "params": {
-          "domain": { "type": "eq", "path": "__exec__.instruction.type", "value": "register" },
+          "domain": { "type": "instruction", "instruction_type": "equipment_inspection_check" },
           "on_true": [
-            { "type": "set", "params": { "path": "__exec__.payload.status", "value": "ok" } }
+            { "type": "set", "params": { "attr": "data", "operation": "set", "value": "__exec__.instruction.params" } },
+            {
+              "type": "branch",
+              "params": {
+                "domain": { "type": "lt", "path": "__exec__.payload.data.sensor.temperature", "value": 80 },
+                "on_true": [{ "type": "set", "params": { "attr": "__exec__.payload.data.inspection.alarm_level", "operation": "set", "value": "normal" } }],
+                "on_false": [{ "type": "set", "params": { "attr": "__exec__.payload.data.inspection.alarm_level", "operation": "set", "value": "escalate" } }]
+              }
+            }
           ],
           "on_false": []
         }
@@ -70,8 +91,8 @@ export const EVORULE_RULE_SPEC = `evorule 规则格式(JSON):
       {
         "type": "branch",
         "params": {
-          "domain": { "type": "all", "domains": [] },
-          "on_true": [{ "type": "set", "params": { "path": "__exec__.payload.result", "value": "未知指令" } }],
+          "domain": { "type": "all", "inner": [] },
+          "on_true": [{ "type": "set", "params": { "attr": "__exec__.payload.data.result", "operation": "set", "value": "未知指令" } }],
           "on_false": []
         }
       }
