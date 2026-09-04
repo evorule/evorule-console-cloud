@@ -12,7 +12,10 @@
 // 关键技术:
 //   - 用 playwright page.route() mock LLM API(避免真实调用产生费用/网络依赖)
 //   - 用 localStorage 注入 LLM 配置(enabled + endpoint + key + model)
-//   - 不依赖 evorule-server(规则库 + LLM 流程都是前端逻辑)
+//   - LLM 三方法走审计桥(callChatApiAudited):需 evorule-server 在
+//     18080 运行 —— 侧车会话 + SSE + call_external 命令 + io_response
+//     (与 scripts/validate-audit-bridge.mjs 同链路);server 不可达时
+//     审计桥如实报错(无静默直连兜底)
 //
 // 依赖:已登录状态(beforeEach 通过 tests/helpers/login.ts 注入 session + auth + db-meta)
 //      LLM 状态由各 test 内部按需覆盖(disabled 或 enabled)
@@ -177,9 +180,8 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
-		// 切到开发者模式(.btn-ai "AI 辅助创建" 只在 RuleLibraryView(dev mode)渲染)
-		await page.locator('.dev-mode-toggle button[role="switch"]').click();
-		// 点击 "AI 辅助创建" 按钮(第一个 .btn-ai)
+		// UV-067 适配:开发者模式已是占位视图(内核 RuleLibraryView 随 v0.2.0 弃用),
+		// "🤖 AI 起草规则" 按钮在业务模式头部渲染(第一个 .btn-ai)
 		await page.locator('.btn-ai').first().click();
 
 		// Dialog 出现
@@ -190,7 +192,8 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		const descTextarea = page.locator('#draft-description');
 		await descTextarea.fill('注册时设置 status=ok');
 
-		// 点击 "生成草案"
+		// 点击 "生成草案"(LLM 调用走审计桥:server 创建侧车会话 + SSE,
+		// 浏览器本地执行 LLM(page.route mock),结果回写 io_response)
 		await page.locator('button:has-text("生成草案")').click();
 
 		// 等草案 JSON 出现(等待 #draft-json 有内容)
@@ -205,7 +208,7 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		// 校验应通过(显示 alert-success)
 		await expect(page.locator('.alert-success').first()).toBeVisible({ timeout: 5000 });
 
-		// 点击 "采用并加入规则库"
+		// 点击 "采用并加入规则库"(addRule → server workspace)
 		await page.locator('button:has-text("采用并加入规则库")').click();
 
 		// 应该看到"已采用"提示
@@ -222,19 +225,19 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
-		// 选中第一个规则(builtin set_basic 默认会选中,但确保选中状态)
-		// 点击 "解释规则" 按钮(应该是第二个 .btn-ai,但保险起见用文本匹配)
-		const explainBtn = page.locator('.btn-ai:has-text("解释规则")');
-		if ((await explainBtn.count()) > 0) {
-			await explainBtn.first().click();
-		} else {
-			// 部分场景需要先选中规则后才显示"解释规则"按钮
-			// 找到规则列表第一项点击
-			await page.locator('.rule-item, [class*="rule"]').first().click().catch(() => null);
-			await page.locator('.btn-ai:has-text("解释")').first().click();
-		}
+		// UV-067 适配:refreshRules 虽自动选中第一条规则,但 content 懒加载只在
+		// 点击卡片(selectRule)时触发 —— ExplainRuleDialog 需要 rule.content,
+		// 未加载会报"规则内容未加载,无法解释"。先点第一张规则卡片并等版本拉取完成。
+		const versionsLoaded = page.waitForResponse(
+			(r) => r.url().includes('/versions') && r.request().method() === 'GET'
+		);
+		await page.locator('.rule-card').first().click();
+		await versionsLoaded;
 
-		// Dialog 出现
+		// 点击规则详情面板的 "✨ LLM 解释" 按钮(业务模式,选中规则后渲染)
+		await page.locator('.btn-ai:has-text("LLM 解释")').first().click();
+
+		// Dialog 出现(挂载即自动触发解释,LLM 走审计桥 + mock)
 		await expect(page.locator('#explain-dialog-title')).toBeVisible({ timeout: 5000 });
 
 		// 等待说明文本出现(LLM 调用是异步)
@@ -249,60 +252,22 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		// 授予剪贴板权限
 		await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-		// mock evorule-server API(让 ExecutionPad 能渲染 input-section)
-		// 内核 ExecutionPad 的 AI 按钮 only 渲染于 currentSessionId !== null
-		await page.route('**/api/health', async (route) => {
-			await route.fulfill({ status: 200, body: 'ok' });
-		});
-		await page.route('**/api/sessions', async (route) => {
-			if (route.request().method() === 'GET') {
-				await route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({ sessions: [1] })
-				});
-			} else if (route.request().method() === 'POST') {
-				await route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({ id: 1 })
-				});
-			}
-		});
-		await page.route('**/api/sessions/1/state', async (route) => {
-			await route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					payload: {},
-					queue: [],
-					reactor: {
-						phase: 'idle',
-						causal_depth: 0,
-						current_step: 0,
-						pending_io_count: 0,
-						structural_invariant_violations: 0
-					},
-					version: 1
-				})
-			});
-		});
+		// UV-067 适配:不再 mock /api/sessions —— 旧 mock 的 POST 响应形状({id:1})
+		// 与审计桥协议不符(需 {session_id}),导致"create_session 失败(HTTP 200)"。
+		// 现改走真实 evorule-server:LLM 审计桥自建侧车会话(create_session → SSE →
+		// call_external → io_response),与 validate-audit-bridge.mjs 同链路;
+		// 唯一 mock 是 LLM 端点(beforeEach 的 page.route)。
 
-		await page.goto('/', { waitUntil: 'networkidle' });
+		// 直接进入执行台(内核 ExecutionPad 的 AI 按钮 only 渲染于 currentSessionId !== null)
+		await page.goto('/view/execution', { waitUntil: 'networkidle' });
 		await page.evaluate((cfg) => {
 			localStorage.setItem('evorule-console-cloud:llm-config', JSON.stringify(cfg));
 		}, LLM_CONFIG);
 		await page.reload({ waitUntil: 'networkidle' });
-		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
-
-		// 切到执行台
-		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
-			.first()
-			.click();
 		await expect(page.locator('h1')).toHaveText('执行台', { timeout: 5000 });
 
-		// 等 session 自动选中(refreshSessions 会拉 [1] 并自动选中)
+		// 点击 "+ 新建" 创建真实 session(refreshSessions 自动选中 → AI 按钮渲染)
+		await page.locator('button:has-text("+ 新建")').click();
 		// 等"提交命令"区域出现(说明 currentSessionId !== null 已被选中)
 		await expect(page.locator('h2:has-text("提交命令")')).toBeVisible({ timeout: 10_000 });
 
@@ -344,9 +309,8 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
-		// 切到开发者模式(.btn-ai "AI 辅助创建" 只在 RuleLibraryView(dev mode)渲染)
-		await page.locator('.dev-mode-toggle button[role="switch"]').click();
-		// 打开 DraftRuleDialog
+		// UV-067 适配:开发者模式已是占位视图(无 .btn-ai),
+		// 业务模式头部 "🤖 AI 起草规则" 打开 DraftRuleDialog
 		await page.locator('.btn-ai').first().click();
 		await expect(page.locator('#draft-dialog-title')).toBeVisible({ timeout: 5000 });
 

@@ -194,7 +194,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		for (const tab of VIEW_TABS) {
 			// 只点内核 5 视图(工作台 section 内)
 			const itemBtn = page
-				.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: tab })
+				.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: tab })
 				.first();
 			await itemBtn.click();
 			// 1) item 高亮
@@ -232,21 +232,22 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 
 	// ============ step 2 加规则:BusinessRuleLibrary ============
 
-	test('step 2/[已登录] 规则库视图 h1 = "规则库" + builtin 规则可见', async ({
+	test('step 2/[已登录] 规则库视图 h1 = "规则库" + 规则列表渲染 server 规则', async ({
 		page
 	}) => {
 		await loginAsAdmin(page);
 
 		// 切到规则库 item
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '规则库' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '规则库' })
 			.first()
 			.click();
 		await expect(page.locator('h1').first()).toHaveText('规则库');
-		// 内核 set_basic builtin 规则,BusinessRuleCard 渲染
-		await expect(
-			page.getByText('set_basic', { exact: false }).first()
-		).toBeVisible({ timeout: 5000 });
+		// UV-067 适配:v0.2.0 规则来自 evorule-server(不再前端内置),
+		// BusinessRuleCard 按 description 渲染(不显示规则名 set_basic),
+		// 断言列表渲染出规则卡片(app 自种的内置示例规则)
+		await expect(page.locator('.rule-list')).toBeVisible();
+		await expect(page.locator('.rule-card').first()).toBeVisible({ timeout: 5000 });
 	});
 
 	test('step 2/[已登录] 规则库有规则列表容器(.business-lib)', async ({
@@ -255,7 +256,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		await loginAsAdmin(page);
 
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '规则库' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '规则库' })
 			.first()
 			.click();
 		await expect(page.locator('.business-lib')).toBeVisible();
@@ -268,7 +269,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		await loginAsAdmin(page);
 
 		const item = page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '执行台' })
 			.first();
 		await expect(item).toBeVisible();
 		await item.click();
@@ -279,7 +280,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		await loginAsAdmin(page);
 
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '执行台' })
 			.first()
 			.click();
 		await expect(page.locator('h1').first()).toHaveText('执行台');
@@ -289,7 +290,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		await loginAsAdmin(page);
 
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '执行台' })
 			.first()
 			.click();
 		await expect(page.locator('h1').first()).toHaveText('执行台');

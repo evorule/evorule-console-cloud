@@ -25,7 +25,8 @@ const VIEW_TABS = ['规则库', '执行台', '状态', '审计', '时间旅行']
 const TAB_TO_MAIN_TEXT: Record<string, string> = {
 	'规则库': '规则库',
 	'执行台': '执行台',
-	'状态': '状态视图',
+	// UV-067:StateView 无选中 session 时显示空态文案(旧断言 "状态视图" 标题已不存在)
+	'状态': '无当前 session',
 	'审计': '业务审计', // BusinessAuditView 顶部工具栏含 "业务审计时间线"
 	'时间旅行': '时间旅行'
 };
@@ -40,23 +41,33 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		await expect(page.locator('.brand-cloud')).toHaveText('console-cloud');
 	});
 
-	test('侧栏导航包含 11 项(5 视图 + 导出 + 4 治理 + 设置),标签正确', async ({
+	test('侧栏导航包含 15 项(home 2 + 分析视图 5 + discover 2 + 治理协作 5 + 设置),标签正确', async ({
 		page
 	}) => {
-		// 已登录 + T4 导出 + T5a 协作后,侧栏总数 = 5 视图 + 1 导出 + 4 治理(发布队列/版本历史/审计记录/治理中心) + 1 设置 = 11
+		// UV-022 侧栏分组重构后(UV-067 适配):
+		// home 组(总览/监控) + 分析视图组(5 内核视图) + discover 组(市场/帮助)
+		// + 治理与协作组(导出/发布队列/版本历史/审计记录/治理中心;it 角色无 view_users/manage_roles → 用户/角色管理隐藏)
+		// + 设置 = 15 项
 		const items = page.locator('.sidebar-item .nav-label');
-		await expect(items).toHaveCount(11);
-		// 前 5 个是内核视图 item
+		await expect(items).toHaveCount(15);
+		// home 组 2 项
+		await expect(items.nth(0)).toHaveText('总览');
+		await expect(items.nth(1)).toHaveText('监控');
+		// 分析视图组 5 项(内核视图)
 		for (let i = 0; i < VIEW_TABS.length; i++) {
-			await expect(items.nth(i)).toHaveText(VIEW_TABS[i]);
+			await expect(items.nth(2 + i)).toHaveText(VIEW_TABS[i]);
 		}
-		// 6=导出 / 7=发布队列 / 8=版本历史 / 9=审计记录 / 10=治理中心 / 11=设置
-		await expect(items.nth(5)).toHaveText('导出');
-		await expect(items.nth(6)).toHaveText('发布队列');
-		await expect(items.nth(7)).toHaveText('版本历史');
-		await expect(items.nth(8)).toHaveText('审计记录');
-		await expect(items.nth(9)).toHaveText('治理中心');
-		await expect(items.nth(10)).toHaveText('设置');
+		// discover 组 2 项
+		await expect(items.nth(7)).toHaveText('市场');
+		await expect(items.nth(8)).toHaveText('帮助');
+		// 治理与协作组 5 项
+		await expect(items.nth(9)).toHaveText('导出');
+		await expect(items.nth(10)).toHaveText('发布队列');
+		await expect(items.nth(11)).toHaveText('版本历史');
+		await expect(items.nth(12)).toHaveText('审计记录');
+		await expect(items.nth(13)).toHaveText('治理中心');
+		// 设置
+		await expect(items.nth(14)).toHaveText('设置');
 	});
 
 	test('设置项在侧栏底部(独立 section,不属于内核 5 视图)', async ({ page }) => {
@@ -66,15 +77,13 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		await expect(settingsItem).toHaveClass(/sidebar-item/);
 	});
 
-	test('默认视图是 RealWorkbench(已登录 + 有库 → HomeRouter 状态 C)', async ({
-		page
-	}) => {
-		// 已登录 + db-meta + 内核有 builtin 规则 → isEmptyDb=false → HomeRouter 进 RealWorkbench
-		// RealWorkbench 顶部 L1 监控大屏 / L2 编辑台 切换
-		// 默认 L1(因为 production 状态初始为 no_published → resolveDefaultLayer 返回 L2 实际)
-		// 简化为:看到任一 L1/L2 切换按钮即可
-		const layerToggle = page.locator('.layer-toggle');
-		await expect(layerToggle).toBeVisible({ timeout: 5000 });
+	test('默认视图是建库向导(已登录 → HomeRouter 状态 B 稳态)', async ({ page }) => {
+		// UV-067 适配:RealWorkbench 已随 UV-021 W2 退役,状态 C 改为 goto /workbench。
+		// 首页加载时规则尚未拉取(rules=[] → isEmptyDb=true → 状态 B),
+		// OnboardingWizard 挂载即置 wizardInProgress=true —— 即使随后 server 规则加载
+		// 完成(isEmptyDb=false),HomeRouter 仍保持在状态 B(见 stores/home-mode.ts),
+		// 建库向导是已登录首页的稳态。向导标题为 h2(UV-021 W2 后首页无 h1)。
+		await expect(page.locator('h2:has-text("建库向导")')).toBeVisible({ timeout: 5000 });
 		// 任一 item 都不应 active(因为默认在 home view,不在 /view/* 路由)
 		const activeCount = await page.locator('.sidebar-item[aria-pressed="true"]').count();
 		expect(activeCount).toBe(0);
@@ -84,7 +93,7 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		test(`点击 "${tab}" item → 切换到对应视图`, async ({ page }) => {
 			// 排除治理区 item(导出/发布队列/版本历史/审计记录/治理中心),只点内核 5 视图
 			const itemBtn = page
-				.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: tab })
+				.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: tab })
 				.first();
 			await itemBtn.click();
 			await expect(itemBtn).toHaveAttribute('aria-pressed', 'true');
@@ -110,7 +119,7 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 	test('设置面板有"返回"按钮 → 点击回到原视图', async ({ page }) => {
 		// 先切到执行台视图(避开默认 RealWorkbench)
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '执行台' })
 			.first()
 			.click();
 		await expect(page.locator('main.content')).toContainText('执行台');
@@ -132,7 +141,7 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 
 		// 点击规则库 item(应触发关闭设置)
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '规则库' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '规则库' })
 			.first()
 			.click();
 		await expect(page.locator('main.content')).toContainText('规则库');
@@ -143,7 +152,7 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 	test('同一时刻只有一个视图 item active(不含设置)', async ({ page }) => {
 		for (const tab of VIEW_TABS) {
 			const itemBtn = page
-				.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: tab })
+				.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: tab })
 				.first();
 			await itemBtn.click();
 			// 等当前 item aria-pressed 变 true(等 reactive 更新)
@@ -156,14 +165,19 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		}
 	});
 
-	test('规则库视图离线可用 — 含 builtin 规则', async ({ page }) => {
+	test('规则库视图渲染 server 规则列表(v0.2.0 workspace 化)', async ({ page }) => {
+		// UV-067 适配:v0.2.0 规则库 workspace 化,规则来自 evorule-server(layout
+		// bootstrap:ensureDefaultWorkspace + seedBuiltinRules + refreshRules),
+		// 不再是前端 localStorage 的 builtin 规则。BusinessRuleCard 以 description
+		// 展示(不渲染规则名),此处断言 app 自种的内置示例规则卡片可见。
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '规则库' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '规则库' })
 			.first()
 			.click();
 		await expect(page.locator('main.content')).toContainText('规则库');
+		await expect(page.locator('.rule-list')).toBeVisible();
 		await expect(
-			page.getByText('set_basic', { exact: false }).first()
+			page.getByText('最简 set 示例', { exact: false }).first()
 		).toBeVisible({ timeout: 5000 });
 	});
 
@@ -180,17 +194,17 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 
 	test('视图选择持久化 — 切到执行台后刷新仍恢复', async ({ page }) => {
 		await page
-			.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' })
+			.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '执行台' })
 			.first()
 			.click();
 		await expect(
-			page.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' }).first()
+			page.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '执行台' }).first()
 		).toHaveAttribute('aria-pressed', 'true');
 		await page.reload();
 		// 等待 hydration
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 		await expect(
-			page.locator('.sidebar-section:has(.sidebar-label:has-text("工作台")) .sidebar-item', { hasText: '执行台' }).first()
+			page.locator('.sidebar-section:has(.sidebar-label:has-text("分析视图")) .sidebar-item', { hasText: '执行台' }).first()
 		).toHaveAttribute('aria-pressed', 'true', { timeout: 10_000 });
 	});
 
