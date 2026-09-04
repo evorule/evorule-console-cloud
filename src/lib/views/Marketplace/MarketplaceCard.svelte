@@ -20,7 +20,7 @@
     type MarketTemplate,
   } from "$lib/stores/import-export-types";
   import { FORMAT_LABELS } from "$lib/stores/format-converter";
-  import { toastSuccess, toastInfo } from "$lib/stores/toast";
+  import { toastSuccess, toastInfo, toastError } from "$lib/stores/toast";
 
   interface Props {
     template: MarketTemplate;
@@ -62,8 +62,13 @@
 
   async function handleDelete() {
     if (!confirm(`确认删除模板「${template.name}」?`)) return;
-    await deleteTemplate(template.id);
-    toastSuccess("模板已删除");
+    try {
+      await deleteTemplate(template.id);
+      toastSuccess("模板已删除");
+    } catch (e) {
+      // 内置/官方模板拒删、server 删除失败等,错误原文上屏
+      toastError(`删除失败:${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 </script>
 
