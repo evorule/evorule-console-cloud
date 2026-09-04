@@ -190,10 +190,17 @@ export class HttpBackend implements ExecutionBackend {
   // === 会话管理 ===
   // ------------------------------------------------------------------------
 
-  /** GET /api/health — 只检查 HTTP 状态,不解析 body(兼容纯文本响应) */
-  async health(): Promise<boolean> {
+  /**
+   * GET /api/health — 只检查 HTTP 状态,不解析 body(兼容纯文本响应)。
+   * signal 透传给 fetch(UV-085 ④):调用方 pagehide 主动中止,消灭浏览器
+   * 中止 in-flight 请求的 console 噪音;中止走 catch → false(探测语义)。
+   */
+  async health(signal?: AbortSignal): Promise<boolean> {
     try {
-      const r = await fetch(`${this.baseUrl}/api/health`, { headers: this.headers() });
+      const r = await fetch(`${this.baseUrl}/api/health`, {
+        headers: this.headers(),
+        signal,
+      });
       return r.ok;
     } catch {
       return false;
