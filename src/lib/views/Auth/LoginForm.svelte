@@ -21,7 +21,6 @@
   import { netConfig } from '$lib/config/net-config';
   import { fetchAuthStatus, bootstrapAdmin, PlatformAuthError } from '$lib/backend/platform-auth-api';
   import { toastSuccess, toastError } from '$lib/stores/toast';
-  import { logActivity } from '$lib/stores/activity-log';
   import { autoMode } from '$lib/stores/home-mode';
 
   // === 登录模式:platform(默认)/ demo ===
@@ -64,12 +63,6 @@
     platformBusy = false;
     if (result.success) {
       toastSuccess(`已登录为 ${username.trim()}`, '登录成功');
-      logActivity({
-        userId: username.trim(),
-        username: username.trim(),
-        action: 'login',
-        detail: '平台登录',
-      });
       autoMode();
       goto('/');
     } else {
@@ -87,12 +80,6 @@
         `管理员 ${bootUsername.trim()} 已创建,请使用该账号登录`,
         '平台初始化完成'
       );
-      logActivity({
-        userId: bootUsername.trim(),
-        username: bootUsername.trim(),
-        action: 'login',
-        detail: 'bootstrap 创建平台管理员',
-      });
       needsBootstrap = false;
       username = bootUsername.trim();
       password = '';
@@ -112,12 +99,6 @@
     if (result.success) {
       const user = BUILTIN_USERS.find((u) => u.username === name);
       toastSuccess(`已登录为 ${user?.displayName ?? name}`, '演示模式登录');
-      logActivity({
-        userId: user?.id ?? '',
-        username: user?.displayName ?? name,
-        action: 'login',
-        detail: `演示模式 · 角色:${ROLE_LABELS[user?.role as keyof typeof ROLE_LABELS] ?? name}`,
-      });
       autoMode();
       goto('/');
     } else {

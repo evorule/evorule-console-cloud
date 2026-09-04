@@ -18,7 +18,6 @@
   } from '$lib/stores/auth';
   import { forceDemo, autoMode } from '$lib/stores/home-mode';
   import { toastSuccess, toastError } from '$lib/stores/toast';
-  import { logActivity } from '$lib/stores/activity-log';
   import { netConfig } from '$lib/config/net-config';
   import { platformChangePassword, PlatformAuthError } from '$lib/backend/platform-auth-api';
 
@@ -39,14 +38,6 @@
   }
 
   function handleLogout(): void {
-    const u = $currentUser;
-    if (u) {
-      logActivity({
-        userId: u.id,
-        username: u.displayName,
-        action: 'logout',
-      });
-    }
     logout();
     open = false;
     toastSuccess('已登出', '再见');
@@ -87,12 +78,6 @@
         newPw
       );
       toastSuccess('密码已更新,下次登录请使用新密码', '修改成功');
-      logActivity({
-        userId: u.id,
-        username: u.displayName,
-        action: 'login',
-        detail: '修改平台密码',
-      });
       showChangePw = false;
       oldPw = newPw = confirmPw = '';
       // 改密不影响当前会话;强制刷新一次资料(节流旁路)

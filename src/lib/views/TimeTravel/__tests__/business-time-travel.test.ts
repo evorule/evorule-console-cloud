@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — 步骤11:回放审计 单测
 //
-// 运行: npx vitest run src/lib/views/Business/__tests__/business-time-travel.test.ts
+// 运行: npx vitest run src/lib/views/TimeTravel/__tests__/business-time-travel.test.ts
 //
 // 说明:
 //   BusinessTimeTravel.svelte / TermOverlay.svelte 无独立 helper 导出(纯 Svelte 组件),
