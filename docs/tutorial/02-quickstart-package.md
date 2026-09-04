@@ -33,7 +33,7 @@ evorule-rule-serve.exe   ← 规则资产治理服务（:18081）
 web\                     ← 前端页面
 rules\                   ← 运行规则集
 service_registry.json    ← 内置服务声明
-resources\               ← 引擎宪法（core_eval）
+resources\               ← 引擎宪法·server 业务规则集（server_eval.json；v0.1.0 旧包为 core_eval.json）
 README-STARTUP.txt       ← 完整使用说明（必读，含升级/换密钥）
 ```
 

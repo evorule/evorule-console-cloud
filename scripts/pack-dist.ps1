@@ -7,7 +7,7 @@
 #   evorule-rule-serve.exe   <- evorule-rule release 构建(治理 :18081,J 族双 exe)
 #   web/                     <- 本仓 adapter-static 产物(build/)
 #   rules/                   <- 本仓 assets/evorule-rules/(业务场景规则 scenario-*;桥接归引擎 core_eval,UV-054)
-#   resources/core_eval.json <- evorule-server 仓 TCB 宪法(server 默认路径 ./resources/)
+#   resources/server_eval.json <- evorule-server 仓 TCB 宪法·server 业务规则集(server 默认路径 ./resources/;UV-044 更名,旧名 core_eval.json)
 #   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,UV-033)
 #   start-evorule.bat       <- packaging/ 启动脚本(双服务,部分保活)
 #   README-STARTUP.txt      <- packaging/ 使用说明
@@ -20,7 +20,7 @@
 
 param(
     [string]$ServerExe = "D:\evorule-server\target\release\evorule-server.exe",
-    [string]$CoreEval = "D:\evorule-server\resources\core_eval.json",
+    [string]$CoreEval = "D:\evorule-server\resources\server_eval.json",
     [string]$RuleExe = "D:\evorule-rule\target\release\evorule-rule-serve.exe"
 )
 
@@ -55,7 +55,7 @@ Copy-Item "$root\packaging\README-STARTUP.txt" "$stage\README-STARTUP.txt"
 $expect = @{
     "$stage\evorule-server.exe"          = (Get-Item $ServerExe).Length
     "$stage\evorule-rule-serve.exe"      = (Get-Item $RuleExe).Length
-    "$stage\resources\core_eval.json"    = (Get-Item $CoreEval).Length
+    "$stage\resources\server_eval.json"  = (Get-Item $CoreEval).Length
     "$stage\rules\scenario-contract-payment-guard.json" = (Get-Item "$root\assets\evorule-rules\scenario-contract-payment-guard.json").Length
     "$stage\rules\scenario-expense-compliance.json"     = (Get-Item "$root\assets\evorule-rules\scenario-expense-compliance.json").Length
     "$stage\rules\scenario-equipment-inspection.json"   = (Get-Item "$root\assets\evorule-rules\scenario-equipment-inspection.json").Length

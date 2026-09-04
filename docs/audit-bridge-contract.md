@@ -1,7 +1,7 @@
 # 单发桥接协议契约说明（audit-bridge / demo-svc）
 
 > 性质：**契约说明文档**，非可装载规则集（2026-09-03，UV-054 处置）。
-> 背景：`call_external` / `call_service` **单发桥接协议已归引擎单一权威**（server 业务规则集 `resources/core_eval.json`，为系统规则，不容退让）。此前 console-cloud 自持的同名 transform（`assets/evorule-rules/llm-audit-bridge.json`、`demo-svc.json`）与引擎桥接重复注册，导致双规则顺序执行、LLM 调用循环 / 服务自治循环（UV-054）。本文件仅记录协议语义与消费范式，供接入方与教学参考，**不进入 --rules-dir 装载路径**。
+> 背景：`call_external` / `call_service` **单发桥接协议已归引擎单一权威**（server 业务规则集 `resources/server_eval.json`（v0.4.1 前旧名 `core_eval.json`），为系统规则，不容退让）。此前 console-cloud 自持的同名 transform（`assets/evorule-rules/llm-audit-bridge.json`、`demo-svc.json`）与引擎桥接重复注册，导致双规则顺序执行、LLM 调用循环 / 服务自治循环（UV-054）。本文件仅记录协议语义与消费范式，供接入方与教学参考，**不进入 --rules-dir 装载路径**。
 
 ## 一、单发桥接协议（系统规则，归引擎 core_eval）
 
