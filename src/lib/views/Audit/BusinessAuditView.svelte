@@ -123,12 +123,21 @@
 
   // === 持久化 mode 到 localStorage ===
   onMount(() => {
+    // UV-078 W2-B6:键前缀统一为 evorule-console-cloud:,读旧键迁移(读旧→写新→删旧)
+    const OLD_KEY = "evorule:audit-mode";
+    const NEW_KEY = "evorule-console-cloud:audit-mode";
     const saved =
       typeof localStorage !== "undefined"
-        ? localStorage.getItem("evorule:audit-mode")
+        ? (localStorage.getItem(NEW_KEY) ?? localStorage.getItem(OLD_KEY))
         : null;
     if (saved === "business" || saved === "developer") {
       mode = saved;
+    }
+    if (typeof localStorage !== "undefined") {
+      if (localStorage.getItem(OLD_KEY) !== null) {
+        localStorage.setItem(NEW_KEY, mode);
+        localStorage.removeItem(OLD_KEY);
+      }
     }
     // 拉取审计链
     void loadAudit();
@@ -271,7 +280,7 @@
   function handleToggleMode(): void {
     mode = mode === "business" ? "developer" : "business";
     if (typeof localStorage !== "undefined") {
-      localStorage.setItem("evorule:audit-mode", mode);
+      localStorage.setItem("evorule-console-cloud:audit-mode", mode);
     }
   }
 

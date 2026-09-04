@@ -337,10 +337,10 @@
       rightWidth = clampWidth(window.innerWidth * 0.2);
     }
 
-    // 主题:固定深色(整体消灭白色底色)
+    // 主题:固定深色(整体消灭白色底色),前缀统一为 evorule-console-cloud:(UV-078 W2-B6)
     theme = "dark";
     document.documentElement.setAttribute("data-theme", "dark");
-    localStorage.setItem("theme", "dark");
+    localStorage.setItem("evorule-console-cloud:theme", "dark");
 
     // backend 健康检查
     backend
