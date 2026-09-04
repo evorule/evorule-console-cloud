@@ -50,6 +50,9 @@
   import { RuleValidator, type ValidationResult } from '$lib/kernel/validators/ruleValidator';
   import { localSaveGate, summarizeTransformSteps, type TransformStepSummary } from '$lib/governance/rule-form';
   import { RULE_TEMPLATES, shouldConfirmTemplateOverwrite, prefillFromEntry } from '$lib/governance/rule-templates';
+  import { currentUser } from '$lib/stores/auth';
+  import { roleToBackend } from '$lib/backend/production-views';
+  import { ensureWorkspaceMembership } from '$lib/governance/workspace-membership';
 
   // WorkspaceBackend 必须在组件初始化期从 context 取出并缓存——
   // getContext/hasContext 只能在组件初始化期间调用,异步回调(部署/预检/刷新)中调用
@@ -200,6 +203,9 @@
     try {
       await connect(cfg.baseUrl.trim(), cfg.tenantId.trim() || 'default', cfg.username, cfg.password);
       toastSuccess('已连接 evorule-rule', '治理');
+      // UV-073 ①:连接成功后自动 ensure 当前平台用户进默认 workspace(幂等;
+      // 失败诚实降级为 toast 提示,不阻塞治理连接 —— ②403 引导仍会兜底)
+      await ensureMembershipQuietly();
     } catch (e) {
       // UV-007 连通性自检:区分「服务不可达」与「凭据/权限错误」,分别给出自服务引导
       const reachable = await probeReachable(cfg.baseUrl.trim());
@@ -629,6 +635,79 @@
     }
   }
 
+  // ===== UV-073:平台用户与 workspace 成员打通(①连接自动 ensure + ②403 一键引导) =====
+  /** ② 触发条件:沙盒族端点 403 not-a-member(loadSandboxes/handleStartSandbox 识别) */
+  let joinOffered = $state(false);
+  let joiningWs = $state(false);
+
+  /** 识别「不在 workspace 成员名单」的 403(UV-073 ② 的触发条件) */
+  function isNotMemberError(e: unknown): boolean {
+    return (
+      !!e &&
+      typeof e === 'object' &&
+      (e as { status?: number }).status === 403 &&
+      String((e as Error).message).includes('not a member')
+    );
+  }
+
+  /** 当前平台用户身份(name 与 +layout actor 注入同源,保证 requester 名字一致) */
+  function platformActor(): { name: string; role: ReturnType<typeof roleToBackend> } | null {
+    const user = get(currentUser);
+    if (!user) return null;
+    return { name: user.id, role: roleToBackend(user.role) };
+  }
+
+  /**
+   * ① 静默 ensure(治理连接成功后调用):幂等加入默认 workspace。
+   * 前置不全(未登录/server 未启动/workspace 未初始化)时跳过不报错;
+   * 真失败诚实降级为 toast(不阻塞治理连接,② 仍会引导)。
+   */
+  async function ensureMembershipQuietly(): Promise<void> {
+    const wb = workspaceBackend;
+    const ws = get(currentWorkspace);
+    const actor = platformActor();
+    if (!wb || !ws || !actor) return;
+    try {
+      const r = await ensureWorkspaceMembership(wb, ws.id, actor);
+      if (r.joined) {
+        toastInfo(`已将 ${actor.name} 加入执行域工作空间(角色 ${r.role})—— 沙盒测试可用`, '工作空间');
+      }
+    } catch (e) {
+      toastError(
+        `自动加入工作空间失败:${e instanceof Error ? e.message : String(e)}(沙盒功能可能被 403 拦截,展开沙盒区可手动加入)`,
+        '工作空间'
+      );
+    }
+  }
+
+  /**
+   * ② 一键加入并重试(显式治理动作,成员落库留痕):
+   * ensure 成功后自动重拉沙盒列表。
+   */
+  async function joinWorkspaceAndRetry(): Promise<void> {
+    const wb = workspaceBackend;
+    const ws = get(currentWorkspace);
+    const actor = platformActor();
+    if (!wb || !ws || !actor) {
+      toastError('执行域通道或登录态不可用,无法加入工作空间(请确认 evorule-server 已启动且已登录主系统)', '沙盒测试');
+      return;
+    }
+    joiningWs = true;
+    try {
+      const r = await ensureWorkspaceMembership(wb, ws.id, actor);
+      toastSuccess(
+        r.joined ? `已加入工作空间(角色 ${r.role}),重新拉取沙盒列表…` : '已是工作空间成员,重新拉取沙盒列表…',
+        '沙盒测试'
+      );
+      joinOffered = false;
+      await loadSandboxes();
+    } catch (e) {
+      toastError(`加入工作空间失败:${e instanceof Error ? e.message : String(e)}`, '沙盒测试');
+    } finally {
+      joiningWs = false;
+    }
+  }
+
   async function loadSandboxes(): Promise<void> {
     const ws = get(currentWorkspace);
     const wb = workspaceBackend;
@@ -640,10 +719,18 @@
     sandboxError = null;
     try {
       sandboxes = await wb.listSandboxes(ws.id);
+      joinOffered = false;
     } catch (e) {
       sandboxes = [];
-      sandboxError = e instanceof Error ? e.message : String(e);
-      toastError(`拉取沙盒列表失败:${sandboxError}`, '沙盒测试');
+      if (isNotMemberError(e)) {
+        // UV-073 ②:403 = 配置性摩擦,升级为一键加入引导(显式动作留痕)
+        joinOffered = true;
+        sandboxError =
+          '当前用户不在执行域工作空间成员名单(403 not a member)。点击下方「加入默认工作空间」后重试 —— 加入是显式治理动作,成员名单落审计留痕。';
+      } else {
+        sandboxError = e instanceof Error ? e.message : String(e);
+        toastError(`拉取沙盒列表失败:${sandboxError}`, '沙盒测试');
+      }
     } finally {
       sandboxLoading = false;
     }
@@ -825,7 +912,14 @@
       sandboxRuleIds = [];
       await loadSandboxes();
     } catch (e) {
-      sandboxStartError = e instanceof Error ? e.message : String(e);
+      if (isNotMemberError(e)) {
+        // UV-073 ②:启动沙盒 403(如成员被移除后仍停留在此页) → 升级为一键加入引导
+        joinOffered = true;
+        sandboxStartError =
+          '当前用户不在执行域工作空间成员名单(403 not a member)—— 请到「③ 沙盒记录与测试报告」区点击「加入默认工作空间」后重试。';
+      } else {
+        sandboxStartError = e instanceof Error ? e.message : String(e);
+      }
       toastError(sandboxStartError, '测试工作台');
     } finally {
       sandboxStarting = false;
@@ -2003,6 +2097,14 @@
                 <p class="muted">加载中…</p>
               {:else if sandboxError}
                 <div class="err-box">{sandboxError}</div>
+                {#if joinOffered}
+                  <div class="btn-row" style="margin-top: 0.5rem;">
+                    <button class="btn btn-sm btn-primary" onclick={joinWorkspaceAndRetry} disabled={joiningWs}>
+                      {joiningWs ? '加入中…' : '➕ 加入默认工作空间并重试'}
+                    </button>
+                    <span class="muted">UV-073 ②:显式加入动作,成员名单落审计留痕</span>
+                  </div>
+                {/if}
               {:else if sandboxes.length === 0}
                 <p class="muted">无沙盒记录。上方选择规则与数据集后启动,启动后在此列出并可查看测试报告。</p>
               {:else}
