@@ -47,6 +47,9 @@
   import BusinessForm from "./BusinessForm.svelte";
   import BusinessPreview from "./BusinessPreview.svelte";
   import SchemaSelector from "./SchemaSelector.svelte";
+  // UV-078 W2-B5:分类与标签管理入口(复活 CategoryManager/TagManager 孤儿组件)
+  import CategoryManager from "$lib/views/Categories/CategoryManager.svelte";
+  import TagManager from "$lib/views/Tags/TagManager.svelte";
 
   let {
     onaiGenerateDraft,
@@ -64,6 +67,10 @@
   let selectedTermId = $state<string | null>(null);
   // schema 选择器 ID(null = 用 meta.schemaId 或无 schema)
   let selectedSchemaId = $state<string | null>(null);
+
+  // === UV-078 W2-B5:分类与标签管理抽屉 ===
+  let manageOpen = $state(false);
+  let manageTab = $state<"category" | "tag">("category");
 
   // === 选中规则的业务元数据(响应式) ===
   const selectedMeta = $derived(
@@ -248,6 +255,9 @@
             🤖 AI 起草规则
           </button>
         {/if}
+        <button class="btn" onclick={() => (manageOpen = true)} title="管理分类与标签以组织规则库">
+          🏷 分类与标签
+        </button>
         <DeveloperModeToggle bind:devMode />
       </div>
     </header>
@@ -374,6 +384,45 @@
       {/if}
     </section>
   </div>
+
+  <!-- UV-078 W2-B5:分类与标签管理抽屉 -->
+  {#if manageOpen}
+    <div class="manage-overlay" role="dialog" aria-modal="true" onclick={(e) => {
+        if (e.target === e.currentTarget) manageOpen = false;
+      }}
+    >
+      <div class="manage-drawer">
+        <header class="drawer-header">
+          <div class="drawer-tabs">
+            <button
+              type="button"
+              class="drawer-tab"
+              class:active={manageTab === "category"}
+              onclick={() => (manageTab = "category")}
+            >
+              📂 分类
+            </button>
+            <button
+              type="button"
+              class="drawer-tab"
+              class:active={manageTab === "tag"}
+              onclick={() => (manageTab = "tag")}
+            >
+              🏷 标签
+            </button>
+          </div>
+          <button type="button" class="btn-close" onclick={() => (manageOpen = false)}>
+            ✕
+          </button>
+        </header>
+        {#if manageTab === "category"}
+          <CategoryManager />
+        {:else}
+          <TagManager />
+        {/if}
+      </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -614,5 +663,59 @@
     font-size: 11px;
     color: var(--text-secondary, #64748b);
     word-break: break-all;
+  }
+
+  /* === UV-078 W2-B5:分类与标签管理抽屉 === */
+  .manage-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-end;
+    z-index: 300;
+  }
+  .manage-drawer {
+    background: var(--bg-card);
+    width: min(520px, 92vw);
+    height: 100%;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    flex-shrink: 0;
+  }
+  .drawer-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .drawer-tab {
+    border: none;
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary, #64748b);
+  }
+  .drawer-tab.active {
+    background: var(--info-bg, #dbeafe);
+    color: var(--brand, #2563eb);
+    font-weight: 600;
+  }
+  .btn-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-secondary, #64748b);
+    padding: 0 4px;
   }
 </style>
