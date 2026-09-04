@@ -88,10 +88,16 @@ const SMOKE_ROUTES: ReadonlyArray<{ path: string; anchor: string; desc: string }
 	{ path: '/publish-queue', anchor: 'section.publish-queue', desc: '发布队列' },
 	{ path: '/version-history', anchor: 'section.version-history', desc: '版本历史' },
 	{ path: '/view/state', anchor: '.empty-state', desc: '状态视图(无 session 空态)' },
-	{ path: '/view/timetravel', anchor: 'h2.btt-title', desc: '业务时间旅行(无 session 空态)' }
+	{ path: '/view/timetravel', anchor: 'h2.btt-title', desc: '业务时间旅行(无 session 空态)' },
+	// UV-084 W3 锚定(补:W3 实施时漏挂 page-smoke,遗留 14 名实不符实际 13):
+	{ path: '/permissions', anchor: '.permissions-view', desc: '权限策略管理' },
+	// UV-084 W5 锚定:知识数据面(mockBackendOffline 下数据面不可达,
+	// KnowledgeView 走 network error → listError 显式上屏,属预期形态,
+	// 无预期外 console error)
+	{ path: '/knowledge', anchor: 'h1:has-text("知识库")', desc: '知识数据面浏览' }
 ];
 
-test.describe('page-smoke:14 路由 goto + 核心元素 + 零 console error', () => {
+test.describe('page-smoke:15 路由 goto + 核心元素 + 零 console error', () => {
 	test.describe.configure({ mode: 'serial' });
 
 	for (const { path, anchor, desc } of SMOKE_ROUTES) {

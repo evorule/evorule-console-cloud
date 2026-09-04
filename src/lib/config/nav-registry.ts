@@ -72,6 +72,15 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     jump: true,
   },
   {
+    id: "knowledge",
+    label: "知识库",
+    icon: "📚",
+    path: "/knowledge",
+    group: "discover",
+    title: "知识库 — 执行侧知识数据资产浏览(UV-084 W5)",
+    loginRequired: true,
+  },
+  {
     id: "help",
     label: "帮助",
     icon: "❓",

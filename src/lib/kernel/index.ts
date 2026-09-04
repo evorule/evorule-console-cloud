@@ -53,6 +53,10 @@ export type {
   PermissionVersionResult,
   PermissionEvaluateRequest,
   PermissionEvaluateResult,
+  KnowledgeDatasetSummary,
+  KnowledgeEntryRecord,
+  KnowledgeDatasetsResult,
+  KnowledgeEntryFilter,
   ExecutionBackend
 } from './backend/types';
 
