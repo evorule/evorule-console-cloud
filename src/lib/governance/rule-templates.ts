@@ -10,8 +10,9 @@
 // ⚠️ 同步纪律(风险登记"模板与 assets 场景文件演进脱节"的缓解):
 //   4 场景的 transform/description 为 assets/evorule-rules/scenario-*.json 的静态内嵌副本,
 //   源文件变更时必须同步本文件(源头路径标在各模板 sourceFile 字段)。
-//   已知差异:场景资产 metadata.sections 声称"noop 收尾规则",但源 transform 无末条兜底
-//   (资产侧漂移,已登记台账);故场景模板在治理表单会触发 G6 warning(不阻断,如实提示)。
+//   场景资产为引擎侧风格:transform 无末条 all([]) 兜底,未匹配指令由引擎产生 Error fact(fail-fast)。
+//   UV-075(2026-09-04)已修正资产侧 sections 漂移(原误称 noop 收尾规则)。
+//   治理表单对此形态触发 G6 warning(末条非 all(inner:[]) 兜底)——不阻断,如实提示,属设计选择非缺陷。
 
 /** 治理页规则模板(W2.3 表单顶部下拉) */
 export interface RuleTemplate {

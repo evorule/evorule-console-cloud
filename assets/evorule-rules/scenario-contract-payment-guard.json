@@ -15,14 +15,13 @@
       ],
       "date": "2026-09-02",
       "workstream": "UV-045 W2.2 场景示例规则",
-      "note": "与 docs/scenarios/rules 中的内核格式同 transform;本文件为 --rules-dir 可装载的 rule_set v1.0 封装"
+      "note": "与 docs/scenarios/rules 中的内核格式同 transform;本文件为 --rules-dir 可装载的 rule_set v1.0 封装;UV-075(2026-09-04)修正 sections 漂移——原第 2 条误称 noop 收尾规则,实际 transform 仅 1 条业务分支"
     },
     "deployment": {
       "method": "evorule-server 启动参数 --rules-dir <本目录>;变更后 POST /api/rules/reload 生效"
     },
     "sections": [
-      "1. 业务分支规则:按 payload.data 业务字段分支,set 写入决策字段",
-      "2. noop 收尾规则(镜像 demo-svc 收敛模式)"
+      "1. 业务分支规则:按 payload.data 业务字段分支,set 写入决策字段(唯一规则;未匹配指令由引擎产生 Error fact,fail-fast,无 noop 收尾)"
     ],
     "constraints": [
       "TCB 数据模型无 Float:金额等数值以整数或字符串形态表达",
