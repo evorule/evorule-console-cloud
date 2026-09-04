@@ -10,6 +10,7 @@
 -->
 
 <script lang="ts">
+  import { onMount } from "svelte";
   import {
     filteredTemplates,
     searchQuery,
@@ -17,6 +18,9 @@
     filterCategory,
     filterSource,
     uploadTemplate,
+    loadMarketplace,
+    marketplaceLoading,
+    marketplaceError,
     resetMarketplace,
   } from "$lib/stores/marketplace";
   import {
@@ -69,6 +73,11 @@
     uploadFile = input.files?.[0] ?? null;
   }
 
+  // W4 接线:挂载时从 server 加载 user 上传模板(builtin 本地即有,server 不可达时显式降级上屏)
+  onMount(() => {
+    void loadMarketplace();
+  });
+
   async function handleUpload() {
     if (!uploadName.trim() || !uploadFile) {
       toastError("请填写名称并选择文件");
@@ -102,6 +111,14 @@
 </script>
 
 <div class="mt-tab">
+  <!-- 加载中 / server 降级错误显式上屏(拒绝静默) -->
+  {#if $marketplaceLoading}
+    <p class="mt-status">正在加载用户模板…</p>
+  {/if}
+  {#if $marketplaceError}
+    <p class="mt-error" role="alert">⚠ {$marketplaceError}</p>
+  {/if}
+
   <!-- 搜索 + 筛选 -->
   <section class="mt-filters">
     <input
@@ -280,6 +297,20 @@
   .mt-count {
     font-size: 12px;
     color: var(--text-secondary, #6b7280);
+  }
+  .mt-status {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+  }
+  .mt-error {
+    margin: 0 0 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    border: 1px solid var(--warning, #f59e0b);
+    border-radius: 6px;
+    background: var(--warning-bg, #fef3c7);
+    color: var(--warning-text, #92400e);
   }
   .mt-action-buttons {
     display: flex;
