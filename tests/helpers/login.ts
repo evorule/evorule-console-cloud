@@ -79,6 +79,17 @@ export async function loginAsAdmin(page: Page): Promise<void> {
 					model: 'gpt-4o-mini'
 				})
 			);
+			// 标记新手引导已完成(否则 TourOverlay 遮罩拦截所有指针事件,
+			// Mavis 01 号 7e78180 引入;key 见 stores/onboarding.ts STORAGE_KEY)
+			localStorage.setItem(
+				'evorule-console-cloud:onboarding',
+				JSON.stringify({
+					tour: { active: false, step: 0, completed: true, skipped: false },
+					checklist: [],
+					bannerDismissed: true,
+					hints: {}
+				})
+			);
 		},
 		{ user: DEFAULT_USER, dbMeta: DEFAULT_DB_META }
 	);
@@ -116,6 +127,16 @@ export async function loginWithLlm(page: Page, llmConfig: object): Promise<void>
 			localStorage.setItem(
 				'evorule-console-cloud:llm-config',
 				JSON.stringify(llm)
+			);
+			// 标记新手引导已完成(同 loginAsAdmin,TourOverlay 遮罩会拦截点击)
+			localStorage.setItem(
+				'evorule-console-cloud:onboarding',
+				JSON.stringify({
+					tour: { active: false, step: 0, completed: true, skipped: false },
+					checklist: [],
+					bannerDismissed: true,
+					hints: {}
+				})
 			);
 		},
 		{ user: DEFAULT_USER, dbMeta: DEFAULT_DB_META, llm: llmConfig }

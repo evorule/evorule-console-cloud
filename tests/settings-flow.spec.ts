@@ -338,14 +338,15 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await expect(page.locator('.alert-info', { hasText: 'LLM 已禁用' })).toBeVisible();
 	});
 
-	// ============ 9. L2 占位 ============
+	// ============ 9. 本地 LLM 占位 ============
 
-	test('L2 占位可见(规划功能提示)', async ({ page }) => {
+	test('本地 LLM 占位可见(Ollama 使用提示)', async ({ page }) => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
-		// 应该显示 L2 占位(无论 LLM 是否启用)
+		// UV-067 适配:原 "L2 规划占位" 已演进为 "本地 LLM" 使用提示
+		// (Ollama 预设已可用;L2 = llama.cpp 深度集成仍是规划,不再出现在标题)
 		await expect(page.locator('.l2-placeholder')).toBeVisible();
 		await expect(page.locator('.l2-placeholder h3')).toContainText('本地 LLM');
-		await expect(page.locator('.l2-placeholder h3')).toContainText('L2');
+		await expect(page.locator('.l2-placeholder')).toContainText('Ollama');
 	});
 });
