@@ -255,7 +255,11 @@
             🤖 AI 起草规则
           </button>
         {/if}
-        <button class="btn" onclick={() => (manageOpen = true)} title="管理分类与标签以组织规则库">
+        <button
+          class="btn"
+          onclick={() => (manageOpen = true)}
+          title="管理分类与标签以组织规则库"
+        >
           🏷 分类与标签
         </button>
         <DeveloperModeToggle bind:devMode />
@@ -673,7 +677,8 @@
     display: flex;
     align-items: stretch;
     justify-content: flex-end;
-    z-index: 300;
+    /* 需高于全局顶栏(.header z-index:1300),否则抽屉顶部被顶栏遮挡不可点(UV-078 W2-B5 实测取证) */
+    z-index: 1400;
   }
   .manage-drawer {
     background: var(--bg-card);
