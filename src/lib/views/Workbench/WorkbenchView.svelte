@@ -34,7 +34,7 @@
   import { governanceConfig } from "$lib/config/governance-config";
 
   /**
-   * 读 rule-serve(18081)运行时版本(Mavis 01 号 P2-01)。
+   * 读 rule-serve(18081)运行时版本(P2-01)。
    * /v1/health 返回形如 { version: "v0.3.0", ... };取不到如实返回 null(不静默造假)。
    */
   async function fetchRuleVersion(baseUrl: string): Promise<string | null> {

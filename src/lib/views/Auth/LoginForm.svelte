@@ -134,7 +134,7 @@
 <section class="login-page">
   <header class="login-header">
     <h1>🔐 登录 evorule</h1>
-    <!-- P3-02(Mavis 01):登录前先用一句讲清 平台 vs 演示 之别,降低新人选择茫然 -->
+    <!-- P3-02:登录前先用一句讲清 平台 vs 演示 之别,降低新人选择茫然 -->
     <p>平台账号=权限由服务端实时下发(生产/团队);演示模式=预置角色一键登录、不连 server,适合首次体验</p>
   </header>
 

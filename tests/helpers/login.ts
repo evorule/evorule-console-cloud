@@ -79,8 +79,8 @@ export async function loginAsAdmin(page: Page): Promise<void> {
 					model: 'gpt-4o-mini'
 				})
 			);
-			// 标记新手引导已完成(否则 TourOverlay 遮罩拦截所有指针事件,
-			// Mavis 01 号 7e78180 引入;key 见 stores/onboarding.ts STORAGE_KEY)
+			// 标记新手引导已完成(否则 TourOverlay 遮罩拦截所有指针事件;
+			// key 见 stores/onboarding.ts STORAGE_KEY)
 			localStorage.setItem(
 				'evorule-console-cloud:onboarding',
 				JSON.stringify({
