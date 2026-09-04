@@ -292,6 +292,7 @@ describe("ReactorPhase - 类型枚举覆盖", () => {
         reactorVersion: 0,
         invariantViolations: 0,
         finished: false,
+        sessionMissing: false,
       });
       expect(storeGet(reactorRuntimeStore)?.phase).toBe(phase);
     });
@@ -308,6 +309,7 @@ describe("ReactorRuntimeState - shape 字段完整", () => {
       reactorVersion: 5,
       invariantViolations: 1,
       finished: false,
+      sessionMissing: false,
     };
     reactorRuntimeStore.set(sample);
 
@@ -428,6 +430,92 @@ describe("startReactorPolling - 轮询 fetch + setInterval", () => {
     vi.advanceTimersByTime(2000);
     await Promise.resolve();
     expect(mockFetchFn).toHaveBeenCalledTimes(9);
+  });
+});
+
+// ============================================================================
+// reactor-runtime - UV-079 ②: 404 显式识别(幻影会话降级提示)
+// ============================================================================
+
+describe("startReactorPolling - UV-079 ② 404 停轮询 + sessionMissing", () => {
+  test("轮询 404 → 停止轮询 + store 置 sessionMissing=true", async () => {
+    const notFound = { status: 404, ok: false } as Response;
+    mockFetchFn
+      .mockResolvedValueOnce(notFound)
+      .mockResolvedValueOnce(notFound)
+      .mockResolvedValueOnce(notFound);
+
+    startReactorPolling(1, "http://localhost:18080");
+
+    for (let i = 0; i < 10; i++) {
+      vi.advanceTimersByTime(0);
+      await Promise.resolve();
+    }
+
+    const state = storeGet(reactorRuntimeStore);
+    expect(state).not.toBeNull();
+    expect(state?.sessionMissing).toBe(true);
+  });
+
+  test("404 之后 setInterval 不再触发(fetch 次数不增长)", async () => {
+    const notFound = { status: 404, ok: false } as Response;
+    mockFetchFn
+      .mockResolvedValueOnce(notFound)
+      .mockResolvedValueOnce(notFound)
+      .mockResolvedValueOnce(notFound);
+
+    startReactorPolling(1, "http://localhost:18080");
+
+    for (let i = 0; i < 10; i++) {
+      vi.advanceTimersByTime(0);
+      await Promise.resolve();
+    }
+    expect(mockFetchFn).toHaveBeenCalledTimes(3);
+
+    // 推进多个轮询周期:404 已停轮询,fetch 不应再被调用
+    vi.advanceTimersByTime(6000);
+    await Promise.resolve();
+    vi.advanceTimersByTime(6000);
+    await Promise.resolve();
+    expect(mockFetchFn).toHaveBeenCalledTimes(3);
+  });
+
+  test("单个端点 404(其余 200)同样触发停轮询降级", async () => {
+    const okResp = (data: unknown) =>
+      ({ status: 200, ok: true, json: () => Promise.resolve(data) }) as Response;
+    const notFound = { status: 404, ok: false } as Response;
+
+    mockFetchFn
+      .mockResolvedValueOnce(okResp({ reactor: { phase: "stable" } }))
+      .mockResolvedValueOnce(notFound)
+      .mockResolvedValueOnce(okResp({ finished: false }));
+
+    startReactorPolling(1, "http://localhost:18080");
+
+    for (let i = 0; i < 10; i++) {
+      vi.advanceTimersByTime(0);
+      await Promise.resolve();
+    }
+
+    const state = storeGet(reactorRuntimeStore);
+    expect(state?.sessionMissing).toBe(true);
+  });
+
+  test("瞬时网络错误(reject)不触发 sessionMissing,保持旧状态", async () => {
+    mockFetchFn
+      .mockRejectedValueOnce(new TypeError("network error"))
+      .mockRejectedValueOnce(new TypeError("network error"))
+      .mockRejectedValueOnce(new TypeError("network error"));
+
+    startReactorPolling(1, "http://localhost:18080");
+
+    for (let i = 0; i < 10; i++) {
+      vi.advanceTimersByTime(0);
+      await Promise.resolve();
+    }
+
+    const state = storeGet(reactorRuntimeStore);
+    expect(state?.sessionMissing ?? false).toBe(false);
   });
 });
 
