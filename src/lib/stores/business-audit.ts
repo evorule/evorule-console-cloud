@@ -14,7 +14,7 @@
 //   - 本 store 只做"展示转换":raw entries → 业务化条目
 //   - 不改 fact log,不重写哈希链
 
-import { derived, get } from "svelte/store";
+import { derived } from "svelte/store";
 import {
   auditData,
   verifyResult,
@@ -291,32 +291,5 @@ export const businessAuditSummary = derived(
 export function businessAuditByType(factType: string) {
   return derived(businessAuditStore, ($entries) =>
     $entries.filter((e) => e.factType === factType),
-  );
-}
-
-// ============================================================================
-// 工具函数(供组件直接调用,不走 store)
-// ============================================================================
-
-/**
- * 同步转换接口(测试 / 组件直接调用)。
- * 提供 backend + sessionId 时,从 backend 实时拉取后转换。
- */
-export async function fetchBusinessAudit(
-  backend: {
-    getAudit: (id: number) => Promise<SessionAudit>;
-    verifyAudit?: (id: number) => Promise<{ verified: boolean; detail?: string }>;
-  },
-  sessionId: number,
-): Promise<BusinessAuditEntry[]> {
-  const [audit, verify] = await Promise.all([
-    backend.getAudit(sessionId),
-    backend.verifyAudit?.(sessionId).catch(() => null) ?? null,
-  ]);
-  const terms = get(businessTermsStore);
-  const rules = getAllRules();
-  const chainVerified = verify?.verified ?? audit.verified ?? false;
-  return (audit.entries as RawAuditEntry[]).map((entry) =>
-    toBusinessAuditEntry(entry, terms, rules, chainVerified),
   );
 }

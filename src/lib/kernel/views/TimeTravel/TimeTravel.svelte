@@ -26,6 +26,7 @@
   import { store } from "$lib/kernel/ttd/core/store.js";
   import { eventbus, EVENTS } from "$lib/kernel/ttd/core/eventbus.js";
   import { injectBackend, syncSessionToTtd } from "$lib/kernel/ttd/console-adapter";
+  import { SessionList } from "$lib/kernel/ttd/components/session-list.js";
   import "$lib/kernel/ttd/styles/console-scoped.css";
 
   const backend = useBackendOrNull();
@@ -53,6 +54,11 @@
   /** 退出回溯: 跳回最新版本(等价 ttd End 键, emit VERSION_SELECT canonical signal) */
   function exitRewind() {
     if (maxVersion > 0) eventbus.emit(EVENTS.VERSION_SELECT, maxVersion);
+  }
+
+  /** UV-084 W1-A3:手动回收已结束/已过期会话(委托 SessionList.reap,含二次确认) */
+  function handleReapSessions() {
+    void SessionList.reap();
   }
 
   onMount(async () => {
@@ -156,7 +162,17 @@
       {/if}
       <div class="main">
         <aside class="sidebar">
-          <h2>会话 (Sessions)</h2>
+          <div class="sidebar-header">
+            <h2>会话 (Sessions)</h2>
+            <!-- UV-084 W1-A3:手动回收已结束/已过期会话(生产会话保活,UV-079) -->
+            <button
+              class="session-reap-btn"
+              title="回收已结束/已过期的会话(活跃与生产会话不受影响)"
+              onclick={handleReapSessions}
+            >
+              ♻ 回收
+            </button>
+          </div>
           <ul class="session-list" id="sessionList">
             <li class="session-item">加载中...</li>
           </ul>

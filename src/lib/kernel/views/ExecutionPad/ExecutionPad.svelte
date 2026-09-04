@@ -63,6 +63,51 @@
 	// 是否在做"重复"对比
 	let isComparing = $state(false);
 
+	// === UV-084 W1-A4:payload 注入(POST /api/sessions/{id}/payload,低频高级操作) ===
+	let payloadSectionOpen = $state(false);
+	let payloadPath = $state('');
+	let payloadValueText = $state('1');
+	let payloadError = $state<string | null>(null);
+	let payloadResultMsg = $state<string | null>(null);
+	let payloadInjecting = $state(false);
+
+	/** 注入 payload 字段:path + JSON value;403 受保护域/404 由错误面如实呈现 */
+	async function handleInjectPayload() {
+		if (!backend || $currentSessionId === null) return;
+		payloadError = null;
+		payloadResultMsg = null;
+
+		const path = payloadPath.trim();
+		if (!path) {
+			payloadError = 'path 不能为空(如 shared.tenant.quota 或 __exec__.payload.x)';
+			return;
+		}
+		let value: unknown;
+		try {
+			value = JSON.parse(payloadValueText);
+		} catch (e) {
+			payloadError = `value 不是合法 JSON: ${(e as Error).message}`;
+			return;
+		}
+
+		payloadInjecting = true;
+		try {
+			const r = await backend.updatePayload($currentSessionId, path, value);
+			if (r.success) {
+				payloadResultMsg = `已注入 ${path}${r.fact_id !== null && r.fact_id !== undefined ? ` (fact #${r.fact_id})` : ''}`;
+			} else {
+				// HTTP 200 + success=false:命令通道关闭(反应器已退出),如实呈现
+				payloadError = `注入失败: ${r.message}`;
+			}
+		} catch (e) {
+			// 403 受保护域(stable.llm/stable.system 需 service 身份)/404 会话不存在:
+			// HttpBackendError 消息含 server 指引原文,完整透出
+			payloadError = (e as Error).message;
+		} finally {
+			payloadInjecting = false;
+		}
+	}
+
 	// 拉取 sessions 列表(组件挂载时)
 	$effect(() => {
 		if (backend) {
@@ -292,6 +337,57 @@
 								current version: <strong>{$reactorVersion ?? '-'}</strong>
 							</span>
 						</div>
+					</section>
+
+					<!-- UV-084 W1-A4:payload 注入(低频高级操作,默认折叠) -->
+					<section class="payload-section">
+						<header class="section-header">
+							<button
+								class="payload-toggle"
+								onclick={() => (payloadSectionOpen = !payloadSectionOpen)}
+								aria-expanded={payloadSectionOpen}
+								title="直接向当前会话注入 payload 字段(path 以 shared. 开头时跨会话广播)"
+							>
+								<span class="toggle-arrow" class:open={payloadSectionOpen}>▸</span>
+								Payload 注入
+							</button>
+						</header>
+
+						{#if payloadSectionOpen}
+							<div class="payload-body">
+								<div class="payload-form">
+									<input
+										type="text"
+										bind:value={payloadPath}
+										placeholder="payload 路径(如 shared.tenant.quota)"
+										spellcheck="false"
+									/>
+									<input
+										type="text"
+										bind:value={payloadValueText}
+										placeholder="值(JSON)"
+										spellcheck="false"
+									/>
+									<button
+										class="btn btn-primary"
+										onclick={() => void handleInjectPayload()}
+										disabled={payloadInjecting}
+									>
+										{payloadInjecting ? '注入中...' : '注入'}
+									</button>
+								</div>
+								{#if payloadError}
+									<div class="payload-msg error">⚠ {payloadError}</div>
+								{/if}
+								{#if payloadResultMsg}
+									<div class="payload-msg ok">✓ {payloadResultMsg}</div>
+								{/if}
+								<div class="payload-hint">
+									path 以 <code>shared.</code> 开头时会同步写入共享事实日志(跨会话广播);
+									受保护域(<code>stable.llm</code> / <code>stable.system</code>)仅受信服务管道可写。
+								</div>
+							</div>
+						{/if}
 					</section>
 
 					{#if lastResult}
@@ -590,6 +686,80 @@
 	}
 
 	.parse-error code {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+	}
+
+	/* === UV-084 W1-A4:payload 注入区块 === */
+	.payload-toggle {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		padding: 0;
+		border: none;
+		background: transparent;
+		font-size: var(--text-sm);
+		font-weight: var(--font-semibold);
+		color: var(--text-primary);
+		cursor: pointer;
+	}
+	.payload-toggle:hover {
+		color: var(--brand);
+	}
+	.payload-toggle .toggle-arrow {
+		display: inline-block;
+		font-size: 10px;
+		color: var(--text-secondary);
+		transition: transform 0.15s ease;
+	}
+	.payload-toggle .toggle-arrow.open {
+		transform: rotate(90deg);
+	}
+	.payload-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+	}
+	.payload-form {
+		display: flex;
+		gap: var(--spacing-sm);
+	}
+	.payload-form input {
+		flex: 1;
+		padding: var(--spacing-sm) var(--spacing-md);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		background: var(--bg-card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		color: var(--text-primary);
+	}
+	.payload-form input:focus {
+		outline: none;
+		border-color: var(--brand);
+		box-shadow: var(--focus-ring);
+	}
+	.payload-msg {
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-sm);
+		font-size: var(--text-sm);
+		word-break: break-all;
+	}
+	.payload-msg.error {
+		background: color-mix(in srgb, var(--danger) 10%, var(--bg-card));
+		border: 1px solid var(--danger);
+		color: var(--danger);
+	}
+	.payload-msg.ok {
+		background: color-mix(in srgb, var(--success) 10%, var(--bg-card));
+		border: 1px solid var(--success);
+		color: var(--success);
+	}
+	.payload-hint {
+		font-size: var(--text-xs);
+		color: var(--text-secondary);
+	}
+	.payload-hint code {
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 	}

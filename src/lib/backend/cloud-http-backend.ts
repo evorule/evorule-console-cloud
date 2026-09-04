@@ -44,6 +44,11 @@ import {
 	type DebugPendingIoInfo,
 	type PendingIoCountInfo,
 	type CausalDepthInfo,
+	type AuditImportResult,
+	type ReapResult,
+	type PayloadUpdateResult,
+	type SharedFactEntry,
+	type SharedFactsVersionInfo,
 	type WorkspaceBackend
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
@@ -323,6 +328,32 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 	getCausalDepth(id: SessionId): Promise<CausalDepthInfo> {
 		return this.backend.getCausalDepth(id);
+	}
+	// UV-084 W1:A 组 5 项(审计导入/会话派生/会话回收/payload 注入/共享事实,代理内核 HttpBackend)
+	importAudit(id: SessionId, data: unknown): Promise<AuditImportResult> {
+		return this.backend.importAudit(id, data);
+	}
+	importAuditCompressed(id: SessionId, blob: Blob): Promise<AuditImportResult> {
+		return this.backend.importAuditCompressed(id, blob);
+	}
+	createSessionFrom(parentId: SessionId, version?: number): Promise<SessionId> {
+		return this.backend.createSessionFrom(parentId, version);
+	}
+	reapSessions(): Promise<ReapResult> {
+		return this.backend.reapSessions();
+	}
+	updatePayload(
+		id: SessionId,
+		path: string,
+		value: unknown
+	): Promise<PayloadUpdateResult> {
+		return this.backend.updatePayload(id, path, value);
+	}
+	getSharedFacts(prefix?: string): Promise<SharedFactEntry[]> {
+		return this.backend.getSharedFacts(prefix);
+	}
+	getSharedFactsVersion(): Promise<SharedFactsVersionInfo> {
+		return this.backend.getSharedFactsVersion();
 	}
 
 	// === Cloud 专属方法(不在内核 ExecutionBackend 接口内) ===

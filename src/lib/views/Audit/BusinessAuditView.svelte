@@ -28,6 +28,8 @@
     fetchCausalChain,
     clearCausalSelection,
     causalSelection,
+    type SharedFactEntry,
+    type SharedFactsVersionInfo,
   } from "$lib/kernel";
   import { toastInfo, toastError, toastSuccess } from "$lib/stores/toast";
   import {
@@ -97,6 +99,14 @@
   // === UV-062 W2 接线4:因果深度(null = 未知:无 session / 读取中 / 读取失败) ===
   let causalDepth = $state<number | null>(null);
   let causalDepthError = $state<string | null>(null);
+
+  // === UV-084 W1-A5:共享事实(跨会话广播事实查询,GET /api/shared/facts) ===
+  let sharedFactsExpanded = $state(false);
+  let sharedFacts = $state<SharedFactEntry[] | null>(null);
+  let sharedFactsVersionInfo = $state<SharedFactsVersionInfo | null>(null);
+  let sharedFactsPrefix = $state("");
+  let sharedFactsLoading = $state(false);
+  let sharedFactsError = $state<string | null>(null);
 
   // === 派生:store 订阅(用 $ 自动订阅,确保响应式) ===
   let auditEntries = $derived($businessAuditStore);
@@ -199,6 +209,39 @@
     }
   }
 
+  // === UV-084 W1-A5:共享事实(跨会话广播,只读查询面) ===
+  /**
+   * 拉取共享事实列表 + 日志版本。跨会话全局数据,不依赖当前 session;
+   * 失败显式错误态(不静默),支持前缀过滤。
+   */
+  async function loadSharedFacts(): Promise<void> {
+    sharedFactsLoading = true;
+    sharedFactsError = null;
+    try {
+      const prefix = sharedFactsPrefix.trim() || undefined;
+      const [facts, version] = await Promise.all([
+        backend.getSharedFacts(prefix),
+        backend.getSharedFactsVersion(),
+      ]);
+      sharedFacts = facts;
+      sharedFactsVersionInfo = version;
+    } catch (e) {
+      sharedFacts = null;
+      sharedFactsVersionInfo = null;
+      sharedFactsError = `读取失败: ${(e as Error).message}`;
+    } finally {
+      sharedFactsLoading = false;
+    }
+  }
+
+  /** 展开/折叠共享事实区块;首次展开自动拉取 */
+  function handleToggleSharedFacts(): void {
+    sharedFactsExpanded = !sharedFactsExpanded;
+    if (sharedFactsExpanded && sharedFacts === null && !sharedFactsLoading) {
+      void loadSharedFacts();
+    }
+  }
+
   // === UV-062 W2 接线1:审计链双格式导出 ===
   /**
    * 导出审计链(JSON / 压缩)。复用 audit-export store:
@@ -272,6 +315,13 @@
   async function handleImportFile(file: File): Promise<void> {
     if (sessionId === null) {
       toastError("无活动 session,无法导入");
+      return;
+    }
+    // UV-084 W1:server 端 import 是破坏性操作(完全覆盖当前会话审计链),须二次确认
+    const confirmed = confirm(
+      `导入将完全覆盖 session ${sessionId} 的当前审计链,且不可撤销。\n确定导入 "${file.name}" 吗?`,
+    );
+    if (!confirmed) {
       return;
     }
     try {
@@ -477,6 +527,79 @@ ${causalChain.nodes
           {exportingFormat === "compressed" ? "⏳ 导出中…" : "压缩 (.gz)"}
         </button>
       </div>
+    </div>
+
+    <!-- UV-084 W1-A5:共享事实区块(跨会话广播事实,只读查询面;默认折叠) -->
+    <div class="shared-facts-section">
+      <button
+        class="shared-facts-toggle"
+        onclick={handleToggleSharedFacts}
+        aria-expanded={sharedFactsExpanded}
+        title="跨会话广播的共享事实(payload 写入 shared.* 前缀路径时同步广播)"
+      >
+        <span class="toggle-arrow" class:expanded={sharedFactsExpanded}>▸</span>
+        🌐 共享事实(跨会话广播)
+        {#if sharedFactsVersionInfo}
+          <span class="shared-facts-meta"
+            >v{sharedFactsVersionInfo.version} · {sharedFactsVersionInfo.history_len}
+              条</span
+          >
+        {/if}
+      </button>
+
+      {#if sharedFactsExpanded}
+        <div class="shared-facts-body">
+          <div class="shared-facts-filter">
+            <input
+              type="text"
+              bind:value={sharedFactsPrefix}
+              placeholder="路径前缀过滤(如 shared.platform.),回车查询"
+              onkeydown={(e) => {
+                if (e.key === "Enter") void loadSharedFacts();
+              }}
+            />
+            <button
+              class="shared-facts-refresh"
+              onclick={() => void loadSharedFacts()}
+              disabled={sharedFactsLoading}
+              >{sharedFactsLoading ? "⏳ 查询中…" : "查询"}</button
+            >
+          </div>
+
+          {#if sharedFactsError}
+            <div class="shared-facts-error">⚠️ {sharedFactsError}</div>
+          {:else if sharedFacts === null}
+            <div class="shared-facts-hint">尚未查询</div>
+          {:else if sharedFacts.length === 0}
+            <div class="shared-facts-hint">无匹配的共享事实</div>
+          {:else}
+            <table class="shared-facts-table">
+              <thead>
+                <tr>
+                  <th>fact_id</th>
+                  <th>路径</th>
+                  <th>值</th>
+                  <th>来源会话</th>
+                  <th>版本</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each sharedFacts as f (f.fact_id)}
+                  <tr>
+                    <td class="mono">{f.fact_id}</td>
+                    <td class="mono path">{f.path}</td>
+                    <td class="mono value"
+                      >{JSON.stringify(f.value).slice(0, 80)}</td
+                    >
+                    <td class="mono">#{f.source_session_id}</td>
+                    <td class="mono">{f.version}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          {/if}
+        </div>
+      {/if}
     </div>
 
     {#if auditErr}
@@ -717,6 +840,117 @@ ${causalChain.nodes
   .setting-retry:hover {
     background: var(--bg-page, #f9fafb);
   }
+
+  /* === UV-084 W1-A5:共享事实区块(跨会话广播,只读查询面) === */
+  .shared-facts-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .shared-facts-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #4b5563);
+    cursor: pointer;
+    text-align: left;
+  }
+  .shared-facts-toggle:hover {
+    background: var(--bg-page, #f9fafb);
+  }
+  .toggle-arrow {
+    display: inline-block;
+    transition: transform 0.15s ease;
+    font-size: 10px;
+    color: var(--text-dim, #9ca3af);
+  }
+  .toggle-arrow.expanded {
+    transform: rotate(90deg);
+  }
+  .shared-facts-meta {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-dim, #9ca3af);
+    margin-left: auto;
+  }
+  .shared-facts-body {
+    padding: 8px 12px 12px;
+    border-top: 1px solid var(--border, #e5e7eb);
+  }
+  .shared-facts-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .shared-facts-filter input {
+    flex: 1;
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 4px;
+    background: var(--bg-page, #f9fafb);
+    color: var(--text-primary, #111827);
+  }
+  .shared-facts-refresh {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border, #d1d5db);
+    background: var(--bg-card);
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+  }
+  .shared-facts-refresh:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .shared-facts-error {
+    font-size: 12px;
+    color: var(--danger, #991b1b);
+  }
+  .shared-facts-hint {
+    font-size: 12px;
+    color: var(--text-dim, #9ca3af);
+  }
+  .shared-facts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .shared-facts-table th {
+    text-align: left;
+    padding: 4px 8px;
+    color: var(--text-dim, #9ca3af);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    white-space: nowrap;
+  }
+  .shared-facts-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
+  }
+  .shared-facts-table .mono {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  .shared-facts-table .path {
+    color: var(--accent, #2563eb);
+  }
+  .shared-facts-table .value {
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .av-switch {
     display: flex;
     align-items: center;

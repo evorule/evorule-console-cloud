@@ -41,6 +41,16 @@ export const SessionList = {
         }, [
           h('div', { class: 'id' }, `#${sid}`),
           h('div', { class: 'meta' }, `${ver} ${esc(phase)}`.trim()),
+          // UV-084 W1-A2:会话派生按钮(从父会话派生变体,记录跨会话因果)
+          h('button', {
+            class: 'session-derive',
+            title: '从此会话派生新会话(记录跨会话因果)',
+            'aria-label': `派生会话 ${sid}`,
+            onclick: (e) => {
+              e.stopPropagation();
+              this.derive(sid);
+            }
+          }, '⎇'),
           // UV-078 W1-A2:会话删除按钮(悬停显示,阻止冒泡避免触发选中)
           h('button', {
             class: 'session-del',
@@ -90,6 +100,58 @@ export const SessionList = {
       if (listEl) {
         listEl.appendChild(
           h('li', { class: 'session-item session-del-error' }, `删除 #${id} 失败: ${esc(e.message)}`)
+        );
+      }
+    }
+  },
+
+  /**
+   * 派生会话(UV-084 W1-A2)。
+   * POST /api/sessions/from/{id} → 从父会话(当前最新版本)派生新会话,
+   * 记录跨会话因果(父会话 ID + 初始内容哈希)。派生后刷新列表并选中新会话。
+   * 失败如实呈现(err item),不静默。
+   */
+  async derive(id) {
+    try {
+      const r = await api.createSessionFrom(id);
+      const newId = (r && typeof r.session_id === 'number') ? r.session_id : r;
+      await this.refresh();
+      if (typeof newId === 'number') {
+        this.select(newId);
+      }
+    } catch (e) {
+      const listEl = document.getElementById('sessionList');
+      if (listEl) {
+        listEl.appendChild(
+          h('li', { class: 'session-item session-del-error' }, `派生 #${id} 失败: ${esc(e.message)}`)
+        );
+      }
+    }
+  },
+
+  /**
+   * 回收已结束/已过期会话(UV-084 W1-A3)。
+   * POST /api/sessions/reap → 与后台 reaper 走同一 reap_once(生产会话
+   * 保活不受影响,UV-079)。结果计数临时显示在列表底部,3s 后自动消失。
+   * 失败如实呈现(err item),不静默。
+   */
+  async reap() {
+    if (!window.confirm('确认回收已结束/已过期的会话?(活跃会话与生产会话不受影响)')) return;
+    try {
+      const r = await api.reap();
+      await this.refresh();
+      const listEl = document.getElementById('sessionList');
+      if (listEl) {
+        const msg = `已回收 ${r.total} 个会话(已结束 ${r.finished} / 已过期 ${r.expired})`;
+        const item = h('li', { class: 'session-item session-reap-info' }, esc(msg));
+        listEl.appendChild(item);
+        setTimeout(() => item.remove(), 3000);
+      }
+    } catch (e) {
+      const listEl = document.getElementById('sessionList');
+      if (listEl) {
+        listEl.appendChild(
+          h('li', { class: 'session-item session-del-error' }, `回收失败: ${esc(e.message)}`)
         );
       }
     }
