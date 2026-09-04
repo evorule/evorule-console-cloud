@@ -285,6 +285,103 @@ export interface SharedFactsVersionInfo {
 }
 
 // ============================================================================
+// 1.x 权限策略类型族(UV-084 W3,对齐 evorule-governance permission/entry.rs 权威结构)
+// ============================================================================
+
+/** 权限条目生命周期状态(仅 Active 参与运行时判定) */
+export type PermissionState = 'draft' | 'candidate' | 'active' | 'rejected';
+
+/** 判定效果 */
+export type PermissionEffect = 'allow' | 'deny';
+
+/** 主体类型(serde snake_case) */
+export type PermissionSubjectType = 'user' | 'role' | 'rule' | 'llm_agent' | 'any';
+
+/** 资源类型(serde snake_case) */
+export type PermissionResourceType = 'fact' | 'io_action' | 'api' | 'shared';
+
+/** 权限主体:谁被允许/拒绝(any 时 id 为空串) */
+export interface PermissionSubject {
+  subject_type: PermissionSubjectType;
+  id: string;
+}
+
+/** 权限资源:要保护什么(path 以 "*" 结尾为前缀通配,如 "shared.*") */
+export interface PermissionResource {
+  resource_type: PermissionResourceType;
+  path: string;
+}
+
+/**
+ * 权限条目 — 一条 subject→resource→action 的授权/拒绝声明
+ * (对齐 PermissionEntry;持久化于 SharedFactsLog 的
+ * shared.__permission__.entry.<id> 路径,写操作追加新版本可审计回放)。
+ */
+export interface PermissionEntryRecord {
+  id: string;
+  version: number;
+  state: PermissionState;
+  subject: PermissionSubject;
+  resource: PermissionResource;
+  /** 动作标识(对应 I/O 指令 type / API 名称,"*" = 任意) */
+  action: string;
+  effect: PermissionEffect;
+  /** 条件表达式(可选,交给 TCB evaluate_domain) */
+  conditions?: unknown;
+  /** 作用域(tenant_id 缺省 = 全局生效) */
+  scope: { tenant_id?: string };
+  /** 触发来源(审批/审计追根溯源) */
+  cause?: string;
+  /** 最近修改者 */
+  updated_by: string;
+}
+
+/** 权限条目列表(GET /api/permissions,对齐 server list_permissions) */
+export interface PermissionListResult {
+  success: boolean;
+  version: number;
+  count: number;
+  entries: PermissionEntryRecord[];
+}
+
+/** 权限写操作结果(create/update/delete/submit/review 共用形状) */
+export interface PermissionWriteResult {
+  success: boolean;
+  id: string;
+  state?: PermissionState;
+  version?: number;
+}
+
+/** 权限快照版本(GET /api/permissions/version) */
+export interface PermissionVersionResult {
+  success: boolean;
+  version: number;
+  count: number;
+}
+
+/** 判定测试请求(POST /api/permissions/evaluate,对齐 server EvaluateRequest) */
+export interface PermissionEvaluateRequest {
+  resource: string;
+  action?: string;
+  /** 调用者角色(human/llm/unknown,缺省 unknown) */
+  caller_role?: string;
+  /** 冻结版本(缺省使用当前共享版本) */
+  v_trigger?: number;
+  cause?: number;
+  tenant_id?: string;
+}
+
+/** 判定测试结果(verdict: allow/deny/candidate — candidate=无匹配条目) */
+export interface PermissionEvaluateResult {
+  success: boolean;
+  caller_role: string;
+  resource: string;
+  action: string;
+  v_trigger: number;
+  verdict: 'allow' | 'deny' | 'candidate';
+}
+
+// ============================================================================
 // 2. ExecutionBackend 抽象接口(SPEC §1.2,35 方法)
 // ============================================================================
 
@@ -311,6 +408,10 @@ export interface SharedFactsVersionInfo {
  *   - A 组 5 项(7,UV-084 W1):importAudit / importAuditCompressed /
  *     createSessionFrom / reapSessions / updatePayload / getSharedFacts /
  *     getSharedFactsVersion
+ *   - A-流权限策略族(9,UV-084 W3):listPermissions / getPermission /
+ *     createPermission / updatePermission / deletePermission /
+ *     submitPermission / reviewPermission / getPermissionsVersion /
+ *     evaluatePermission
  */
 export interface ExecutionBackend {
   // === 会话管理 ===
@@ -445,4 +546,50 @@ export interface ExecutionBackend {
   getSharedFacts(prefix?: string): Promise<SharedFactEntry[]>;
   /** GET /api/shared/facts/version — 共享事实日志版本与历史长度 */
   getSharedFactsVersion(): Promise<SharedFactsVersionInfo>;
+
+  // === UV-084 W3:A-流权限策略族(9,对齐 server permissions.rs) ===
+  /**
+   * GET /api/permissions — 列出全部权限条目(含当前快照版本号)。
+   * 错误纪律:500(快照重建失败)抛 HttpBackendError(消息含 server 原文)。
+   */
+  listPermissions(): Promise<PermissionListResult>;
+  /**
+   * GET /api/permissions/{id} — 查询单条权限条目。
+   * 404(条目不存在)抛 HttpBackendError。
+   */
+  getPermission(id: string): Promise<PermissionEntryRecord>;
+  /**
+   * POST /api/permissions — 新建权限条目(强制 Draft 状态,version=0)。
+   * 400(id 为空)/409(id 冲突)抛 HttpBackendError(消息含 server 原文)。
+   */
+  createPermission(entry: PermissionEntryRecord): Promise<PermissionWriteResult>;
+  /**
+   * PUT /api/permissions/{id} — 全量替换一条权限(幂等:不存在则创建;
+   * 已 Active 保持 Active)。path id 须与 body id 一致(400)。
+   */
+  updatePermission(id: string, entry: PermissionEntryRecord): Promise<PermissionWriteResult>;
+  /**
+   * DELETE /api/permissions/{id} — 删除(写墓碑,历史保留可审计回放)。
+   * 破坏性操作,调用方须二次确认。
+   */
+  deletePermission(id: string): Promise<PermissionWriteResult>;
+  /**
+   * POST /api/permissions/{id}/submit — 提交审批(Draft → Candidate)。
+   * 400(非 Draft 不可提交)/404 抛 HttpBackendError。
+   */
+  submitPermission(id: string): Promise<PermissionWriteResult>;
+  /**
+   * POST /api/permissions/{id}/review — 审批裁决(Candidate → Active/Rejected)。
+   * body: { approve: boolean }。400(非 Candidate)/404 抛 HttpBackendError。
+   */
+  reviewPermission(id: string, approve: boolean): Promise<PermissionWriteResult>;
+  /** GET /api/permissions/version — 权限快照版本与条目数量 */
+  getPermissionsVersion(): Promise<PermissionVersionResult>;
+  /**
+   * POST /api/permissions/evaluate — 按给定上下文跑一次权限判定(只读,
+   * 不落库)。verdict: allow/deny/candidate(candidate = 无匹配条目)。
+   */
+  evaluatePermission(
+    req: PermissionEvaluateRequest
+  ): Promise<PermissionEvaluateResult>;
 }

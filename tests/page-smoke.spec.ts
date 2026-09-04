@@ -91,7 +91,7 @@ const SMOKE_ROUTES: ReadonlyArray<{ path: string; anchor: string; desc: string }
 	{ path: '/view/timetravel', anchor: 'h2.btt-title', desc: '业务时间旅行(无 session 空态)' }
 ];
 
-test.describe('page-smoke:13 路由 goto + 核心元素 + 零 console error', () => {
+test.describe('page-smoke:14 路由 goto + 核心元素 + 零 console error', () => {
 	test.describe.configure({ mode: 'serial' });
 
 	for (const { path, anchor, desc } of SMOKE_ROUTES) {

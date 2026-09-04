@@ -55,11 +55,11 @@ describe('visibleNavItems', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('三组归位:home 2 / discover 2 / governance 7', () => {
+	it('三组归位:home 2 / discover 2 / governance 8', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor']);
 		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'help']);
-		expect(g.governance).toHaveLength(7);
+		expect(g.governance).toHaveLength(8);
 	});
 
 	it('跳单卡子集(jump:true)为 4 项且顺序稳定:marketplace/export/publish-queue/governance', () => {

@@ -41,6 +41,18 @@ export type {
   PayloadUpdateResult,
   SharedFactEntry,
   SharedFactsVersionInfo,
+  PermissionState,
+  PermissionEffect,
+  PermissionSubjectType,
+  PermissionResourceType,
+  PermissionSubject,
+  PermissionResource,
+  PermissionEntryRecord,
+  PermissionListResult,
+  PermissionWriteResult,
+  PermissionVersionResult,
+  PermissionEvaluateRequest,
+  PermissionEvaluateResult,
   ExecutionBackend
 } from './backend/types';
 

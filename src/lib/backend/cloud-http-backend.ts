@@ -45,11 +45,17 @@ import {
 	type PendingIoCountInfo,
 	type CausalDepthInfo,
 	type AuditImportResult,
-	type ReapResult,
-	type PayloadUpdateResult,
-	type SharedFactEntry,
-	type SharedFactsVersionInfo,
-	type WorkspaceBackend
+  type ReapResult,
+  type PayloadUpdateResult,
+  type SharedFactEntry,
+  type SharedFactsVersionInfo,
+  type PermissionEntryRecord,
+  type PermissionListResult,
+  type PermissionWriteResult,
+  type PermissionVersionResult,
+  type PermissionEvaluateRequest,
+  type PermissionEvaluateResult,
+  type WorkspaceBackend
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
 import {
@@ -354,6 +360,40 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 	getSharedFactsVersion(): Promise<SharedFactsVersionInfo> {
 		return this.backend.getSharedFactsVersion();
+	}
+
+	// UV-084 W3:A-流权限策略族(9,代理内核 HttpBackend)
+	listPermissions(): Promise<PermissionListResult> {
+		return this.backend.listPermissions();
+	}
+	getPermission(id: string): Promise<PermissionEntryRecord> {
+		return this.backend.getPermission(id);
+	}
+	createPermission(entry: PermissionEntryRecord): Promise<PermissionWriteResult> {
+		return this.backend.createPermission(entry);
+	}
+	updatePermission(
+		id: string,
+		entry: PermissionEntryRecord
+	): Promise<PermissionWriteResult> {
+		return this.backend.updatePermission(id, entry);
+	}
+	deletePermission(id: string): Promise<PermissionWriteResult> {
+		return this.backend.deletePermission(id);
+	}
+	submitPermission(id: string): Promise<PermissionWriteResult> {
+		return this.backend.submitPermission(id);
+	}
+	reviewPermission(id: string, approve: boolean): Promise<PermissionWriteResult> {
+		return this.backend.reviewPermission(id, approve);
+	}
+	getPermissionsVersion(): Promise<PermissionVersionResult> {
+		return this.backend.getPermissionsVersion();
+	}
+	evaluatePermission(
+		req: PermissionEvaluateRequest
+	): Promise<PermissionEvaluateResult> {
+		return this.backend.evaluatePermission(req);
 	}
 
 	// === Cloud 专属方法(不在内核 ExecutionBackend 接口内) ===

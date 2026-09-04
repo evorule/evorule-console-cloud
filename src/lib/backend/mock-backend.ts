@@ -43,6 +43,12 @@ import type {
 	PayloadUpdateResult,
 	SharedFactEntry,
 	SharedFactsVersionInfo,
+	PermissionEntryRecord,
+	PermissionListResult,
+	PermissionWriteResult,
+	PermissionVersionResult,
+	PermissionEvaluateRequest,
+	PermissionEvaluateResult,
 } from "$lib/kernel";
 import { get } from "svelte/store";
 import { demoDatasetStore, type DemoDataset } from "$lib/stores/demo-dataset";
@@ -652,6 +658,225 @@ export class MockBackend implements ExecutionBackend {
 		return {
 			version: MockBackend.SHARED_FACTS_VERSION,
 			history_len: MockBackend.SHARED_FACTS_DEMO.length,
+		};
+	}
+
+	// === UV-084 W3:A-流权限策略族(mock) ===
+	//
+	// demo 语义:内存可变条目集(种子 3 条演示数据),生命周期状态机与
+	// server 同口径(仅 Draft 可 submit、仅 Candidate 可 review、仅 Active
+	// 参与判定);evaluate 忠实复刻治理层语义(deny 即胜 → allow →
+	// candidate → 默认策略 human=allow / llm=deny / unknown=deny)。
+	// demo 数据本就是本地模拟,写操作不触网、刷新即重置。
+
+	/** demo 权限条目种子(展示三类典型形态:通配允许/精确拒绝/候选待审) */
+	private static readonly PERMISSIONS_DEMO_SEED: PermissionEntryRecord[] = [
+		{
+			id: "demo-allow-shared-read",
+			version: 2,
+			state: "active",
+			subject: { subject_type: "any", id: "" },
+			resource: { resource_type: "shared", path: "shared.platform.*" },
+			action: "*",
+			effect: "allow",
+			scope: {},
+			updated_by: "demo-admin",
+		},
+		{
+			id: "demo-deny-llm-write",
+			version: 3,
+			state: "active",
+			subject: { subject_type: "user", id: "llm" },
+			resource: { resource_type: "fact", path: "db.users.*" },
+			action: "write",
+			effect: "deny",
+			scope: {},
+			updated_by: "demo-admin",
+		},
+		{
+			id: "demo-candidate-api-export",
+			version: 1,
+			state: "candidate",
+			subject: { subject_type: "role", id: "human" },
+			resource: { resource_type: "api", path: "/api/audit/export" },
+			action: "*",
+			effect: "allow",
+			scope: {},
+			updated_by: "demo-auditor",
+		},
+	];
+
+	/** 内存权限条目集(构造时深拷贝种子,写操作本地生效) */
+	private permissionEntries: PermissionEntryRecord[] = MockBackend.PERMISSIONS_DEMO_SEED.map(
+		(e) => structuredClone(e),
+	);
+	/** mock 版本号(每次写操作 +1,演示追加版本语义) */
+	private permissionVersion = 9;
+
+	/** GET /api/permissions(mock) */
+	async listPermissions(): Promise<PermissionListResult> {
+		return {
+			success: true,
+			version: this.permissionVersion,
+			count: this.permissionEntries.length,
+			entries: this.permissionEntries.map((e) => structuredClone(e)),
+		};
+	}
+
+	/** GET /api/permissions/{id}(mock;不存在抛 Error,与 server 404 对齐由调用方提示) */
+	async getPermission(id: string): Promise<PermissionEntryRecord> {
+		const found = this.permissionEntries.find((e) => e.id === id);
+		if (!found) {
+			throw new Error(`permission entry not found: ${id}`);
+		}
+		return structuredClone(found);
+	}
+
+	/** POST /api/permissions(mock;强制 Draft,幂等冲突检测与 server 409 对齐) */
+	async createPermission(entry: PermissionEntryRecord): Promise<PermissionWriteResult> {
+		if (!entry.id.trim()) {
+			throw new Error("permission id must not be empty");
+		}
+		if (this.permissionEntries.some((e) => e.id === entry.id)) {
+			throw new Error(`duplicate permission id: ${entry.id}`);
+		}
+		const created: PermissionEntryRecord = {
+			...structuredClone(entry),
+			state: "draft",
+			version: 0,
+		};
+		this.permissionEntries.push(created);
+		this.permissionVersion += 1;
+		return { success: true, id: created.id, state: "draft", version: this.permissionVersion };
+	}
+
+	/** PUT /api/permissions/{id}(mock;幂等,已 Active 保持 Active) */
+	async updatePermission(
+		id: string,
+		entry: PermissionEntryRecord,
+	): Promise<PermissionWriteResult> {
+		if (entry.id !== id) {
+			throw new Error("path id and body id mismatch");
+		}
+		const idx = this.permissionEntries.findIndex((e) => e.id === id);
+		const next: PermissionEntryRecord = { ...structuredClone(entry), version: 0 };
+		if (idx >= 0) {
+			next.state = this.permissionEntries[idx].state;
+			this.permissionEntries[idx] = next;
+		} else {
+			this.permissionEntries.push(next);
+		}
+		this.permissionVersion += 1;
+		return { success: true, id, version: this.permissionVersion };
+	}
+
+	/** DELETE /api/permissions/{id}(mock;内存删除,墓碑语义由 server 真实承载) */
+	async deletePermission(id: string): Promise<PermissionWriteResult> {
+		const idx = this.permissionEntries.findIndex((e) => e.id === id);
+		if (idx < 0) {
+			throw new Error(`permission entry not found: ${id}`);
+		}
+		this.permissionEntries.splice(idx, 1);
+		this.permissionVersion += 1;
+		return { success: true, id };
+	}
+
+	/** POST /api/permissions/{id}/submit(mock;仅 Draft 可提交,状态机与 server 对齐) */
+	async submitPermission(id: string): Promise<PermissionWriteResult> {
+		const entry = this.permissionEntries.find((e) => e.id === id);
+		if (!entry) {
+			throw new Error(`permission entry not found: ${id}`);
+		}
+		if (entry.state !== "draft") {
+			throw new Error(`only Draft can be submitted, current = ${entry.state}`);
+		}
+		entry.state = "candidate";
+		this.permissionVersion += 1;
+		return { success: true, id, state: "candidate", version: this.permissionVersion };
+	}
+
+	/** POST /api/permissions/{id}/review(mock;仅 Candidate 可裁决) */
+	async reviewPermission(id: string, approve: boolean): Promise<PermissionWriteResult> {
+		const entry = this.permissionEntries.find((e) => e.id === id);
+		if (!entry) {
+			throw new Error(`permission entry not found: ${id}`);
+		}
+		if (entry.state !== "candidate") {
+			throw new Error(`only Candidate can be reviewed, current = ${entry.state}`);
+		}
+		entry.state = approve ? "active" : "rejected";
+		this.permissionVersion += 1;
+		return { success: true, id, state: entry.state, version: this.permissionVersion };
+	}
+
+	/** GET /api/permissions/version(mock) */
+	async getPermissionsVersion(): Promise<PermissionVersionResult> {
+		return {
+			success: true,
+			version: this.permissionVersion,
+			count: this.permissionEntries.length,
+		};
+	}
+
+	/**
+	 * POST /api/permissions/evaluate(mock)。
+	 * 忠实复刻治理层 PermissionTable::evaluate:遍历条目,
+	 * candidate 命中记候选;active 命中 deny 即胜(立即返回)、allow 记允许;
+	 * 收尾 allow > candidate > 默认策略(human=allow / llm=deny / unknown=deny)。
+	 * 简化边界:conditions 条件求值不模拟(demo 种子无 conditions),如实注释。
+	 */
+	async evaluatePermission(
+		req: PermissionEvaluateRequest,
+	): Promise<PermissionEvaluateResult> {
+		const role = req.caller_role ?? "unknown";
+		const action = req.action ?? "*";
+		let sawCandidate = false;
+		let sawAllow = false;
+		for (const e of this.permissionEntries) {
+			const subjectMatch =
+				e.subject.subject_type === "any" || e.subject.id === role;
+			const actionMatch = e.action === "*" || e.action === action;
+			const pattern = e.resource.path;
+			const resourceMatch =
+				pattern !== "" &&
+				(pattern.endsWith("*")
+					? req.resource.startsWith(pattern.slice(0, -1))
+					: pattern === req.resource);
+			if (!subjectMatch || !actionMatch || !resourceMatch) continue;
+			if (e.state === "candidate") {
+				sawCandidate = true;
+				continue;
+			}
+			if (e.state !== "active") continue;
+			if (e.effect === "deny") {
+				return this.mockEvaluateResult(req, role, action, "deny");
+			}
+			sawAllow = true;
+		}
+		if (sawAllow) {
+			return this.mockEvaluateResult(req, role, action, "allow");
+		}
+		if (sawCandidate) {
+			return this.mockEvaluateResult(req, role, action, "candidate");
+		}
+		// 默认策略(fail-closed:llm/unknown 拒绝,人类允许)
+		const fallback = role === "human" ? "allow" : "deny";
+		return this.mockEvaluateResult(req, role, action, fallback);
+	}
+
+	private mockEvaluateResult(
+		req: PermissionEvaluateRequest,
+		callerRole: string,
+		action: string,
+		verdict: "allow" | "deny" | "candidate",
+	): PermissionEvaluateResult {
+		return {
+			success: true,
+			caller_role: callerRole,
+			resource: req.resource,
+			action,
+			v_trigger: req.v_trigger ?? this.permissionVersion,
+			verdict,
 		};
 	}
 

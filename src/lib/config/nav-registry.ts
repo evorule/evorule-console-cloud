@@ -150,6 +150,15 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     title: "角色管理 — 自定义角色与权限矩阵",
     permissions: ["manage_roles"],
   },
+  {
+    id: "permissions",
+    label: "权限策略",
+    icon: "🔐",
+    path: "/permissions",
+    group: "governance",
+    title: "权限策略 — A-流权限条目生命周期(草稿→审批→激活)与判定测试",
+    loginRequired: true,
+  },
 ];
 
 /** 可见性判定上下文(由宿主注入,保持本模块纯函数无 store 依赖) */
