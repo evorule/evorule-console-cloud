@@ -391,8 +391,18 @@
 
   <!-- UV-078 W2-B5:分类与标签管理抽屉 -->
   {#if manageOpen}
-    <div class="manage-overlay" role="dialog" aria-modal="true" onclick={(e) => {
+    <!-- tabindex="-1":dialog 容器可编程聚焦(ARIA 惯例),同时满足 a11y 焦点要求;
+         Escape 关闭提供与遮罩点击对等的键盘通道 -->
+    <div
+      class="manage-overlay"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      onclick={(e) => {
         if (e.target === e.currentTarget) manageOpen = false;
+      }}
+      onkeydown={(e) => {
+        if (e.key === "Escape") manageOpen = false;
       }}
     >
       <div class="manage-drawer">
