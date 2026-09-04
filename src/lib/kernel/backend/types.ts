@@ -381,6 +381,52 @@ export interface PermissionEvaluateResult {
   verdict: 'allow' | 'deny' | 'candidate';
 }
 
+// === UV-084 W5:知识数据面(3,对齐 server knowledge.rs/knowledge_store.rs) ===
+
+/**
+ * 知识数据集摘要(对齐 KnowledgeDatasetSummary)。
+ * 清单只含"已承载数据资产"的数据集 — 不存在"空数据集"形态。
+ */
+export interface KnowledgeDatasetSummary {
+  dataset_id: string;
+  /** 来源 bundle 集合(单激活语义下通常 1 个) */
+  bundle_ids: string[];
+  entry_count: number;
+  /** 该数据集条目引用的领域 schema 集合(去重,确定性序) */
+  schema_refs: string[];
+}
+
+/** 知识数据条目(对齐 KnowledgeEntryRecord;payload 零转译原样透传) */
+export interface KnowledgeEntryRecord {
+  dataset_id: string;
+  entry_id: string;
+  /** 领域结构化数据本体(落盘 {entry_id}.json 原样内容) */
+  payload: unknown;
+  /** 领域 JSON Schema 引用(D3;旧 manifest 可缺省) */
+  schema_ref?: string | null;
+  /** 来源 bundle(溯源) */
+  bundle_id: string;
+  /** 治理侧源版本(溯源) */
+  source_version: string;
+  /** 领域分类(manifest 携带;旧 manifest → 空串) */
+  domain: string;
+  tags: string[];
+}
+
+/** GET /api/knowledge 响应 */
+export interface KnowledgeDatasetsResult {
+  datasets: KnowledgeDatasetSummary[];
+  count: number;
+}
+
+/** 条目检索过滤参数(q 子串 / domain 精确 / tags 逗号分隔任一命中,与治理侧同语法) */
+export interface KnowledgeEntryFilter {
+  q?: string;
+  domain?: string;
+  /** 逗号分隔标签 */
+  tags?: string;
+}
+
 // ============================================================================
 // 2. ExecutionBackend 抽象接口(SPEC §1.2,35 方法)
 // ============================================================================
@@ -412,6 +458,10 @@ export interface PermissionEvaluateResult {
  *     createPermission / updatePermission / deletePermission /
  *     submitPermission / reviewPermission / getPermissionsVersion /
  *     evaluatePermission
+ *   - 知识数据面(3,UV-084 W5):listKnowledgeDatasets / listKnowledgeEntries /
+ *     getKnowledgeEntry
+ *
+ * 现共 47 方法(早期注释"35"已过期,本行校正)。
  */
 export interface ExecutionBackend {
   // === 会话管理 ===
@@ -592,4 +642,26 @@ export interface ExecutionBackend {
   evaluatePermission(
     req: PermissionEvaluateRequest
   ): Promise<PermissionEvaluateResult>;
+
+  // === UV-084 W5:知识数据面(3,对齐 server knowledge.rs;错误体 {"error"},非 message) ===
+  /**
+   * GET /api/knowledge — 已承载数据资产的数据集清单(只含非空数据集)。
+   * 错误纪律:500(知识库加载失败/磁盘损坏)抛 HttpBackendError(消息含 server
+   * 原文),数据面异常必须可见,禁止降级为静默空列表。
+   */
+  listKnowledgeDatasets(): Promise<KnowledgeDatasetsResult>;
+  /**
+   * GET /api/knowledge/{ds}/entries?q=&domain=&tags= — 条目检索。
+   * 404(数据集未承载/不存在,server 刻意区分"不存在"与"为空")抛
+   * HttpBackendError;tags 逗号分隔任一命中,与治理侧同语法。
+   */
+  listKnowledgeEntries(
+    datasetId: string,
+    filter?: KnowledgeEntryFilter
+  ): Promise<KnowledgeEntryRecord[]>;
+  /**
+   * GET /api/knowledge/{ds}/entries/{id} — 单条直取(payload 零转译原样)。
+   * 404(条目不存在)抛 HttpBackendError。
+   */
+  getKnowledgeEntry(datasetId: string, entryId: string): Promise<KnowledgeEntryRecord>;
 }

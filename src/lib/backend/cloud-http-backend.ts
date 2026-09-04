@@ -55,6 +55,9 @@ import {
   type PermissionVersionResult,
   type PermissionEvaluateRequest,
   type PermissionEvaluateResult,
+  type KnowledgeDatasetsResult,
+  type KnowledgeEntryRecord,
+  type KnowledgeEntryFilter,
   type WorkspaceBackend
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
@@ -394,6 +397,20 @@ export class CloudHttpBackend implements ExecutionBackend {
 		req: PermissionEvaluateRequest
 	): Promise<PermissionEvaluateResult> {
 		return this.backend.evaluatePermission(req);
+	}
+
+	// === UV-084 W5:知识数据面(委托内核 HttpBackend;错误纪律由 HttpBackend 承担) ===
+	listKnowledgeDatasets(): Promise<KnowledgeDatasetsResult> {
+		return this.backend.listKnowledgeDatasets();
+	}
+	listKnowledgeEntries(
+		datasetId: string,
+		filter?: KnowledgeEntryFilter
+	): Promise<KnowledgeEntryRecord[]> {
+		return this.backend.listKnowledgeEntries(datasetId, filter);
+	}
+	getKnowledgeEntry(datasetId: string, entryId: string): Promise<KnowledgeEntryRecord> {
+		return this.backend.getKnowledgeEntry(datasetId, entryId);
 	}
 
 	// === Cloud 专属方法(不在内核 ExecutionBackend 接口内) ===

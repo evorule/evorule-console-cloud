@@ -48,6 +48,9 @@ import type {
   PermissionVersionResult,
   PermissionEvaluateRequest,
   PermissionEvaluateResult,
+  KnowledgeDatasetsResult,
+  KnowledgeEntryRecord,
+  KnowledgeEntryFilter,
   ExecutionBackend
 } from './types';
 
@@ -759,6 +762,40 @@ export class HttpBackend implements ExecutionBackend {
     return this.fetchJson<PermissionEvaluateResult>(
       '/api/permissions/evaluate',
       this.postJson(req)
+    );
+  }
+
+  // === UV-084 W5:知识数据面(对齐 server knowledge.rs;错误体 {"error"},
+  // fetchJson 非 ok 时原文透出,含 error 原文可自诊断) ===
+
+  /** GET /api/knowledge — 已承载数据集清单(库加载失败 500 抛错,不静默空) */
+  async listKnowledgeDatasets(): Promise<KnowledgeDatasetsResult> {
+    return this.fetchJson<KnowledgeDatasetsResult>('/api/knowledge');
+  }
+
+  /** GET /api/knowledge/{ds}/entries — 条目检索(404=数据集未承载/不存在,抛错) */
+  async listKnowledgeEntries(
+    datasetId: string,
+    filter?: KnowledgeEntryFilter
+  ): Promise<KnowledgeEntryRecord[]> {
+    const qs = new URLSearchParams();
+    if (filter?.q) qs.set('q', filter.q);
+    if (filter?.domain) qs.set('domain', filter.domain);
+    if (filter?.tags) qs.set('tags', filter.tags);
+    const suffix = qs.size > 0 ? `?${qs.toString()}` : '';
+    const j = await this.fetchJson<{ entries: KnowledgeEntryRecord[] }>(
+      `/api/knowledge/${encodeURIComponent(datasetId)}/entries${suffix}`
+    );
+    return Array.isArray(j.entries) ? j.entries : [];
+  }
+
+  /** GET /api/knowledge/{ds}/entries/{id} — 单条直取(payload 零转译原样) */
+  async getKnowledgeEntry(
+    datasetId: string,
+    entryId: string
+  ): Promise<KnowledgeEntryRecord> {
+    return this.fetchJson<KnowledgeEntryRecord>(
+      `/api/knowledge/${encodeURIComponent(datasetId)}/entries/${encodeURIComponent(entryId)}`
     );
   }
 }

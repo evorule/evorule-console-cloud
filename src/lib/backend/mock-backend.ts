@@ -49,6 +49,9 @@ import type {
 	PermissionVersionResult,
 	PermissionEvaluateRequest,
 	PermissionEvaluateResult,
+	KnowledgeDatasetsResult,
+	KnowledgeEntryRecord,
+	KnowledgeEntryFilter,
 } from "$lib/kernel";
 import { get } from "svelte/store";
 import { demoDatasetStore, type DemoDataset } from "$lib/stores/demo-dataset";
@@ -878,6 +881,110 @@ export class MockBackend implements ExecutionBackend {
 			v_trigger: req.v_trigger ?? this.permissionVersion,
 			verdict,
 		};
+	}
+
+	// === UV-084 W5:知识数据面(mock;静态种子,只读数据面无写操作) ===
+
+	/** demo 知识条目种子(2 数据集 4 条目;domain/tags 差异供过滤演示) */
+	private static readonly KNOWLEDGE_DEMO: readonly KnowledgeEntryRecord[] = [
+		{
+			dataset_id: "medical_guidelines",
+			entry_id: "triage_level_definition",
+			payload: { title: "分诊级别定义", levels: ["一级(濒危)", "二级(危重)", "三级(急症)", "四级(非急症)"], source: "急诊预检分诊专家共识" },
+			schema_ref: "https://evorule.dev/schemas/medical/triage-level.json",
+			bundle_id: "demo-bundle-medical-001",
+			source_version: "2.1.0",
+			domain: "medical",
+			tags: ["分诊", "急诊"],
+		},
+		{
+			dataset_id: "medical_guidelines",
+			entry_id: "djbh_threshold",
+			payload: { title: "等级保护阈值", critical_asset_availability: 0.9999, audit_retention_months: 6 },
+			schema_ref: "https://evorule.dev/schemas/medical/djbh-threshold.json",
+			bundle_id: "demo-bundle-medical-001",
+			source_version: "2.1.0",
+			domain: "medical",
+			tags: ["等保", "合规"],
+		},
+		{
+			dataset_id: "medical_guidelines",
+			entry_id: "antibiotic_stewardship",
+			payload: { title: "抗菌药物分级管理", classes: ["非限制使用级", "限制使用级", "特殊使用级"] },
+			schema_ref: null,
+			bundle_id: "demo-bundle-medical-002",
+			source_version: "1.4.2",
+			domain: "medical",
+			tags: ["用药"],
+		},
+		{
+			dataset_id: "finance_limits",
+			entry_id: "single_payment_limit",
+			payload: { title: "单笔支付限额", retail: 50000, corporate: 5000000, currency: "CNY" },
+			schema_ref: "https://evorule.dev/schemas/finance/payment-limit.json",
+			bundle_id: "demo-bundle-finance-001",
+			source_version: "3.0.1",
+			domain: "finance",
+			tags: ["支付", "限额"],
+		},
+	];
+
+	private knowledgeFilter(datasetId: string, filter?: KnowledgeEntryFilter): KnowledgeEntryRecord[] {
+		const q = filter?.q?.trim().toLowerCase() ?? "";
+		const tags = (filter?.tags ?? "")
+			.split(",")
+			.map((t) => t.trim())
+			.filter((t) => t.length > 0);
+		return MockBackend.KNOWLEDGE_DEMO.filter((e) => {
+			if (e.dataset_id !== datasetId) return false;
+			if (filter?.domain && e.domain !== filter.domain) return false;
+			if (tags.length > 0 && !tags.some((t) => e.tags.includes(t))) return false;
+			if (q.length > 0) {
+				const hay = `${e.entry_id} ${JSON.stringify(e.payload)}`.toLowerCase();
+				if (!hay.includes(q)) return false;
+			}
+			return true;
+		});
+	}
+
+	/** GET /api/knowledge(mock;由种子聚合,只含已承载数据集) */
+	async listKnowledgeDatasets(): Promise<KnowledgeDatasetsResult> {
+		const datasets = [...new Set(MockBackend.KNOWLEDGE_DEMO.map((e) => e.dataset_id))].map(
+			(dataset_id) => {
+				const entries = MockBackend.KNOWLEDGE_DEMO.filter((e) => e.dataset_id === dataset_id);
+				return {
+					dataset_id,
+					bundle_ids: [...new Set(entries.map((e) => e.bundle_id))],
+					entry_count: entries.length,
+					schema_refs: [
+						...new Set(entries.map((e) => e.schema_ref).filter((s): s is string => Boolean(s))),
+					],
+				};
+			},
+		);
+		return { datasets, count: datasets.length };
+	}
+
+	/** GET /api/knowledge/{ds}/entries(mock;404 语义:数据集未承载抛错,不静默空) */
+	async listKnowledgeEntries(
+		datasetId: string,
+		filter?: KnowledgeEntryFilter,
+	): Promise<KnowledgeEntryRecord[]> {
+		if (!MockBackend.KNOWLEDGE_DEMO.some((e) => e.dataset_id === datasetId)) {
+			throw new Error(`knowledge dataset not found: ${datasetId}`);
+		}
+		return this.knowledgeFilter(datasetId, filter);
+	}
+
+	/** GET /api/knowledge/{ds}/entries/{id}(mock;不存在抛错) */
+	async getKnowledgeEntry(datasetId: string, entryId: string): Promise<KnowledgeEntryRecord> {
+		const hit = MockBackend.KNOWLEDGE_DEMO.find(
+			(e) => e.dataset_id === datasetId && e.entry_id === entryId,
+		);
+		if (!hit) {
+			throw new Error(`knowledge entry not found: ${datasetId}/${entryId}`);
+		}
+		return hit;
 	}
 
 	// === Cloud 专属方法(与 CloudHttpBackend 同名,视图层 instanceof 判断) ===

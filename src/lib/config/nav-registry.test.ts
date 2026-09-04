@@ -55,10 +55,10 @@ describe('visibleNavItems', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('三组归位:home 2 / discover 2 / governance 8', () => {
+	it('三组归位:home 2 / discover 3 / governance 8(UV-084 W5 discover 增知识库)', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor']);
-		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'help']);
+		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'knowledge', 'help']);
 		expect(g.governance).toHaveLength(8);
 	});
 
