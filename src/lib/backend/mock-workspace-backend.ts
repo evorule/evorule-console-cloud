@@ -37,6 +37,7 @@ import type {
 	CreateSessionRequest,
 	StartSandboxRequest,
 	StartSandboxResponse,
+	CreateTestDatasetRequest,
 	SubmitPublishRequest,
 	ReviewPublishRequest,
 	RollbackRequest,
@@ -322,6 +323,14 @@ export class MockWorkspaceBackend implements WorkspaceBackend {
 
 	async listTestDatasets(_workspaceId: string): Promise<TestDatasetRecord[]> {
 		return [];
+	}
+
+	// 写操作:创建合成数据集需 server sandbox_service 落库,离线不支持(不臆造语义)
+	async createTestDataset(
+		_workspaceId: string,
+		_req: CreateTestDatasetRequest
+	): Promise<TestDatasetRecord> {
+		unsupported('createTestDataset');
 	}
 
 	// === 发布队列(写操作属多人审批流程,离线不支持) ===

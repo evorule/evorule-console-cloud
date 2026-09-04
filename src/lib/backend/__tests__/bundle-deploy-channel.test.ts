@@ -149,6 +149,27 @@ describe('CloudWorkspaceBackend 透传(部署通道)', () => {
 	});
 });
 
+describe('GovernanceBackend.buildTestsForEvidence(证据三形态构造,UV-058 W1.3)', () => {
+	test('sandbox-report 机器背书 → subset 引用沙盒 ID + verdict 透传(不伪造:fail 报告如实 fail)', () => {
+		expect(
+			GovernanceBackend.buildTestsForEvidence({ kind: 'sandbox-report', sandboxId: 7, verdict: 'pass' })
+		).toEqual({ subset: ['sandbox:7'], verdict: 'pass' });
+		expect(
+			GovernanceBackend.buildTestsForEvidence({ kind: 'sandbox-report', sandboxId: 9, verdict: 'fail' })
+		).toEqual({ subset: ['sandbox:9'], verdict: 'fail' });
+	});
+
+	test('human-confirmed 人工降级 → subset 带 human:<actor> 标记(降级可追溯)+ verdict=pass', () => {
+		expect(
+			GovernanceBackend.buildTestsForEvidence({ kind: 'human-confirmed', actor: 'admin' })
+		).toEqual({ subset: ['human:admin'], verdict: 'pass' });
+	});
+
+	test('none 无证据 → verdict=fail(执行侧闸门一硬拒,不静默)', () => {
+		expect(GovernanceBackend.buildTestsForEvidence({ kind: 'none' })).toEqual({ verdict: 'fail' });
+	});
+});
+
 describe('GovernanceBackend.exportBundle(带证据导出)', () => {
 	const gb = new GovernanceBackend('http://localhost:18081', 't1');
 
@@ -158,11 +179,11 @@ describe('GovernanceBackend.exportBundle(带证据导出)', () => {
 		await gb.login('u1', 'pw');
 	}
 
-	test('人工确认 → POST /v1/bundles/export 且 tests.verdict=pass', async () => {
+	test('sandbox-report 机器背书 → POST /v1/bundles/export 且 tests={subset:[sandbox:id],verdict:pass}', async () => {
 		await login();
 		mockFetch.mockResolvedValue(okResponse({ bundle: { dataset_id: 'ds-1' } }));
 
-		await gb.exportBundle('ds-1', 'V2', true);
+		await gb.exportBundle('ds-1', 'V2', { kind: 'sandbox-report', sandboxId: 7, verdict: 'pass' });
 
 		const [url, init] = mockFetch.mock.calls[1] as [string, RequestInit];
 		expect(url).toBe('http://localhost:18081/v1/bundles/export');
@@ -170,15 +191,28 @@ describe('GovernanceBackend.exportBundle(带证据导出)', () => {
 		expect(JSON.parse(init.body as string)).toEqual({
 			dataset_id: 'ds-1',
 			version: 'V2',
-			tests: { verdict: 'pass' }
+			tests: { subset: ['sandbox:7'], verdict: 'pass' }
 		});
 	});
 
-	test('未确认 → verdict=fail(导出不可导入执行域的预览包,不伪造)', async () => {
+	test('human-confirmed 人工降级 → tests={subset:[human:actor],verdict:pass}(显式降级可追溯)', async () => {
 		await login();
 		mockFetch.mockResolvedValue(okResponse({ bundle: {} }));
 
-		await gb.exportBundle('ds-1', 'V2', false);
+		await gb.exportBundle('ds-1', 'V2', { kind: 'human-confirmed', actor: 'admin' });
+
+		const init = mockFetch.mock.calls[1][1] as RequestInit;
+		expect(JSON.parse(init.body as string).tests).toEqual({
+			subset: ['human:admin'],
+			verdict: 'pass'
+		});
+	});
+
+	test('none 无证据 → verdict=fail(导出不可导入执行域的预览包,不伪造)', async () => {
+		await login();
+		mockFetch.mockResolvedValue(okResponse({ bundle: {} }));
+
+		await gb.exportBundle('ds-1', 'V2', { kind: 'none' });
 
 		const init = mockFetch.mock.calls[1][1] as RequestInit;
 		expect(JSON.parse(init.body as string).tests.verdict).toBe('fail');

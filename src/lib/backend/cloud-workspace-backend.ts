@@ -42,6 +42,7 @@ import {
 	type CreateSessionRequest,
 	type StartSandboxRequest,
 	type StartSandboxResponse,
+	type CreateTestDatasetRequest,
 	type SubmitPublishRequest,
 	type ReviewPublishRequest,
 	type RollbackRequest,
@@ -259,8 +260,11 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 		return this.backend.closeSandbox(workspaceId, sandboxId);
 	}
 	listTestDatasets(workspaceId: string): Promise<TestDatasetRecord[]> {
-		return this.backend.listTestDatasets(workspaceId);
-	}
+            return this.backend.listTestDatasets(workspaceId);
+    }
+    createTestDataset(workspaceId: string, req: CreateTestDatasetRequest): Promise<TestDatasetRecord> {
+            return this.backend.createTestDataset(workspaceId, req);
+    }
 	listPublishQueue(status?: string): Promise<PublishQueueItem[]> {
 		return this.backend.listPublishQueue(status);
 	}
