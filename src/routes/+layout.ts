@@ -45,7 +45,7 @@ export const load: LayoutLoad = ({ url }) => {
 
 	// /runtime(L1) / /workspace(L2) / /view/[id] / /export / /import-export / /marketplace 守卫:
 	// 仅拦截未登录(需登录才能访问视图)。
-	// 移除了 "|| emptyDb" 阻却原因(Mavis 01 号 P0-01/P0-02 复盘,2026-09-03):
+	// 移除了 "|| emptyDb" 阻却原因(P0-01/P0-02 复盘,2026-09-03):
 	//   emptyDb = 内核 rules store 是否为空,而 rules 在首屏/直载时必为空、
 	//   只在 workbench refresh() 异步水合后方有数据 —— 守卫在布局 load 同步求值,
 	//   对直连 /view/* 或刚进工作台即点卡片时必然命中 emptyDb → 被 307 弹回 /,

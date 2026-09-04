@@ -37,7 +37,7 @@
 }`);
   let ruleId = $state("rule.user.demo");
 
-  // P1-01(Mavis 01):一键插入一个完整可提交的示例(P2-03 同类:inline JSON 校验)
+  // P1-01:一键插入一个完整可提交的示例(P2-03 同类:inline JSON 校验)
   const EXAMPLE_RULE_ID = "rule.medical.triage";
   const EXAMPLE_RULE_JSON = `{
   "type": "set",
@@ -195,7 +195,7 @@
         <div class="llm-disabled">
           ⚠ LLM 尚未配置 · 请在「设置 → LLM 配置」填写 API key 后使用
         </div>
-        <!-- P1-02(Mavis 01):无 Key 也可预览 LLM 将产出的结果形态,降低配置焦虑 -->
+        <!-- P1-02:无 Key 也可预览 LLM 将产出的结果形态,降低配置焦虑 -->
         <details class="llm-sample">
           <summary>💡 查看 LLM 样例输出(无需 Key)</summary>
           <p class="llm-sample-note">

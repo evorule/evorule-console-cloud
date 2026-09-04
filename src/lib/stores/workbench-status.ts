@@ -21,7 +21,7 @@ export interface WorkbenchStatus {
 	ruleConnected: boolean | null;
 	/**
 	 * rule-serve(18081)运行时版本(从 /v1/health 读取)。null=未取得
-	 * (Mavis 01 号 P2-01:顶栏 rule 版本曾硬编码 CONSOLE_VERSION,
+	 * (P2-01:顶栏 rule 版本曾硬编码 CONSOLE_VERSION,
 	 *  现由宿主轮询时动态拉取,取不到时 UI 回落 consoleVersion)。
 	 */
 	ruleVersion: string | null;
