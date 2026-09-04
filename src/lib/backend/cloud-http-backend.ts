@@ -244,8 +244,8 @@ export class CloudHttpBackend implements ExecutionBackend {
 
 	// === 代理所有 17 方法到内部 HttpBackend ===
 
-	health(): Promise<boolean> {
-		return this.backend.health();
+	health(signal?: AbortSignal): Promise<boolean> {
+		return this.backend.health(signal);
 	}
 	createSession(): Promise<SessionId> {
 		return this.backend.createSession();

@@ -290,8 +290,8 @@ export class MockBackend implements ExecutionBackend {
 
 	// === ExecutionBackend 15 方法 ===
 
-	async health(): Promise<boolean> {
-		// MockBackend 永远在线(浏览器内,无网络)
+	async health(_signal?: AbortSignal): Promise<boolean> {
+		// MockBackend 永远在线(浏览器内,无网络;signal 形参仅为契约对齐)
 		return true;
 	}
 

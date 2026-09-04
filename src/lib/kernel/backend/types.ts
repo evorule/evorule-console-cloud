@@ -465,7 +465,14 @@ export interface KnowledgeEntryFilter {
  */
 export interface ExecutionBackend {
   // === 会话管理 ===
-  health(): Promise<boolean>;
+  /**
+   * GET /api/health — 连接探测(布尔语义:失败即 false,不抛错)。
+   * signal(UV-085 ④,可选):探测是可弃请求——调用方在页面卸载(pagehide)
+   * 时主动中止,避免整页导航让浏览器中止 in-flight 请求留下
+   * "Failed to load resource: net::ERR_ABORTED" console 噪音
+   * (JS 主动中止不产生该报错;实现须把 signal 透传给 fetch)。
+   */
+  health(signal?: AbortSignal): Promise<boolean>;
   createSession(): Promise<SessionId>;
   listSessions(): Promise<SessionId[]>;
   closeSession(id: SessionId): Promise<void>;

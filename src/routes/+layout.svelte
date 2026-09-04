@@ -314,6 +314,14 @@
 
   // === 连接状态 ===
   let connected = $state<boolean | null>(null);
+  // UV-085 ④:健康检查延迟定时器 + 中止器(onMount 发起,pagehide/卸载清理)
+  let healthTimer: number | undefined;
+  let healthAbort: AbortController | undefined;
+
+  /** pagehide 时主动中止 in-flight 探测(JS 中止不产生 ERR_ABORTED console 噪音) */
+  function abortHealthOnHide(): void {
+    healthAbort?.abort();
+  }
 
   // === 主题 ===
   let theme = $state<"dark">("dark");
@@ -342,18 +350,34 @@
     document.documentElement.setAttribute("data-theme", "dark");
     localStorage.setItem("evorule-console-cloud:theme", "dark");
 
-    // backend 健康检查
-    backend
-      .health()
-      .then((ok) => {
-        connected = ok;
-      })
-      .catch(() => {
-        connected = false;
-      });
+    // backend 健康检查(UV-085 ④,双层防御)
+    // 第一层:延迟 500ms——避免请求落在 dev 水合瞬间(快速整页导航恰在此时
+    // 到达);页面活不过 500ms 则定时器随文档消亡,根本不产生请求。
+    // 第二层:pagehide 主动中止——实测快速导航页面生命周期可覆盖任意延迟点,
+    // 单靠延迟无法归零;JS 主动中止(AbortController)不产生浏览器
+    // "Failed to load resource: net::ERR_ABORTED" 报错(浏览器强制中止才有),
+    // 且 pagehide 先于文档销毁执行,稳赢强制中止。
+    window.addEventListener("pagehide", abortHealthOnHide);
+    healthTimer = window.setTimeout(() => {
+      healthAbort = new AbortController();
+      backend
+        .health(healthAbort.signal)
+        .then((ok) => {
+          connected = ok;
+        })
+        .catch(() => {
+          connected = false;
+        });
+    }, 500);
 
     // 规则库启动引导(workspace → 内置示例 → 规则列表)
     bootstrapRuleLibrary();
+
+    return () => {
+      window.clearTimeout(healthTimer);
+      window.removeEventListener("pagehide", abortHealthOnHide);
+      healthAbort?.abort();
+    };
   });
 
   // 当前活动路由字符串,用于导航高亮
