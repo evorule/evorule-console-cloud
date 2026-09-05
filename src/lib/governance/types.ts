@@ -125,6 +125,50 @@ export interface AddEntryRequest {
 }
 
 /**
+ * 添加 knowledge 数据条目请求体（POST /v1/datasets/{id}/entries，knowledge 数据集分流）
+ *
+ * UV-086：payload + schema_ref 必填，与 rule_body 互斥（server 显式 400）。
+ * schema_ref 须为 domain_schemas 已注册引用（$id 或文件名），resolver 未命中 = 拒绝入库（D3 强校验）。
+ */
+export interface AddKnowledgeEntryRequest {
+	entry_id: string;
+	/** 治理版本：必填，递增 */
+	version: number;
+	domain?: string;
+	tags?: string[];
+	/** 领域结构化数据本体（任意 JSON，过 schema_ref 领域 schema 强校验） */
+	payload: unknown;
+	/** 领域 JSON Schema 引用（D3 强校验锚） */
+	schema_ref: string;
+	provenance?: GovernanceProvenanceInput;
+}
+
+/**
+ * 编辑条目草稿请求体（PATCH /v1/entries/{id}，knowledge 分流字段）
+ *
+ * UV-086：仅 payload/schema_ref/tags/provenance 可改（PATCH 契约无 domain/version）；
+ * 仅非 frozen 条目可改（Draft；Active/Published 拒绝原地修改，修改=创建新版本）。
+ * 字段缺省 = 不修改；全部缺省 = 无操作（server 逐字段 if-let）。
+ */
+export interface PatchKnowledgeEntryRequest {
+	payload?: unknown;
+	schema_ref?: string;
+	tags?: string[];
+	provenance?: GovernanceProvenanceInput;
+}
+
+/** 治理溯源输入（条目创建/编辑时的 provenance 形状，对齐 server Provenance serde） */
+export interface GovernanceProvenanceInput {
+	source: string;
+	clause?: string | null;
+	document_id?: string | null;
+	effective_from?: string | null;
+	effective_to?: string | null;
+	last_verified?: string | null;
+	verified_by?: string | null;
+}
+
+/**
  * 数据资产条目（KnowledgeEntry，Q12 数据资产化 R2 / 段2 P5）
  *
  * knowledge 数据集专属载荷：`payload` 为领域结构化 JSON（零转译），
