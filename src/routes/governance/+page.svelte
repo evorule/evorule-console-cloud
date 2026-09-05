@@ -21,6 +21,7 @@
     createDataset,
     selectDataset,
     addEntry,
+    deleteEntry,
     transition,
     publish,
     unpublish,
@@ -29,7 +30,7 @@
   } from '$lib/governance/governance-store';
   import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
   import { GovernanceBackend, type ExportEvidence } from '$lib/governance/governance-backend';
-  import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, GovernanceEntry, LifecycleStatus } from '$lib/governance/types';
+  import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, GovernanceEntry, KnowledgeEntry, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import { useWorkspaceBackendOrNull, currentWorkspace, HttpWorkspaceBackendError } from '$lib/kernel';
   import type {
@@ -47,6 +48,7 @@
   } from '$lib/kernel';
   import GuidedHint from '$lib/views/Feedback/GuidedHint.svelte';
   import JsonViewer from '$lib/views/Dataset/JsonViewer.svelte';
+  import KnowledgeEntryForm from '$lib/views/Dataset/KnowledgeEntryForm.svelte';
   import { RuleValidator, type ValidationResult } from '$lib/kernel/validators/ruleValidator';
   import { localSaveGate, summarizeTransformSteps, type TransformStepSummary } from '$lib/governance/rule-form';
   import { RULE_TEMPLATES, shouldConfirmTemplateOverwrite, prefillFromEntry } from '$lib/governance/rule-templates';
@@ -529,6 +531,42 @@
       newEntry = { entry_id: '', version: 1, domain: '', rule_body: '' };
     } catch (e) {
       toastError(e instanceof Error ? e.message : String(e), '添加规则');
+    }
+  }
+
+  // ===== knowledge 数据条目在线编辑(UV-086) =====
+  // 表单态:create(空白或底稿预填)/ edit(Draft 原地 PATCH);null = 收起。
+  // 切换数据集时随条目列表一并收起($effect 监听 selectedId)。
+  let knForm = $state<{ mode: 'create' | 'edit'; entry?: KnowledgeEntry } | null>(null);
+
+  $effect(() => {
+    void $governanceStore.selectedId;
+    knForm = null;
+  });
+
+  function openKnCreate(): void {
+    knForm = knForm?.mode === 'create' && !knForm.entry ? null : { mode: 'create' };
+  }
+
+  /** Draft 条目 → 原地编辑(PATCH;仅 payload/schema_ref/tags/provenance 可改) */
+  function openKnEdit(e: KnowledgeEntry): void {
+    knForm = { mode: 'edit', entry: e };
+  }
+
+  /** 任意条目 → 编辑新版本(POST 新条目;以当前条目为底稿,version+1) */
+  function openKnNewVersion(e: KnowledgeEntry): void {
+    knForm = { mode: 'create', entry: { ...e, version: e.version + 1 } };
+  }
+
+  async function handleKnDelete(e: KnowledgeEntry): Promise<void> {
+    const s = get(governanceStore);
+    if (!s.selectedId) return;
+    if (!confirm(`确认删除数据条目「${e.entry_id}」(v${e.version})?仅 Draft 可删,删除不可恢复(连带版本历史)。`)) return;
+    try {
+      await deleteEntry(s.selectedId, e.entry_id);
+      toastSuccess(`数据条目 ${e.entry_id} 已删除`, '治理');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : String(err), '删除数据条目');
     }
   }
 
@@ -1767,12 +1805,30 @@
             <span>
               {selectedIsKnowledge ? `数据条目(${$governanceStore.entries.length})` : `规则条目(${$governanceStore.entries.length})`}
             </span>
-            {#if !selectedIsKnowledge}
+            {#if selectedIsKnowledge}
+              <!-- UV-086:knowledge 数据条目在线添加 -->
+              <button class="btn btn-sm" onclick={openKnCreate} title="在治理中心添加数据条目(payload 过 schema_ref 强校验)">
+                {knForm?.mode === 'create' && !knForm.entry ? '收起' : '+ 添加数据条目'}
+              </button>
+            {:else}
               <button class="btn btn-sm" onclick={() => (showAddEntry = !showAddEntry)}>
                 {showAddEntry ? '收起' : '+ 灌入规则'}
               </button>
             {/if}
           </div>
+
+          {#if knForm && selectedIsKnowledge}
+            <KnowledgeEntryForm
+              datasetId={selected.dataset_id}
+              mode={knForm.mode}
+              entry={knForm.entry}
+              onDone={() => {
+                knForm = null;
+                toastSuccess('数据条目已保存', '治理');
+              }}
+              onCancel={() => (knForm = null)}
+            />
+          {/if}
 
           {#if showAddEntry && !selectedIsKnowledge}
             <div class="entry-form">
@@ -1857,6 +1913,27 @@
                     {#if k.status && k.status !== 'Active'}
                       <span class="badge {statusClass(k.status)}">{statusLabel[k.status] ?? k.status}</span>
                     {/if}
+                    <!-- UV-086:按状态分流 —— Draft=可原地编辑+可删;其余(含缺省=视同 Active)=仅"编辑新版本" -->
+                    <span class="entry-actions">
+                      {#if k.status === 'Draft'}
+                        <button
+                          class="btn btn-sm"
+                          onclick={() => openKnEdit(k)}
+                          title="Draft 原地编辑(PATCH:payload/schema_ref/标签/溯源;Active/Published 不可原地改)"
+                        >✎ 编辑</button>
+                        <button
+                          class="btn btn-sm btn-danger"
+                          onclick={() => handleKnDelete(k)}
+                          title="删除 Draft 条目(连带版本历史,不可恢复)"
+                        >🗑 删除</button>
+                      {:else}
+                        <button
+                          class="btn btn-sm"
+                          onclick={() => openKnNewVersion(k)}
+                          title="以当前条目为底稿创建新版本(version+1,入库后形成版本链)"
+                        >✎ 编辑新版本</button>
+                      {/if}
+                    </span>
                   </div>
                   <div class="kn-meta">
                     <span class="chip" title="领域 JSON Schema 引用(D3 强校验锚)">{k.schema_ref}</span>

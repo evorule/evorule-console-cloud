@@ -218,3 +218,113 @@ describe('GovernanceBackend.exportBundle(带证据导出)', () => {
 		expect(JSON.parse(init.body as string).tests.verdict).toBe('fail');
 	});
 });
+
+describe('GovernanceBackend knowledge 条目在线编辑(UV-086)', () => {
+	const gb = new GovernanceBackend('http://localhost:18081', 't1');
+
+	/** 先 mock 登录拿 token(条目操作走认证请求) */
+	async function login(): Promise<void> {
+		mockFetch.mockResolvedValueOnce(okResponse({ access_token: 'jwt-test' }));
+		await gb.login('u1', 'pw');
+	}
+
+	test('addKnowledgeEntry → POST /v1/datasets/{id}/entries,body 为 knowledge 分流形状(payload+schema_ref)', async () => {
+		await login();
+		mockFetch.mockResolvedValue(
+			okResponse({ entry_id: 'kn-1', version: 1, payload: { a: 1 }, schema_ref: 's.json' })
+		);
+
+		await gb.addKnowledgeEntry('ds-kn', {
+			entry_id: 'kn-1',
+			version: 1,
+			payload: { a: 1 },
+			schema_ref: 's.json',
+			tags: ['t']
+		});
+
+		const [url, init] = mockFetch.mock.calls[1] as [string, RequestInit];
+		expect(url).toBe('http://localhost:18081/v1/datasets/ds-kn/entries');
+		expect(init.method).toBe('POST');
+		expect(JSON.parse(init.body as string)).toEqual({
+			entry_id: 'kn-1',
+			version: 1,
+			payload: { a: 1 },
+			schema_ref: 's.json',
+			tags: ['t']
+		});
+	});
+
+	test('addKnowledgeEntry schema 未命中 → 抛错携带 server 错误原文(不静默)', async () => {
+		await login();
+		mockFetch.mockResolvedValue({
+			ok: false,
+			status: 400,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => ({ error: { code: 'schema_not_found', message: 'schema_ref 未注册: s.json' } }),
+			text: async () => '',
+		} as unknown as Response);
+
+		await expect(
+			gb.addKnowledgeEntry('ds-kn', { entry_id: 'kn-1', version: 1, payload: {}, schema_ref: 's.json' })
+		).rejects.toThrow(/schema_ref 未注册/);
+	});
+
+	test('patchKnowledgeEntry → PATCH /v1/entries/{id},缺省字段不携带(server 逐字段 if-let)', async () => {
+		await login();
+		mockFetch.mockResolvedValue(
+			okResponse({ entry_id: 'kn-1', version: 1, payload: { a: 2 }, schema_ref: 's.json' })
+		);
+
+		await gb.patchKnowledgeEntry('kn-1', { payload: { a: 2 } });
+
+		const [url, init] = mockFetch.mock.calls[1] as [string, RequestInit];
+		expect(url).toBe('http://localhost:18081/v1/entries/kn-1');
+		expect(init.method).toBe('PATCH');
+		expect(JSON.parse(init.body as string)).toEqual({ payload: { a: 2 } });
+	});
+
+	test('patchKnowledgeEntry 原地改已生效条目 → server 400 拒绝原文透出(frozen 语义不静默)', async () => {
+		await login();
+		mockFetch.mockResolvedValue({
+			ok: false,
+			status: 400,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => ({ error: { code: 'entry_frozen', message: '已生效条目不可原地修改,请创建新版本' } }),
+			text: async () => '',
+		} as unknown as Response);
+
+		await expect(gb.patchKnowledgeEntry('kn-1', { tags: ['x'] })).rejects.toThrow(/不可原地修改/);
+	});
+
+	test('deleteEntry → DELETE /v1/entries/{id},204 无 body 正常返回', async () => {
+		await login();
+		mockFetch.mockResolvedValue({
+			ok: true,
+			status: 204,
+			headers: new Headers(),
+			json: async () => {
+				throw new Error('204 不应有 body');
+			},
+			text: async () => '',
+		} as unknown as Response);
+
+		await gb.deleteEntry('kn-1');
+
+		const [url, init] = mockFetch.mock.calls[1] as [string, RequestInit];
+		expect(url).toBe('http://localhost:18081/v1/entries/kn-1');
+		expect(init.method).toBe('DELETE');
+	});
+
+	test('deleteEntry 删非 Draft 条目 → server 400 拒绝原文透出(status 缺省视同 Active)', async () => {
+		await login();
+		mockFetch.mockResolvedValue({
+			ok: false,
+			status: 400,
+			headers: new Headers({ 'content-type': 'application/json' }),
+			json: async () => ({ error: { code: 'not_draft', message: '仅 Draft 条目可删除' } }),
+			text: async () => '',
+		} as unknown as Response);
+
+		await expect(gb.deleteEntry('kn-1')).rejects.toThrow(/仅 Draft 条目可删除/);
+	});
+});

@@ -19,11 +19,13 @@ import { writable, get } from 'svelte/store';
 import { GovernanceBackend, GovernanceError } from './governance-backend';
 import type {
 	AddEntryRequest,
+	AddKnowledgeEntryRequest,
 	CreateDatasetRequest,
 	GovernanceDataset,
 	GovernanceEntry,
 	KnowledgeEntry,
 	LawRef,
+	PatchKnowledgeEntryRequest,
 	VersioningInfo
 } from './types';
 
@@ -196,6 +198,46 @@ export async function addEntry(datasetId: string, req: AddEntryRequest): Promise
 	const entry = await bk.addEntry(datasetId, req);
 	await loadEntries(datasetId);
 	return entry;
+}
+
+// ====================================================================
+// 条目(knowledge 数据条目 — UV-086 在线编辑)
+// ====================================================================
+
+/** 添加 knowledge 数据条目（payload+schema_ref 必填），成功后刷新条目列表 */
+export async function addKnowledgeEntry(
+	datasetId: string,
+	req: AddKnowledgeEntryRequest
+): Promise<KnowledgeEntry> {
+	const bk = backend();
+	const entry = await bk.addKnowledgeEntry(datasetId, req);
+	await loadEntries(datasetId);
+	return entry;
+}
+
+/**
+ * 编辑 knowledge 条目草稿（PATCH：仅 Draft 可原地改 payload/schema_ref/tags/provenance），
+ * 成功后刷新条目列表。非 frozen 拒绝由 server 裁定，错误原文向上抛（不静默）。
+ */
+export async function patchKnowledgeEntry(
+	datasetId: string,
+	entryId: string,
+	req: PatchKnowledgeEntryRequest
+): Promise<KnowledgeEntry> {
+	const bk = backend();
+	const entry = await bk.patchKnowledgeEntry(entryId, req);
+	await loadEntries(datasetId);
+	return entry;
+}
+
+/**
+ * 删除条目草稿（DELETE：仅显式 Draft 可删，规则/知识条目同构），
+ * 成功后刷新条目列表。删除不可恢复（连带版本历史），UI 侧须二次确认。
+ */
+export async function deleteEntry(datasetId: string, entryId: string): Promise<void> {
+	const bk = backend();
+	await bk.deleteEntry(entryId);
+	await loadEntries(datasetId);
 }
 
 /** 判断条目是否为数据资产条目（Q12 段2 P5：payload/schema_ref 形态） */

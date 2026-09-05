@@ -13,6 +13,7 @@
 
 import type {
 	AddEntryRequest,
+	AddKnowledgeEntryRequest,
 	CreateDatasetRequest,
 	EntryDiffResponse,
 	EntryVersionPayloadResponse,
@@ -22,6 +23,7 @@ import type {
 	KnowledgeEntry,
 	LifecycleStatus,
 	Page,
+	PatchKnowledgeEntryRequest,
 	UpdateDatasetMetaRequest,
 	VersioningInfo
 } from './types';
@@ -239,6 +241,55 @@ export class GovernanceBackend {
 			method: 'POST',
 			path: `/v1/datasets/${encodeURIComponent(datasetId)}/entries`,
 			body: req
+		});
+	}
+
+	/**
+	 * 添加 knowledge 数据条目（UV-086；POST /v1/datasets/{id}/entries，knowledge 数据集分流）
+	 *
+	 * 同一端点按数据集类型分流（server 侧 Q12 R4）：knowledge 数据集收
+	 * {entry_id, version, payload, schema_ref, ...}，payload+schema_ref 必填、与 rule_body 互斥。
+	 * schema_ref 须为 domain_schemas 已注册引用，resolver 未命中 = 400 拒绝（D3）。
+	 */
+	async addKnowledgeEntry(
+		datasetId: string,
+		req: AddKnowledgeEntryRequest
+	): Promise<KnowledgeEntry> {
+		return this.request<KnowledgeEntry>({
+			method: 'POST',
+			path: `/v1/datasets/${encodeURIComponent(datasetId)}/entries`,
+			body: req
+		});
+	}
+
+	/**
+	 * 编辑 knowledge 条目草稿（UV-086；PATCH /v1/entries/{id}）
+	 *
+	 * 仅非 frozen 条目可改（Draft；Active/Published 原地修改被 server 拒绝——
+	 * 修改已生效内容须创建新版本）。字段缺省 = 不修改。
+	 * 返回更新后的条目（server 回读最新状态）。
+	 */
+	async patchKnowledgeEntry(
+		entryId: string,
+		req: PatchKnowledgeEntryRequest
+	): Promise<KnowledgeEntry> {
+		return this.request<KnowledgeEntry>({
+			method: 'PATCH',
+			path: `/v1/entries/${encodeURIComponent(entryId)}`,
+			body: req
+		});
+	}
+
+	/**
+	 * 删除条目草稿（UV-086；DELETE /v1/entries/{id}，204）
+	 *
+	 * 仅显式 Draft 可删（status 缺省视同 Active，server 拒删）；
+	 * 规则/知识条目后端同构分流。删除不可恢复（连带版本历史）。
+	 */
+	async deleteEntry(entryId: string): Promise<void> {
+		await this.request<null>({
+			method: 'DELETE',
+			path: `/v1/entries/${encodeURIComponent(entryId)}`
 		});
 	}
 
