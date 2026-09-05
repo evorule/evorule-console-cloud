@@ -424,6 +424,83 @@ describe("P07 PdfRenderer", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  // === UV-084 W6:Bearer 认证 + 降级不静默 ===
+
+  test("W6:传入 authToken 时请求携带 Authorization: Bearer 头", async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedAuth: string | null = null;
+    let capturedUrl = "";
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      capturedUrl = String(input);
+      capturedAuth =
+        (init?.headers as Record<string, string>)?.Authorization ?? null;
+      return new Response(pdfBytes, {
+        status: 200,
+        headers: { "content-type": "application/pdf" },
+      });
+    }) as typeof fetch;
+    try {
+      const r = new PdfRenderer("http://localhost:18080", "secret-token-123");
+      const blob = await r.render(makeContent(), makeMeta(), {});
+      expect(blob.type).toBe("application/pdf");
+      expect(capturedUrl).toBe("http://localhost:18080/api/export/pdf");
+      expect(capturedAuth).toBe("Bearer secret-token-123");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("W6:无 authToken 时请求不带 Authorization 头", async () => {
+    const originalFetch = globalThis.fetch;
+    let capturedAuth: string | null = "SENTINEL";
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      capturedAuth =
+        (init?.headers as Record<string, string>)?.Authorization ?? null;
+      return new Response(pdfBytes, {
+        status: 200,
+        headers: { "content-type": "application/pdf" },
+      });
+    }) as typeof fetch;
+    try {
+      const r = new PdfRenderer("http://localhost:18080");
+      await r.render(makeContent(), makeMeta(), {});
+      expect(capturedAuth).toBeNull();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("W6:服务端失败时 console.warn 透出状态码与 message(不静默降级)", async () => {
+    const originalFetch = globalThis.fetch;
+    const originalWarn = console.warn;
+    const warns: string[] = [];
+    console.warn = (...args: unknown[]) => {
+      warns.push(args.map(String).join(" "));
+    };
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          success: false,
+          message: "渲染字体缺少以下字符的字形",
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      )) as typeof fetch;
+    try {
+      const r = new PdfRenderer("http://localhost:18080");
+      const blob = await r.render(makeContent(), makeMeta(), {});
+      expect(blob.type).toBe("text/html");
+      expect(warns.length).toBeGreaterThan(0);
+      expect(warns[0]).toContain("HTTP 400");
+      expect(warns[0]).toContain("渲染字体缺少");
+      expect(warns[0]).toContain("降级");
+    } finally {
+      globalThis.fetch = originalFetch;
+      console.warn = originalWarn;
+    }
+  });
 });
 
 // ============================================================================

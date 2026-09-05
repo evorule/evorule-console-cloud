@@ -338,7 +338,11 @@ function xmlTagName(key: string): string {
 export class PdfRenderer implements ExportRenderer {
   format = "pdf" as const;
 
-  constructor(private serverBaseUrl?: string) {}
+  constructor(
+    public readonly serverBaseUrl?: string,
+    /** 执行域 server Bearer token(UV-084 W6:/api/export/pdf 在受保护路由组) */
+    public readonly authToken?: string,
+  ) {}
 
   async render(
     content: ExportContent,
@@ -352,8 +356,11 @@ export class PdfRenderer implements ExportRenderer {
       try {
         const blob = await this.tryServerPdf(content, meta, opts);
         if (blob) return blob;
-      } catch {
-        // 降级到打印 HTML
+      } catch (e) {
+        // 降级到打印 HTML,但原因必须透出(不静默降级)
+        console.warn(
+          `[export] 服务端 PDF 请求失败: ${(e as Error).message},降级为打印 HTML`,
+        );
       }
     }
 
@@ -394,14 +401,36 @@ export class PdfRenderer implements ExportRenderer {
       },
     };
 
+    // Bearer 认证(UV-084 W6):端点挂载在受保护路由组,生产模式(启用 auth_token)
+    // 无 token 会 401。认证禁用的 loopback 开发模式下带 token 亦无害。
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (this.authToken) {
+      headers.Authorization = `Bearer ${this.authToken}`;
+    }
+
     const r = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      // 失败原因透出(不静默降级);server 端 message 在 body 里,尽力读取
+      let detail = "";
+      try {
+        detail = ((await r.json()) as { message?: string }).message ?? "";
+      } catch {
+        /* 非 JSON 错误体,只报状态码 */
+      }
+      console.warn(
+        `[export] 服务端 PDF 渲染失败(HTTP ${r.status}${detail ? `: ${detail}` : ""}),降级为打印 HTML`,
+      );
+      return null;
+    }
     const ct = r.headers.get("content-type") ?? "";
-    if (!ct.includes("pdf")) return null;
+    if (!ct.includes("pdf")) {
+      console.warn(`[export] 服务端 PDF 响应类型异常(${ct}),降级为打印 HTML`);
+      return null;
+    }
     return await r.blob();
   }
 
@@ -514,6 +543,7 @@ let rendererCache: Partial<Record<string, ExportRenderer>> = {};
 export function getRenderer(
   format: "json" | "csv" | "pdf" | "xml",
   serverBaseUrl?: string,
+  authToken?: string,
 ): ExportRenderer {
   if (!rendererCache[format]) {
     switch (format) {
@@ -527,15 +557,18 @@ export function getRenderer(
         rendererCache[format] = new XmlRenderer();
         break;
       case "pdf":
-        rendererCache[format] = new PdfRenderer(serverBaseUrl);
+        rendererCache[format] = new PdfRenderer(serverBaseUrl, authToken);
         break;
     }
   }
-  // PDF 渲染器需要 serverBaseUrl,若变化需重建
-  if (format === "pdf" && serverBaseUrl) {
+  // PDF 渲染器需要 serverBaseUrl + authToken(UV-084 W6),任一变化需重建
+  if (format === "pdf") {
     const pdf = rendererCache.pdf as PdfRenderer | undefined;
-    if (pdf && (pdf as unknown as { serverBaseUrl?: string }).serverBaseUrl !== serverBaseUrl) {
-      rendererCache.pdf = new PdfRenderer(serverBaseUrl);
+    if (
+      pdf &&
+      (pdf.serverBaseUrl !== serverBaseUrl || pdf.authToken !== authToken)
+    ) {
+      rendererCache.pdf = new PdfRenderer(serverBaseUrl, authToken);
     }
   }
   return rendererCache[format]!;

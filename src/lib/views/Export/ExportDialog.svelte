@@ -178,15 +178,17 @@
     const primaryContent: ExportContentType =
       contentsArr.length > 1 ? "comprehensive" : contentsArr[0];
 
-    // 获取 serverBaseUrl(用于 PDF 服务端渲染)
-    const serverBaseUrl =
-      backend instanceof CloudHttpBackend ? backend.baseUrl : undefined;
+    // 获取 serverBaseUrl(用于 PDF 服务端渲染) + authToken(UV-084 W6:端点在
+    // 受保护路由组,生产模式需 Bearer;loopback 开发模式认证禁用时为 undefined)
+    const cloud = backend instanceof CloudHttpBackend ? backend : null;
+    const serverBaseUrl = cloud?.baseUrl;
+    const authToken = cloud?.config.authToken;
 
     // 若选了模板,用模板的完整配置
     if (selectedTemplateId) {
       const tpl = templates.find((t) => t.id === selectedTemplateId);
       if (tpl) {
-        await executeTemplateExport(backend, sessionId, tpl, serverBaseUrl);
+        await executeTemplateExport(backend, sessionId, tpl, serverBaseUrl, authToken);
         return;
       }
     }
@@ -201,6 +203,7 @@
       renderOptions,
       undefined,
       serverBaseUrl,
+      authToken,
     );
   }
 

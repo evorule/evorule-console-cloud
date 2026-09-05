@@ -313,6 +313,7 @@ function describeRange(filters: ExportFilters): string {
  * @param options     渲染选项
  * @param templateId  使用的模板 ID(写入元数据)
  * @param serverBaseUrl 服务端基地址(PDF 渲染用)
+ * @param authToken   执行域 server Bearer token(UV-084 W6,PDF 服务端渲染认证用)
  */
 export async function executeExport(
   backend: ExecutionBackend,
@@ -323,6 +324,7 @@ export async function executeExport(
   options?: ExportRenderOptions,
   templateId?: string,
   serverBaseUrl?: string,
+  authToken?: string,
 ): Promise<{ blob: Blob; filename: string } | null> {
   exportExecutionStore.update((s) => ({
     ...s,
@@ -403,7 +405,7 @@ export async function executeExport(
     }));
 
     // 8. 调渲染器
-    const renderer = getRenderer(format, serverBaseUrl);
+    const renderer = getRenderer(format, serverBaseUrl, authToken);
     const blob = await renderer.render(content, meta, options ?? {});
 
     // 9. 生成文件名
@@ -448,6 +450,7 @@ export async function executeExportAndDownload(
   options?: ExportRenderOptions,
   templateId?: string,
   serverBaseUrl?: string,
+  authToken?: string,
 ): Promise<void> {
   const result = await executeExport(
     backend,
@@ -458,6 +461,7 @@ export async function executeExportAndDownload(
     options,
     templateId,
     serverBaseUrl,
+    authToken,
   );
   if (!result) return;
 
@@ -483,6 +487,7 @@ export async function executeTemplateExport(
   sessionId: SessionId,
   template: ExportTemplate,
   serverBaseUrl?: string,
+  authToken?: string,
 ): Promise<void> {
   // 模板可能含多种 contents,comprehensive 类型聚合多内容
   // P0 简化:取第一个 content 类型导出(comprehensive 模板直接用 comprehensive 类型)
@@ -501,6 +506,7 @@ export async function executeTemplateExport(
     template.renderOptions,
     template.id,
     serverBaseUrl,
+    authToken,
   );
 }
 
