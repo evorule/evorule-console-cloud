@@ -188,6 +188,59 @@ export async function uploadTemplate(
 }
 
 /**
+ * 编辑模板(UV-087):multipart PATCH /api/marketplace/templates/:id。
+ *
+ * - meta(JSON,必填):普通字段整体替换(name/description/tags/version 等)
+ * - content(可选):提供则替换内容并触发 server 重算 content_hash;缺省=保留原内容
+ * - id/source/download_url/download_count/created_at 为 server 权威字段,
+ *   客户端提供的值不采信(一律保留原值);updated_at 由 server 刷新
+ * - 成功后以 server 返回的完整模板替换镜像对应项(不整表重拉,保持乐观更新模式)
+ */
+export async function updateTemplate(
+	templateId: string,
+	template: Omit<
+		MarketTemplate,
+		| "id"
+		| "download_count"
+		| "created_at"
+		| "updated_at"
+		| "source"
+	>,
+	content?: Blob,
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const fd = new FormData();
+		fd.append("meta", JSON.stringify(template));
+		if (content) {
+			fd.append("content", content, "template-content.bin");
+		}
+
+		const res = await fetch(
+			`${resolveApiBase()}/api/marketplace/templates/${encodeURIComponent(templateId)}`,
+			{ method: "PATCH", headers: authHeaders(), body: fd },
+		);
+		if (!res.ok) {
+			return { success: false, error: await serverErrorMessage(res, "编辑失败") };
+		}
+		const data = (await res.json()) as { success?: boolean; template?: MarketTemplate };
+		if (!data.template) {
+			return { success: false, error: "编辑响应形态异常(缺 template)" };
+		}
+		// 以 server 返回的权威模板替换镜像项(双写:镜像 + 全量列表)
+		userTemplatesStore.update((list) =>
+			list.map((t) => (t.id === templateId ? data.template! : t)),
+		);
+		resyncMarketplace();
+		return { success: true };
+	} catch (e) {
+		return {
+			success: false,
+			error: e instanceof Error ? e.message : String(e),
+		};
+	}
+}
+
+/**
  * 下载模板:
  * - builtin/official(私有协议 URL)→ 本地返回模板元数据 JSON(P0 语义保留)
  * - user(server 模板)→ GET /api/marketplace/templates/:id/download,

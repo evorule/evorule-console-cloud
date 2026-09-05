@@ -19,6 +19,7 @@ import {
 	filterSource,
 	loadMarketplace,
 	uploadTemplate,
+	updateTemplate,
 	downloadTemplate,
 	deleteTemplate,
 	getTemplateById,
@@ -287,6 +288,102 @@ describe("P09 marketplace 上传 + 删除", () => {
 		expect(builtin).toBeDefined();
 		await expect(deleteTemplate(builtin!.id)).rejects.toThrow("不可删除");
 		expect(fetchMock).not.toHaveBeenCalled();
+	});
+});
+
+// ============================================================================
+// 4b. 编辑(UV-087:multipart PATCH /api/marketplace/templates/:id)
+// ============================================================================
+
+describe("P09 marketplace 编辑(UV-087)", () => {
+	/** 先上传一个模板进 store,返回其 server id */
+	async function seedUserTemplate(): Promise<string> {
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse({ success: true, template: serverTemplate({ name: "待编辑" }) }),
+		);
+		const result = await uploadTemplate(uploadPayload("待编辑"), new Blob(["old"]));
+		expect(result.success).toBe(true);
+		return "srv-tpl-1";
+	}
+
+	test("编辑元数据:PATCH :id + server 返回模板替换镜像项", async () => {
+		const id = await seedUserTemplate();
+
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse({
+				success: true,
+				template: serverTemplate({ name: "已编辑", description: "新描述", version: "2.0.0" }),
+			}),
+		);
+		const result = await updateTemplate(id, {
+			...uploadPayload("已编辑"),
+			description: "新描述",
+			version: "2.0.0",
+		});
+		expect(result.success).toBe(true);
+
+		// 请求形状:multipart PATCH 到 /api/marketplace/templates/:id
+		const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+		expect(url).toContain(`/api/marketplace/templates/${id}`);
+		expect(init.method).toBe("PATCH");
+		expect(init.body).toBeInstanceOf(FormData);
+
+		// 镜像替换为 server 权威模板(非追加)
+		const list = get(marketplaceTemplates).filter((t) => t.source === "user");
+		expect(list).toHaveLength(1);
+		expect(list[0].name).toBe("已编辑");
+		expect(list[0].version).toBe("2.0.0");
+	});
+
+	test("content 缺省=不携带(FormData 无 content 字段,保留原内容语义)", async () => {
+		const id = await seedUserTemplate();
+
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse({ success: true, template: serverTemplate({ name: "仅改元数据" }) }),
+		);
+		await updateTemplate(id, uploadPayload("仅改元数据"));
+
+		const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+		const fd = init.body as FormData;
+		expect(fd.has("meta")).toBe(true);
+		expect(fd.has("content")).toBe(false);
+	});
+
+	test("content 提供则携带(FormData 含 content)", async () => {
+		const id = await seedUserTemplate();
+
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse({ success: true, template: serverTemplate({ name: "换内容" }) }),
+		);
+		await updateTemplate(id, uploadPayload("换内容"), new Blob(["new content"]));
+
+		const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+		const fd = init.body as FormData;
+		expect(fd.has("content")).toBe(true);
+	});
+
+	test("编辑失败显式暴露 server 指引(404 不存在,拒绝静默成功)", async () => {
+		const id = await seedUserTemplate();
+
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse({ message: "模板不存在或不完整: srv-tpl-1" }, 404),
+		);
+		const result = await updateTemplate(id, uploadPayload("改名"));
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain("模板不存在");
+		// 镜像保持原值(未被失败响应污染)
+		expect(get(marketplaceTemplates).find((t) => t.id === id)?.name).toBe("待编辑");
+	});
+
+	test("编辑响应缺 template → 显式报形态异常(不静默当成功)", async () => {
+		const id = await seedUserTemplate();
+
+		fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+		const result = await updateTemplate(id, uploadPayload("改名"));
+
+		expect(result.success).toBe(false);
+		expect(result.error).toContain("形态异常");
 	});
 });
 

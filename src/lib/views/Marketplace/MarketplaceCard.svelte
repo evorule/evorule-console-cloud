@@ -24,9 +24,11 @@
 
   interface Props {
     template: MarketTemplate;
+    /** 编辑入口(UV-087):仅 user 来源卡片渲染编辑按钮,上抛给宿主页开编辑弹窗 */
+    onEdit?: (template: MarketTemplate) => void;
   }
 
-  let { template }: Props = $props();
+  let { template, onEdit }: Props = $props();
 
   const sourceLabels: Record<MarketTemplate["source"], string> = {
     builtin: "内置",
@@ -120,6 +122,9 @@
     </span>
     <div class="mc-actions">
       <button class="mc-btn primary" onclick={handleDownload}>📥 下载</button>
+      {#if template.source === "user" && onEdit}
+        <button class="mc-btn edit" onclick={() => onEdit(template)}>✎ 编辑</button>
+      {/if}
       {#if template.source === "user"}
         <button class="mc-btn danger" onclick={handleDelete}>🗑 删除</button>
       {/if}
@@ -238,6 +243,11 @@
     background: var(--brand, #2563eb);
     border-color: var(--brand, #2563eb);
     color: white;
+  }
+  .mc-btn.edit {
+    background: var(--bg-card);
+    border-color: var(--brand, #2563eb);
+    color: var(--brand, #2563eb);
   }
   .mc-btn.danger {
     background: var(--bg-card);

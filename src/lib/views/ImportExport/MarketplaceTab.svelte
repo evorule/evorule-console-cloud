@@ -18,6 +18,7 @@
     filterCategory,
     filterSource,
     uploadTemplate,
+    updateTemplate,
     loadMarketplace,
     marketplaceLoading,
     marketplaceError,
@@ -26,6 +27,7 @@
   import {
     OBJECT_TYPE_LABELS,
     TEMPLATE_CATEGORY_LABELS,
+    type MarketTemplate,
     type ObjectType,
     type TemplateCategory,
     type TemplateSource,
@@ -44,6 +46,15 @@
   let uploadCategory = $state<TemplateCategory>("general");
   let uploadVersion = $state("1.0.0");
   let uploadFile = $state<File | null>(null);
+
+  // 编辑表单状态(UV-087):editing 非空时弹编辑弹窗;文件可选(不选=保留原内容)
+  let editing = $state<MarketTemplate | null>(null);
+  let editName = $state("");
+  let editDesc = $state("");
+  let editType = $state<ObjectType>("rule");
+  let editCategory = $state<TemplateCategory>("general");
+  let editVersion = $state("1.0.0");
+  let editFile = $state<File | null>(null);
 
   const typeOptions: (ObjectType | "all")[] = [
     "all",
@@ -106,6 +117,55 @@
       uploadFile = null;
     } else {
       toastError(`上传失败:${result.error}`);
+    }
+  }
+
+  // ---------- UV-087 编辑 ----------
+
+  function handleEditFileChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    editFile = input.files?.[0] ?? null;
+  }
+
+  function openEdit(tpl: MarketTemplate) {
+    editing = tpl;
+    // 预填当前元数据(仅 user 来源可达此入口,卡片按钮已分流)
+    editName = tpl.name;
+    editDesc = tpl.description;
+    editType = tpl.type;
+    editCategory = tpl.category;
+    editVersion = tpl.version;
+    editFile = null;
+  }
+
+  async function handleUpdate() {
+    if (!editing) return;
+    if (!editName.trim()) {
+      toastError("请填写名称");
+      return;
+    }
+    const result = await updateTemplate(
+      editing.id,
+      {
+        type: editType,
+        name: editName,
+        description: editDesc,
+        category: editCategory,
+        tags: editing.tags,
+        author: editing.author,
+        version: editVersion,
+        format: editing.format,
+        content_hash: editing.content_hash,
+        download_url: editing.download_url,
+      },
+      editFile ?? undefined,
+    );
+    if (result.success) {
+      toastSuccess("模板已更新");
+      editing = null;
+    } else {
+      // server 400/404/500 错误原文上屏,不静默
+      toastError(`编辑失败:${result.error}`);
     }
   }
 </script>
@@ -186,7 +246,7 @@
   {:else}
     <div class="mt-grid">
       {#each $filteredTemplates as tpl (tpl.id)}
-        <MarketplaceCard template={tpl} />
+        <MarketplaceCard template={tpl} onEdit={openEdit} />
       {/each}
     </div>
   {/if}
@@ -251,6 +311,65 @@
 {/if}
 
 <RulesetImporter open={showRulesetImporter} onClose={() => (showRulesetImporter = false)} />
+
+<!-- 编辑弹窗(UV-087):预填元数据;文件可选,不选=保留原内容(server 侧 hash 不变) -->
+{#if editing}
+  <div
+    class="mt-overlay"
+    role="presentation"
+    onclick={(e) => {
+      if (e.currentTarget === e.target) editing = null;
+    }}
+  >
+    <div class="mt-dialog" role="dialog" aria-modal="true">
+      <header class="mt-dialog-header">
+        <h3>✎ 编辑模板</h3>
+        <button class="mt-close" onclick={() => (editing = null)}>×</button>
+      </header>
+      <div class="mt-dialog-body">
+        <label class="mt-field">
+          名称:
+          <input type="text" bind:value={editName} placeholder="如:我的报销规则" />
+        </label>
+        <label class="mt-field">
+          描述:
+          <textarea bind:value={editDesc} rows="2" placeholder="模板用途说明"></textarea>
+        </label>
+        <div class="mt-field-row">
+          <label class="mt-field">
+            类型:
+            <select bind:value={editType}>
+              {#each Object.entries(OBJECT_TYPE_LABELS) as [key, label] (key)}
+                <option value={key}>{label}</option>
+              {/each}
+            </select>
+          </label>
+          <label class="mt-field">
+            分类:
+            <select bind:value={editCategory}>
+              {#each Object.entries(TEMPLATE_CATEGORY_LABELS) as [key, label] (key)}
+                <option value={key}>{label}</option>
+              {/each}
+            </select>
+          </label>
+        </div>
+        <label class="mt-field">
+          版本:
+          <input type="text" bind:value={editVersion} placeholder="1.0.0" />
+        </label>
+        <label class="mt-field">
+          替换内容(可选):
+          <input type="file" onchange={handleEditFileChange} />
+          <span class="mt-edit-hint">不选择新文件则保留原内容</span>
+        </label>
+      </div>
+      <footer class="mt-dialog-footer">
+        <button class="mt-btn" onclick={() => (editing = null)}>取消</button>
+        <button class="mt-btn primary" onclick={handleUpdate}>保存</button>
+      </footer>
+    </div>
+  </div>
+{/if}
 
 <style>
   .mt-tab {
@@ -415,6 +534,10 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+  }
+  .mt-edit-hint {
+    font-size: 10px;
+    color: var(--text-secondary, #9ca3af);
   }
   .mt-dialog-footer {
     display: flex;
