@@ -3,7 +3,7 @@
 
 # evorule-console-cloud
 
-> evorule 规则引擎面板 · **联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM）
+> evorule 规则引擎面板 · **联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM + 平台治理）
 
 [![version](https://img.shields.io/badge/version-0.2.0-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
@@ -12,9 +12,10 @@
 `evorule-console-cloud` 基于 evorule-console 内核快照（`src/lib/kernel/`，取自内核 v0.2.0）扩展：
 
 - **联网**：可连接远程 evorule-server（非仅本地 loopback）
-- **云 LLM 辅助**：OpenAI 兼容协议，多厂商预设（智谱/通义/DeepSeek/OpenAI），辅助生成规则草案/解释规则/生成测试输入
+- **平台治理**：登录 / 用户 / 角色 / 权限矩阵 / 发布审批，对接 evorule-server 统一认证与 evorule-rule 资产库
+- **云 LLM 辅助**：OpenAI 兼容协议，9 家厂商预设（智谱/通义/DeepSeek/MiniMax/Kimi/OpenAI/Ollama/ERNIE/自定义），辅助生成规则草案/解释规则/生成测试输入
 - **用户审核确认**：LLM 只生成草案，最终规则是用户审核的 JSON，不破坏 evorule「确定性执行」基调
-- **本地 LLM（L2）**：规划中，付费扩展（v0.2.0+）
+- **本地 LLM（L2）**：规划中，付费扩展
 
 > **LLM 是辅助层，不参与确定性执行** — 执行链路完全不经过 LLM，规则即数据，用户审核才生效。
 
@@ -42,9 +43,14 @@
 | 合规审计难通过 | 审计导出满足 EU AI Act Article 12 + 等保 2.0 三级 |
 | 规则发布无管控 | 三级权限审批 + 滚动 session 热更新零停机 |
 
-### 在线体验
+### 生态位置
 
-**[在线 demo](https://evorule.github.io/evorule-console-cloud/)**（无需注册，医疗 + 财务两套场景，浏览器内 MockBackend 零网络依赖）
+| 仓 | 角色 |
+| --- | --- |
+| [evorule](https://gitee.com/evorule/evorule) | 核心引擎（TCB / 反应器 / 治理，crates.io） |
+| [evorule-server](https://gitee.com/evorule/evorule-server) | HTTP 服务端（认证 / 审计 / 插件 / 模板市场） |
+| **本仓** | 唯一用户入口（浏览器面板，二次开发者专业起点） |
+| [在线 demo](https://evorule.github.io/evorule-console-cloud/) | 无需注册，医疗 + 财务两套场景，浏览器内 MockBackend 零网络依赖 |
 
 ### 4 个引导任务（2-3 分钟体验完整链路）
 
@@ -67,15 +73,18 @@
 - **BLAKE3 不可篡改审计链**：每个 Fact 哈希链接，篡改即被发现
 - **时间旅行回放**：回溯任意版本，diff 对比 + 因果链追溯
 - **等保 2.0 三级门禁**：AI Agent 工具调用前合规检查（§8.1.4.1.d MFA / §8.1.4.7.b 加密）
-- **合规报告导出**：6 种内容 × 4 种格式（JSON/CSV/XML/PDF），满足 EU AI Act
+- **合规报告导出**：6 种内容 × 4 种格式（JSON/CSV/XML/PDF）；PDF 优先服务端渲染（`POST /api/export/pdf`），server 不支持时自动降级浏览器打印
 - **滚动 session 热更新**：规则集发布零停机，版本单调递增
-- ✅ **协作审批工作流**：三级权限（admin/lead/auditor），规则发布需审批
+- **平台认证与多用户治理**：登录 / 个人中心 / 用户管理 / 角色权限矩阵 / `can()` 权限判定后端化
+- **治理中心**：直连 evorule-rule 资产库（:18081），条目 5 态生命周期（Draft→Candidate→Active→Published→Rejected）+ 版本链 + 知识条目在线编辑
+- **模板市场**：模板上传 / 在线编辑 / 下载
+- **协作审批工作流**：三级权限（admin/lead/auditor），规则发布需审批
 
 ---
 
 ## 定位
 
-evorule-console-cloud 是 **evorule 全生态的唯一用户入口**（2026-08-30 生态裁定）：浏览器用户对 evorule 的一切操作——规则库、执行、审计、回放、审批——都收敛于此面板。同时它也是面向**二次开发者**的专业起点工具：开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
+evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器用户对 evorule 的一切操作——规则库、执行、审计、回放、审批——都收敛于此面板。同时它也是面向**二次开发者**的专业起点工具：开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
 
 | 层级 | 仓 | 定位 | LLM | 网络 | 内核关系 |
 | --- | --- | --- | --- | --- | --- |
@@ -87,21 +96,35 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**（2026-08-3
 
 ---
 
-## 当前版本边界与 Roadmap
+## 版本能力边界
 
-### 当前版本已支持（v0.2.0）
+### v0.2.0 已发版（2026-09-02）
 
 - 规则库视图离线可用（内置 demo 数据集 + 4 个引导任务）
 - 执行台 / 状态 / 审计 / 时间旅行：连接 evorule-server 运行（支持本地 / 远程地址）
-- 云 LLM 辅助三用途：创建规则草案 / 解释规则 / 生成测试输入（智谱 / 通义 / DeepSeek / OpenAI 预设）
+- **平台登录接入**（server 统一认证）+ 个人中心 + 权限判定后端化；用户管理 / 角色管理页（权限矩阵编辑器）
+- 总览 Dashboard（widget 注册表化）；导航注册表化（侧栏 / 跳单卡 / 命令面板同清单同门控）
+- 历史会话审计档案面板 + 平台认证事件面板
+- 云 LLM 辅助三用途：创建规则草案 / 解释规则 / 生成测试输入（9 家厂商预设）
 - 联网模式切换（offline ↔ online）、视图选择、联网与 LLM 配置持久化
 - apiKey 安全：仅存浏览器 localStorage，不进 URL / 日志 / 错误信息
+- 单镜像双进程 Docker 一键部署（`packaging/docker/`）；分发包插件清单缺省文件 + 双平台打包接线
+
+### main 分支已合入（待随下一版发布）
+
+- 知识数据面 UI（`/knowledge` 路由，执行侧数据只读通道）
+- 权限点页（`/permissions`）；模板在线编辑 UI（marketplace 编辑弹窗）
+- PDF 服务端渲染接线（Bearer 认证透传 + 降级原因显式提示）
+- 治理中心-向导贯通（从向导包导入 / 版本链徽标 / 内容预载）；治理中心知识条目在线编辑（Draft 编辑/删除 + 新版本链）
+- 导出链五项修复；健康检查噪音消除
+
+完整清单见 [CHANGELOG](./CHANGELOG.md) 与 commit 历史。
 
 ### Roadmap（规划中，非承诺）
 
 | 目标 | 版本 | 说明 |
 | --- | --- | --- |
-| 本地 LLM（L2）| v0.2.0+ | 付费扩展，本地 GPU LLM |
+| 本地 LLM（L2）| 后续版本 | 付费扩展，本地 GPU LLM |
 | 后续优化迭代 | 持续 | 依社区反馈完善 UI / 功能 / 文档 |
 
 > 版本语义：`0.x` 为预发布系列，`v1.0.0` 对应功能完整。欢迎通过 [Issues](https://gitee.com/evorule/evorule-console-cloud/issues) 反馈需求与缺陷。
@@ -194,17 +217,19 @@ npm run preview -- --host 127.0.0.1 --port 4173
 
 大众版 LLM apiKey **只**走浏览器 localStorage（`evorule-console-cloud:llm-config`），不读 .env。在设置面板 → LLM 配置 tab 中填写。
 
-推荐使用**智谱 GLM-4-Flash**（有免费额度）：在 [智谱开放平台](https://open.bigmodel.cn/usercenter/apikeys) 获取 apiKey。
+内置 9 家厂商预设：智谱 GLM（推荐，有免费额度）/ 通义千问 / DeepSeek / MiniMax / Kimi / OpenAI / Ollama（本机）/ ERNIE / 自定义（任意 OpenAI 兼容端点）。推荐从 [智谱开放平台](https://open.bigmodel.cn/usercenter/apikeys) 获取 apiKey 起步。
 
 ### 认证配置（EVORULE_AUTH_TOKEN）
 
-evorule-server 开启认证后，工作台需要在**设置面板 → 联网配置 → 认证 Token** 中填入与 server 一致的 token（失焦自动保存，留空 = 请求不带凭据，仅免认证 server 可用）。全链路（执行侧会话 API、workspace 规则库、发布审批/回滚、生产状态/版本历史）统一携带 `Authorization: Bearer` 头。
+**优先路径——平台登录**：若 server 已启用平台用户体系（bootstrap 首启创建管理员），直接在登录页登录即可，无需手工填写 token。体验包默认开 `--demo-auth` 演示入口（server 下发开关控制显隐，server 不可达时保留）。
+
+直连静态 token 场景：在**设置面板 → 联网配置 → 认证 Token** 中填入与 server 一致的 token（失焦自动保存，留空 = 请求不带凭据，仅免认证 server 可用）。全链路（执行侧会话 API、workspace 规则库、发布审批/回滚、生产状态/版本历史）统一携带 `Authorization: Bearer` 头。
 
 server 侧两个 token 环境变量（详见 evorule-server README「环境变量 / CLI 参数」）：
 
 | 环境变量 | 语义 |
 | --- | --- |
-| `EVORULE_AUTH_TOKEN` | 普通 Bearer token（浏览器用户身份）；**生产部署必须配置**——未配置时认证整体关闭，受保护域写入准入失效（dev 放行语义，见 dispositions AC-B5-S1） |
+| `EVORULE_AUTH_TOKEN` | 普通 Bearer token（浏览器用户身份）；**生产部署必须配置**——未配置时认证整体关闭，受保护域写入准入失效（dev 放行语义） |
 | `EVORULE_SERVICE_TOKEN` | service 身份 token（供服务间调用，如 evo-agent sidecar）；受保护域 `stable.llm.*` / `stable.system.*` 仅此身份可写，浏览器端**不应**使用 |
 
 注意事项：
@@ -225,11 +250,11 @@ server 侧两个 token 环境变量（详见 evorule-server README「环境变�
 npm run check && npx vitest run && npm run test && npm run build
 ```
 
-| 测试 | 命令 | 当前通过数 |
+| 测试 | 命令 | 实测结果（2026-09-05） |
 | --- | --- | --- |
 | 类型检查 | `npm run check` | 0 errors / 0 warnings |
-| 单元测试 | `npx vitest run` | 904/904 |
-| e2e 测试 | `npm run test` | 64/64 |
+| 单元测试 | `npx vitest run` | 1214/1214（60 个测试文件） |
+| e2e 测试 | `npm run test` | 5 个套件：navigation / settings-flow / assistant-flow / page-smoke / 步骤按钮回归 |
 | 生产构建 | `npm run build` | ✅ build/ |
 
 > **e2e 首次跑需先装浏览器**：`npx playwright install chromium`
@@ -242,8 +267,8 @@ npm run check && npx vitest run && npm run test && npm run build
 ```bash
 npm run verify     # vitest:验证 $lib/kernel 快照导入通路(CONSOLE_VERSION=0.2.0 + 所有导出可用)
 npm run check      # svelte-check:0 errors / 0 warnings
-npm run test:unit  # vitest:单元测试(assistant + backend + types)
-npm run test       # playwright:e2e(navigation + assistant-flow + settings-flow)
+npm run test:unit  # vitest:单元测试(assistant + backend + types + stores + governance …)
+npm run test       # playwright:e2e(navigation + settings-flow + assistant-flow + page-smoke + 回归)
 npm run build      # adapter-static:产出静态文件到 build/
 ```
 
@@ -264,21 +289,23 @@ npm run build      # adapter-static:产出静态文件到 build/
 ```
 evorule-console-cloud/
 ├── src/
-│   ├── routes/
-│   │   ├── +layout.svelte     # 根布局:三栏(Docker 风格左侧栏 + 主内容 + 右 LLM 侧栏)+ 路由守卫
-│   │   └── +page.svelte       # 视图容器:根据 currentView 渲染各视图
+│   ├── routes/                # 17 条路由(workbench / governance / audit / knowledge /
+│   │                          #   marketplace / users / roles / permissions / monitor /
+│   │                          #   publish-queue / version-history / export / login / help …)
 │   ├── lib/
 │   │   ├── backend/           # CloudHttpBackend(联网/离线双模式)
 │   │   ├── assistant/         # CloudLlmAssistant + llm-fetch + prompts + types
-│   │   ├── config/            # net-config + llm-config + llm-presets(厂商预设)
+│   │   ├── config/            # net-config + llm-config + llm-presets(9 家预设) + governance-config + nav-registry
 │   │   ├── data/              # demo 数据集 + 模板 + 引导任务
-│   │   ├── governance/        # 治理后端 + store(发布/审批/审计)
+│   │   ├── governance/        # 治理后端 + store(发布/审批/审计,直连 evorule-rule :18081)
 │   │   ├── stores/            # 跨视图共享状态(会话/数据集/导出/规则库/设置等)
-│   │   └── views/             # 20+ 视图组件(规则库/执行台/审计/设置/…)
+│   │   ├── kernel/            # 内核源码快照(取自 evorule-console v0.2.0)
+│   │   └── views/             # 25 个视图组件
 │   ├── app.css                # 设计令牌(与内核对齐,深色主题)
 │   └── verify.test.ts         # 导入验证(vitest)
-├── tests/                     # playwright e2e(navigation + assistant-flow + settings-flow + 回归)
-├── docs/                      # 公开文档(Diátaxis 四类 + ADR)
+├── tests/                     # playwright e2e(5 套件)
+├── docs/                      # 公开文档(Diátaxis 四类 + ADR + 场景示例)
+├── packaging/docker/          # 单镜像双进程 Docker 一键部署
 ├── package.json               # 依赖声明(内核已内联,无 npm 内核依赖)
 ├── svelte.config.js           # adapter-static
 ├── vite.config.ts             # port 5174
@@ -304,6 +331,14 @@ evorule-console-cloud/
 | [CLA-individual.md](./CLA-individual.md) | 个人贡献者许可协议 |
 | [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md) | 商业许可 |
 | [FREE_COMMERCIAL_LICENSE.md](./FREE_COMMERCIAL_LICENSE.md) | 免费商业豁免资格 |
+
+---
+
+## 贡献
+
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+> 本生态以 **Gitee 为主仓**，GitHub 为同步镜像——Issue 与 PR 请提交到 [Gitee](https://gitee.com/evorule/evorule-console-cloud/issues)。
 
 ---
 
