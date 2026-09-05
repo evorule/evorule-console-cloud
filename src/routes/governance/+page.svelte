@@ -52,6 +52,7 @@
   import { RuleValidator, type ValidationResult } from '$lib/kernel/validators/ruleValidator';
   import { localSaveGate, summarizeTransformSteps, type TransformStepSummary } from '$lib/governance/rule-form';
   import { RULE_TEMPLATES, shouldConfirmTemplateOverwrite, prefillFromEntry } from '$lib/governance/rule-templates';
+  import { parseWizardBatchPackage, type WizardRuleItem } from '$lib/stores/rule-import-export';
   import { currentUser } from '$lib/stores/auth';
   import { roleToBackend } from '$lib/backend/production-views';
   import { ensureWorkspaceMembership } from '$lib/governance/workspace-membership';
@@ -143,6 +144,90 @@
     entryError = null;
     showAddEntry = true;
     toastInfo(`已预填 ${p.entry_id} → v${p.version}(编辑新版本,入库后形成版本链)`, '编辑新版本');
+  }
+
+  // ===== UV-078 W3:从向导包导入(.evorule-batch.json → 治理规则条目) =====
+  // 向导/规则库「导出规则」的批量包在此入库:解析 → 预览(含冲突 version 计划) → 逐条 addEntry。
+  // 形态零鸿沟(尽调核实):包内 files[].content_base64 解码即 evorule 原生规则 JSON,
+  // 与 addEntry.rule_body 同形态直通,机械映射无需转译。
+  let showWizardImport = $state(false);
+  let wizardImporting = $state(false);
+  let wizardFileName = $state('');
+  let wizardItems = $state<WizardRuleItem[]>([]);
+  let wizardErrors = $state<string[]>([]);
+  /** 导入结果:成功数 + 失败明细(逐条如实透出,不静默跳过) */
+  let wizardDone = $state<{ ok: number; fail: string[] } | null>(null);
+
+  function toggleWizardImport(): void {
+    showWizardImport = !showWizardImport;
+    if (!showWizardImport) {
+      wizardItems = [];
+      wizardErrors = [];
+      wizardFileName = '';
+      wizardDone = null;
+    }
+  }
+
+  async function handleWizardFile(e: Event): Promise<void> {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // 允许重复选择同一文件重新解析
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const pkg: unknown = JSON.parse(text);
+      const parsed = parseWizardBatchPackage(pkg);
+      wizardFileName = file.name;
+      wizardItems = parsed.items;
+      wizardErrors = parsed.errors;
+      wizardDone = null;
+      if (parsed.items.length === 0) {
+        toastWarning('包内无可导入规则(明细见面板)', '向导包导入');
+      }
+    } catch (e) {
+      toastError(`读取失败:${e instanceof Error ? e.message : String(e)}`, '向导包导入');
+    }
+  }
+
+  /** 同 entry_id 冲突时自动 version+1(复用 W2.4 版本链语义);新条目 version=1 */
+  function nextVersionFor(entryId: string): number {
+    const existing = $governanceStore.entries.filter((x) => x.entry_id === entryId);
+    if (existing.length === 0) return 1;
+    return Math.max(...existing.map((x) => x.version)) + 1;
+  }
+
+  async function confirmWizardImport(): Promise<void> {
+    const s = get(governanceStore);
+    if (!s.selectedId || wizardItems.length === 0) return;
+    if (
+      !confirm(
+        `将导入 ${wizardItems.length} 条规则到数据集「${s.selectedId}」。\n` +
+          '同 entry_id 的已有条目将作为新版本入库(版本链保留历史)。继续?'
+      )
+    )
+      return;
+    wizardImporting = true;
+    const done = { ok: 0, fail: [] as string[] };
+    for (const item of wizardItems) {
+      try {
+        await addEntry(s.selectedId, {
+          entry_id: item.entryId,
+          version: nextVersionFor(item.entryId),
+          domain: undefined,
+          rule_body: JSON.parse(item.ruleBody)
+        });
+        done.ok++;
+      } catch (e) {
+        done.fail.push(`${item.entryId}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    wizardImporting = false;
+    wizardDone = done;
+    if (done.fail.length === 0) {
+      toastSuccess(`向导包导入完成:${done.ok} 条全部入库`, '向导包导入');
+    } else {
+      toastError(`导入完成:${done.ok} 成 / ${done.fail.length} 败(失败明细见面板)`, '向导包导入');
+    }
   }
 
   // ===== 发布确认 =====
@@ -1811,9 +1896,19 @@
                 {knForm?.mode === 'create' && !knForm.entry ? '收起' : '+ 添加数据条目'}
               </button>
             {:else}
-              <button class="btn btn-sm" onclick={() => (showAddEntry = !showAddEntry)}>
-                {showAddEntry ? '收起' : '+ 灌入规则'}
-              </button>
+              <div class="sec-head-actions">
+                <button class="btn btn-sm" onclick={() => (showAddEntry = !showAddEntry)}>
+                  {showAddEntry ? '收起' : '+ 灌入规则'}
+                </button>
+                <button
+                  class="btn btn-sm"
+                  data-testid="wizard-import-toggle"
+                  onclick={toggleWizardImport}
+                  title="导入向导/规则库导出的 .evorule-batch.json 批量包"
+                >
+                  {showWizardImport ? '收起导入' : '📥 从向导包导入'}
+                </button>
+              </div>
             {/if}
           </div>
 
@@ -1828,6 +1923,88 @@
               }}
               onCancel={() => (knForm = null)}
             />
+          {/if}
+
+          {#if showWizardImport && !selectedIsKnowledge}
+            <div class="entry-form wiz-import">
+              <div class="wiz-intro">
+                选择向导完成页或规则库「导出规则」生成的批量包文件,解析预览后一键入库。
+                同 entry_id 的已有条目将作为<strong>新版本</strong>入库(版本链保留历史)。
+              </div>
+              <label class="field">
+                <span>批量包文件(.evorule-batch.json)</span>
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onchange={handleWizardFile}
+                  data-testid="wizard-import-file"
+                />
+              </label>
+
+              {#if wizardErrors.length > 0}
+                <div class="val-panel val-panel-error">
+                  <div class="val-title">包内 {wizardErrors.length} 项解析失败(不影响其余条目导入):</div>
+                  <ul class="val-list">
+                    {#each wizardErrors as err (err)}
+                      <li>{err}</li>
+                    {/each}
+                  </ul>
+                </div>
+              {/if}
+
+              {#if wizardItems.length > 0}
+                <div class="wiz-preview">
+                  <div class="wiz-preview-title">
+                    📋 预览:{wizardFileName} · {wizardItems.length} 条规则
+                  </div>
+                  <table class="wiz-table">
+                    <thead>
+                      <tr><th>entry_id</th><th>入库版本</th><th>描述</th></tr>
+                    </thead>
+                    <tbody>
+                      {#each wizardItems as item (item.sourceId)}
+                        <tr>
+                          <td class="wiz-cell-id">{item.entryId}</td>
+                          <td>
+                            {#if nextVersionFor(item.entryId) === 1}
+                              <span class="wiz-new">v1(新增)</span>
+                            {:else}
+                              <span class="wiz-bump">v{nextVersionFor(item.entryId)}(新版本)</span>
+                            {/if}
+                          </td>
+                          <td class="wiz-cell-desc">{item.description || '—'}</td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                  <button
+                    class="btn btn-primary btn-sm"
+                    onclick={confirmWizardImport}
+                    disabled={wizardImporting}
+                    data-testid="wizard-import-confirm"
+                  >
+                    {wizardImporting ? '⏳ 导入中…' : `✅ 确认导入 ${wizardItems.length} 条`}
+                  </button>
+                </div>
+              {/if}
+
+              {#if wizardDone}
+                <div class="val-panel" class:val-panel-error={wizardDone.fail.length > 0}>
+                  {#if wizardDone.fail.length === 0}
+                    <div class="val-ok">✓ 导入完成:{wizardDone.ok} 条全部入库</div>
+                  {:else}
+                    <div class="val-title">
+                      导入完成:{wizardDone.ok} 成 / {wizardDone.fail.length} 败,失败明细:
+                    </div>
+                    <ul class="val-list">
+                      {#each wizardDone.fail as f (f)}
+                        <li>{f}</li>
+                      {/each}
+                    </ul>
+                  {/if}
+                </div>
+              {/if}
+            </div>
           {/if}
 
           {#if showAddEntry && !selectedIsKnowledge}
@@ -2487,6 +2664,69 @@
     color: var(--danger);
   }
   .val-warn {
+    color: var(--warning, #b26a00);
+  }
+  .val-title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+  }
+  .val-list {
+    margin: 0;
+    padding-left: 18px;
+    white-space: normal;
+  }
+  /* UV-078 W3:向导包导入面板 */
+  .sec-head-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+  }
+  .wiz-import {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  .wiz-intro {
+    font-size: var(--text-sm);
+    color: var(--text-secondary, #64748b);
+    line-height: 1.6;
+  }
+  .wiz-preview {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  .wiz-preview-title {
+    font-weight: 600;
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+  .wiz-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+  .wiz-table th,
+  .wiz-table td {
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .wiz-cell-id {
+    font-family: var(--font-mono, monospace);
+    white-space: nowrap;
+  }
+  .wiz-cell-desc {
+    color: var(--text-secondary, #64748b);
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wiz-new {
+    color: var(--success, #2e7d32);
+  }
+  .wiz-bump {
     color: var(--warning, #b26a00);
   }
   .step-summary {

@@ -148,6 +148,40 @@ enabled: true`;
 		expect(restored.condition.fact).toBe("patient.temperature");
 		expect(restored.action.type).toBe("block");
 	});
+
+	// UV-089 ⑤:yamlSerialize 对 key 下非空数组输出"key 同缩进 `- ` 项"形态,
+	// yamlParse 曾只认更大缩进嵌套→该 key 静默置 null 无报错(roundtrip 丢 transform)。
+	// 本测试镜像真实规则形态(transform.branch + on_true 嵌套数组 + on_false 空数组)堵盲区。
+	test("key 下数组 roundtrip(UV-089 ⑤ 回归)", async () => {
+		const rule = {
+			rule_id: "r-arr",
+			description: "数组嵌套 roundtrip",
+			transform: [
+				{
+					type: "branch",
+					params: {
+						domain: { type: "eq", path: "__exec__.x", value: 1 },
+						on_true: [
+							{
+								type: "set",
+								params: { attr: "data.ok", operation: "set", value: true },
+							},
+						],
+						on_false: [],
+					},
+				},
+			],
+		};
+		const blob = await c.serialize(rule);
+		const restored = (await c.deserialize(blob)) as typeof rule;
+		expect(restored.rule_id).toBe("r-arr");
+		expect(restored.description).toBe("数组嵌套 roundtrip");
+		expect(restored.transform).toHaveLength(1);
+		expect(restored.transform[0].type).toBe("branch");
+		expect(restored.transform[0].params.domain.value).toBe(1);
+		expect(restored.transform[0].params.on_true[0].params.value).toBe(true);
+		expect(restored.transform[0].params.on_false).toEqual([]);
+	});
 });
 
 // ============================================================================

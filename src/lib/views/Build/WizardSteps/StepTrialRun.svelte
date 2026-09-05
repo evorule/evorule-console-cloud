@@ -88,7 +88,7 @@
       if (!healthy) {
         runStatus = "offline";
         runError =
-          "evorule-server 未响应(检查地址或启动服务器)。可跳过此步,P0 阶段规则已保存到本地。";
+          "evorule-server 未响应(检查地址或启动服务器)。可跳过此步,规则已保存到本地,稍后可经治理链发布到执行域。";
         toastWarning("服务器离线,可跳过", "试运行");
         return;
       }
@@ -110,8 +110,8 @@
       if (result && result.accepted) {
         runStatus = "success";
         runResult = `事件已提交(session=${sessionId},version=${result.version ?? "?"})。
-注意:P0 阶段规则存储在浏览器本地,服务端规则集尚未加载此规则。
-真正用此规则测试事件需 P1+ 的服务端规则加载功能(规则集 reload)。`;
+注意:规则存储在浏览器本地,server 当前规则集尚未包含此规则,本次提交主要演示 session 机制。
+要让规则真正驱动执行:完成向导后用「导出规则 JSON」→ 治理中心「从向导包导入」→ 发布 → 部署,新会话即生效。`;
         toastSuccess("事件已提交(演示 session 机制)", "试运行");
       } else {
         runStatus = "failed";
@@ -127,7 +127,8 @@
 <div class="step-trial-run">
   <h2>步骤 4:试运行</h2>
   <p class="step-desc">
-    用业务事件测试规则。P0 阶段规则已保存到本地,此处展示 session 提交机制。
+    用业务事件测试规则。规则存储在浏览器本地,此处演示 session 提交机制;
+    要让规则真正生效,完成向导后走 导出 → 治理中心发布 → 部署 链路。
   </p>
 
   {#if createdRuleId && meta}

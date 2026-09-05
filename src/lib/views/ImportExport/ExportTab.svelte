@@ -24,7 +24,7 @@
   import { exportDataset } from "$lib/stores/dataset-import-export";
   import { exportFormSchema } from "$lib/stores/form-import-export";
   import { exportLibrarySchema } from "$lib/stores/library-schema-import";
-  import { getAllRules } from "$lib/kernel";
+  import { rules } from "$lib/kernel";
   import { datasetStore } from "$lib/stores/dataset";
   import { businessFormSchemaStore } from "$lib/stores/business-form-schema";
   import BatchExportDialog from "./BatchExportDialog.svelte";
@@ -46,9 +46,12 @@
   const objectTypes: ObjectType[] = ["rule", "dataset", "form", "library_schema"];
 
   // 派生:当前类型的可选对象列表
+  // 注意:三个分支须一致用响应式 store 订阅($rules/$datasetStore/$businessFormSchemaStore)。
+  // 曾用 getAllRules()(=get(rules) 一次性快照)导致整页直载时 rules store 异步填充后
+  // 对象列表不重算、恒为空(UV-089 ①)。
   let availableObjects = $derived.by(() => {
     if (selectedType === "rule") {
-      return getAllRules().map((r) => ({ id: r.id, label: r.description ?? r.id }));
+      return $rules.map((r) => ({ id: r.id, label: r.description ?? r.id }));
     }
     if (selectedType === "dataset") {
       return $datasetStore.map((d) => ({ id: d.id, label: d.name }));
