@@ -93,8 +93,10 @@
         }) : Promise.resolve(),
       ];
       if (ws) {
+        // 不传 status:列全量发布队列。曾误传 ws.id 当 status 过滤参数,
+        // server 校验 status 枚举(pending/approved/...)必 400,队列面板恒空(UV-089 ②)。
         promises.push(
-          refreshPublishQueue(wsBackend, ws.id).catch((e) => {
+          refreshPublishQueue(wsBackend).catch((e) => {
             console.error("[workbench] refreshPublishQueue failed:", e);
           }),
         );

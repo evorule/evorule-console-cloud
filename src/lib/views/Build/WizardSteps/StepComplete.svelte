@@ -10,7 +10,9 @@
 <script lang="ts">
   import { dbStore, ruleCount } from "$lib/stores/db";
   import { autoMode } from "$lib/stores/home-mode";
-  import { toastSuccess } from "$lib/stores/toast";
+  import { toastSuccess, toastError } from "$lib/stores/toast";
+  import { exportRulesBatch } from "$lib/stores/rule-import-export";
+  import { downloadBlob } from "$lib/stores/export-store";
 
   let {
     onComplete,
@@ -24,6 +26,27 @@
     autoMode();
     onComplete();
   }
+
+  // UV-078 W3 方向 b:向导终点从"死胡同"变"换乘站" — 全量规则导出为标准批量包
+  // (BatchExportPackage JSON,.evorule-batch.json),供治理中心「从向导包导入」消费
+  let exporting = $state(false);
+
+  async function handleExportRules() {
+    exporting = true;
+    try {
+      // 'json':治理导入契约 = 包内 content_base64 解码即原生规则 JSON(零鸿沟直通)。
+      // 不传 format 会走默认 'yaml',治理侧 parseWizardBatchPackage 逐条解析失败
+      // (UV-078 W3 e2e 实测发现,e2e 段2 走导出中心同样路径复现)
+      const blob = await exportRulesBatch([], "json");
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `evorule-wizard-rules-${stamp}.evorule-batch.json`);
+      toastSuccess(`已导出 ${$ruleCount} 条规则(批量包 JSON)`, "导出完成");
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), "导出失败");
+    } finally {
+      exporting = false;
+    }
+  }
 </script>
 
 <div class="step-complete">
@@ -31,13 +54,12 @@
     <h2>建库完成</h2>
     <!-- UV-078 W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
     <!-- 执行域(server)仅运行治理链发布的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
-    <!-- 诚实边界 + 下一跳引导(W3 方向 b 将补导出/跳转按钮,此处先明示路径)。 -->
+    <!-- W3 方向 b:边界明示 + 换乘动作组(导出批量包/直达治理中心),终点从死胡同变换乘站。 -->
     <p class="complete-desc">本地规则库已就绪。</p>
     <div class="boundary-note">
       <strong>注意:</strong>规则目前存于<strong>浏览器本地</strong>,执行域(server)仅运行
       <strong>治理链发布</strong>的规则——要让规则真正驱动执行台,需前往
-      <a href="/governance" class="gov-link">治理中心</a>走数据集→发布→导入链路
-      (完整导出引导即将上线)。
+      <a href="/governance" class="gov-link">治理中心</a>走数据集→发布→导入链路。
     </div>
 
   <div class="summary-card">
@@ -80,6 +102,28 @@
     <button class="btn-primary btn-large" onclick={handleEnterWorkbench}>
       🚀 进入工作台
     </button>
+    <div class="gov-actions">
+      <!-- UV-078 W3 方向 b:换乘站动作组 — 导出批量包 + 直达治理中心导入 -->
+      <button
+        class="btn-secondary"
+        onclick={handleExportRules}
+        disabled={exporting || $ruleCount === 0}
+        data-testid="wizard-export-rules"
+      >
+        {exporting ? "⏳ 导出中…" : `📤 导出规则 JSON(${$ruleCount} 条)`}
+      </button>
+      <a
+        href="/governance"
+        class="btn-link"
+        data-testid="wizard-goto-governance"
+      >
+        🏛 前往治理中心发布
+      </a>
+    </div>
+    <p class="gov-hint">
+      导出 .evorule-batch.json 后,在治理中心规则条目区「从向导包导入」一键入库,
+      再走 发布 → 部署到执行域 链路,规则即可驱动真实执行台。
+    </p>
   </div>
 </div>
 
@@ -196,5 +240,45 @@
     border: none;
     border-radius: 6px;
     cursor: pointer;
+  }
+  .gov-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .btn-secondary {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+    background: var(--bg-card);
+    color: var(--text-primary, #1e293b);
+    border: 1px solid var(--brand, #2563eb);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-link {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, #1e40af);
+    border: 1px solid var(--info, #1e40af);
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .gov-hint {
+    margin: 10px 0 0 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-secondary, #64748b);
+    text-align: left;
   }
 </style>

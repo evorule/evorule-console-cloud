@@ -142,12 +142,14 @@ function yamlSerialize(
 ): void {
 	const pad = " ".repeat(indent);
 	if (data === null || data === undefined) {
-		lines.push(`${key !== undefined ? `${key}: ` : ""}null`);
+		// UV-089 ⑤:三处标量占位分支曾漏 pad,嵌套空值被序列化到第 0 列
+		// 解析时错位成顶层 key(如 params.on_false: [] → 根级 on_false)
+		lines.push(`${pad}${key !== undefined ? `${key}: ` : ""}null`);
 		return;
 	}
 	if (Array.isArray(data)) {
 		if (data.length === 0) {
-			lines.push(`${key !== undefined ? `${key}: ` : ""}[]`);
+			lines.push(`${pad}${key !== undefined ? `${key}: ` : ""}[]`);
 			return;
 		}
 		if (key !== undefined) lines.push(`${pad}${key}:`);
@@ -165,7 +167,7 @@ function yamlSerialize(
 	if (typeof data === "object") {
 		const entries = Object.entries(data as Record<string, unknown>);
 		if (entries.length === 0) {
-			lines.push(`${key !== undefined ? `${key}: ` : ""}{}`);
+			lines.push(`${pad}${key !== undefined ? `${key}: ` : ""}{}`);
 			return;
 		}
 		if (key !== undefined) lines.push(`${pad}${key}:`);
@@ -274,6 +276,11 @@ function yamlParseBlock(
 							const nested2 = yamlParseBlock(lines, i, nli + 2);
 							obj[nk] = nested2.value;
 							i = nested2.nextIdx;
+						} else if (i < lines.length && isSeqItemLine(lines[i], nli)) {
+							// UV-089 ⑤:同缩进 dash 序列(yamlSerialize 输出形态),同上
+							const nested2 = yamlParseBlock(lines, i, nli);
+							obj[nk] = nested2.value;
+							i = nested2.nextIdx;
 						} else {
 							obj[nk] = null;
 						}
@@ -328,6 +335,12 @@ function yamlParseBlock(
 					const nested = yamlParseBlock(lines, i, firstIndent + 2);
 					obj[k] = nested.value;
 					i = nested.nextIdx;
+				} else if (i < lines.length && isSeqItemLine(lines[i], firstIndent)) {
+					// UV-089 ⑤:yamlSerialize 对 key 下非空数组输出"key 同缩进的 `- ` 项"形态,
+					// 曾只认更大缩进导致该 key 静默置 null(roundtrip 丢 transform 无报错)
+					const nested = yamlParseBlock(lines, i, firstIndent);
+					obj[k] = nested.value;
+					i = nested.nextIdx;
 				} else {
 					obj[k] = null;
 				}
@@ -354,6 +367,17 @@ function yamlParseBlock(
 
 function leadingSpaces(s: string): number {
 	return s.match(/^ */)?.[0].length ?? 0;
+}
+
+/**
+ * UV-089 ⑤:行是否为位于指定缩进的序列项("-" 或 "- xxx")。
+ * yamlSerialize 对 key 下的非空数组输出"`key:` 同缩进的 `- ` 项"形态,
+ * 解析侧须能识别该形态并交给数组块解析(否则 key 静默置 null)。
+ */
+function isSeqItemLine(line: string, indent: number): boolean {
+	if (leadingSpaces(line) !== indent) return false;
+	const t = line.trimStart();
+	return t === "-" || t.startsWith("- ");
 }
 
 function parseYamlScalar(s: string): unknown {
