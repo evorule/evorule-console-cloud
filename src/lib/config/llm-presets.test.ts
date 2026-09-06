@@ -32,19 +32,16 @@ describe('LLM_PRESETS 覆盖面(DoD)', () => {
 	test('除 ernie(needsAdapter)外全部为 OpenAI 兼容端点', () => {
 		for (const p of LLM_PRESETS) {
 			if (p.needsAdapter || p.provider === 'custom') continue;
-			// MiniMax 现网端点为 /v1/text/chatcompletion_v2(2026-09-01 实测),
-			// 其余厂商为 /chat/completions —— 两种 OpenAI 兼容形态均合法
-			const ok =
-				/\/chat\/completions$/.test(p.apiEndpoint) ||
-				/\/text\/chatcompletion_v2$/.test(p.apiEndpoint);
-			expect(ok, `${p.provider}: ${p.apiEndpoint}`).toBe(true);
+			// 2026-09-06 起 MiniMax 预设亦统一为标准 /chat/completions 形态
+			// (国内版 api.minimax.cn);全部预设均为标准 OpenAI 兼容路径
+			expect(p.apiEndpoint, p.provider).toMatch(/\/chat\/completions$/);
 		}
 	});
 
-	test('MiniMax 预设:现网端点(api.minimaxi.com,实测可达)+ 平台指引一致', () => {
+	test('MiniMax 预设:国内版标准 OpenAI 兼容端点(2026-09-06 实测可达)+ 平台指引一致', () => {
 		const minimax = findPreset('minimax');
 		expect(minimax).toBeDefined();
-		expect(minimax!.apiEndpoint).toBe('https://api.minimaxi.com/v1/text/chatcompletion_v2');
+		expect(minimax!.apiEndpoint).toBe('https://api.minimax.cn/v1/chat/completions');
 		expect(minimax!.defaultModel).toBe('MiniMax-Text-01');
 		expect(minimax!.helpUrl).toContain('platform.minimaxi.com');
 	});

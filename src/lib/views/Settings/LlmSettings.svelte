@@ -128,10 +128,12 @@
 		savedNotice = true;
 		setTimeout(() => {
 			isSaving = false;
-			// 提示用户刷新页面以重注入 LLM provider
+			// 现取语义下配置改动即时生效;唯一例外:页面加载时 LLM 尚未配置的
+			// 场景,注入的是 null(按钮不渲染),需刷新一次让 AI 按钮出现
 			if (
 				confirm(
-					'配置已保存。\n\n由于 LLM provider 需要在组件初始化时注入,需要刷新页面才能让新配置生效。\n\n是否立即刷新页面?'
+					'配置已保存并即时生效。\n\n' +
+						'例外:若本页加载时 LLM 尚未启用,需刷新页面以渲染 AI 按钮。\n\n是否立即刷新页面?'
 				)
 			) {
 				location.reload();

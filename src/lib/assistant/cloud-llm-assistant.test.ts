@@ -16,6 +16,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CloudLlmAssistant } from './cloud-llm-assistant';
 import type { CloudLlmConfig } from './types';
+import { llmConfig, resetLlmConfig } from '$lib/config/llm-config';
 import {
 	LlmError,
 	LlmNetworkError,
@@ -577,5 +578,73 @@ describe('LlmAssistant 接口完整性', () => {
 		expect(typeof a.generateInput).toBe('function');
 		expect(typeof a.isConfigured).toBe('function');
 		expect(typeof a.testConnection).toBe('function');
+	});
+});
+
+// ============ 现取语义(注入场景无参构造) ============
+//
+// 注入场景(+layout)使用无参构造:实例不持快照,方法内部每次现取
+// llmConfig store 最新配置——设置面板改动即时生效,无需刷新页面。
+
+describe('现取语义(无参构造)', () => {
+	beforeEach(() => {
+		resetLlmConfig();
+	});
+
+	afterEach(() => {
+		resetLlmConfig();
+	});
+
+	test('store 配置变化即时反映到 isConfigured', () => {
+		const a = new CloudLlmAssistant();
+		// 默认配置 enabled=false → 未配置
+		expect(a.isConfigured()).toBe(false);
+
+		llmConfig.set({ ...FULL_CONFIG });
+		expect(a.isConfigured()).toBe(true);
+
+		// 中途停用也即时可见
+		llmConfig.set({ ...FULL_CONFIG, enabled: false });
+		expect(a.isConfigured()).toBe(false);
+	});
+
+	test('改 store 端点后三方法用新端点发请求', async () => {
+		llmConfig.set({ ...FULL_CONFIG });
+		const a = new CloudLlmAssistant();
+
+		const NEW_ENDPOINT = 'https://api.minimax.cn/v1/chat/completions';
+		llmConfig.set({ ...FULL_CONFIG, apiEndpoint: NEW_ENDPOINT });
+
+		mockFetch.mockResolvedValueOnce(
+			mockOkResponse('```json\n{"id":"r1","when":{},"then":[]}\n```')
+		);
+		await a.generateRuleDraft('测试');
+
+		const [url] = mockFetch.mock.calls[0] as [string, unknown];
+		expect(url).toBe(NEW_ENDPOINT);
+	});
+
+	test('显式快照:构造传入的配置不受 store 后续变化影响', async () => {
+		const a = new CloudLlmAssistant({ ...FULL_CONFIG });
+
+		llmConfig.set({ ...FULL_CONFIG, apiKey: 'sk-store-side' });
+
+		mockFetch.mockResolvedValueOnce(mockOkResponse('说明文本'));
+		await a.explainRule({ id: 'r1' });
+
+		const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+		const headers = init.headers as Record<string, string>;
+		// 仍用构造时的快照 Key(与 store 侧后续改动隔离)
+		expect(headers['Authorization']).toBe(`Bearer ${TEST_API_KEY}`);
+	});
+
+	test('现取配置未完备时三方法显式拒绝,不发请求', async () => {
+		resetLlmConfig(); // 默认 enabled=false
+		const a = new CloudLlmAssistant();
+
+		await expect(a.generateRuleDraft('测试')).rejects.toThrow('LLM 未配置或已停用');
+		await expect(a.explainRule({})).rejects.toThrow('LLM 未配置或已停用');
+		await expect(a.generateInput('测试')).rejects.toThrow('LLM 未配置或已停用');
+		expect(mockFetch).not.toHaveBeenCalled();
 	});
 });
