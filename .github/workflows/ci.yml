@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 EvoRule Project
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check (svelte-check)
+        run: npm run check
+
+      - name: Unit tests (vitest)
+        run: npx vitest run
+
+      - name: Production build (adapter-static)
+        run: npm run build
+
+      - name: Public-surface scan (internal ids zero tolerance)
+        run: |
+          if grep -rnE "UV-[0-9]+|CR-[0-9]+|AUDIT-[0-9]+|INC-[0-9]+" \
+              --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build . ; then
+            echo "::error::Internal identifier found in public surface"
+            exit 1
+          fi
