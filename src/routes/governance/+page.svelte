@@ -250,11 +250,32 @@
   ]
 }`;
 
+  // ===== 市场官方资产部署落地(47 号接线专项) =====
+  // marketplace「部署到执行域」经 /governance?deploy=<dataset_id> 跳入:
+  // 连接态下立即选中并打开既有证据门禁部署面板;未连接时挂起,连接成功后补执行。
+  let pendingDeployId: string | null = null;
+
+  function runPendingDeploy(): void {
+    if (!pendingDeployId) return;
+    const id = pendingDeployId;
+    pendingDeployId = null;
+    selectDataset(id);
+    openDeploy();
+  }
+
   onMount(() => {
     // 已连接(刷新后内存 token 丢失)则不自动重连;仅清空过期状态
     const s = get(governanceStore);
     if (!s.connected) {
       disconnect();
+    }
+    const deployId = new URLSearchParams(window.location.search).get('deploy');
+    if (deployId) {
+      history.replaceState(null, '', window.location.pathname);
+      pendingDeployId = deployId;
+      if (get(governanceStore).connected) {
+        runPendingDeploy();
+      }
     }
   });
 
@@ -293,6 +314,8 @@
       // ①:连接成功后自动 ensure 当前平台用户进默认 workspace(幂等;
       // 失败诚实降级为 toast 提示,不阻塞治理连接 —— ②403 引导仍会兜底)
       await ensureMembershipQuietly();
+      // ②市场官方资产部署跳入(?deploy=)在连接完成后落地
+      runPendingDeploy();
     } catch (e) {
       // 连通性自检:区分「服务不可达」与「凭据/权限错误」,分别给出自服务引导
       const reachable = await probeReachable(cfg.baseUrl.trim());
@@ -1502,6 +1525,7 @@
           <span>密码</span>
           <input
             type="password"
+            autocomplete="current-password"
             value={$governanceConfig.password}
             oninput={(e) => updateGovernanceConfig({ password: (e.currentTarget as HTMLInputElement).value })}
             placeholder="••••••••"
