@@ -1,0 +1,146 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 EvoRule Project
+# Release workflow for EvoRule Console Cloud (用户面板)
+#
+# 触发: 推送 v* tag
+# 产物: web 静态产物 zip (adapter-static build/) + sha256 清单
+#   - GitHub Release 附件 + 经 Gitee OpenAPI 回传 gitee Release (幂等)
+#   - 需在 github 仓库 Settings → Secrets and variables → Actions 配置 GITEE_TOKEN
+#     (Gitee 个人令牌,勾选 releases + projects 权限)
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Check + Test + Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check (svelte-check)
+        run: npm run check
+
+      - name: Unit tests (vitest)
+        run: npx vitest run
+
+      - name: Production build (adapter-static)
+        run: npm run build
+
+      - name: Public-surface scan (internal ids zero tolerance)
+        run: |
+          if grep -rnE "UV-[0-9]+|CR-[0-9]+|AUDIT-[0-9]+|INC-[0-9]+" \
+              --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build . ; then
+            echo "::error::Internal identifier found in public surface"
+            exit 1
+          fi
+
+      - name: 打包 web 静态产物
+        run: |
+          set -e
+          VER="${GITHUB_REF_NAME#v}"
+          PKG="evorule-console-cloud-${VER}-web"
+          cp -r build "${PKG}"
+          zip -qr "${PKG}.zip" "${PKG}"
+          sha256sum "${PKG}.zip" > sha256-checks.txt
+          cat sha256-checks.txt
+
+      - name: 上传分发包 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-package
+          path: |
+            evorule-console-cloud-*-web.zip
+            sha256-checks.txt
+
+  release:
+    name: release
+    needs: [verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 下载分发包
+        uses: actions/download-artifact@v4
+        with:
+          name: web-package
+          path: release-assets
+
+      - name: 创建 Release 并附加 web 包
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/evorule-console-cloud-*-web.zip
+            release-assets/sha256-checks.txt
+          body: |
+            EvoRule Console Cloud ${{ github.ref_name }} web 静态产物。
+
+            - `evorule-console-cloud-*-web.zip` — adapter-static 预渲染站点,任意静态服务器可托管
+            - `sha256-checks.txt` — 包完整性校验
+
+            在线 demo 无需下载:https://evorule.github.io/evorule-console-cloud/
+          generate_release_notes: true
+
+  attach-gitee:
+    name: attach-all-to-gitee
+    needs: [verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载分发包
+        uses: actions/download-artifact@v4
+        with:
+          name: web-package
+          path: gitee-assets
+
+      - name: 附加到 Gitee Release
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          set -e
+          REPO="evorule/evorule-console-cloud"
+          TAG="${GITHUB_REF_NAME}"
+          if [ -z "$GITEE_TOKEN" ]; then echo "ERROR: github secrets 缺 GITEE_TOKEN"; exit 1; fi
+          echo "TAG=$TAG → gitee release"
+
+          # 幂等: 已存在则按 tag 查询,否则创建
+          RELEASE_ID=$(curl --retry 3 --retry-delay 5 --retry-connrefused -fsS \
+            "https://gitee.com/api/v5/repos/${REPO}/releases/tags/${TAG}" \
+            -H "Authorization: token ${GITEE_TOKEN}" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
+          if [ -z "$RELEASE_ID" ]; then
+            echo "gitee release 不存在,创建..."
+            RELEASE_RESP=$(curl --retry 3 --retry-delay 5 --retry-connrefused -fsS -X POST \
+              "https://gitee.com/api/v5/repos/${REPO}/releases" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: token ${GITEE_TOKEN}" \
+              -d "{\"tag_name\":\"${TAG}\",\"name\":\"EvoRule Console Cloud ${TAG}\",\"body\":\"EvoRule Console Cloud ${TAG} web 静态产物 — 详见 CHANGELOG.md\",\"target_commitish\":\"main\"}" \
+              || echo "")
+            RELEASE_ID=$(echo "${RELEASE_RESP}" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
+          fi
+          if [ -z "$RELEASE_ID" ]; then
+            echo "ERROR: 无法获取 gitee release id"
+            exit 1
+          fi
+          echo "gitee Release id: ${RELEASE_ID}"
+
+          cd gitee-assets
+          for f in $(ls evorule-console-cloud-*-web.zip sha256-checks.txt); do
+            echo "上传 ${f} ..."
+            curl --retry 3 --retry-delay 5 --retry-connrefused -fsS -X POST \
+              "https://gitee.com/api/v5/repos/${REPO}/releases/${RELEASE_ID}/attach_files" \
+              -H "Authorization: token ${GITEE_TOKEN}" \
+              -F "file=@${f}"
+            echo ""
+          done
+          echo "DONE: https://gitee.com/${REPO}/releases/tag/${TAG}"
