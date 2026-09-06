@@ -44,7 +44,9 @@ describe('visibleNavItems', () => {
 	it('未登录:登录限定项全部隐藏,公开项保留', () => {
 		const items = visibleNavItems(NAV_REGISTRY, anonCtx());
 		const ids = items.map((i) => i.id);
-		expect(ids).toEqual(['overview', 'monitor', 'marketplace', 'help']);
+		// 0.4.1 行为变更:marketplace 补标 loginRequired(其页面受登录守卫),
+		// 未登录导航中随之隐藏——与页面可达性口径一致(未登录不可达即不展示)。
+		expect(ids).toEqual(['overview', 'monitor', 'help']);
 	});
 
 	it('保序:输出顺序与注册表声明顺序一致', () => {
