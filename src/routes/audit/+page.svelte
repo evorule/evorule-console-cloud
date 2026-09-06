@@ -39,11 +39,11 @@
       <p><Term id="blake3" /> 不可篡改审计链 · 因果链回溯 · <Term id="timetravel" /> 回放</p>
     </header>
     <BusinessAuditView />
-    <!-- UV-016:历史会话审计档案(只读,服务器重启后 WAL 重建回看) -->
+    <!-- :历史会话审计档案(只读,服务器重启后 WAL 重建回看) -->
     <ArchiveSessionsPanel />
-    <!-- UV-018:平台认证事件报表(登录/用户/角色管理事件,prev_hash 链) -->
+    <!-- :平台认证事件报表(登录/用户/角色管理事件,prev_hash 链) -->
     <PlatformEventsPanel />
-    <!-- UV-062 ④:部署历史(bundle 导入溯源,GET /api/bundles/imports) -->
+    <!-- ④:部署历史(bundle 导入溯源,GET /api/bundles/imports) -->
     <BundleImportsPanel />
   </div>
 {:else}

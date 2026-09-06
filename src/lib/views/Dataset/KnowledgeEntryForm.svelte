@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  KnowledgeEntryForm — knowledge 数据条目在线编辑表单（UV-086）
+  KnowledgeEntryForm — knowledge 数据条目在线编辑表单（）
 
   模式：
     - create：添加新条目（含"编辑新版本"底稿预填，POST 全量字段）

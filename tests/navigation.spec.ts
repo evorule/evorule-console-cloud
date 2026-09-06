@@ -25,7 +25,7 @@ const VIEW_TABS = ['规则库', '执行台', '状态', '审计', '时间旅行']
 const TAB_TO_MAIN_TEXT: Record<string, string> = {
 	'规则库': '规则库',
 	'执行台': '执行台',
-	// UV-067:StateView 无选中 session 时显示空态文案(旧断言 "状态视图" 标题已不存在)
+	// :StateView 无选中 session 时显示空态文案(旧断言 "状态视图" 标题已不存在)
 	'状态': '无当前 session',
 	'审计': '业务审计', // BusinessAuditView 顶部工具栏含 "业务审计时间线"
 	'时间旅行': '时间旅行'
@@ -44,7 +44,7 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 	test('侧栏导航包含 17 项(home 2 + 分析视图 5 + discover 3 + 治理协作 6 + 设置),标签正确', async ({
 		page
 	}) => {
-		// UV-022 侧栏分组重构后(UV-067 适配,UV-084 W3 增权限策略,W5 增知识库):
+		// 侧栏分组重构后(适配,W3 增权限策略,W5 增知识库):
 		// home 组(总览/监控) + 分析视图组(5 内核视图) + discover 组(市场/知识库/帮助)
 		// + 治理与协作组(导出/发布队列/版本历史/审计记录/治理中心/权限策略;it 角色无 view_users/manage_roles → 用户/角色管理隐藏)
 		// + 设置 = 17 项
@@ -80,11 +80,11 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 	});
 
 	test('默认视图是建库向导(已登录 → HomeRouter 状态 B 稳态)', async ({ page }) => {
-		// UV-067 适配:RealWorkbench 已随 UV-021 W2 退役,状态 C 改为 goto /workbench。
+		// 适配:RealWorkbench 已随 W2 退役,状态 C 改为 goto /workbench。
 		// 首页加载时规则尚未拉取(rules=[] → isEmptyDb=true → 状态 B),
 		// OnboardingWizard 挂载即置 wizardInProgress=true —— 即使随后 server 规则加载
 		// 完成(isEmptyDb=false),HomeRouter 仍保持在状态 B(见 stores/home-mode.ts),
-		// 建库向导是已登录首页的稳态。向导标题为 h2(UV-021 W2 后首页无 h1)。
+		// 建库向导是已登录首页的稳态。向导标题为 h2（后首页无 h1）。
 		await expect(page.locator('h2:has-text("建库向导")')).toBeVisible({ timeout: 5000 });
 		// 任一 item 都不应 active(因为默认在 home view,不在 /view/* 路由)
 		const activeCount = await page.locator('.sidebar-item[aria-pressed="true"]').count();
@@ -168,7 +168,7 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 	});
 
 	test('规则库视图渲染 server 规则列表(v0.2.0 workspace 化)', async ({ page }) => {
-		// UV-067 适配:v0.2.0 规则库 workspace 化,规则来自 evorule-server(layout
+		// 适配:v0.2.0 规则库 workspace 化,规则来自 evorule-server(layout
 		// bootstrap:ensureDefaultWorkspace + seedBuiltinRules + refreshRules),
 		// 不再是前端 localStorage 的 builtin 规则。BusinessRuleCard 以 description
 		// 展示(不渲染规则名),此处断言 app 自种的内置示例规则卡片可见。

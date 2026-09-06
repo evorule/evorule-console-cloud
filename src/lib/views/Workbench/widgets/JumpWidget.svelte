@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  快速跳单页 widget:包装 WorkbenchJump(UV-021 注册表化)。
-  UV-017/021:目标项按权限门控(与侧栏同源 hasPermission 双轨判定),
+  快速跳单页 widget:包装 WorkbenchJump(注册表化)。
+  :目标项按权限门控(与侧栏同源 hasPermission 双轨判定),
   无权限的项直接隐藏(而非渲染后 403)。
 -->
 

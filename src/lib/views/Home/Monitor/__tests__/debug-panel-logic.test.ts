@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// UV-062 W2 接线3 单测:DebugPanel 纯逻辑层。
+// W2 接线3 单测:DebugPanel 纯逻辑层。
 //
 // 覆盖点:
 //   D1: 通道定义完整性(六路 key,标签齐全,顺序无重复)

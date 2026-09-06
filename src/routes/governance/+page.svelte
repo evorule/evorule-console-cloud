@@ -146,7 +146,7 @@
     toastInfo(`已预填 ${p.entry_id} → v${p.version}(编辑新版本,入库后形成版本链)`, '编辑新版本');
   }
 
-  // ===== UV-078 W3:从向导包导入(.evorule-batch.json → 治理规则条目) =====
+  // ===== W3:从向导包导入(.evorule-batch.json → 治理规则条目) =====
   // 向导/规则库「导出规则」的批量包在此入库:解析 → 预览(含冲突 version 计划) → 逐条 addEntry。
   // 形态零鸿沟(尽调核实):包内 files[].content_base64 解码即 evorule 原生规则 JSON,
   // 与 addEntry.rule_body 同形态直通,机械映射无需转译。
@@ -260,7 +260,7 @@
 
   // ===== 连接 =====
   /**
-   * 可达性探测(UV-007 连通性自检):no-cors 模式下仅判网络层通断,
+   * 可达性探测(连通性自检):no-cors 模式下仅判网络层通断,
    * resolve=服务可达(reject=不可达),不读响应内容( opaque,无 CORS 依赖)。
    */
   async function probeReachable(baseUrl: string): Promise<boolean> {
@@ -290,11 +290,11 @@
     try {
       await connect(cfg.baseUrl.trim(), cfg.tenantId.trim() || 'default', cfg.username, cfg.password);
       toastSuccess('已连接 evorule-rule', '治理');
-      // UV-073 ①:连接成功后自动 ensure 当前平台用户进默认 workspace(幂等;
+      // ①:连接成功后自动 ensure 当前平台用户进默认 workspace(幂等;
       // 失败诚实降级为 toast 提示,不阻塞治理连接 —— ②403 引导仍会兜底)
       await ensureMembershipQuietly();
     } catch (e) {
-      // UV-007 连通性自检:区分「服务不可达」与「凭据/权限错误」,分别给出自服务引导
+      // 连通性自检:区分「服务不可达」与「凭据/权限错误」,分别给出自服务引导
       const reachable = await probeReachable(cfg.baseUrl.trim());
       const raw = e instanceof Error ? e.message : String(e);
       connError = reachable
@@ -362,8 +362,8 @@
       toastError('独立发布需二次确认:请勾选确认框', '发布审批');
       return;
     }
-    // UV-078 W1-A6:生效基准前置显式化——版本选择缺省为 auto_by_effective_date,
-    // 缺 law_ref.effective_from 的发布必被 server UV-051 前置校验 400 拦截;
+    // W1-A6:生效基准前置显式化——版本选择缺省为 auto_by_effective_date,
+    // 缺 law_ref.effective_from 的发布必被 server 前置校验 400 拦截;
     // 与其事后撞墙,不如事前拦截并一步引导到法规锚编辑器补齐(不替代 server 权威闸门)
     if (!selected?.law_ref?.effective_from) {
       toastError(
@@ -415,7 +415,7 @@
   /** 当前执行域激活 bundle(按 dataset_id 匹配选中数据集,部署徽标数据源) */
   let activeBundles = $state<ActiveBundleInfo[]>([]);
 
-  // ===== 法规锚编辑(UV-051:生效基准 UI 编辑通道——发布闸门 400 的产品内修复路径) =====
+  // ===== 法规锚编辑(:生效基准 UI 编辑通道——发布闸门 400 的产品内修复路径) =====
   let showLawEdit = $state(false);
   let lawSaving = $state(false);
   let lawForm = $state({ document_id: '', law_version: '', effective_from: '', effective_to: '' });
@@ -448,7 +448,7 @@
       toastSuccess('法规锚已更新', '治理');
       showLawEdit = false;
     } catch (e) {
-      // 后端 UV-051 前置校验/租户校验错误原文透出,不静默
+      // 后端 前置校验/租户校验错误原文透出,不静默
       toastError(e instanceof Error ? e.message : String(e), '法规锚');
     } finally {
       lawSaving = false;
@@ -543,7 +543,7 @@
   }
 
   // ===== 条目 =====
-  /** 规则体预检失败详情格式化(UV-062 接线①:server 错误原文透出,不静默) */
+  /** 规则体预检失败详情格式化(接线①:server 错误原文透出,不静默) */
   function formatValidateFailure(r: ValidateRulesResult): string {
     const lines: string[] = [];
     if (r.error) lines.push(`JSON 解析失败:${r.error}`);
@@ -583,7 +583,7 @@
       return;
     }
     const ruleBody: unknown = JSON.parse(newEntry.rule_body);
-    // UV-062 接线①:入库前规则体预检(执行域 POST /api/rules/validate)。
+    // 接线①:入库前规则体预检(执行域 POST /api/rules/validate)。
     // 校验失败 → 透出 server 错误详情并阻断保存;
     // 服务不可达 → 诚实降级:toast 警示后放行(禁止静默跳过)。
     if (!workspaceBackend) {
@@ -619,7 +619,7 @@
     }
   }
 
-  // ===== knowledge 数据条目在线编辑(UV-086) =====
+  // ===== knowledge 数据条目在线编辑() =====
   // 表单态:create(空白或底稿预填)/ edit(Draft 原地 PATCH);null = 收起。
   // 切换数据集时随条目列表一并收起($effect 监听 selectedId)。
   let knForm = $state<{ mode: 'create' | 'edit'; entry?: KnowledgeEntry } | null>(null);
@@ -744,7 +744,7 @@
     return h.length > 14 ? `${h.slice(0, 14)}…` : h;
   }
 
-  // ===== 执行域工作空间区(UV-062 接线②⑤⑥ + Wave 2 补充:规则 fork) =====
+  // ===== 执行域工作空间区(接线②⑤⑥ + Wave 2 补充:规则 fork) =====
   // 数据来自 evorule-server(:18080) workspace API,与左侧规则资产库(evorule-rule :18081)解耦。
   // 各区均按需加载(首次展开拉取),失败显式报错(toast + 区内错误框),不静默。
 
@@ -769,12 +769,12 @@
     }
   }
 
-  // ===== UV-073:平台用户与 workspace 成员打通(①连接自动 ensure + ②403 一键引导) =====
+  // ===== :平台用户与 workspace 成员打通(①连接自动 ensure + ②403 一键引导) =====
   /** ② 触发条件:沙盒族端点 403 not-a-member(loadSandboxes/handleStartSandbox 识别) */
   let joinOffered = $state(false);
   let joiningWs = $state(false);
 
-  /** 识别「不在 workspace 成员名单」的 403(UV-073 ② 的触发条件) */
+  /** 识别「不在 workspace 成员名单」的 403(② 的触发条件) */
   function isNotMemberError(e: unknown): boolean {
     return (
       !!e &&
@@ -857,7 +857,7 @@
     } catch (e) {
       sandboxes = [];
       if (isNotMemberError(e)) {
-        // UV-073 ②:403 = 配置性摩擦,升级为一键加入引导(显式动作留痕)
+        // ②:403 = 配置性摩擦,升级为一键加入引导(显式动作留痕)
         joinOffered = true;
         sandboxError =
           '当前用户不在执行域工作空间成员名单(403 not a member)。点击下方「加入默认工作空间」后重试 —— 加入是显式治理动作,成员名单落审计留痕。';
@@ -929,7 +929,7 @@
       : { label: `FAIL(${s.failed} 失败)`, cls: 'diff-changed' };
   }
 
-  // --- 合成测试数据集管理(UV-058 W1.2:测试工作台数据源) ---
+  // --- 合成测试数据集管理（测试工作台数据源） ---
   let testDatasets = $state<TestDatasetRecord[]>([]);
   let testDatasetsLoading = $state(false);
   let testDatasetsError = $state<string | null>(null);
@@ -1001,7 +1001,7 @@
     }
   }
 
-  // --- 沙盒启动编排(UV-058 W1.2:规则多选 × 数据集单选 → startSandbox) ---
+  // --- 沙盒启动编排（规则多选 × 数据集单选 → startSandbox） ---
   /** 待测规则选择(key = rule_version_id;来源 = 工作空间规则表,须先展开"工作空间规则"加载) */
   let sandboxRuleIds = $state<string[]>([]);
   let sandboxDatasetId = $state<number | null>(null);
@@ -1047,7 +1047,7 @@
       await loadSandboxes();
     } catch (e) {
       if (isNotMemberError(e)) {
-        // UV-073 ②:启动沙盒 403(如成员被移除后仍停留在此页) → 升级为一键加入引导
+        // ②:启动沙盒 403(如成员被移除后仍停留在此页) → 升级为一键加入引导
         joinOffered = true;
         sandboxStartError =
           '当前用户不在执行域工作空间成员名单(403 not a member)—— 请到「③ 沙盒记录与测试报告」区点击「加入默认工作空间」后重试。';
@@ -1060,7 +1060,7 @@
     }
   }
 
-  // --- 部署证据(UV-058 W1.3/W1.4:ExportEvidence 三形态,机器背书默认+人工降级显式) ---
+  // --- 部署证据（/W1.4:ExportEvidence 三形态,机器背书默认+人工降级显式） ---
   /** 证据源选择:勾选证据声明后二选一(sandbox=机器背书默认/human=人工降级显式) */
   let evidenceSource = $state<'sandbox' | 'human'>('sandbox');
   /** 最近可用机器证据(最近一次 completed 沙盒的 PASS 报告;null=无) */
@@ -1234,7 +1234,7 @@
     }
   }
 
-  // --- 工作空间规则 fork(UV-062 Wave 2 补充项) ---
+  // --- 工作空间规则 fork(Wave 2 补充项) ---
   // 数据来自 evorule-server workspace 规则表(listRules);fork 调
   // POST /api/workspaces/{id}/rules/{rule_id}/fork(server 复制当前版本内容为新规则,
   // state=draft + 独立版本历史)。失败显式报错含 server 错误文本,不静默。
@@ -1640,7 +1640,7 @@
           {:else if selectedStatus === 'Active'}
             <div class="publish-box">
               {#if !selected.law_ref?.effective_from}
-                <!-- UV-078 W1-A6:把缺基准警示放在发布动作发生处,而非只留在法规锚区块 -->
+                <!-- W1-A6:把缺基准警示放在发布动作发生处,而非只留在法规锚区块 -->
                 <p class="law-missing">
                   ⚠ 缺生效基准(law_ref.effective_from)— 发布将被前置校验拦截,
                   <button class="link-btn" onclick={openLawEdit}>立即设置</button>
@@ -1717,7 +1717,7 @@
                       <span class="badge {v.cls}">{v.label}</span> ·
                       {latestMachineEvidence.report.summary.total_cases} case 全过
                       (证据引用 sandbox:{latestMachineEvidence.sandboxId})
-                      <!-- UV-080 A: 机器背书边界提示(合成 IO 应答不等价于生产 IO) -->
+                      <!-- A: 机器背书边界提示(合成 IO 应答不等价于生产 IO) -->
                       <span class="warn-text">合成 IO 背书:报告应答由 MockIoResponder 提供,依赖外部 LLM/服务的规则不等价于生产行为</span>
                     {:else}
                       无可用沙盒报告——请先在「测试工作台」运行沙盒并得到 PASS,
@@ -1787,7 +1787,7 @@
           </div>
         {/if}
 
-        <!-- 法规锚(UV-051:生效基准编辑通道;auto_by_effective_date 模式发布/部署需 effective_from) -->
+        <!-- 法规锚(:生效基准编辑通道;auto_by_effective_date 模式发布/部署需 effective_from) -->
         <div class="sec">
           <div class="sec-head">
             <span>法规锚(law_ref)</span>
@@ -1813,7 +1813,7 @@
           {:else}
             <p class="muted">
               未设置 —— 版本选择缺省为 auto_by_effective_date 模式,发布与部署需
-              law_ref.effective_from 作为生效基准(UV-051 前置校验)。建议发布前先设置。
+              law_ref.effective_from 作为生效基准(前置校验)。建议发布前先设置。
             </p>
           {/if}
 
@@ -1891,7 +1891,7 @@
               {selectedIsKnowledge ? `数据条目(${$governanceStore.entries.length})` : `规则条目(${$governanceStore.entries.length})`}
             </span>
             {#if selectedIsKnowledge}
-              <!-- UV-086:knowledge 数据条目在线添加 -->
+              <!-- :knowledge 数据条目在线添加 -->
               <button class="btn btn-sm" onclick={openKnCreate} title="在治理中心添加数据条目(payload 过 schema_ref 强校验)">
                 {knForm?.mode === 'create' && !knForm.entry ? '收起' : '+ 添加数据条目'}
               </button>
@@ -2090,7 +2090,7 @@
                     {#if k.status && k.status !== 'Active'}
                       <span class="badge {statusClass(k.status)}">{statusLabel[k.status] ?? k.status}</span>
                     {/if}
-                    <!-- UV-086:按状态分流 —— Draft=可原地编辑+可删;其余(含缺省=视同 Active)=仅"编辑新版本" -->
+                    <!-- :按状态分流 —— Draft=可原地编辑+可删;其余(含缺省=视同 Active)=仅"编辑新版本" -->
                     <span class="entry-actions">
                       {#if k.status === 'Draft'}
                         <button
@@ -2160,7 +2160,7 @@
     </section>
   </div>
 
-  <!-- 执行域工作空间(UV-062 接线②⑤⑥ + Wave 2 补充:规则 fork;数据来自 evorule-server :18080) -->
+  <!-- 执行域工作空间(接线②⑤⑥ + Wave 2 补充:规则 fork;数据来自 evorule-server :18080) -->
   <div class="ws-zone-wrap">
     <div class="card ws-zone">
       <div class="sec-head">
@@ -2242,7 +2242,7 @@
           {/if}
         </div>
 
-        <!-- 测试工作台(UV-058 W1.2:数据集管理 + 沙盒编排 + 报告查看;接线②为其中报告区) -->
+        <!-- 测试工作台(W1.2:数据集管理 + 沙盒编排 + 报告查看;接线②为其中报告区) -->
         <div class="sec">
           <div class="sec-head">
             <button class="btn btn-sm" onclick={toggleSandboxZone}>
@@ -2376,7 +2376,7 @@
                     <button class="btn btn-sm btn-primary" onclick={joinWorkspaceAndRetry} disabled={joiningWs}>
                       {joiningWs ? '加入中…' : '➕ 加入默认工作空间并重试'}
                     </button>
-                    <span class="muted">UV-073 ②:显式加入动作,成员名单落审计留痕</span>
+                    <span class="muted">②:显式加入动作,成员名单落审计留痕</span>
                   </div>
                 {/if}
               {:else if sandboxes.length === 0}
@@ -2461,7 +2461,7 @@
                             · 报告哈希 <span class="chip" title={rep.report_hash}>{rep.report_hash.slice(0, 14)}…</span>
                             · 生成于 {fmtTime(rep.generated_at)}
                           </p>
-                          <!-- UV-080 A: 合成 IO 背书边界标注(40 号 §3.3.3/裁定项 4)——
+                          <!-- A: 合成 IO 背书边界标注(40 号 §3.3.3/裁定项 4)——
                                如实告知该 PASS 的 io_request 应答来自 MockIoResponder 全合成应答,
                                对依赖外部 LLM/服务的规则不等价于生产行为 -->
                           <p class="ws-item-sub evidence-note">
@@ -2675,7 +2675,7 @@
     padding-left: 18px;
     white-space: normal;
   }
-  /* UV-078 W3:向导包导入面板 */
+  /* W3:向导包导入面板 */
   .sec-head-actions {
     display: flex;
     gap: var(--spacing-xs);
@@ -3035,7 +3035,7 @@
     align-items: center;
     flex-wrap: wrap;
   }
-  /* UV-058 W1.2 测试工作台/ W1.4 证据选择 */
+  /* W1.2 测试工作台/ W1.4 证据选择 */
   .tw-sub {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -3073,7 +3073,7 @@
     color: var(--warn, #b45309);
     font-size: var(--text-sm);
   }
-  /* UV-080 A: 报告区合成 IO 背书边界标注(醒目但不喧宾夺主) */
+  /* A: 报告区合成 IO 背书边界标注(醒目但不喧宾夺主) */
   .evidence-note {
     color: var(--warn, #b45309);
     border-top: 1px dashed var(--border, #d4a72c66);
@@ -3289,7 +3289,7 @@
     }
   }
 
-  /* === 执行域工作空间区(UV-062 接线②⑤⑥) === */
+  /* === 执行域工作空间区(接线②⑤⑥) === */
   .ws-zone-wrap {
     padding: 0 var(--spacing-xl) var(--spacing-2xl);
   }

@@ -56,7 +56,7 @@
     if (maxVersion > 0) eventbus.emit(EVENTS.VERSION_SELECT, maxVersion);
   }
 
-  /** UV-084 W1-A3:手动回收已结束/已过期会话(委托 SessionList.reap,含二次确认) */
+  /** W1-A3:手动回收已结束/已过期会话(委托 SessionList.reap,含二次确认) */
   function handleReapSessions() {
     void SessionList.reap();
   }
@@ -164,7 +164,7 @@
         <aside class="sidebar">
           <div class="sidebar-header">
             <h2>会话 (Sessions)</h2>
-            <!-- UV-084 W1-A3:手动回收已结束/已过期会话(生产会话保活,UV-079) -->
+            <!-- W1-A3:手动回收已结束/已过期会话(生产会话保活,) -->
             <button
               class="session-reap-btn"
               title="回收已结束/已过期的会话(活跃与生产会话不受影响)"

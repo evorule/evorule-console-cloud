@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// 总览页 widget 注册表(UV-021 W1)——「一切皆 plugin」交互层首个落地。
+// 总览页 widget 注册表——「一切皆 plugin」交互层首个落地。
 //
 // 注册即接入:新增卡片 = 写一个 widget 组件 + 在此追加一行,
 // 渲染器(DashboardGrid)不感知具体 widget。

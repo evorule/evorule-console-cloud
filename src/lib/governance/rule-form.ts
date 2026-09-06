@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — 治理页规则表单辅助(纯函数,UV-058 W2.2)
+// evorule-console-cloud — 治理页规则表单辅助(纯函数,W2.2)
 //
 // 职责(43 号方案 W2.2):
 //   - localSaveGate:保存分层第 1 层(本地 error 阻断,不发起网络请求)

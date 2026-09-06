@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// 调试面板纯逻辑(DebugPanel 组件的纯函数化抽出层,UV-062 W2 接线3)。
+// 调试面板纯逻辑(DebugPanel 组件的纯函数化抽出层,W2 接线3)。
 //
 // 职责:
 //   - 六路调试通道定义(step / snapshot / phase / queue / pending_io / pending_io_count)

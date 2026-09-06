@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  最近活动 widget:包装 WorkbenchActivity(UV-021 注册表化)。
+  最近活动 widget:包装 WorkbenchActivity(注册表化)。
   数据自取:audit store → deriveActivity 纯函数(workbench-data.ts)。
 -->
 

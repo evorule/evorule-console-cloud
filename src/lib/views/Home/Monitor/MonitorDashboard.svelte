@@ -65,7 +65,7 @@
     type InterventionAction,
   } from "./InterventionBar.svelte";
   import SessionSwitchToast from "./SessionSwitchToast.svelte";
-  // UV-062 W2 接线3+5:调试区(活跃会话清单 + 六路调试面板)
+  // W2 接线3+5:调试区(活跃会话清单 + 六路调试面板)
   import ActiveSessionsPanel from "./ActiveSessionsPanel.svelte";
   import DebugPanel from "./DebugPanel.svelte";
 
@@ -104,7 +104,7 @@
   // === PR6: 连接诊断抽屉 ===
   let diagOpen = $state(false);
 
-  // === UV-062 W2 接线3+5:调试区状态 ===
+  // === W2 接线3+5:调试区状态 ===
   // 活跃会话面板点选 → 传给 DebugPanel(每次点选新建对象确保 effect 重触发)
   let debugPick = $state<{ sid: number } | null>(null);
 
@@ -296,7 +296,7 @@
     </aside>
   </div>
 
-  <!-- UV-062 W2 接线3+5:调试区(活跃会话清单 + 六路内核调试面板) -->
+  <!-- W2 接线3+5:调试区(活跃会话清单 + 六路内核调试面板) -->
   <div class="md-debug-row">
     <ActiveSessionsPanel onPick={(sid) => (debugPick = { sid })} />
     <DebugPanel pick={debugPick} />
@@ -450,7 +450,7 @@
     min-width: 0;
     min-height: 0;
   }
-  /* UV-062 W2 接线3+5:调试区(活跃会话 + 调试面板) */
+  /* W2 接线3+5:调试区(活跃会话 + 调试面板) */
   .md-debug-row {
     display: grid;
     grid-template-columns: minmax(220px, 1fr) minmax(0, 2.5fr);

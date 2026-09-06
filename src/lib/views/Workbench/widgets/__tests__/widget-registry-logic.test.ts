@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// Widget 注册表纯逻辑层单测(UV-021 W1)。
+// Widget 注册表纯逻辑层单测。
 //
 // 覆盖点:
 //   T1: matchesPermission — 缺省权限/有权限/无权限/未登录
@@ -182,7 +182,7 @@ describe('T6 selectWidgets', () => {
 	});
 });
 
-// === T7: 双轨权限一致性(与 UV-017 侧栏门控同源) ===
+// === T7: 双轨权限一致性(与 侧栏门控同源) ===
 describe('T7 双轨权限', () => {
 	test('demo exec 有 view_test_report,platform viewer 无', () => {
 		const def = meta({ id: 'report', permission: 'view_test_report' });

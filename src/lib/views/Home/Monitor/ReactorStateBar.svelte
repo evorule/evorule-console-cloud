@@ -27,18 +27,18 @@
 
   const phase = $derived(state ? phaseMap[state.phase] : phaseMap.idle);
 
-  // UV-079 ②: 会话失效(404)态——phase 指示器切警示样式,指标区换提示文案
+  // ②: 会话失效(404)态——phase 指示器切警示样式,指标区换提示文案
   const missing = $derived(state?.sessionMissing === true);
 </script>
 
 <div class="reactor-state-bar" aria-live="polite">
   <!-- 左侧:Phase -->
-  <!-- UV-078 W1-A4:"未连接"→"待会话" — state 为 null 仅表示当前无选中会话可观测, -->
+  <!-- W1-A4:"未连接"→"待会话" — state 为 null 仅表示当前无选中会话可观测, -->
   <!-- 并非连接故障;tooltip 说明数据来源与预期态,消除新用户困惑 -->
   {#if missing}
-    <!-- UV-079 ②: 幻影会话警示——轮询 404 已停止,提示刷新重新同步 -->
+    <!-- ②: 幻影会话警示——轮询 404 已停止,提示刷新重新同步 -->
     <div class="phase-indicator missing"
-      title="轮询的生产会话已不存在(可能被回收或切换)。服务端 reaper 会自动重建生产会话——刷新页面即可重新同步;若刷新后仍失效,请检查 evorule-server 日志中的 UV-079 报警。">
+      title="轮询的生产会话已不存在(可能被回收或切换)。服务端 reaper 会自动重建生产会话——刷新页面即可重新同步;若刷新后仍失效,请检查 evorule-server 日志中的 报警。">
       <span class="phase-icon">⚠</span>
       <div class="phase-texts">
         <span class="phase-label">Reactor</span>
@@ -198,7 +198,7 @@
   .metric.done .metric-value {
     color: var(--text-secondary, #6b7280);
   }
-  /* UV-079 ②: 会话失效警示样式(幻影引用报警面) */
+  /* ②: 会话失效警示样式(幻影引用报警面) */
   .phase-indicator.missing {
     background: #fffbeb;
     border-color: #fcd34d;

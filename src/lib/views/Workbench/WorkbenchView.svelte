@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  Workbench 总览页 — 主组件(UV-021 收敛为唯一首页)
+  Workbench 总览页 — 主组件(收敛为唯一首页)
 
   职责:
     - surface 宿主:轮询调度(15s 健康 / 30s 数据)与 kernel 数据刷新
@@ -9,7 +9,7 @@
     - 渲染委托 DashboardGrid(注册表驱动,widget 见 widgets/registry.ts)
 
   历史:
-    - 原 5 region 硬编码布局已注册表化(UV-021 W1):
+    - 原 5 region 硬编码布局已注册表化(W1):
       identity/monitor-summary(新)+ system-status/stats/quick/activity/jump(包装)
     - 「一切皆 plugin」交互层首个落地:新增卡片 = 注册表追加一行
 -->
@@ -94,7 +94,7 @@
       ];
       if (ws) {
         // 不传 status:列全量发布队列。曾误传 ws.id 当 status 过滤参数,
-        // server 校验 status 枚举(pending/approved/...)必 400,队列面板恒空(UV-089 ②)。
+        // server 校验 status 枚举(pending/approved/...)必 400,队列面板恒空(②)。
         promises.push(
           refreshPublishQueue(wsBackend).catch((e) => {
             console.error("[workbench] refreshPublishQueue failed:", e);
@@ -144,7 +144,7 @@
 </script>
 
 <div class="workbench">
-  <!-- 首屏引导横幅(UV-021 W2 自 RealWorkbench 迁移到新着陆路径) -->
+  <!-- 首屏引导横幅(W2 自 RealWorkbench 迁移到新着陆路径) -->
   <OnboardingBanner />
 
   <!-- 极简工作台首访提示 -->
@@ -163,7 +163,7 @@
     一屏看到所有状态 + 高频操作 · 卡片按角色与权限自动显隐
   </p>
 
-  <!-- 注册表驱动渲染(UV-021):新增卡片 = widgets/registry.ts 追加一行 -->
+  <!-- 注册表驱动渲染():新增卡片 = widgets/registry.ts 追加一行 -->
   <DashboardGrid surface="workbench" />
 </div>
 

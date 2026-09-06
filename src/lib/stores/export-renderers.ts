@@ -340,7 +340,7 @@ export class PdfRenderer implements ExportRenderer {
 
   constructor(
     public readonly serverBaseUrl?: string,
-    /** 执行域 server Bearer token(UV-084 W6:/api/export/pdf 在受保护路由组) */
+    /** 执行域 server Bearer token(W6:/api/export/pdf 在受保护路由组) */
     public readonly authToken?: string,
   ) {}
 
@@ -401,7 +401,7 @@ export class PdfRenderer implements ExportRenderer {
       },
     };
 
-    // Bearer 认证(UV-084 W6):端点挂载在受保护路由组,生产模式(启用 auth_token)
+    // Bearer 认证:端点挂载在受保护路由组,生产模式(启用 auth_token)
     // 无 token 会 401。认证禁用的 loopback 开发模式下带 token 亦无害。
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (this.authToken) {
@@ -561,7 +561,7 @@ export function getRenderer(
         break;
     }
   }
-  // PDF 渲染器需要 serverBaseUrl + authToken(UV-084 W6),任一变化需重建
+  // PDF 渲染器需要 serverBaseUrl + authToken,任一变化需重建
   if (format === "pdf") {
     const pdf = rendererCache.pdf as PdfRenderer | undefined;
     if (

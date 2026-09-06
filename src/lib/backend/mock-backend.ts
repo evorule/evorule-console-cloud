@@ -116,11 +116,11 @@ interface MockSession {
 export class MockBackend implements ExecutionBackend {
 	private sessions: Map<SessionId, MockSession> = new Map();
 	private nextSessionId: SessionId = 6; // 1-5 预填,6+ 动态创建
-	/** UV-062 W2:auto_verify 开关内存态(session → enabled;默认 false,对齐 server clap 默认) */
+	/** W2:auto_verify 开关内存态(session → enabled;默认 false,对齐 server clap 默认) */
 	private autoVerifyBySession: Map<SessionId, boolean> = new Map();
 
 	/**
-	 * UV-084 W1:共享事实演示数据(跨会话广播形态示例:
+	 * W1:共享事实演示数据(跨会话广播形态示例:
 	 * 平台事件类 + 租户配额类,source_session_id 指向预填 session)。
 	 */
 	private static readonly SHARED_FACTS_DEMO: readonly SharedFactEntry[] = [
@@ -265,7 +265,7 @@ export class MockBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * UV-062 W2:取 session 对应数据集的 SessionState。
+	 * W2:取 session 对应数据集的 SessionState。
 	 * 不存在 → 抛错(与 server 404 对齐;mock 读路径不静默返回空)。
 	 */
 	private requireState(id: SessionId): SessionState {
@@ -277,7 +277,7 @@ export class MockBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * UV-084 W1:校验 session 存在,返回其元数据。
+	 * W1:校验 session 存在,返回其元数据。
 	 * 不存在 → 抛错(与 server 404 对齐)。
 	 */
 	private requireSession(id: SessionId): MockSession {
@@ -424,7 +424,7 @@ export class MockBackend implements ExecutionBackend {
 		return id;
 	}
 
-	// === 停止 / 中止(UV-062;mock 与 submitCommand 同语义:接受请求,校验 session 存在) ===
+	// === 停止 / 中止(;mock 与 submitCommand 同语义:接受请求,校验 session 存在) ===
 
 	async interruptSession(id: SessionId): Promise<InterruptResult> {
 		if (!this.sessions.has(id)) {
@@ -444,7 +444,7 @@ export class MockBackend implements ExecutionBackend {
 		return { session_id: id, success: true, message: "Session aborted" };
 	}
 
-	// === UV-062 W2:审计导出 / 自动验证 / 调试只读 / 因果深度 ===
+	// === W2:审计导出 / 自动验证 / 调试只读 / 因果深度 ===
 
 	/** 审计链 JSON 导出(mock:预填审计链组装导出对象,含完整 entries) */
 	async exportAudit(id: SessionId): Promise<unknown> {
@@ -575,7 +575,7 @@ export class MockBackend implements ExecutionBackend {
 		};
 	}
 
-	// === UV-084 W1:A 组 5 项(mock;对齐 server 端点形状,demo 只读语义) ===
+	// === W1:A 组 5 项(mock;对齐 server 端点形状,demo 只读语义) ===
 
 	/**
 	 * 导入审计链(mock)。demo 只读:不真正覆盖预填数据(保护演示场景),
@@ -664,7 +664,7 @@ export class MockBackend implements ExecutionBackend {
 		};
 	}
 
-	// === UV-084 W3:A-流权限策略族(mock) ===
+	// === W3:A-流权限策略族(mock) ===
 	//
 	// demo 语义:内存可变条目集(种子 3 条演示数据),生命周期状态机与
 	// server 同口径(仅 Draft 可 submit、仅 Candidate 可 review、仅 Active
@@ -883,7 +883,7 @@ export class MockBackend implements ExecutionBackend {
 		};
 	}
 
-	// === UV-084 W5:知识数据面(mock;静态种子,只读数据面无写操作) ===
+	// === W5:知识数据面(mock;静态种子,只读数据面无写操作) ===
 
 	/** demo 知识条目种子(2 数据集 4 条目;domain/tags 差异供过滤演示) */
 	private static readonly KNOWLEDGE_DEMO: readonly KnowledgeEntryRecord[] = [

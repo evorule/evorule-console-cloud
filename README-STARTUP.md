@@ -108,7 +108,7 @@ $env:EVORULE_RULE_ARGS = '--host 127.0.0.1 --port 18081 --db C:\path\to\rule.db 
 > 受保护域(`stable.llm.*`/`stable.system.*`)写入仅 service token 可用
 > (`--service-token`,供服务间调用,浏览器端不用)。
 
-## 平台登录与用户管理(UV-017)
+## 平台登录与用户管理()
 
 除演示模式(P0 预置用户一键登录,走本地权限矩阵)外,console 支持**平台账号登录**,
 账号/角色/会话全部存于 evorule-server(事实日志回放,Argon2id 口令哈希,审计链留痕):

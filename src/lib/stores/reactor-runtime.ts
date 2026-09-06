@@ -8,7 +8,7 @@
 //
 // 设计:evorule-server SSE 只推 Fact/anomaly/session_switched,不推 ReactorState 变化,
 //   故 ReactorState 用 2s 轮询(轻量,无压力)。
-// UV-079 ②: 404 显式识别——会话不存在时停止轮询并置 sessionMissing 态,
+// ②: 404 显式识别——会话不存在时停止轮询并置 sessionMissing 态,
 //   由 UI 报警提示;禁止与瞬时网络错误混同后静默保持旧状态(静默通过形态)。
 
 import { writable } from "svelte/store";
@@ -39,7 +39,7 @@ export interface ReactorRuntimeState {
   invariantViolations: number;
   /** session 是否已结束 */
   finished: boolean;
-  /** 会话不存在(404): 轮询目标已失效(幻影引用/已回收),轮询已停止(UV-079 ②) */
+  /** 会话不存在(404): 轮询目标已失效(幻影引用/已回收),轮询已停止(②) */
   sessionMissing: boolean;
 }
 
@@ -68,7 +68,7 @@ export function startReactorPolling(
         fetch(`${baseUrl}/api/sessions/${sessionId}/finished`),
       ]);
 
-      // UV-079 ②: 404 = 轮询目标已失效(幻影引用/已被回收)。
+      // ②: 404 = 轮询目标已失效(幻影引用/已被回收)。
       // 旧实现直接 r.json():404 空 body 解析抛错落入 catch,与瞬时网络
       // 错误混同后静默保持旧状态——幻影会话轮询完全无感知。
       // 现显式识别:停止轮询 + 置 missing 态,由 ReactorStateBar 报警提示。

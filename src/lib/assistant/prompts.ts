@@ -14,7 +14,7 @@
  * 这份说明让 LLM 知道规则 schema,产出的草案更可能通过 RuleValidator。
  * 注意:这只是引导,不替代 RuleValidator 的硬性校验。
  *
- * 对齐源(UV-074 / UV-058 W2.5,2026-09-04 重写):evorule-server
+ * 对齐源(/ W2.5,2026-09-04 重写):evorule-server
  * core/rule_schema/schemas/_shared/v1.0.json(固化版,$defs SSOT)——
  * 6 元指令 params 形状、7 域类型、inner 嵌套、复数 __io_results__.<io_type>。
  */

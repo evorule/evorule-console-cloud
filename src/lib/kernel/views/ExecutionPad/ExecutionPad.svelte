@@ -63,7 +63,7 @@
 	// 是否在做"重复"对比
 	let isComparing = $state(false);
 
-	// === UV-084 W1-A4:payload 注入(POST /api/sessions/{id}/payload,低频高级操作) ===
+	// === W1-A4:payload 注入(POST /api/sessions/{id}/payload,低频高级操作) ===
 	let payloadSectionOpen = $state(false);
 	let payloadPath = $state('');
 	let payloadValueText = $state('1');
@@ -197,7 +197,7 @@
 		isComparing = false;
 	}
 
-	// UV-078 W1-A2:会话删除(执行台主路径)。A2 初版只改了 ttd session-list.js
+	// W1-A2:会话删除(执行台主路径)。A2 初版只改了 ttd session-list.js
 	// (时间旅行页的列表),漏了执行台这份内联列表 —— 浏览器实测 FAIL 后补齐。
 	// 交互对齐 ttd 版:悬停显示 × 、二次 confirm 同文案、失败走 lastError 显式呈现。
 	async function handleDeleteSession(id: number) {
@@ -339,7 +339,7 @@
 						</div>
 					</section>
 
-					<!-- UV-084 W1-A4:payload 注入(低频高级操作,默认折叠) -->
+					<!-- W1-A4:payload 注入(低频高级操作,默认折叠) -->
 					<section class="payload-section">
 						<header class="section-header">
 							<button
@@ -543,7 +543,7 @@
 		margin-bottom: 2px;
 	}
 
-	/* UV-078 W1-A2:会话行 = 选择按钮 + 删除按钮(悬停显示) */
+	/* W1-A2:会话行 = 选择按钮 + 删除按钮(悬停显示) */
 	.session-row {
 		display: flex;
 		align-items: center;
@@ -690,7 +690,7 @@
 		font-size: var(--text-xs);
 	}
 
-	/* === UV-084 W1-A4:payload 注入区块 === */
+	/* === W1-A4:payload 注入区块 === */
 	.payload-toggle {
 		display: flex;
 		align-items: center;

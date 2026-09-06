@@ -1,8 +1,8 @@
-﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 EvoRule Project
 <#
 .SYNOPSIS
-    UV-032 W2 部署验收:一体镜像 装→用→断电恢复 全流程断言
+    W2 部署验收:一体镜像 装→用→断电恢复 全流程断言
 
 .DESCRIPTION
     前置:build-bundle-docker.ps1 已产出 evorule-bundle 镜像。
@@ -47,7 +47,7 @@ function Wait-Health([string]$Url, [int]$Sec) {
 
 $api = "http://127.0.0.1:$PortServer"
 $rule = "http://127.0.0.1:$PortRule"
-# server 绑 0.0.0.0 触发 fail-closed(B3),容器默认 token(见 start-bundle.sh)
+# server 绑 0.0.0.0 触发 fail-closed,容器默认 token(见 start-bundle.sh)
 $tok = @{ Authorization = 'Bearer evorule-demo-token-2026' }
 
 # ---- 清理旧环境(存在才删,避免 stderr 被 Stop 语义放大) ----

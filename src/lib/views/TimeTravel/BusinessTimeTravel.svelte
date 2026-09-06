@@ -31,7 +31,7 @@
   let rollbackTarget = $state<number | null>(null);
 
   onMount(() => {
-    // UV-078 W2-B6:键前缀统一为 evorule-console-cloud:,读旧键迁移(读旧→写新→删旧)
+    // W2-B6:键前缀统一为 evorule-console-cloud:,读旧键迁移(读旧→写新→删旧)
     const OLD_KEY = "evorule:timetravel-mode";
     const NEW_KEY = "evorule-console-cloud:timetravel-mode";
     const saved =

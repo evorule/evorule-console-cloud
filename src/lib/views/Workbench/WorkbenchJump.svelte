@@ -4,10 +4,10 @@
   Region 5 — 9 个跳单页按钮
     网格布局,一键跳到常用视图/治理页
     登录限定项(发布队列/治理中心)未登录时禁用 + 提示
-    UV-014 导航发现性:补「市场」入口(此前全局无任何入口指向 /marketplace);
+    导航发现性:补「市场」入口(此前全局无任何入口指向 /marketplace);
     「审计」(本地链,免登录)与「治理中心」(治理角色登录)title 澄清语义
-    UV-022 首项改造:页面类入口(市场/导出/发布队列/治理中心)改由 NAV_REGISTRY
-    派生(jump:true 子集),门控与侧栏同清单同语义(闭合 UV-023);
+    首项改造:页面类入口(市场/导出/发布队列/治理中心)改由 NAV_REGISTRY
+    派生(jump:true 子集),门控与侧栏同清单同语义(闭合 );
     /view/* 分析视图仍属 VIEW_LIST 域,在本组件本地声明
 -->
 
@@ -61,7 +61,7 @@
     }).filter((d) => d.jump),
   );
 
-  /** 悬停说明:语义澄清 + 未登录锁定前置引导(UV-014) */
+  /** 悬停说明:语义澄清 + 未登录锁定前置引导() */
   function hintOf(t: { id: string; label: string; loginRequired?: boolean; lockHint?: string }): string {
     if (t.loginRequired && !loggedIn) return t.lockHint || "需登录";
     switch (t.id) {

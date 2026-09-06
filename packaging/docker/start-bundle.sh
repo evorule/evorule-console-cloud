@@ -1,5 +1,5 @@
 #!/bin/bash
-# evorule 一体镜像双服务启动脚本(UV-032 W1)
+# evorule 一体镜像双服务启动脚本(W1)
 # 治理服务(18081)后台 + 主服务(18080)后台,tini 托管,TERM 时双进程优雅退出。
 # 凭据默认与体验包一致(公开演示值),生产部署必须用环境变量覆盖(见 README-DOCKER)。
 # server 绑定 0.0.0.0(容器外可达)触发 fail-closed 安全策略(B3):必须带 auth_token。

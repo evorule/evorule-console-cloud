@@ -29,7 +29,7 @@ import {
   type KernelTransformStep,
 } from "../kernel-rule-adapter";
 
-// === 辅助:断言"末条 step 是 G6 兜底 branch + all(inner:[])"(UV-074:inner 口径) ===
+// === 辅助:断言"末条 step 是 G6 兜底 branch + all(inner:[])"(:inner 口径) ===
 function expectG6Fallback(kernel: KernelRuleJson): void {
   const last = kernel.transform[kernel.transform.length - 1];
   expect(last).toBeDefined();
@@ -140,7 +140,7 @@ describe("kernel-rule-adapter — wrapAsKernelTransform 单条件 + 单动作", 
     const kernel = wrapAsKernelTransform(business);
     const onTrue = kernel.transform[0].params.on_true as KernelTransformStep[];
     expect(onTrue[0].type).toBe("set");
-    // 业务口径 key → 内核 attr;operation 缺省补 set(W2.1 params 完备性对齐)
+    // 业务口径 key → 内核 attr;operation 缺省补 set（params 完备性对齐）
     expect(onTrue[0].params).toEqual({ attr: "flag", operation: "set", value: true });
   });
 
@@ -414,7 +414,7 @@ describe("kernel-rule-adapter — buildKernelRuleContent", () => {
 
     const parsed = JSON.parse(content);
     expect(parsed.id).toBe("test.rule");
-    // 设计决策(B4, commit 39e2932):version 由内核在 addRule 时管理,不透传至 Rule.content JSON
+    // 设计决策（, commit 39e2932）:version 由内核在 addRule 时管理,不透传至 Rule.content JSON
     expect(parsed.version).toBeUndefined();
     expect(parsed.description).toBe("测试规则");
     expect(Array.isArray(parsed.transform)).toBe(true);

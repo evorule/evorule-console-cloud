@@ -149,10 +149,10 @@ enabled: true`;
 		expect(restored.action.type).toBe("block");
 	});
 
-	// UV-089 ⑤:yamlSerialize 对 key 下非空数组输出"key 同缩进 `- ` 项"形态,
+	// ⑤:yamlSerialize 对 key 下非空数组输出"key 同缩进 `- ` 项"形态,
 	// yamlParse 曾只认更大缩进嵌套→该 key 静默置 null 无报错(roundtrip 丢 transform)。
 	// 本测试镜像真实规则形态(transform.branch + on_true 嵌套数组 + on_false 空数组)堵盲区。
-	test("key 下数组 roundtrip(UV-089 ⑤ 回归)", async () => {
+	test("key 下数组 roundtrip(⑤ 回归)", async () => {
 		const rule = {
 			rule_id: "r-arr",
 			description: "数组嵌套 roundtrip",

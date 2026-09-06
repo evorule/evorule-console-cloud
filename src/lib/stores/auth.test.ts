@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// auth store 权限判定单元测试(UV-017 W3:can() 后端化)。
+// auth store 权限判定单元测试（can(） 后端化)。
 // browser=false(无 localStorage 路径),只测纯函数:
 //   - hasPermission:platform 身份以服务端 permissions 为准;demo 身份走 P08 本地矩阵
 //   - roleDisplayName:platform 内置角色中文标签;自定义角色回退原文
@@ -27,7 +27,7 @@ function platformUser(permissions: string[], role = 'administrator'): User {
 	};
 }
 
-describe('hasPermission(UV-017 can() 后端化)', () => {
+describe('hasPermission(can() 后端化)', () => {
 	it('platform 身份:服务端 permissions 清单是唯一依据', () => {
 		const u = platformUser(['view_monitor', 'manage_users']);
 		expect(hasPermission(u, 'view_monitor' as PermissionAction)).toBe(true);

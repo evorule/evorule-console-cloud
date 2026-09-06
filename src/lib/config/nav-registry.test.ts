@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// nav-registry 单测 — 门控过滤纯函数(UV-022 首项改造)
+// nav-registry 单测 — 门控过滤纯函数(首项改造)
 import { describe, expect, it } from 'vitest';
 import {
 	NAV_REGISTRY,
@@ -26,7 +26,7 @@ describe('visibleNavItems', () => {
 		expect(visibleNavItems(NAV_REGISTRY, adminCtx())).toHaveLength(NAV_REGISTRY.length);
 	});
 
-	it('wang(仅 view_users):无发布队列(view_publish_queue 门控,UV-023 闭合)', () => {
+	it('wang(仅 view_users):无发布队列(view_publish_queue 门控,闭合)', () => {
 		const ids = visibleNavItems(NAV_REGISTRY, wangCtx()).map((i) => i.id);
 		expect(ids).not.toContain('publish-queue');
 		expect(ids).not.toContain('roles');
@@ -55,7 +55,7 @@ describe('visibleNavItems', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('三组归位:home 2 / discover 3 / governance 8(UV-084 W5 discover 增知识库)', () => {
+	it('三组归位:home 2 / discover 3 / governance 8(W5 discover 增知识库)', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor']);
 		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'knowledge', 'help']);

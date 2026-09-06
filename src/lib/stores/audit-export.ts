@@ -45,7 +45,7 @@ export const auditExportStore = writable<AuditExportState>({
  * 导出审计链(JSON 或压缩 JSON)。
  *
  * @param sessionId  当前 session id
- * @param backend    ExecutionBackend(UV-062 W2 起 exportAudit/exportAuditCompressed 为接口必选方法)
+ * @param backend    ExecutionBackend(W2 起 exportAudit/exportAuditCompressed 为接口必选方法)
  * @param compressed 是否压缩(P06 §5.4,false=JSON,true=JSON.gz)
  * @param filename   自定义文件名(默认 audit-session-{id}.json)
  */
@@ -98,7 +98,7 @@ export async function exportAudit(
  * 调用方(UI 层)必须先经用户二次确认再调用本函数。
  *
  * @param sessionId  当前 session id
- * @param backend    ExecutionBackend(UV-084 W1 起 importAudit/importAuditCompressed 为接口必选方法)
+ * @param backend    ExecutionBackend(W1 起 importAudit/importAuditCompressed 为接口必选方法)
  * @param data       导入的数据(JSON 对象或 Blob)
  * @param compressed 是否压缩
  */

@@ -1,10 +1,10 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  身份卡 widget(UV-021 W2 新增):
+  身份卡 widget(W2 新增):
     - platform 登录:显示名/用户名/平台角色/权限点数(服务端下发)
     - demo 登录:显示名/本地角色/「演示」徽标
-  数据自取:订阅 currentUser(双轨响应式,UV-017 范式)
+  数据自取:订阅 currentUser(双轨响应式,范式)
 -->
 
 <script lang="ts">

@@ -1,18 +1,18 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:状态感知首页路由(UV-021 W2 收敛)
+  职责:状态感知首页路由(W2 收敛)
     - 状态决策(A/B/C):
         force-demo           → A DemoHome
         !session.loggedIn    → A DemoHome
         isEmptyDb            → B OnboardingWizard
         wizardInProgress     → B OnboardingWizard(向导进行中不切走)
-        else                 → C goto('/workbench') 总览着陆(UV-021 W2)
-    - 历史:状态 C 原内嵌 RealWorkbench(层感知 L1/L2),已随 UV-021 W2 退役:
+        else                 → C goto('/workbench') 总览着陆(W2)
+    - 历史:状态 C 原内嵌 RealWorkbench(层感知 L1/L2),已随 W2 退役:
       总览 /workbench 成为唯一首页,监控大屏改由侧栏「监控」直达(/monitor)
 
   依赖:sessionStore / isEmptyDb / homeModeStore / wizardInProgress
-  关联设计:HOME_DESIGN.md §3(状态机) + UV-021 盘点与计划(07)
+  关联设计:HOME_DESIGN.md §3(状态机) + 盘点与计划(07)
 -->
 
 <script lang="ts">
@@ -46,7 +46,7 @@
     return "C";
   });
 
-  // 状态 C → 总览着陆(UV-021 W2):/workbench 是唯一首页
+  // 状态 C → 总览着陆:/workbench 是唯一首页
   $effect(() => {
     if (mode === "C") {
       void goto("/workbench");

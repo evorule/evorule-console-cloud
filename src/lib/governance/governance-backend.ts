@@ -47,7 +47,7 @@ export interface GovernanceConnectionConfig {
 }
 
 /**
- * 导出证据三形态（UV-058 W1.3/W1.4，42 号方案 §1.3）。
+ * 导出证据三形态（W1.3/W1.4，42 号方案 §1.3）。
  *
  * - sandbox-report：机器背书（首选路径）——verdict 从沙盒报告派生
  *   （调用方以 reportVerdict() 从报告 summary 派生，不手填不伪造），
@@ -191,7 +191,7 @@ export class GovernanceBackend {
 		});
 	}
 
-	/** 更新数据集元数据（PATCH /v1/datasets/{id}；字段缺省 = 不修改，UV-051 法规锚编辑通道） */
+	/** 更新数据集元数据（PATCH /v1/datasets/{id}；字段缺省 = 不修改，法规锚编辑通道） */
 	async updateDatasetMeta(id: string, req: UpdateDatasetMetaRequest): Promise<GovernanceDataset> {
 		return this.request<GovernanceDataset>({
 			method: 'PATCH',
@@ -245,7 +245,7 @@ export class GovernanceBackend {
 	}
 
 	/**
-	 * 添加 knowledge 数据条目（UV-086；POST /v1/datasets/{id}/entries，knowledge 数据集分流）
+	 * 添加 knowledge 数据条目（；POST /v1/datasets/{id}/entries，knowledge 数据集分流）
 	 *
 	 * 同一端点按数据集类型分流（server 侧 Q12 R4）：knowledge 数据集收
 	 * {entry_id, version, payload, schema_ref, ...}，payload+schema_ref 必填、与 rule_body 互斥。
@@ -263,7 +263,7 @@ export class GovernanceBackend {
 	}
 
 	/**
-	 * 编辑 knowledge 条目草稿（UV-086；PATCH /v1/entries/{id}）
+	 * 编辑 knowledge 条目草稿（；PATCH /v1/entries/{id}）
 	 *
 	 * 仅非 frozen 条目可改（Draft；Active/Published 原地修改被 server 拒绝——
 	 * 修改已生效内容须创建新版本）。字段缺省 = 不修改。
@@ -281,7 +281,7 @@ export class GovernanceBackend {
 	}
 
 	/**
-	 * 删除条目草稿（UV-086；DELETE /v1/entries/{id}，204）
+	 * 删除条目草稿（；DELETE /v1/entries/{id}，204）
 	 *
 	 * 仅显式 Draft 可删（status 缺省视同 Active，server 拒删）；
 	 * 规则/知识条目后端同构分流。删除不可恢复（连带版本历史）。
@@ -377,7 +377,7 @@ export class GovernanceBackend {
 	 * 部署到执行域必须走本端点（带证据）：GET 导出固定 unverified()
 	 * （verdict=fail），执行侧闸门一会拒绝导入（T0 决策：未验证不得默认 Pass）。
 	 *
-	 * 证据语义（UV-058 W1.3 升级，取代 32 号方案 B 的单一人工背书）：
+	 * 证据语义（W1.3 升级，取代 32 号方案 B 的单一人工背书）：
 	 * evidence 为结构化三形态（ExportEvidence）——sandbox-report 机器背书为
 	 * 默认路径，human-confirmed 为显式降级路径，none 导出不可导入的预览包。
 	 * 本客户端如实按 evidence 构造 tests 段（buildTestsForEvidence），

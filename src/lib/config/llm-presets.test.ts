@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — LLM 厂商预设单测(UV-004)
+// evorule-console-cloud — LLM 厂商预设单测()
 
 import { describe, test, expect } from 'vitest';
 import { LLM_PRESETS, findPreset, getPresetOptions } from './llm-presets';
 
-describe('LLM_PRESETS 覆盖面(UV-004 DoD)', () => {
+describe('LLM_PRESETS 覆盖面(DoD)', () => {
 	test('必含厂商:智谱/通义/DeepSeek/Kimi/OpenAI/Ollama/自定义', () => {
 		const ids = LLM_PRESETS.map((p) => p.provider);
 		expect(ids).toEqual(
@@ -32,7 +32,7 @@ describe('LLM_PRESETS 覆盖面(UV-004 DoD)', () => {
 	test('除 ernie(needsAdapter)外全部为 OpenAI 兼容端点', () => {
 		for (const p of LLM_PRESETS) {
 			if (p.needsAdapter || p.provider === 'custom') continue;
-			// MiniMax 现网端点为 /v1/text/chatcompletion_v2(2026-09-01 UV-030 实测),
+			// MiniMax 现网端点为 /v1/text/chatcompletion_v2(2026-09-01 实测),
 			// 其余厂商为 /chat/completions —— 两种 OpenAI 兼容形态均合法
 			const ok =
 				/\/chat\/completions$/.test(p.apiEndpoint) ||

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// evorule-console-cloud — 平台认证 API 客户端(UV-017 W3)
+// evorule-console-cloud — 平台认证 API 客户端
 //
 // 对接 evorule-server /api/platform/auth/* 端点:
 //   - GET  /api/platform/auth/status   公开:登录页判断是否需要 bootstrap 引导
@@ -102,7 +102,7 @@ async function request<T>(
 	throw new PlatformAuthError(message, r.status, hasServerMessage);
 }
 
-/** `GET /api/platform/auth/status` — 是否需要 bootstrap(尚无任何用户) + 演示登录入口开关(UV-020) */
+/** `GET /api/platform/auth/status` — 是否需要 bootstrap(尚无任何用户) + 演示登录入口开关() */
 export async function fetchAuthStatus(
 	baseUrl: string
 ): Promise<{ needsBootstrap: boolean; demoAuth: boolean }> {
@@ -201,7 +201,7 @@ export async function platformChangePassword(
 }
 
 // ---------------------------------------------------------------------------
-// 管理端点(UV-017 W4:用户管理 / 角色管理,需 manage_users / manage_roles 权限)
+// 管理端点（用户管理 / 角色管理,需 manage_users / manage_roles 权限）
 // ---------------------------------------------------------------------------
 
 /** 管理端点统一错误:401(未认证)/ 403(缺权限点)由 PlatformAuthError 携带 status */

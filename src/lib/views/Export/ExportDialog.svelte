@@ -178,7 +178,7 @@
     const primaryContent: ExportContentType =
       contentsArr.length > 1 ? "comprehensive" : contentsArr[0];
 
-    // 获取 serverBaseUrl(用于 PDF 服务端渲染) + authToken(UV-084 W6:端点在
+    // 获取 serverBaseUrl(用于 PDF 服务端渲染) + authToken(W6:端点在
     // 受保护路由组,生产模式需 Bearer;loopback 开发模式认证禁用时为 undefined)
     const cloud = backend instanceof CloudHttpBackend ? backend : null;
     const serverBaseUrl = cloud?.baseUrl;

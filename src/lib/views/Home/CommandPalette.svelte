@@ -41,7 +41,7 @@
 	}
 
 	function buildCommands(): Command[] {
-		// 导航组(UV-022):从 NAV_REGISTRY 派生,与侧栏/跳单卡同清单同门控。
+		// 导航组():从 NAV_REGISTRY 派生,与侧栏/跳单卡同清单同门控。
 		// 面板每次打开重建命令列表,登录态/权限快照即时生效。
 		const nav: Command[] = [
 			...visibleNavItems(NAV_REGISTRY, {

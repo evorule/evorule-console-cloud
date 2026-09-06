@@ -81,7 +81,7 @@ export const api = {
     return fetchJson(`/api/sessions/${id}/facts${q}`);
   },
 
-  // === UV-084 W1:会话派生 / 会话回收 ===
+  // === W1:会话派生 / 会话回收 ===
 
   // 派生:从父会话(记录跨会话因果);version 缺省 = 父最新版本
   createSessionFrom(parentId, version) {
@@ -89,7 +89,7 @@ export const api = {
     return fetchJson(`/api/sessions/from/${parentId}${q}`, { method: 'POST' });
   },
 
-  // 回收:与后台 reaper 同一 reap_once(生产会话保活,UV-079)
+  // 回收:与后台 reaper 同一 reap_once(生产会话保活,)
   reap() {
     return fetchJson('/api/sessions/reap', { method: 'POST' });
   }

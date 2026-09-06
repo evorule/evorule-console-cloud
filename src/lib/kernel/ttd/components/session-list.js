@@ -27,7 +27,7 @@ export const SessionList = {
 
       const currentId = store.getState().currentSessionId;
       sessions.forEach(s => {
-        // UV-055:/api/sessions 响应为纯 id 数组(u64),非对象 —— 直接按 id 渲染;
+        // :/api/sessions 响应为纯 id 数组(u64),非对象 —— 直接按 id 渲染;
         // 归一化兼容对象形态(带 version/phase 的富元数据)以备未来扩展
         const isObj = typeof s === 'object' && s !== null;
         const sid = isObj ? s.id : s;
@@ -41,7 +41,7 @@ export const SessionList = {
         }, [
           h('div', { class: 'id' }, `#${sid}`),
           h('div', { class: 'meta' }, `${ver} ${esc(phase)}`.trim()),
-          // UV-084 W1-A2:会话派生按钮(从父会话派生变体,记录跨会话因果)
+          // W1-A2:会话派生按钮(从父会话派生变体,记录跨会话因果)
           h('button', {
             class: 'session-derive',
             title: '从此会话派生新会话(记录跨会话因果)',
@@ -51,7 +51,7 @@ export const SessionList = {
               this.derive(sid);
             }
           }, '⎇'),
-          // UV-078 W1-A2:会话删除按钮(悬停显示,阻止冒泡避免触发选中)
+          // W1-A2:会话删除按钮(悬停显示,阻止冒泡避免触发选中)
           h('button', {
             class: 'session-del',
             title: '删除此会话',
@@ -80,7 +80,7 @@ export const SessionList = {
   },
 
   /**
-   * 删除会话(UV-078 W1-A2)。
+   * 删除会话(W1-A2)。
    * 二次确认 → DELETE /api/sessions/{id} → 刷新列表;
    * 若删除的是当前选中会话,清空选中态并广播 SESSION_DELETED(null) 通知视图退出会话上下文。
    * 删除失败如实呈现(err item),不静默。
@@ -106,7 +106,7 @@ export const SessionList = {
   },
 
   /**
-   * 派生会话(UV-084 W1-A2)。
+   * 派生会话(W1-A2)。
    * POST /api/sessions/from/{id} → 从父会话(当前最新版本)派生新会话,
    * 记录跨会话因果(父会话 ID + 初始内容哈希)。派生后刷新列表并选中新会话。
    * 失败如实呈现(err item),不静默。
@@ -130,9 +130,9 @@ export const SessionList = {
   },
 
   /**
-   * 回收已结束/已过期会话(UV-084 W1-A3)。
+   * 回收已结束/已过期会话(W1-A3)。
    * POST /api/sessions/reap → 与后台 reaper 走同一 reap_once(生产会话
-   * 保活不受影响,UV-079)。结果计数临时显示在列表底部,3s 后自动消失。
+   * 保活不受影响,)。结果计数临时显示在列表底部,3s 后自动消失。
    * 失败如实呈现(err item),不静默。
    */
   async reap() {

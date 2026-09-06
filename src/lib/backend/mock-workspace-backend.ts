@@ -440,7 +440,7 @@ export class MockWorkspaceBackend implements WorkspaceBackend {
 		return [];
 	}
 
-	// === 治理域 API 接线(UV-062:执行域 server 直连端点) ===
+	// === 治理域 API 接线(:执行域 server 直连端点) ===
 
 	/**
 	 * 规则体校验 — 离线不支持:server 校验语义(静态+安全分析)不在 mock 复制,

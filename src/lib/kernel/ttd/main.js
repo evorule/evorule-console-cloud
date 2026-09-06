@@ -150,7 +150,7 @@ export async function initTtd(opts = {}) {
     Object.values(VIEWS).forEach(v => v.onSessionChange?.(id));
   });
 
-  // SESSION_DELETED → 当前会话被删,通知视图退出会话上下文(UV-078 W1-A2)
+  // SESSION_DELETED → 当前会话被删,通知视图退出会话上下文（-A2）
   eventbus.on(EVENTS.SESSION_DELETED, (id) => {
     Object.values(VIEWS).forEach(v => v.onSessionChange?.(id));
   });

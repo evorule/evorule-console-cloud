@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:平台认证事件报表面板(UV-018)
+  职责:平台认证事件报表面板()
     - 消费 GET /api/audit/platform-events(SharedFactsLog platform.event.* 只读派生)
     - 12 类认证事件:登录(成功/失败/停用拒绝)/改密/用户增删改/角色增删改
     - kind 服务端筛选 + 失败类事件红色标记 + JSON/CSV 导出(客户端 Blob)

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# evorule 单机一体镜像(server + rule-serve 双服务,UV-032 W1)
+# evorule 单机一体镜像(server + rule-serve 双服务,W1)
 #
 # 构建:scripts/build-bundle-docker.ps1(组装 staging 目录后调用本文件;
 #      构建上下文 = staging 目录,不含任何源码,Rust 二进制在容器内编译产出)
@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     && rm -rf /var/lib/apt/lists/*
 # 注:不装 libsqlite3-0——双二进制经 rusqlite bundled 特性静态内嵌 SQLite,
-# ldd 实证无 libsqlite3 动态依赖(UV-041,2026-09-02 清理)
+# ldd 实证无 libsqlite3 动态依赖(,2026-09-02 清理)
 
 COPY evorule-server /usr/local/bin/evorule-server
 COPY evorule-rule-serve /usr/local/bin/evorule-rule-serve

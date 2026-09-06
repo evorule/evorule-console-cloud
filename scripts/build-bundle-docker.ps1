@@ -2,7 +2,7 @@
 # Copyright (C) 2026 EvoRule Project
 <#
 .SYNOPSIS
-    evorule 单机一体 Docker 镜像构建(UV-032 W1)
+    evorule 单机一体 Docker 镜像构建(W1)
 
 .DESCRIPTION
     语义与体验包(pack-dist.ps1)同源:server + rule-serve 双服务 + web + 规则 +

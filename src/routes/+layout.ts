@@ -26,7 +26,7 @@ import { toastInfo } from '$lib/stores/toast';
 export const load: LayoutLoad = ({ url }) => {
 	if (!browser) return {}; // SSR/prerender 时跳过守卫(adapter-static 默认无 SSR)
 
-	// UV-017 W3:platform 会话节流刷新(30s 一次,随导航触发)。
+	// W3:platform 会话节流刷新(30s 一次,随导航触发)。
 	// - 授权变更后权限矩阵自动更新(permissions_version)
 	// - 会话被吊销(登出/停用/删除)→ 本地登出,后续 loggedIn 判断自然跳登录
 	if (isPlatformSession()) {
@@ -78,7 +78,7 @@ export const load: LayoutLoad = ({ url }) => {
 
 	if (url.pathname === '/audit') {
 		if (!session.loggedIn) {
-			// UV-014:登录墙前置说明 —— 守卫 redirect 会短路页面 onMount,提示必须在这里给
+			// :登录墙前置说明 —— 守卫 redirect 会短路页面 onMount,提示必须在这里给
 			toastInfo(
 				'审计员工作台属治理侧,需治理角色登录(auditor/admin 等)。演示凭据见包内 README-STARTUP.txt;本地免登录的审计链视图在工作台「审计」入口。',
 				'登录墙'
@@ -94,10 +94,10 @@ export const load: LayoutLoad = ({ url }) => {
 		}
 	}
 
-	// /users /roles 平台管理路由守卫(UV-017 W4):
+	// /users /roles 平台管理路由守卫:
 	// - 未登录跳 /login(布局层拦)
 	// - 权限不足交页面级守卫(/users /roles +page.svelte onMount:toast 引导 + 客户端 goto)
-	//   UV-078 W1-A1 修正(2026-09-04 e2e 取证):整页直连时,布局 load 的 throw redirect(307)
+	//   W1-A1 修正(2026-09-04 e2e 取证):整页直连时,布局 load 的 throw redirect(307)
 	//   触发整页跳转(SvelteKit 初始加载期不走客户端 router),load 里的 toast 写入随页面
 	//   实例丢失 → toast 永不可见(it/demo 侧栏无入口,直连 URL 是唯一到达方式)。
 	//   页面 onMount 用 $app/navigation goto(客户端导航,store 保留)→ toast 真正可见。

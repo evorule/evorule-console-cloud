@@ -192,7 +192,7 @@ export class HttpBackend implements ExecutionBackend {
 
   /**
    * GET /api/health — 只检查 HTTP 状态,不解析 body(兼容纯文本响应)。
-   * signal 透传给 fetch(UV-085 ④):调用方 pagehide 主动中止,消灭浏览器
+   * signal 透传给 fetch(④):调用方 pagehide 主动中止,消灭浏览器
    * 中止 in-flight 请求的 console 噪音;中止走 catch → false(探测语义)。
    */
   async health(signal?: AbortSignal): Promise<boolean> {
@@ -255,7 +255,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * POST /api/sessions/{id}/interrupt — 温和中断(UV-062)。
+   * POST /api/sessions/{id}/interrupt — 温和中断()。
    * 下一检查点生效,无条件可用;会话不存在 → 404(HttpBackendError)。
    * 返回对齐 server InterruptResponse:{ session_id, success, message }。
    */
@@ -267,7 +267,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * POST /api/sessions/{id}/abort — 强制中止反应器任务(UV-062,破坏性)。
+   * POST /api/sessions/{id}/abort — 强制中止反应器任务(,破坏性)。
    * 不等待 checkpoint,直接中止;条件挂载:server 未以 --allow-abort
    * (或 EVORULE_ALLOW_ABORT=1)启动时端点未挂载 → 404,由调用方
    * 显式提示启用方法(fail-fast,不静默)。
@@ -397,7 +397,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * GET /api/sessions/{id}/audit/export — 审计链 JSON 导出(UV-062 W2)。
+   * GET /api/sessions/{id}/audit/export — 审计链 JSON 导出(W2)。
    * server 返回完整哈希链 JSON(serde_json::Value),以 unknown 透传,
    * 由视图层序列化下载;失败(404 会话不存在 / 500 导出失败)抛 HttpBackendError。
    */
@@ -407,7 +407,7 @@ export class HttpBackend implements ExecutionBackend {
 
   /**
    * GET /api/sessions/{id}/audit/export/compressed — gzip 压缩审计链导出
-   * (UV-062 W2)。server 返回 application/gzip 二进制(Content-Disposition
+   * (W2)。server 返回 application/gzip 二进制(Content-Disposition
    * 文件名 audit_chain.json.gz,体积约为 JSON 的 5-10%),以 Blob 返回,
    * Blob.type 携带实际 content-type,由视图层决定扩展名(.json.gz)。
    */
@@ -416,7 +416,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * GET /api/sessions/{id}/audit/auto_verify — 查询实时验证开关(UV-062 W2)。
+   * GET /api/sessions/{id}/audit/auto_verify — 查询实时验证开关(W2)。
    * 返回 { session_id, auto_verify }。
    */
   async getAutoVerify(id: SessionId): Promise<AutoVerifyStatus> {
@@ -426,7 +426,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * POST /api/sessions/{id}/audit/auto_verify — 设置实时验证开关(UV-062 W2)。
+   * POST /api/sessions/{id}/audit/auto_verify — 设置实时验证开关(W2)。
    * threshold / interval 缺省不传(server serde default:threshold=0 不限制,
    * interval=0 被核心归一为 1 = 每次验证);返回配置结果,调用方须检查
    * success 并显式提示失败(不静默)。
@@ -447,7 +447,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * 公开只读 GET JSON(UV-016 审计档案等 server 扩展端点使用)。
+   * 公开只读 GET JSON(审计档案等 server 扩展端点使用)。
    * 复用统一 headers(Bearer)与错误处理,供 Cloud 层组合调用。
    */
   getJson<T>(path: string): Promise<T> {
@@ -529,7 +529,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   // ------------------------------------------------------------------------
-  // === 调试只读查询(UV-062 W2,六路独立) ===
+  // === 调试只读查询（,六路独立） ===
   // ------------------------------------------------------------------------
 
   /** GET /api/sessions/{id}/step — 当前执行步数({ session_id, current_step }) */
@@ -576,11 +576,11 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   // ------------------------------------------------------------------------
-  // === A 组 5 项(UV-084 W1:审计导入/会话派生/会话回收/payload 注入/共享事实) ===
+  // === A 组 5 项（审计导入/会话派生/会话回收/payload 注入/共享事实） ===
   // ------------------------------------------------------------------------
 
   /**
-   * POST /api/sessions/{id}/audit/import — 导入外部审计链 JSON(UV-084 W1)。
+   * POST /api/sessions/{id}/audit/import — 导入外部审计链 JSON(W1)。
    * 破坏性:完全覆盖当前会话审计链,调用方须二次确认。
    * server 导入后自动 verify,verify_ok=false 时 status="verify_failed"
    * (HTTP 仍 200,数据可能损坏,如实呈现,不静默);400 JSON 解析失败 / 404 会话
@@ -595,7 +595,7 @@ export class HttpBackend implements ExecutionBackend {
 
   /**
    * POST /api/sessions/{id}/audit/import/compressed — 导入 gzip 压缩审计链
-   * (UV-084 W1)。请求体 application/gzip 二进制(与 exportAuditCompressed
+   * (W1)。请求体 application/gzip 二进制(与 exportAuditCompressed
    * 的导出互逆:导出的 .json.gz 可直接回灌);响应含 format:"gzip",
    * 其余字段与 importAudit 一致。
    */
@@ -615,7 +615,7 @@ export class HttpBackend implements ExecutionBackend {
 
   /**
    * POST /api/sessions/from/{parent_id}?version= — 从父会话派生新会话
-   * (UV-084 W1)。记录跨会话因果(父会话 ID + 初始内容哈希);version 缺省 =
+   * (W1)。记录跨会话因果(父会话 ID + 初始内容哈希);version 缺省 =
    * 父最新版本。server 返回 { session_id, parent_session_id, ... },
    * 取 session_id;404 父会话不存在 / 429 超最大会话数 / 400 版本无效
    * 由 fetchJson 抛 HttpBackendError。
@@ -639,8 +639,8 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * POST /api/sessions/reap — 手动回收已结束/已过期会话(UV-084 W1)。
-   * 与后台 reaper 走同一 reap_once:生产会话保活 + 失忆自愈(UV-079),
+   * POST /api/sessions/reap — 手动回收已结束/已过期会话(W1)。
+   * 与后台 reaper 走同一 reap_once:生产会话保活 + 失忆自愈(),
    * 不会误回收生产会话。返回 { finished, expired, total } 计数。
    */
   async reapSessions(): Promise<ReapResult> {
@@ -649,7 +649,7 @@ export class HttpBackend implements ExecutionBackend {
 
   /**
    * POST /api/sessions/{id}/payload — 向指定会话注入 payload 字段
-   * (UV-084 W1,body: { path, value })。path 以 "shared." 开头时 server
+   * (W1,body: { path, value })。path 以 "shared." 开头时 server
    * 同步写入共享事实日志(跨会话广播)。
    * 错误纪律:403 受保护域(stable.llm/stable.system 需 service 身份)与
    * 404 会话不存在抛 HttpBackendError(消息含 server 指引原文);
@@ -668,7 +668,7 @@ export class HttpBackend implements ExecutionBackend {
   }
 
   /**
-   * GET /api/shared/facts?prefix= — 共享事实查询(UV-084 W1,跨会话广播
+   * GET /api/shared/facts?prefix= — 共享事实查询(W1,跨会话广播
    * 事实,前缀过滤,缺省全部)。server 返回裸数组 [{ fact_id, path, value,
    * source_session_id, version }]。
    */
@@ -686,13 +686,13 @@ export class HttpBackend implements ExecutionBackend {
 
   /**
    * GET /api/shared/facts/version — 共享事实日志版本与历史长度
-   * (UV-084 W1)。返回 { version, history_len }。
+   * (W1)。返回 { version, history_len }。
    */
   async getSharedFactsVersion(): Promise<SharedFactsVersionInfo> {
     return this.fetchJson<SharedFactsVersionInfo>('/api/shared/facts/version');
   }
 
-  // === UV-084 W3:A-流权限策略族(对齐 server permissions.rs) ===
+  // === W3:A-流权限策略族(对齐 server permissions.rs) ===
   // 错误纪律:400/404/409/500 一律抛 HttpBackendError(消息含 server
   // {"message": ...} 原文,LLM/用户可自诊断),拒绝静默。
 
@@ -772,7 +772,7 @@ export class HttpBackend implements ExecutionBackend {
     );
   }
 
-  // === UV-084 W5:知识数据面(对齐 server knowledge.rs;错误体 {"error"},
+  // === W5:知识数据面(对齐 server knowledge.rs;错误体 {"error"},
   // fetchJson 非 ok 时原文透出,含 error 原文可自诊断) ===
 
   /** GET /api/knowledge — 已承载数据集清单(库加载失败 500 抛错,不静默空) */

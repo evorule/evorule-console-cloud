@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  统计卡 widget:包装 WorkbenchStats(UV-021 注册表化)。
+  统计卡 widget:包装 WorkbenchStats(注册表化)。
   数据自取:订阅 kernel stores,派生逻辑在 workbench-data.ts(纯函数)。
 -->
 

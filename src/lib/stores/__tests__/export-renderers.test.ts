@@ -425,7 +425,7 @@ describe("P07 PdfRenderer", () => {
     }
   });
 
-  // === UV-084 W6:Bearer 认证 + 降级不静默 ===
+  // === W6:Bearer 认证 + 降级不静默 ===
 
   test("W6:传入 authToken 时请求携带 Authorization: Bearer 头", async () => {
     const originalFetch = globalThis.fetch;

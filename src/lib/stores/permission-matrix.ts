@@ -16,7 +16,7 @@
  * 权限动作清单(12 业务点 + 3 平台管理点 = 15)。
  * 与 evorule-server platform_auth::PLATFORM_ACTIONS 保持一一对应:
  *   - 业务 12 点(P08 §5.1 种子):demo 矩阵(ROLE_PERMISSIONS)覆盖
- *   - 平台管理 3 点(UV-017 新增):仅 platform 登录由服务端下发,
+ *   - 平台管理 3 点(新增):仅 platform 登录由服务端下发,
  *     demo 矩阵刻意不含 → 演示用户永远无法进入用户/角色管理
  */
 export type PermissionAction =
@@ -32,7 +32,7 @@ export type PermissionAction =
 	| 'approve_publish' // 审批发布
 	| 'view_publish_queue' // 查看发布队列
 	| 'view_test_report' // 查看测试报告
-	// 平台管理 3 点(UV-017,server 权限点注册表权威定义)
+	// 平台管理 3 点(,server 权限点注册表权威定义)
 	| 'manage_users' // 用户管理(增删改/启停/改角色)
 	| 'manage_roles' // 角色管理(自定义角色 + 权限集)
 	| 'view_users'; // 查看用户列表(只读)

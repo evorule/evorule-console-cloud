@@ -8,7 +8,7 @@
  *                 提交前即时反馈;server POST /api/rules/validate(schema gate
  *                 + governance 详细校验)仍是入库前的权威预检
  *
- * 对齐源(UV-074 / UV-058 W2.1,2026-09-04 重对齐):
+ * 对齐源(/ W2.1,2026-09-04 重对齐):
  *   evorule-server core/rule_schema/schemas/_shared/v1.0.json(固化版,$defs SSOT)
  *   — 6 元指令枚举 + 各指令 params 完备性(_shared L161-281)
  *   — 7 基础域类型(含 has_fields,L30)+ inner 嵌套(禁 domain/domains,P0-03,L59-63)

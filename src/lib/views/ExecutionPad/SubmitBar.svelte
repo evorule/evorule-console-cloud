@@ -5,7 +5,7 @@
     - 提交结果:lastResult 摘要(Fact ID + 触发规则数 + 耗时)
     - [提交到 session]按钮(需要 instruction translated 状态)
     - [重新翻译] / [清空] 辅助按钮
-    - [停止] / [强制中止] 会话控制(UV-062;仅存在活跃 sessionId 时可用)
+    - [停止] / [强制中止] 会话控制(;仅存在活跃 sessionId 时可用)
   关联设计:P04_BUSINESS_EXECUTION_PAD_DESIGN.md §6.3(底部操作栏) + §7.1(提交流)
 -->
 
@@ -55,7 +55,7 @@
       (translateStatus === "translated" || translateStatus === "error"),
   );
 
-  // UV-062:仅存在活跃 sessionId 时可停止/中止;任一操作进行中互斥
+  // :仅存在活跃 sessionId 时可停止/中止;任一操作进行中互斥
   const canStop = $derived(sessionId > 0 && !disabled && !submitting && !stopping && !aborting);
 </script>
 
@@ -109,7 +109,7 @@
     >
       🗑 清空
     </button>
-    <!-- UV-062:停止(温和中断,下一检查点生效) -->
+    <!-- :停止(温和中断,下一检查点生效) -->
     <button
       type="button"
       class="btn btn-secondary"
@@ -126,7 +126,7 @@
         ⏹ 停止
       {/if}
     </button>
-    <!-- UV-062:强制中止(破坏性,确认对话框由父视图处理) -->
+    <!-- :强制中止(破坏性,确认对话框由父视图处理) -->
     <button
       type="button"
       class="btn btn-danger"
@@ -288,7 +288,7 @@
     background: var(--brand-hover, var(--brand, #1d4ed8));
     border-color: var(--brand-hover, var(--brand, #1d4ed8));
   }
-  /* UV-062:强制中止 = 破坏性操作,红色醒目 */
+  /* :强制中止 = 破坏性操作,红色醒目 */
   .btn-danger {
     background: var(--danger, #dc2626);
     border-color: var(--danger, #dc2626);

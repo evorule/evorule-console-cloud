@@ -30,7 +30,7 @@ export interface LifecycleStateChange {
 	published_as?: string;
 }
 
-/** 法规锚（合规数据集核心锚；UV-051：auto_by_effective_date 模式须含 effective_from） */
+/** 法规锚（合规数据集核心锚；：auto_by_effective_date 模式须含 effective_from） */
 export interface LawRef {
     document_id: string;
     law_version?: string | null;
@@ -127,7 +127,7 @@ export interface AddEntryRequest {
 /**
  * 添加 knowledge 数据条目请求体（POST /v1/datasets/{id}/entries，knowledge 数据集分流）
  *
- * UV-086：payload + schema_ref 必填，与 rule_body 互斥（server 显式 400）。
+ * ：payload + schema_ref 必填，与 rule_body 互斥（server 显式 400）。
  * schema_ref 须为 domain_schemas 已注册引用（$id 或文件名），resolver 未命中 = 拒绝入库（D3 强校验）。
  */
 export interface AddKnowledgeEntryRequest {
@@ -146,7 +146,7 @@ export interface AddKnowledgeEntryRequest {
 /**
  * 编辑条目草稿请求体（PATCH /v1/entries/{id}，knowledge 分流字段）
  *
- * UV-086：仅 payload/schema_ref/tags/provenance 可改（PATCH 契约无 domain/version）；
+ * ：仅 payload/schema_ref/tags/provenance 可改（PATCH 契约无 domain/version）；
  * 仅非 frozen 条目可改（Draft；Active/Published 拒绝原地修改，修改=创建新版本）。
  * 字段缺省 = 不修改；全部缺省 = 无操作（server 逐字段 if-let）。
  */

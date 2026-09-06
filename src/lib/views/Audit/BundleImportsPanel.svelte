@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:部署历史面板 — bundle 导入溯源(UV-062 优先项④)
+  职责:部署历史面板 — bundle 导入溯源(优先项④)
     - 消费 GET /api/bundles/imports(workspace 元数据库 bundle_imports 表,导入时间倒序)
     - 展示每次快照包导入:时间 / bundle / 数据集 / 版本语义 / 防篡改指纹 / 导入者
     - 只读溯源:imported_at 为管理元数据(墙钟旁路),不参与 fact / 内容哈希 / 审计验证链

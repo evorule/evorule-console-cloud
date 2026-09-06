@@ -193,10 +193,10 @@ describe('CloudHttpBackend.emergencyRollbackRequest', () => {
 });
 
 // ============================================================================
-// 审计档案(UV-016):只读档案端点,直连执行侧 /api/audit-archive
+// 审计档案():只读档案端点,直连执行侧 /api/audit-archive
 // ============================================================================
 
-describe('CloudHttpBackend 审计档案(UV-016)', () => {
+describe('CloudHttpBackend 审计档案()', () => {
   const ARCHIVE_LIST = {
     sessions: [
       {
@@ -305,10 +305,10 @@ describe('CloudHttpBackend 审计档案(UV-016)', () => {
 });
 
 // ============================================================================
-// 平台认证事件(UV-018):只读报表端点 /api/audit/platform-events
+// 平台认证事件():只读报表端点 /api/audit/platform-events
 // ============================================================================
 
-describe('CloudHttpBackend 平台认证事件(UV-018)', () => {
+describe('CloudHttpBackend 平台认证事件()', () => {
   /** mock 全局 fetch 返回 JSON 响应,并捕获请求参数 */
   function mockFetchJson(payload: unknown): ReturnType<typeof vi.fn> {
     const fn = vi.fn().mockResolvedValue(
@@ -399,10 +399,10 @@ describe('CloudHttpBackend 平台认证事件(UV-018)', () => {
 });
 
 // ============================================================================
-// bundle 导入溯源(UV-062 ④):部署历史端点 /api/bundles/imports
+// bundle 导入溯源(④):部署历史端点 /api/bundles/imports
 // ============================================================================
 
-describe('CloudHttpBackend bundle 导入溯源(UV-062 ④)', () => {
+describe('CloudHttpBackend bundle 导入溯源(④)', () => {
   /** mock 全局 fetch 返回 JSON 响应,并捕获请求参数 */
   function mockFetchJson(payload: unknown): ReturnType<typeof vi.fn> {
     const fn = vi.fn().mockResolvedValue(
@@ -502,10 +502,10 @@ describe('CloudHttpBackend bundle 导入溯源(UV-062 ④)', () => {
 });
 
 // ============================================================================
-// 服务清单(UV-062 ⑨):能力对账端点 /api/services
+// 服务清单(⑨):能力对账端点 /api/services
 // ============================================================================
 
-describe('CloudHttpBackend 服务清单(UV-062 ⑨)', () => {
+describe('CloudHttpBackend 服务清单(⑨)', () => {
   const SERVICES = [
     { name: 'http_request', source: 'native', version: '1.0.0' },
     {

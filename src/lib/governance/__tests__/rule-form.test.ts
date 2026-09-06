@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — UV-058 W2.2 治理页规则表单辅助单测
+// evorule-console-cloud — W2.2 治理页规则表单辅助单测
 //
 // 覆盖(43 号方案 W2.2 验收):
 //   - 保存分层第 1 层三态:本地 error 阻断 / warning-only 放行 / 全绿放行

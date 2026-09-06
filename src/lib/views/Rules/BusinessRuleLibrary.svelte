@@ -47,7 +47,7 @@
   import BusinessForm from "./BusinessForm.svelte";
   import BusinessPreview from "./BusinessPreview.svelte";
   import SchemaSelector from "./SchemaSelector.svelte";
-  // UV-078 W2-B5:分类与标签管理入口(复活 CategoryManager/TagManager 孤儿组件)
+  // W2-B5:分类与标签管理入口(复活 CategoryManager/TagManager 孤儿组件)
   import CategoryManager from "$lib/views/Categories/CategoryManager.svelte";
   import TagManager from "$lib/views/Tags/TagManager.svelte";
 
@@ -68,7 +68,7 @@
   // schema 选择器 ID(null = 用 meta.schemaId 或无 schema)
   let selectedSchemaId = $state<string | null>(null);
 
-  // === UV-078 W2-B5:分类与标签管理抽屉 ===
+  // === W2-B5:分类与标签管理抽屉 ===
   let manageOpen = $state(false);
   let manageTab = $state<"category" | "tag">("category");
 
@@ -165,7 +165,7 @@
     }
   }
 
-  // === 执行域生效规则(UV-062 接线③:只读,数据来自 evorule-server GET /api/rules) ===
+  // === 执行域生效规则(接线③:只读,数据来自 evorule-server GET /api/rules) ===
   // 与本地规则库(工作区 draft/active 规则)区分:此处展示执行域当前实际生效的
   // 合并规则集(宪法 + 已落地 bundle),用于核对"运行中到底在用什么规则"。
   let execRulesOpen = $state(false);
@@ -336,7 +336,7 @@
       </main>
     </div>
 
-    <!-- 执行域生效规则(UV-062 接线③:只读;数据来自 evorule-server :18080) -->
+    <!-- 执行域生效规则(接线③:只读;数据来自 evorule-server :18080) -->
     <section class="exec-rules">
       <header class="exec-head">
         <button class="btn exec-toggle" onclick={toggleExecRules}>
@@ -389,7 +389,7 @@
     </section>
   </div>
 
-  <!-- UV-078 W2-B5:分类与标签管理抽屉 -->
+  <!-- W2-B5:分类与标签管理抽屉 -->
   {#if manageOpen}
     <!-- tabindex="-1":dialog 容器可编程聚焦(ARIA 惯例),同时满足 a11y 焦点要求;
          Escape 关闭提供与遮罩点击对等的键盘通道 -->
@@ -589,7 +589,7 @@
     }
   }
 
-  /* === 执行域生效规则(UV-062 接线③) === */
+  /* === 执行域生效规则(接线③) === */
   .exec-rules {
     border-top: 1px solid var(--border, #e2e8f0);
     background: var(--bg-page, #f8fafc);
@@ -679,7 +679,7 @@
     word-break: break-all;
   }
 
-  /* === UV-078 W2-B5:分类与标签管理抽屉 === */
+  /* === W2-B5:分类与标签管理抽屉 === */
   .manage-overlay {
     position: fixed;
     inset: 0;
@@ -687,7 +687,7 @@
     display: flex;
     align-items: stretch;
     justify-content: flex-end;
-    /* 需高于全局顶栏(.header z-index:1300),否则抽屉顶部被顶栏遮挡不可点(UV-078 W2-B5 实测取证) */
+    /* 需高于全局顶栏(.header z-index:1300),否则抽屉顶部被顶栏遮挡不可点(W2-B5 实测取证) */
     z-index: 1400;
   }
   .manage-drawer {

@@ -42,7 +42,7 @@
   // 不支持事件处理器内调用);队列项详情走内核通道 GET /api/publish/queue/{id}。
   const workspaceBackend = useWorkspaceBackendOrNull();
 
-  // ===== 队列项详情(UV-062 接线④:完整请求体查看) =====
+  // ===== 队列项详情(接线④:完整请求体查看) =====
   let detailOpen = $state<Record<string, boolean>>({});
   /** 详情缓存(队列项不可变历史记录,首次拉取后缓存) */
   let detailCache = $state<Record<string, PublishQueueItem>>({});
@@ -241,7 +241,7 @@
             {/if}
           </div>
 
-          <!-- 队列项详情(UV-062 接线④:GET /api/publish/queue/{id} 完整请求体) -->
+          <!-- 队列项详情(接线④:GET /api/publish/queue/{id} 完整请求体) -->
           <div class="item-actions detail-row">
             <button class="btn btn-ghost" onclick={() => toggleDetail(req)}>
               {detailOpen[req.id] ? "收起详情" : "📋 详情"}
@@ -582,7 +582,7 @@
     justify-content: flex-end;
   }
 
-  /* === 队列项详情(UV-062 接线④) === */
+  /* === 队列项详情(接线④) === */
   .item-actions.detail-row {
     justify-content: flex-start;
     margin-bottom: 0;
