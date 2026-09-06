@@ -84,14 +84,14 @@ export const load: LayoutLoad = ({ url }) => {
 		if (!session.loggedIn) {
 			// :登录墙前置说明 —— 守卫 redirect 会短路页面 onMount,提示必须在这里给
 			toastInfo(
-				'审计员工作台属治理侧,需治理角色登录(auditor/admin 等)。演示凭据见包内 README-STARTUP.txt;本地免登录的审计链视图在工作台「审计」入口。',
+				'审计员工作台属治理侧,需治理角色登录(auditor/admin 等)。本地免登录的审计链视图在工作台「审计」入口。',
 				'登录墙'
 			);
 			throw redirect(307, '/login');
 		}
 		if (!can('view_audit_chain')) {
 			toastInfo(
-				'当前账号无 view_audit_chain 权限(需 auditor/admin 等治理角色)。如需演示,请用 README-STARTUP.txt 中的治理凭据登录。',
+				'当前账号无 view_audit_chain 权限(需 auditor/admin 等治理角色)。请用具备相应角色的治理账号登录。',
 				'权限不足'
 			);
 			throw redirect(307, '/');
