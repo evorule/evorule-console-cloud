@@ -108,6 +108,9 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 - **15 项治理/执行 API 接线**：审计导入/会话派生/回收/payload 注入/共享事实、执行台停止/中断、规则预检、沙盒报告、部署溯源、执行域规则、队列详情、会话清单、成员增删、服务清单等
 - **平台用户打通**：平台用户与 workspace 成员连接（幂等自动加入 + 403 显式加入重试）
 - **「部署到执行域」**：治理数据集 → 执行域发布链出口 UI
+- **法规锚编辑通道**：发布闸门问题的产品内修复路径
+- **分类标签管理**：抽屉式管理 + Escape 键盘关闭通道
+- **场景示例规则 v2**：业务指令范式 + 体验包 rules 预置（4 规则 9 用例实测全过）
 - **规则编辑表单深化** + 校验器对齐权威 schema；旅程可用性整治 + 新用户体验修复
 - 完整明细见 [CHANGELOG](CHANGELOG.md)
 
@@ -122,16 +125,6 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 - 联网模式切换（offline ↔ online）、视图选择、联网与 LLM 配置持久化
 - apiKey 安全：仅存浏览器 localStorage，不进 URL / 日志 / 错误信息
 - 单镜像双进程 Docker 一键部署（`packaging/docker/`）；分发包插件清单缺省文件 + 双平台打包接线
-
-### main 分支已合入（待随下一版发布）
-
-- 知识数据面 UI（`/knowledge` 路由，执行侧数据只读通道）
-- 权限点页（`/permissions`）；模板在线编辑 UI（marketplace 编辑弹窗）
-- PDF 服务端渲染接线（Bearer 认证透传 + 降级原因显式提示）
-- 治理中心-向导贯通（从向导包导入 / 版本链徽标 / 内容预载）；治理中心知识条目在线编辑（Draft 编辑/删除 + 新版本链）
-- 导出链五项修复；健康检查噪音消除
-
-完整清单见 [CHANGELOG](./CHANGELOG.md) 与 commit 历史。
 
 ### Roadmap（规划中，非承诺）
 
@@ -263,7 +256,7 @@ server 侧两个 token 环境变量（详见 evorule-server README「环境变�
 npm run check && npx vitest run && npm run test && npm run build
 ```
 
-| 测试 | 命令 | 实测结果（2026-09-05） |
+| 测试 | 命令 | 实测结果（2026-09-06） |
 | --- | --- | --- |
 | 类型检查 | `npm run check` | 0 errors / 0 warnings |
 | 单元测试 | `npx vitest run` | 1214/1214（60 个测试文件） |
