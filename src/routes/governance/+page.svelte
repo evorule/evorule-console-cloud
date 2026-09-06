@@ -1501,6 +1501,12 @@
           oninput={(e) => updateGovernanceConfig({ baseUrl: (e.currentTarget as HTMLInputElement).value })}
           placeholder="http://127.0.0.1:18081"
         />
+        {#if import.meta.env.DEV && $governanceConfig.baseUrl === '/rule-serve'}
+          <span class="field-hint">
+            开发模式默认经 vite 代理转发至 127.0.0.1:18081(同源,免 CORS 配置)。
+            需直连其他实例时填完整地址。
+          </span>
+        {/if}
       </label>
       <label class="field">
         <span>租户 ID</span>
@@ -2651,6 +2657,11 @@
   }
   .field-row .field {
     flex: 1;
+  }
+  .field-hint {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    line-height: 1.5;
   }
   .err-box {
     background: color-mix(in srgb, var(--danger) 10%, transparent);
