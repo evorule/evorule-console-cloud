@@ -26,18 +26,33 @@ export interface GovernanceConfig {
 
 const STORAGE_KEY = 'evorule-console-cloud:governance-config';
 
+/**
+ * 默认治理地址按运行形态分派(2026-09-06 CORS 环境坑修复):
+ * - dev(vite :5174):相对路径 /rule-serve,经 vite 开发代理转发到 127.0.0.1:18081
+ *   (同源请求,浏览器 CORS 不参与)——rule-serve 无需为 dev 端口追加白名单,
+ *   保持其 --allowed-origins 原参即可;
+ * - 生产构建:直连 http://127.0.0.1:18081(打包启动参数已配套 --allowed-origins);
+ * - SSR/测试(browser=false):真实 URL(SvelteKit SSR 相对 fetch 不可用;虽不会在
+ *   SSR 期发起治理请求,仍以真实 URL 保持初始态确定性)。
+ */
+function defaultBaseUrl(): string {
+	if (browser && import.meta.env.DEV) return '/rule-serve';
+	return 'http://127.0.0.1:18081';
+}
+
 const DEFAULT_CONFIG: GovernanceConfig = {
-	baseUrl: 'http://127.0.0.1:18081',
+	baseUrl: 'http://127.0.0.1:18081', // 由 defaultBaseUrl() 分派,见下方 loadConfig
 	tenantId: 'default',
 	username: '',
 	password: ''
 };
 
 function loadConfig(): GovernanceConfig {
-	if (!browser) return { ...DEFAULT_CONFIG };
+	const fallback: GovernanceConfig = { ...DEFAULT_CONFIG, baseUrl: defaultBaseUrl() };
+	if (!browser) return fallback;
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return { ...DEFAULT_CONFIG };
+		if (!raw) return fallback;
 		const parsed = JSON.parse(raw) as Partial<GovernanceConfig>;
 		return {
 			baseUrl:
@@ -52,7 +67,7 @@ function loadConfig(): GovernanceConfig {
 			password: typeof parsed.password === 'string' ? parsed.password : ''
 		};
 	} catch {
-		return { ...DEFAULT_CONFIG };
+		return fallback;
 	}
 }
 
