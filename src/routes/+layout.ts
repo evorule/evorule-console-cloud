@@ -62,7 +62,7 @@ export const load: LayoutLoad = ({ url }) => {
 		url.pathname.startsWith('/view/')
 	) {
 		if (!session.loggedIn) {
-			// UV-117 修复(2026-09-06):未登录访问受守卫路由统一引导至 /login,
+			// 修复(2026-09-06):未登录访问受守卫路由统一引导至 /login,
 			// 不再静默弹回 / ——弹回首页让用户误判"页面坏了",登录页才是
 			// 可行动的下一步(与 /publish-queue /version-history 组口径一致)。
 			// 注:此处不加 toast(W1-A1 取证:布局 load 里的 toast 在整页直连时丢失)。
