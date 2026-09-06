@@ -70,6 +70,11 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     group: "discover",
     title: "模板市场 — 官方规则集(等保 2.0 等)一键导入",
     jump: true,
+    // UV-117 修复(2026-09-06):市场页受登录守卫(routes/+layout.ts),导航项须同步
+    // 标注 loginRequired,未登录时消费端(WorkbenchJump)显示 lockHint 锁态提示,
+    // 避免可点却被守卫静默弹回的误导体验(与跳单卡组 L81+ 标注口径一致)。
+    loginRequired: true,
+    lockHint: "需登录后使用市场(演示登录亦可)",
   },
   {
     id: "knowledge",
