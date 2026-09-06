@@ -85,7 +85,7 @@ try {
 
 if ($sid) {
     try {
-        $body = '{"instruction":{"type":"set","params":{"attr":"uv032_probe","operation":"set","value":42}}}'
+        $body = '{"instruction":{"type":"set","params":{"attr":"probe_attr_demo","operation":"set","value":42}}}'
         $null = Invoke-RestMethod -Uri "$api/api/sessions/$sid/command" -Method Post -Body $body -ContentType 'application/json' -Headers $tok
         Start-Sleep -Milliseconds 800
         Assert "D2.3 规则命令执行成功" $true ""
