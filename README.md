@@ -5,7 +5,7 @@
 
 > evorule 规则引擎面板 · **联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM + 平台治理）
 
-[![version](https://img.shields.io/badge/version-0.2.0-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.3.0-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
 [![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
 
@@ -97,6 +97,19 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 ---
 
 ## 版本能力边界
+
+### v0.3.0 已发版（2026-09-06）
+
+- **测试工作台**：规则试运行 + 结构化部署证据流（部署前验证规则行为）
+- **知识数据面**：`/knowledge` 路由 + 治理中心知识条目在线编辑（Draft 编辑/删除 + 新版本链）
+- **权限管理 UI**：权限条目生命周期 + 判定测试台
+- **模板市场 server 接线**：user 模板以 server 为唯一真相源 + 模板在线编辑 UI
+- **PDF 服务端渲染接线**：Bearer 认证透传 + 降级原因显式上屏
+- **15 项治理/执行 API 接线**：审计导入/会话派生/回收/payload 注入/共享事实、执行台停止/中断、规则预检、沙盒报告、部署溯源、执行域规则、队列详情、会话清单、成员增删、服务清单等
+- **平台用户打通**：平台用户与 workspace 成员连接（幂等自动加入 + 403 显式加入重试）
+- **「部署到执行域」**：治理数据集 → 执行域发布链出口 UI
+- **规则编辑表单深化** + 校验器对齐权威 schema；旅程可用性整治 + 新用户体验修复
+- 完整明细见 [CHANGELOG](CHANGELOG.md)
 
 ### v0.2.0 已发版（2026-09-02）
 
