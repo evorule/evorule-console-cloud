@@ -6,41 +6,80 @@
 
 ---
 
+
+## [0.3.0] - 2026-09-06
+
+**治理能力深化与知识数据面** — 测试工作台 / 知识条目在线编辑 / 权限管理 UI / 模板市场 server 接线 / PDF 服务端渲染 / 规则编辑深化 / 旅程可用性整治
+
+### 🆕 新增
+
+- **测试工作台** — 规则试运行 + 结构化部署证据流(部署前验证规则行为)
+- **知识数据面** — /knowledge 路由 + 治理中心知识条目在线编辑(Draft 编辑/删除 + 新版本链)
+- **权限管理 UI** — 权限条目生命周期 + 判定测试台
+- **模板市场 server 接线** — user 模板以 server 为唯一真相源 + 模板在线编辑 UI
+- **PDF 服务端渲染接线** — Bearer 认证透传 + 降级原因显式上屏
+- **15 项治理/执行 API 接线** — 审计导入/会话派生/回收/payload 注入/共享事实、执行台停止/中断、规则预检、沙盒报告、部署溯源、执行域规则、队列详情、会话清单、成员增删、服务清单、审计导出/auto_verify 开关/监控页调试面板/因果深度/规则 fork
+- **平台用户打通** — 平台用户与 workspace 成员连接(幂等自动加入 + 403 显式加入重试)
+- **法规锚编辑通道** — 发布闸门问题的产品内修复路径
+- **「部署到执行域」** — 治理数据集→执行域发布链出口 UI
+- **分类标签管理复活** — 抽屉式管理 + 层级遮挡修复 + Escape 键盘关闭通道
+- **场景示例规则 v2** — 业务指令范式 + 体验包 rules 预置(4 规则 9 用例实测全过)
+
+### 🔄 变更
+
+- **规则编辑表单深化** — 编辑体验收尾 + 校验器对齐权威 schema + 前端规则知识漂移修复
+- **旅程可用性整治** — 6 项止血修复 + 13 路由 page-smoke 骨架 + 资产清理(activity-log/comments 链、孤儿视图退役)
+- **新用户体验修复** — 单页视图守卫竞态 + 版本动态化 + 示例按钮/LLM 预览/零停机语义/登录引导
+
+### 🐛 修复
+
+- **消费侧重复桥接 transform 退役** — 单发桥接协议归引擎 core_eval 单一权威
+- **导出链五项修复** — 从向导包导入/版本链徽标/内容预载/YAML 静默丢失清剿
+- **健康检查 ERR_ABORTED 噪音消除** + e2e CI 逃生门
+- **前端报警面扩容** — 轮询 404 显式识别停轮询 + 会话失效警示
+- **会话号渲染归一化** + 启动失败 stderr 可见性
+- **.gitignore uild/ 未锚定根目录** — Windows 大小写不敏感匹配吞掉 src/lib/views/Build/(新手向导 6 文件),任何新 clone 与 CI 类型检查必挂而本地全绿;锚定为 /build/ 并入库该目录
+- **镜像死重移除** — libsqlite3-0(双二进制经 rusqlite bundled 静态内嵌 SQLite,ldd 实证无动态依赖)
+- **打包脚本补 plugin_manifest.json 复制语句** — 核验表含 11 项但组装段仅 10 项,首跑 fail-fast 暴露
+
+### 📚 文档
+
+- 开发者指南(架构/启动/产品主流程/代码地图/坑表)、《5 分钟跑起来》图文教程、README 门面清障
 ## [0.2.0] - 2026-09-02
 
 **平台化与交付闭环** — 平台登录 / 用户管理 / 总览页 / 审计档案 / Docker 一键部署 / 分发包增强,以及规则写入链路适配与旁路收敛
 
 ### 新增
 
-**平台认证与用户管理(UV-017/020)**
+**平台认证与用户管理**
 
-- 平台登录接入(server 统一认证)+ 个人中心 + `can()` 权限判定后端化
+- 平台登录接入(server 统一认证)+ 个人中心 + `can` 权限判定后端化
 - 用户管理 + 角色管理页(权限矩阵编辑器);侧栏权限响应式;/users 只读视图
 - 登录页按 server 下发的 `demo_auth` 开关隐藏演示入口(server 不可达时保留)
 
-**总览页与导航(UV-021/022)**
+**总览页与导航**
 
 - 总览页 widget 注册表化(DashboardGrid + 身份/监控摘要/决策者卡),登录默认着陆总览,极简首页退役
-- 导航注册表化:侧栏 / 跳单卡 / 命令面板同清单同门控,市场入口补齐(UV-014)
+- 导航注册表化:侧栏 / 跳单卡 / 命令面板同清单同门控,市场入口补齐
 
-**审计与帮助(UV-016/018/010/024)**
+**审计与帮助**
 
 - 历史会话审计档案面板(归档分组 + LLM 审计详情)
 - 平台认证事件面板;帮助页文案对齐总览注册表现状;反馈入口(Gitee Issues + 邮件)
 
-**交付与部署(UV-032/033/031/001/009)**
+**交付与部署**
 
 - 单镜像双进程 Docker 一键部署(部署验收 19/19 通过);TTD 事实卡片 Stable 展示适配(快照 → 版本号)
 - 分发包插件清单缺省文件 `assets/plugin_manifest.json`(部署方可编辑裁剪)+ pack-dist 双平台接线 + 启动脚本传 `--plugins`
 - `start-evorule.bat` 双服务日志落盘(server 原生 `--log-file` 7 天/1024MB 轮转);README-STARTUP 升级换包章节(保留 data 六步流程)
 - WAL 进包与分发包纳入治理服务(双 exe);macOS/Linux 一键启停与打包脚本
 
-**LLM 与演示(UV-030/004/003/006)**
+**LLM 与演示**
 
 - MiniMax 预设端点更新(现网 api.minimaxi.com)+ 业务错误如实透出(此前 200 + base_resp 错误形态被误报为"响应结构异常",违反拒绝静默通过原则);llm-fetch 5 用例
 - LLM 厂商预设补齐 Kimi 与 Ollama(本机);ExplainRuleDialog 并发防护加固;call_service 服务调用演示进包
 
-**易用性(UV-007/008/011)**
+**易用性**
 
 - 治理页连通性自检引导 + 市场/发布队列空态文案;演示凭据首启警示强化(含幂等引导换密指引)
 
@@ -58,10 +97,10 @@
 
 #### 建库向导无法退出（HomeRouter 状态决策冻结）
 
-- **根因**：`HomeRouter` 的 `mode = $derived(resolveMode())` 内部经 `get(store)` 快照读取 — Svelte 5 中 `get()` 不被 `$derived` 依赖追踪，`mode` 在组件挂载时求值一次后永久冻结。登录/取消向导/完成建库等 store 变更均无法触发 A/B/C 重判：点「取消，回 demo」handler 已执行（logout + force-demo 落库），但页面停留在向导；完成建库同样无法切到工作台。此前能进入向导纯粹依赖登录页跳转引发的组件重挂载。
+- **根因**：`HomeRouter` 的 `mode = $derived(resolveMode)` 内部经 `get(store)` 快照读取 — Svelte 5 中 `get` 不被 `$derived` 依赖追踪，`mode` 在组件挂载时求值一次后永久冻结。登录/取消向导/完成建库等 store 变更均无法触发 A/B/C 重判：点「取消，回 demo」handler 已执行（logout + force-demo 落库），但页面停留在向导；完成建库同样无法切到工作台。此前能进入向导纯粹依赖登录页跳转引发的组件重挂载。
 - **修复**：`HomeRouter` 改用 `$` 前缀自动订阅读取（`$derived.by` + `$homeModeStore/$sessionStore/$wizardInProgress/$isEmptyDb`），状态迁移恢复响应式。
 - **同类反模式清理**（同一 bug 家族：`$derived(get(x))` → `$derived($x)`，7 处）：`BusinessExecutionPad`（当前事件/影响预览）、`AnomalyPanel`（异常计数 ×3）、`FactStreamView`（事实流 ×2）。修后监控面板/执行垫能随 store 更新实时刷新（原先为挂载时快照，永不更新）。
-- **保留不动**：事件处理器内的一次性 `get()` 读取（如 `BusinessRuleLibrary.handleSelect/handleSave`）为正确用法，不在此列。
+- **保留不动**：事件处理器内的一次性 `get` 读取（如 `BusinessRuleLibrary.handleSelect/handleSave`）为正确用法，不在此列。
 - 回归：svelte-check 0 errors / vitest 883/883 / build ✓；浏览器实测：向导步骤 1/2 取消均正常退回 Demo 首页、刷新无卡死、console 零报错。
 
 ### 变更
@@ -89,9 +128,9 @@
 
 **直连旁路与双通道收敛**
 
-- 删除 `stores/publish-queue-api.ts` 与 `production-state.ts` 的直连 fetch；`production-state.ts` 收敛为纯响应式缓存，`MonitorDashboard` 改经 `backend.getProductionState()`（SSE 行为不变）
+- 删除 `stores/publish-queue-api.ts` 与 `production-state.ts` 的直连 fetch；`production-state.ts` 收敛为纯响应式缓存，`MonitorDashboard` 改经 `backend.getProductionState`（SSE 行为不变）
 - 删除 `stores/publish-queue.ts`（localStorage 本地发布状态机）与 `ReviewActions.svelte`（死代码）：审批链路单通道走 server（SQLite 持久化），DecisionMaker 待审数与队列页同源；离线演示数据由 `MockBackend` 既有 5 个 cloud 方法承接（不持久化，明示）
-- `production-audit` 的 localStorage 版本历史废弃，统一 server 通道（`backend.getProductionAudit()`）
+- `production-audit` 的 localStorage 版本历史废弃，统一 server 通道（`backend.getProductionAudit`）
 
 **类型收敛**
 
@@ -131,7 +170,7 @@
 
 - 补齐内核快照：`http-workspace-backend.ts`、`workspace-context.ts`（含 barrel 导出）
 - 新增 `MockWorkspaceBackend`：内存实现 WorkspaceBackend 全部 36 方法，含规则状态机（draft→candidate→active→blocked→archived）与版本 supersession；只读侧（沙盒/发布审批/转译/判定契约）不臆造语义，如实抛错提示连接 evorule-server；头部明示"离线演示数据不持久化"
-- 新增 `CloudWorkspaceBackend`：联网/离线双模式组合（online/offline → HttpWorkspaceBackend，noServer → Mock），与 `CloudHttpBackend` 同构，`reconfigure()` 实例不变
+- 新增 `CloudWorkspaceBackend`：联网/离线双模式组合（online/offline → HttpWorkspaceBackend，noServer → Mock），与 `CloudHttpBackend` 同构，`reconfigure` 实例不变
 - 新增模块级单例 `setActiveWorkspaceBackend` / `getActiveWorkspaceBackend`：供 store 层非组件调用点取用（Svelte 5 的 getContext 仅限组件初始化期，事件处理器/store 模块内调用会抛 lifecycle_outside_component）
 - `+layout.svelte`：`provideWorkspaceBackend` 双注入 + 模块级单例登记 + 启动引导（refreshWorkspaces → ensureDefaultWorkspace → seedBuiltinRules → refreshRules），失败如实提示不静默
 
@@ -187,17 +226,17 @@
 #### Phase 2：联网扩展（CloudHttpBackend）
 
 - `CloudHttpBackend`：继承内核 HttpBackend，支持 `mode: 'online' | 'offline'` 双模式
-- `reconfigure()` 方法：切换 baseUrl 时实例不变，视图自动用新地址
+- `reconfigure` 方法：切换 baseUrl 时实例不变，视图自动用新地址
 - `net-config` store：联网模式 + 远程 URL + localStorage 持久化
 - 顶部联网切换徽标（快捷切换 + 显示当前模式）
 - 联网配置面板（在 Settings 内）
 
 #### Phase 3+4：LLM 抽象 + CloudLlmAssistant
 
-- `LlmAssistant` 接口：继承内核 `AssistantProvider` 三方法 + 大众版独有 `isConfigured()` + `testConnection()`
+- `LlmAssistant` 接口：继承内核 `AssistantProvider` 三方法 + 大众版独有 `isConfigured` + `testConnection`
 - `CloudLlmConfig` 类型：enabled + provider + apiEndpoint + apiKey + model
 - `llm-config` store：localStorage 持久化
-- `llm-context.ts`：转发到内核 `provideAssistant()` 扩展槽
+- `llm-context.ts`：转发到内核 `provideAssistant` 扩展槽
 - `CloudLlmAssistant` 实现：
   - OpenAI 兼容 `/v1/chat/completions` 协议
   - 三方法：`generateRuleDraft` / `explainRule` / `generateInput`
@@ -232,7 +271,7 @@
   - apiEndpoint 输入（可手动改）
   - apiKey 密码框（默认隐藏，眼睛图标切换显示）
   - model 下拉（预设提供选项）/ 输入框（自定义）
-  - 测试连接按钮（调 `testConnection()` 验证）
+  - 测试连接按钮（调 `testConnection` 验证）
   - 重置按钮（清空配置回默认）
   - L2 占位（“本地 LLM，付费扩展，敬请期待”）
 - `Settings.svelte`：联网配置 + LLM 配置两 tab
@@ -297,7 +336,7 @@
 
 验证依据：
 
-1. `ExecutionPad.svelte` `handleSubmit()` 调用 `submitCommand(backend, instruction)`，仅使用 `backend`（CloudHttpBackend），**不调用 LLM**
+1. `ExecutionPad.svelte` `handleSubmit` 调用 `submitCommand(backend, instruction)`，仅使用 `backend`（CloudHttpBackend），**不调用 LLM**
 2. AI 按钮仅在用户显式点击 + Dialog 确认后才调用 LLM
 3. LLM 调用失败时降级为“用户手动编辑 JSON”，不阻塞规则引擎工作
 4. assistant-flow.spec.ts 验证：LLM 启用时不影响内核 5 视图回归（navigation 20/20 PASS）
@@ -306,13 +345,13 @@
 
 大众版不修改内核 `@evorule/console` 任何代码：
 
-- 通过 `provideAssistant()` 扩展槽注入 LLM
-- 通过 `provideBackend()` 注入 CloudHttpBackend
+- 通过 `provideAssistant` 扩展槽注入 LLM
+- 通过 `provideBackend` 注入 CloudHttpBackend
 - 内核 `VIEW_LIST` 不变（5 视图），设置 tab 是大众版独有
 
 ### 已知限制
 
-1. **配置变更需刷新页面**：LLM 配置修改后，因 Svelte context 必须在组件初始化期间同步设置，需 `location.reload()` 重新注入 provider（UX 提示已实现）
+1. **配置变更需刷新页面**：LLM 配置修改后，因 Svelte context 必须在组件初始化期间同步设置，需 `location.reload` 重新注入 provider（UX 提示已实现）
 2. **文心一言不支持**：原生 API 与 OpenAI 协议有差异，v0.1.0 标记为 `needsAdapter`，后续版本增加适配层
 3. **apiKey localStorage 明文**：大众版可接受，UI 已提示；高级版用 Tauri 加密（未来）
 4. **L2 本地 LLM 未实现**：v0.1.0 仅含 L1 云 LLM，L2 为付费扩展规划（v0.2.0+）
