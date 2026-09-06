@@ -5,8 +5,6 @@
 //
 // 「一切皆 plugin」交互层首个落地:widget 声明式注册,
 // 渲染器(DashboardGrid)不感知具体 widget,注册即接入。
-//
-// 关联计划:iterations/07-UV021Dashboard总览页专项-盘点与计划.md §4
 
 import type { Component } from 'svelte';
 import type { PermissionAction } from '$lib/stores/permission-matrix';
