@@ -15,8 +15,10 @@
 //   - 注入到内核扩展槽后,内核视图只调三方法,不感知 CloudLlmConfig
 //   - LLM 只生成草案,最终规则是用户审核后的 JSON(规则即数据),不破坏执行确定性
 
+import { get } from 'svelte/store';
 import { RuleValidator, type ValidationResult } from '$lib/kernel';
 import type { LlmAssistant, CloudLlmConfig } from './types';
+import { llmConfig } from '$lib/config/llm-config';
 import { callChatApi, type ChatApiParams, LlmError } from './llm-fetch';
 import { callChatApiAudited, type AuditPurpose } from './audited-llm';
 import {
@@ -30,12 +32,15 @@ import {
  * CloudLlmAssistant — 云 LLM 实现(OpenAI 兼容协议)。
  *
  * 用法:
- *   const assistant = new CloudLlmAssistant(config);
- *   if (assistant.isConfigured()) {
- *     provideLlm(assistant);  // 注入到内核扩展槽
- *   } else {
- *     provideLlm(null);       // 配置不完备,不注入
- *   }
+ *   // 注入场景(推荐):无参构造,方法内部每次现取 llmConfig store 最新配置,
+ *   // 设置面板改动即时生效,无需刷新页面:
+ *   const assistant = new CloudLlmAssistant();
+ *   provideLlm(assistant);
+ *
+ *   // 显式快照场景:LlmSettings.testConnection 现取 $llmConfig 后传入,
+ *   // 实例持快照不变(连通性探针与注入实例隔离):
+ *   const probe = new CloudLlmAssistant(config);
+ *   probe.testConnection();
  *
  * 三方法:
  *   - generateRuleDraft(naturalLanguage) → { rule, confidence, validation? }
@@ -45,11 +50,21 @@ import {
  * 错误处理:三方法均抛 LlmError 子类,UI 层 catch 后显示错误。
  */
 export class CloudLlmAssistant implements LlmAssistant {
-	private readonly config: CloudLlmConfig;
+	/** 显式快照(构造传入时持有);注入场景不持快照,走 store 现取 */
+	private readonly snapshot?: CloudLlmConfig;
 
-	constructor(config: CloudLlmConfig) {
-		// 防御性拷贝(避免外部修改 store 后影响 assistant)
-		this.config = { ...config };
+	constructor(config?: CloudLlmConfig) {
+		// 防御性拷贝(避免外部修改后影响本实例)
+		if (config) this.snapshot = { ...config };
+	}
+
+	/**
+	 * 当前生效配置:显式快照优先;否则每次现取 store 最新值。
+	 * 现取语义保证设置面板改动(端点/Key/模型/启停)对已注入实例即时生效,
+	 * 消除"页面加载时快照旧配置、改配置不生效直至整页刷新"的注入时效缺陷。
+	 */
+	private get config(): CloudLlmConfig {
+		return this.snapshot ?? get(llmConfig);
 	}
 
 	/** 当前配置是否完备 */
@@ -110,10 +125,18 @@ export class CloudLlmAssistant implements LlmAssistant {
 	 * @throws LlmError 子类(LLM 执行失败) / AuditedBridgeError(协议失败)
 	 */
 	private auditedChat(params: Omit<ChatApiParams, 'apiEndpoint' | 'apiKey' | 'model'> & { auditPurpose: AuditPurpose }): Promise<string> {
+		const cfg = this.config;
+		// 现取语义下配置可能在实例注入后被用户改动/停用:调用时点再校验,
+		// 未配置即显式报错(fail-fast),不发无凭据请求
+		if (!cfg.enabled || !cfg.apiEndpoint.trim() || !cfg.apiKey.trim() || !cfg.model.trim()) {
+			return Promise.reject(
+				new LlmError('LLM 未配置或已停用:请到 设置 → LLM 配置 完成配置后再试', 'api')
+			);
+		}
 		return callChatApiAudited({
-			apiEndpoint: this.config.apiEndpoint,
-			apiKey: this.config.apiKey,
-			model: this.config.model,
+			apiEndpoint: cfg.apiEndpoint,
+			apiKey: cfg.apiKey,
+			model: cfg.model,
 			...params
 		});
 	}

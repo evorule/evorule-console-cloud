@@ -304,13 +304,13 @@
     }
   }
 
-  // === 注入 LLM assistant(配置完备时注入,否则 null) ===
-  const initialLlm = get(llmConfig);
-  if (isLlmConfigured(initialLlm)) {
-    provideAssistant(new CloudLlmAssistant(initialLlm));
-  } else {
-    provideAssistant(null);
-  }
+  // === 注入 LLM assistant(现取语义) ===
+  // 注入无参实例:方法内部每次现取 llmConfig store 最新配置,设置面板
+  // 改动(端点/Key/模型/启停)即时生效,无需整页刷新——消除页面加载时
+  // 快照旧配置导致的"草案/解释/输入沿用旧端点旧 Key"缺陷。
+  // 首载未配置仍注入 null(按钮不渲染,与内核"无智能"边界一致);
+  // 配好后按钮渲染需刷新一次,由设置面板保存后的刷新提示兜底。
+  provideAssistant(isLlmConfigured(get(llmConfig)) ? new CloudLlmAssistant() : null);
 
   // === 连接状态 ===
   let connected = $state<boolean | null>(null);

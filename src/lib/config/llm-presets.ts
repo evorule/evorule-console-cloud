@@ -73,9 +73,13 @@ export const LLM_PRESETS: LlmPreset[] = [
 	{
 		provider: 'minimax',
 		label: 'MiniMax(海螺AI)',
-		// 2026-09-01(实测):api.minimax.chat 已废弃;现网 OpenAI 兼容端点为
-		// api.minimaxi.com/v1/text/chatcompletion_v2(与 helpUrl 平台一致,实测通过)
-		apiEndpoint: 'https://api.minimaxi.com/v1/text/chatcompletion_v2',
+		// 2026-09-06 面板实测(同 Key 三端点对照):国内版标准 OpenAI 兼容路径
+		// api.minimax.cn/v1/chat/completions 连通,旧专有路径
+		// api.minimaxi.com/v1/text/chatcompletion_v2 亦连通(此域名实为国内可达,
+		// 此前"选预设即认证失败"实为注入旧配置快照所致,非端点问题)。
+		// 预设采用国内版标准路径;海外用户可手改国际端点
+		// api.minimax.io/v1/chat/completions
+		apiEndpoint: 'https://api.minimax.cn/v1/chat/completions',
 		defaultModel: 'MiniMax-Text-01',
 		models: ['MiniMax-Text-01', 'MiniMax-M2.5'],
 		helpUrl: 'https://platform.minimaxi.com/user-center/basic-information/interface-key'
