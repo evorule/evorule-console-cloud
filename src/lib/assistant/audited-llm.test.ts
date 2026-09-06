@@ -298,3 +298,65 @@ describe('审计桥失败语义', () => {
 		expect((err as AuditedBridgeError).kind).toBe('server_unreachable');
 	});
 });
+
+// ============ 收尾清理(signal 桥接 + keepalive) ============
+
+describe('收尾清理(signal 桥接 + keepalive)', () => {
+	/** 最小 sidecar mock(Stable 一步到位),捕获 SSE 订阅 signal 与 DELETE init */
+	function mountMinimalSidecar() {
+		let sseSignal: AbortSignal | null | undefined;
+		let deleteInit: RequestInit | undefined;
+		mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+			const method = (init?.method ?? 'GET').toUpperCase();
+			if (url === `${SERVER_BASE}/api/sessions` && method === 'POST') {
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({ session_id: 7 })
+				} as unknown as Response;
+			}
+			if (url === `${SERVER_BASE}/api/sessions/7/events`) {
+				sseSignal = init?.signal;
+				return sseResponse([{ type: 'IoRequest', id: 1 }, { type: 'Stable' }]);
+			}
+			if (url === `${SERVER_BASE}/api/sessions/7/command`) {
+				return emptyOk();
+			}
+			if (url === `${SERVER_BASE}/api/sessions/7/io_response`) {
+				return emptyOk();
+			}
+			if (url === API_ENDPOINT) {
+				return chatResponse('好的,这是回复');
+			}
+			if (url === `${SERVER_BASE}/api/sessions/7` && method === 'DELETE') {
+				deleteInit = init;
+				return emptyOk();
+			}
+			throw new Error(`mock fetch 未处理的请求: ${method} ${url}`);
+		});
+		return {
+			getSseSignal: () => sseSignal,
+			getDeleteInit: () => deleteInit
+		};
+	}
+
+	test('SSE 订阅的调用方中止生效:收尾后订阅请求的 signal 已 aborted', async () => {
+		const m = mountMinimalSidecar();
+
+		await callChatApiAudited({ ...BASE_PARAMS, auditPurpose: 'chat' });
+
+		// 收尾中止必须经桥接到达 fetch:覆盖式实现(丢弃 init.signal)下
+		// signal 永不 aborted,流只能靠页面卸载被浏览器强制中止(控制台噪声)
+		expect(m.getSseSignal()?.aborted).toBe(true);
+	});
+
+	test('收尾 DELETE 带 keepalive(页面卸载时由浏览器接管发完,不产生中止噪声)', async () => {
+		const m = mountMinimalSidecar();
+
+		await callChatApiAudited({ ...BASE_PARAMS, auditPurpose: 'chat' });
+
+		const del = m.getDeleteInit();
+		expect(del).toBeTruthy();
+		expect(del?.keepalive).toBe(true);
+	});
+});

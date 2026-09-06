@@ -59,7 +59,7 @@ interface SidecarEvent {
 	[key: string]: unknown;
 }
 
-/** 带超时的 fetch(每个 HTTP 等待点) */
+/** 带超时的 fetch(每个 HTTP 等待点;调用方 signal 与超时任一触发即中止) */
 async function fetchWithTimeout(
 	url: string,
 	init: RequestInit,
@@ -68,12 +68,30 @@ async function fetchWithTimeout(
 ): Promise<Response> {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), timeoutMs);
+	// 桥接调用方 signal:若直接 { ...init, signal } 覆盖,init.signal 会被静默
+	// 丢弃,调用方(如 SSE 订阅收尾的中止)失效,流只能靠页面卸载被浏览器强制
+	// 中止并产生 net::ERR_ABORTED 控制台噪声。桥接后任一方触发即中止;且
+	// JS 主动中止不产生浏览器 ERR_ABORTED 报错(浏览器强制中止才有)。
+	const external = init.signal;
+	const onExternalAbort = () => controller.abort();
+	if (external) {
+		if (external.aborted) controller.abort();
+		else external.addEventListener('abort', onExternalAbort);
+		// 监听器不主动移除:SSE 场景调用方需在 body 读取期间持续保有中止
+		// 通道,而本函数职责止于响应头返回;监听器闭包随调用方 signal 一起
+		// 被 GC,无累积泄漏。caller abort 在等待阶段触发时报"被调用方中止"。
+	}
 	try {
 		return await fetch(url, { ...init, signal: controller.signal });
 	} catch (e) {
 		const err = e as Error;
 		if (err.name === 'AbortError') {
-			throw new AuditedBridgeError(`审计桥超时(${step},${timeoutMs}ms)`, 'protocol');
+			throw new AuditedBridgeError(
+				external?.aborted
+					? `审计桥 ${step} 被调用方中止`
+					: `审计桥超时(${step},${timeoutMs}ms)`,
+				'protocol'
+			);
 		}
 		throw new AuditedBridgeError(
 			`无法连接 evorule-server(审计桥 ${step}),请确认服务已启动:${url}`,
@@ -340,7 +358,11 @@ async function closeSession(
 		await fetch(`${base}/api/sessions/${sessionId}`, {
 			method: 'DELETE',
 			headers,
-			signal: AbortSignal.timeout(5_000)
+			signal: AbortSignal.timeout(5_000),
+			// keepalive:页面卸载(刷新/关闭)时请求由浏览器接管发完,避免
+			// in-flight DELETE 被强制中止产生 net::ERR_ABORTED 控制台噪声;
+			// DELETE 无 body,不受 keepalive 64KB 请求体上限约束。
+			keepalive: true
 		});
 	} catch {
 		// 尽力而为:会话残留由 server 会话上限兜底
