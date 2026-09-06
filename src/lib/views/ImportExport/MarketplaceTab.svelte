@@ -34,7 +34,26 @@
   } from "$lib/stores/import-export-types";
   import MarketplaceCard from "../Marketplace/MarketplaceCard.svelte";
   import RulesetImporter from "../Marketplace/RulesetImporter.svelte";
+  import OfficialAssetsSection from "../Marketplace/OfficialAssetsSection.svelte";
   import { toastSuccess, toastError } from "$lib/stores/toast";
+  import {
+    refreshOfficialAssets,
+  } from "$lib/stores/official-assets";
+  import { governanceStore } from "$lib/governance/governance-store";
+  import { get } from "svelte/store";
+
+  /** 分区视图:模板(既有) | 官方资产(治理中心公开+已发布数据集,47 号接线专项) */
+  type MarketViewMode = "templates" | "official";
+  let viewMode = $state<MarketViewMode>("templates");
+
+  function switchView(mode: MarketViewMode): void {
+    viewMode = mode;
+    if (mode === "official" && get(governanceStore).connected) {
+      void refreshOfficialAssets().catch(() => {
+        /* 错误原文由 officialAssetsUi 上屏,不静默吞 */
+      });
+    }
+  }
 
   let showUploadDialog = $state(false);
   let showRulesetImporter = $state(false);
@@ -171,16 +190,41 @@
 </script>
 
 <div class="mt-tab">
-  <!-- 加载中 / server 降级错误显式上屏(拒绝静默) -->
-  {#if $marketplaceLoading}
-    <p class="mt-status">正在加载用户模板…</p>
-  {/if}
-  {#if $marketplaceError}
-    <p class="mt-error" role="alert">⚠ {$marketplaceError}</p>
-  {/if}
+  <!-- 分区切换:模板 | 官方资产(47 号接线专项) -->
+  <div class="mt-viewswitch" role="tablist" aria-label="市场分区">
+    <button
+      role="tab"
+      aria-selected={viewMode === "templates"}
+      class="mt-viewbtn"
+      class:active={viewMode === "templates"}
+      onclick={() => switchView("templates")}
+    >
+      🧩 模板
+    </button>
+    <button
+      role="tab"
+      aria-selected={viewMode === "official"}
+      class="mt-viewbtn"
+      class:active={viewMode === "official"}
+      onclick={() => switchView("official")}
+    >
+      🏛️ 官方资产
+    </button>
+  </div>
 
-  <!-- 搜索 + 筛选 -->
-  <section class="mt-filters">
+  {#if viewMode === "official"}
+    <OfficialAssetsSection />
+  {:else}
+    <!-- 加载中 / server 降级错误显式上屏(拒绝静默) -->
+    {#if $marketplaceLoading}
+      <p class="mt-status">正在加载用户模板…</p>
+    {/if}
+    {#if $marketplaceError}
+      <p class="mt-error" role="alert">⚠ {$marketplaceError}</p>
+    {/if}
+
+    <!-- 搜索 + 筛选 -->
+    <section class="mt-filters">
     <input
       class="mt-search"
       type="text"
@@ -249,6 +293,7 @@
         <MarketplaceCard template={tpl} onEdit={openEdit} />
       {/each}
     </div>
+  {/if}
   {/if}
 </div>
 
@@ -376,6 +421,27 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+  }
+  .mt-viewswitch {
+    display: inline-flex;
+    align-self: flex-start;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .mt-viewbtn {
+    padding: 6px 16px;
+    border: none;
+    background: var(--bg-card);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #4b5563);
+  }
+  .mt-viewbtn.active {
+    background: var(--brand, #2563eb);
+    color: white;
   }
   .mt-filters {
     display: flex;
