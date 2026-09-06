@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// ruleValidator 黄金向量测试(UV-074 / UV-058 W2.1)
+// ruleValidator 黄金向量测试(/ W2.1)
 //
 // 对齐权威:evorule-server core/rule_schema/schemas/_shared/v1.0.json(固化版)
 // — 7 域类型(含 has_fields)、inner 嵌套(禁 domains/domain,P0-03)、
@@ -376,7 +376,7 @@ describe('场景级黄金向量(assets/evorule-rules 形态)', () => {
     expect(r.warnings.map((w) => w.gate)).toEqual(['G6']); // 该场景无末条兜底 → 仅 G6 建议
   });
 
-  test('旧口径规则(domains 嵌套+单数 io_result)被拦截——UV-074 回归锚', () => {
+  test('旧口径规则(domains 嵌套+单数 io_result)被拦截——回归锚', () => {
     const r = v(JSON.stringify({
       transform: [
         {

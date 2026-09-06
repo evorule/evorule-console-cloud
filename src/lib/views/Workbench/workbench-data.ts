@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// 工作台数据派生纯函数(UV-021 W1,从 WorkbenchView 抽出)。
+// 工作台数据派生纯函数（,从 WorkbenchView 抽出）。
 //
 // 职责:
 //   - deriveStats:4 统计卡数据(规则数/内置/自定义/session/待审/最近 fact)

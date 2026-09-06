@@ -142,7 +142,7 @@ export interface CommandResult {
 }
 
 /**
- * interruptSession / abortSession 返回值(UV-062)。
+ * interruptSession / abortSession 返回值()。
  * 对齐 evorule-server InterruptResponse:POST interrupt/abort 均返回
  *   { session_id, success, message }。
  */
@@ -153,7 +153,7 @@ export interface InterruptResult {
 }
 
 // ============================================================================
-// 1.W Wave 2 数据契约(UV-062 W2,对齐 evorule-server 审计导出/自动验证/调试端点)
+// 1.W Wave 2 数据契约（,对齐 evorule-server 审计导出/自动验证/调试端点）
 // ============================================================================
 
 /** 审计链自动验证状态(GET /audit/auto_verify,对齐 server AutoVerifyResponse) */
@@ -234,7 +234,7 @@ export interface CausalDepthInfo {
 }
 
 // ============================================================================
-// 1.W2 UV-084 W1 数据契约(A 组 5 项:审计导入/会话派生/会话回收/payload 注入/共享事实)
+// 1.W2 W1 数据契约(A 组 5 项:审计导入/会话派生/会话回收/payload 注入/共享事实)
 // ============================================================================
 
 /**
@@ -285,7 +285,7 @@ export interface SharedFactsVersionInfo {
 }
 
 // ============================================================================
-// 1.x 权限策略类型族(UV-084 W3,对齐 evorule-governance permission/entry.rs 权威结构)
+// 1.x 权限策略类型族（,对齐 evorule-governance permission/entry.rs 权威结构）
 // ============================================================================
 
 /** 权限条目生命周期状态(仅 Active 参与运行时判定) */
@@ -381,7 +381,7 @@ export interface PermissionEvaluateResult {
   verdict: 'allow' | 'deny' | 'candidate';
 }
 
-// === UV-084 W5:知识数据面(3,对齐 server knowledge.rs/knowledge_store.rs) ===
+// === W5:知识数据面(3,对齐 server knowledge.rs/knowledge_store.rs) ===
 
 /**
  * 知识数据集摘要(对齐 KnowledgeDatasetSummary)。
@@ -443,22 +443,22 @@ export interface KnowledgeEntryFilter {
  *   - 命令执行(1):submitCommand
  *   - 历史 / 回放(3):getHistory / getReplay / getFacts
  *   - 审计(3):getAudit / verifyAudit / getCausalChain
- *   - 审计导出 / 自动验证(4,UV-062 W2):exportAudit / exportAuditCompressed /
+ *   - 审计导出 / 自动验证(4,W2):exportAudit / exportAuditCompressed /
  *     getAutoVerify / setAutoVerify
  *   - 时间旅行(2):getStateAtVersion / getDiff
  *   - What-If(1):forkSession
- *   - 停止 / 中止(2,UV-062):interruptSession / abortSession(abort 条件挂载,见方法注释)
- *   - 调试只读(6,UV-062 W2):getStep / getSessionSnapshot / getDebugPhase /
+ *   - 停止 / 中止(2,):interruptSession / abortSession(abort 条件挂载,见方法注释)
+ *   - 调试只读(6,W2):getStep / getSessionSnapshot / getDebugPhase /
  *     getDebugQueue / getDebugPendingIo / getPendingIoCount
- *   - 因果深度(1,UV-062 W2):getCausalDepth
- *   - A 组 5 项(7,UV-084 W1):importAudit / importAuditCompressed /
+ *   - 因果深度(1,W2):getCausalDepth
+ *   - A 组 5 项(7,W1):importAudit / importAuditCompressed /
  *     createSessionFrom / reapSessions / updatePayload / getSharedFacts /
  *     getSharedFactsVersion
- *   - A-流权限策略族(9,UV-084 W3):listPermissions / getPermission /
+ *   - A-流权限策略族(9,W3):listPermissions / getPermission /
  *     createPermission / updatePermission / deletePermission /
  *     submitPermission / reviewPermission / getPermissionsVersion /
  *     evaluatePermission
- *   - 知识数据面(3,UV-084 W5):listKnowledgeDatasets / listKnowledgeEntries /
+ *   - 知识数据面(3,W5):listKnowledgeDatasets / listKnowledgeEntries /
  *     getKnowledgeEntry
  *
  * 现共 47 方法(早期注释"35"已过期,本行校正)。
@@ -467,7 +467,7 @@ export interface ExecutionBackend {
   // === 会话管理 ===
   /**
    * GET /api/health — 连接探测(布尔语义:失败即 false,不抛错)。
-   * signal(UV-085 ④,可选):探测是可弃请求——调用方在页面卸载(pagehide)
+   * signal(④,可选):探测是可弃请求——调用方在页面卸载(pagehide)
    * 时主动中止,避免整页导航让浏览器中止 in-flight 请求留下
    * "Failed to load resource: net::ERR_ABORTED" console 噪音
    * (JS 主动中止不产生该报错;实现须把 signal 透传给 fetch)。
@@ -491,7 +491,7 @@ export interface ExecutionBackend {
   verifyAudit(id: SessionId): Promise<VerifyResult>;
   getCausalChain(id: SessionId, factId: number): Promise<CausalChain>;
 
-  // === 审计导出 / 自动验证(UV-062 W2) ===
+  // === 审计导出 / 自动验证 ===
   /**
    * GET /api/sessions/{id}/audit/export — 导出完整审计链 JSON
    * (含完整哈希链,用于跨实例迁移 / 离线分析 / 备份)。
@@ -530,7 +530,7 @@ export interface ExecutionBackend {
   // === What-If 假设分析 ===
   forkSession(parentId: SessionId, version: number): Promise<SessionId>;
 
-  // === 会话停止 / 中止(UV-062) ===
+  // === 会话停止 / 中止() ===
   /**
    * POST /api/sessions/{id}/interrupt — 温和中断。
    * 下一检查点生效,无条件可用;会话不存在 → 404。
@@ -543,7 +543,7 @@ export interface ExecutionBackend {
    */
   abortSession(id: SessionId): Promise<InterruptResult>;
 
-  // === 调试只读查询(UV-062 W2,六路独立,一路失败不拖垮其他路) ===
+  // === 调试只读查询（,六路独立,一路失败不拖垮其他路） ===
   /** GET /api/sessions/{id}/step — 当前执行步数 */
   getStep(id: SessionId): Promise<StepInfo>;
   /**
@@ -561,11 +561,11 @@ export interface ExecutionBackend {
   /** GET /api/sessions/{id}/pending_io_count — 悬挂 I/O 计数 */
   getPendingIoCount(id: SessionId): Promise<PendingIoCountInfo>;
 
-  // === 因果深度(UV-062 W2) ===
+  // === 因果深度 ===
   /** GET /api/sessions/{id}/causal_depth — 因果链深度 */
   getCausalDepth(id: SessionId): Promise<CausalDepthInfo>;
 
-  // === UV-084 W1:A 组 5 项(审计导入/会话派生/会话回收/payload 注入/共享事实) ===
+  // === W1:A 组 5 项(审计导入/会话派生/会话回收/payload 注入/共享事实) ===
   /**
    * POST /api/sessions/{id}/audit/import — 导入外部审计链 JSON(破坏性:
    * 完全覆盖当前会话审计链,调用方须二次确认)。导入后 server 自动 verify,
@@ -585,7 +585,7 @@ export interface ExecutionBackend {
   createSessionFrom(parentId: SessionId, version?: number): Promise<SessionId>;
   /**
    * POST /api/sessions/reap — 手动回收已结束/已过期会话(与后台 reaper
-   * 同一 reap_once,生产会话保活不受影响,UV-079)。返回回收计数。
+   * 同一 reap_once,生产会话保活不受影响,)。返回回收计数。
    */
   reapSessions(): Promise<ReapResult>;
   /**
@@ -604,7 +604,7 @@ export interface ExecutionBackend {
   /** GET /api/shared/facts/version — 共享事实日志版本与历史长度 */
   getSharedFactsVersion(): Promise<SharedFactsVersionInfo>;
 
-  // === UV-084 W3:A-流权限策略族(9,对齐 server permissions.rs) ===
+  // === W3:A-流权限策略族(9,对齐 server permissions.rs) ===
   /**
    * GET /api/permissions — 列出全部权限条目(含当前快照版本号)。
    * 错误纪律:500(快照重建失败)抛 HttpBackendError(消息含 server 原文)。
@@ -650,7 +650,7 @@ export interface ExecutionBackend {
     req: PermissionEvaluateRequest
   ): Promise<PermissionEvaluateResult>;
 
-  // === UV-084 W5:知识数据面(3,对齐 server knowledge.rs;错误体 {"error"},非 message) ===
+  // === W5:知识数据面(3,对齐 server knowledge.rs;错误体 {"error"},非 message) ===
   /**
    * GET /api/knowledge — 已承载数据资产的数据集清单(只含非空数据集)。
    * 错误纪律:500(知识库加载失败/磁盘损坏)抛 HttpBackendError(消息含 server

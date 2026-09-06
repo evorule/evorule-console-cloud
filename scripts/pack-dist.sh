@@ -8,8 +8,8 @@
 #   evorule-rule-serve       <- evorule-rule release 构建(治理 :18081)
 #   web/                     <- 本仓 adapter-static 产物(build/)
 #   rules/                   <- 本仓 assets/evorule-rules/
-#   resources/server_eval.json <- evorule-server 仓 TCB 宪法·server 业务规则集(UV-044 更名,旧名 core_eval.json)
-#   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,UV-033)
+#   resources/server_eval.json <- evorule-server 仓 TCB 宪法·server 业务规则集(更名,旧名 core_eval.json)
+#   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,)
 #   start-evorule.sh / stop-evorule.sh / README-STARTUP.txt
 #
 # 用法(先完成三处构建,在目标平台本机执行):

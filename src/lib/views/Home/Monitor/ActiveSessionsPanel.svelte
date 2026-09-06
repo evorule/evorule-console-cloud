@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:活跃会话清单(UV-062 W2 接线5)
+  职责:活跃会话清单(W2 接线5)
     - GET /api/sessions(HttpBackend.listSessions)拉取 session id 列表
     - 每项:点选(填入调试面板)+ 📋 复制到剪贴板
     - 读取失败显式错误态 + 重试;空列表与错误分开展示

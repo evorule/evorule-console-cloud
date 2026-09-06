@@ -90,7 +90,7 @@ describe('CloudWorkspaceBackend actor 注入', () => {
   });
 });
 
-describe('CloudWorkspaceBackend forkRule 接线(UV-062 Wave 2 补充项)', () => {
+describe('CloudWorkspaceBackend forkRule 接线(Wave 2 补充项)', () => {
   test('POST /api/workspaces/{id}/rules/{rule_id}/fork,actor 注入 created_by', async () => {
     const wb = new CloudWorkspaceBackend({
       mode: 'offline',

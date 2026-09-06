@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:平台角色管理页(UV-017 W4c)
+  职责:平台角色管理页(W4c)
     - 角色列表(内置 4 + 自定义;GET /api/platform/roles 登录可读)
     - 创建自定义角色 / 编辑权限矩阵(权限点勾选)/ 删除(manage_roles)
   规则(与 server platform_auth 对齐,前端预检 + server 强制):

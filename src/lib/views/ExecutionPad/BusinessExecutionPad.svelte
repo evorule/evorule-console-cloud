@@ -55,7 +55,7 @@
 
   let developerMode = $state(false);
   let submitting = $state(false);
-  // UV-062:停止/强制中止进行中标志(与提交互斥,由 SubmitBar canStop 消费)
+  // :停止/强制中止进行中标志(与提交互斥,由 SubmitBar canStop 消费)
   let stopping = $state(false);
   let aborting = $state(false);
 
@@ -153,7 +153,7 @@
   }
 
   /**
-   * UV-062:把 backend 异常映射为含可操作指引的 toast 文案。
+   * :把 backend 异常映射为含可操作指引的 toast 文案。
    * fail-fast 诚实原则:任何失败都显式提示,拒绝静默吞错。
    */
   function stopActionErrorMessage(err: unknown, action: string): string {
@@ -174,7 +174,7 @@
     return `${action}失败:${err instanceof Error ? err.message : String(err)}`;
   }
 
-  /** UV-062:停止 — 温和中断,下一检查点生效(无条件可用) */
+  /** :停止 — 温和中断,下一检查点生效(无条件可用) */
   async function handleInterrupt(): Promise<void> {
     if (!(sessionId > 0)) {
       pushToast("无活跃 session,无法停止", "warning");
@@ -195,7 +195,7 @@
     }
   }
 
-  /** UV-062:强制中止 — 破坏性操作,确认对话框二次确认后才调用 */
+  /** :强制中止 — 破坏性操作,确认对话框二次确认后才调用 */
   async function handleAbort(): Promise<void> {
     if (!(sessionId > 0)) {
       pushToast("无活跃 session,无法中止", "warning");

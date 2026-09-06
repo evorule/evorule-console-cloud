@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  决策者视图 widget(UV-021 W1d):包装 DecisionMakerView。
+  决策者视图 widget(W1d):包装 DecisionMakerView。
   按角色白名单展示(demo exec/auditor + platform approver,见注册表),
   决策者登录即见简化视图(P11 初衷),技术细节隐藏。
 -->

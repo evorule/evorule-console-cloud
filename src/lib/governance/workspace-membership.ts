@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// UV-073: 平台用户与 workspace 成员体系打通(①连接时自动 ensure + ②403 一键引导,用户 2026-09-04 裁定组合)
+// : 平台用户与 workspace 成员体系打通(①连接时自动 ensure + ②403 一键引导,用户 2026-09-04 裁定组合)
 //
 // 背景:执行域(18080)沙盒族端点要求 requester 是 workspace 成员(validate_member,
 // sandbox_service.rs L143-150),但成员名单独立于平台用户池(bootstrap 仅 owner

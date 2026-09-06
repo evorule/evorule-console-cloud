@@ -85,7 +85,7 @@ function mapDomain(domain: string | undefined): string {
  * 业务动作 type(如 require_approval)不是内核元指令,
  * 映射为 io_request(调用外部审批/通知系统),prompt 携带业务语义。
  *
- * G3 双路径模式(UV-074 修正:单数 __io_result__ → 复数 __io_results__.<io_type>,P1-03):
+ * G3 双路径模式(修正:单数 __io_result__ → 复数 __io_results__.<io_type>,P1-03):
  *   - on_true:结果已存在 → 处理结果(此处为空,由后续规则处理)
  *   - on_false:结果不存在 → 发起 io_request
  * 故 io_request 动作会被包成一个内层 branch,而非裸 io_request step。
@@ -98,7 +98,7 @@ function actionToSteps(action: BusinessAction): KernelTransformStep[] {
     action.meta &&
     ["set", "push", "branch"].includes(action.meta)
   ) {
-    // set 归一化(W2.1 对齐 _shared/v1.0.json 后暴露的历史债务):
+    // set 归一化（对齐 _shared/v1.0.json 后暴露的历史债务）:
     // 业务表单/explainer 口径用 key(或 attr),内核 schema 要求 attr+operation+value 三件套;
     // 旧版直传 {key,value} 缺 attr/operation,曾被不查 params 完备性的旧校验器静默放行。
     if (action.meta === "set") {
@@ -180,7 +180,7 @@ function conditionToDomain(
  *
  * G3 双路径:io_request 类动作会被 actionToSteps 包成 exists(__io_results__.<io_type>) 内层 branch,
  *           不会出现裸 io_request step。
- * G6 兜底(UV-074 修正:domains → inner,P0-03):末条 all(inner:[]) 空域匹配所有未识别指令,
+ * G6 兜底(修正:domains → inner,P0-03):末条 all(inner:[]) 空域匹配所有未识别指令,
  *           避免未匹配指令产生 Error fact。
  */
 export function wrapAsKernelTransform(
@@ -286,7 +286,7 @@ export function unwrapKernelTransform(
   return result;
 }
 
-/** 判断是否为兜底 branch(all(inner:[]) 空域;UV-074 修正:domains → inner,P0-03) */
+/** 判断是否为兜底 branch(all(inner:[]) 空域;修正:domains → inner,P0-03) */
 function isFallbackBranch(step: KernelTransformStep): boolean {
   if (step.type !== "branch") return false;
   const domain = step.params.domain as Record<string, unknown> | undefined;

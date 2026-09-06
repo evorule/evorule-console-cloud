@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- /permissions 路由 — A-流权限策略管理(UV-084 W3) -->
+<!-- /permissions 路由 — A-流权限策略管理(W3) -->
 <!--
   守卫(双层,+layout.ts 为第一层):
     - 未登录 → /login

@@ -434,10 +434,10 @@ describe("startReactorPolling - 轮询 fetch + setInterval", () => {
 });
 
 // ============================================================================
-// reactor-runtime - UV-079 ②: 404 显式识别(幻影会话降级提示)
+// reactor-runtime - ②: 404 显式识别(幻影会话降级提示)
 // ============================================================================
 
-describe("startReactorPolling - UV-079 ② 404 停轮询 + sessionMissing", () => {
+describe("startReactorPolling - ② 404 停轮询 + sessionMissing", () => {
   test("轮询 404 → 停止轮询 + store 置 sessionMissing=true", async () => {
     const notFound = { status: 404, ok: false } as Response;
     mockFetchFn

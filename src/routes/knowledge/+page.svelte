@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- /knowledge 路由 — 执行侧知识数据面浏览(UV-084 W5) -->
+<!-- /knowledge 路由 — 执行侧知识数据面浏览(W5) -->
 <!--
   守卫(双层,+layout.ts 为第一层):
     - 未登录 → /login

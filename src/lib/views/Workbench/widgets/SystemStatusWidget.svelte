@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  系统状态 widget:包装 WorkbenchTop(UV-021 注册表化)。
+  系统状态 widget:包装 WorkbenchTop(注册表化)。
   数据自取:订阅 workbenchStatus store(宿主轮询产物)+ workspace/mode store。
-  UV-062 ⑨:追加执行侧服务清单(GET /api/services,紧凑列表):
+  ⑨:追加执行侧服务清单(GET /api/services,紧凑列表):
     - 服务名 / 类型(native|registry)/ 状态(已绑定,该端点即绑定能力全集)
     - 自取数据;随宿主刷新(lastRefreshAt 变化)重拉,对齐数据刷新模式
     - 失败显式「服务清单不可用」态,不阻塞既有连接状态显示
@@ -33,7 +33,7 @@
     void goto("/?task=open");
   }
 
-  // === 服务清单(UV-062 ⑨,GET /api/services) ===
+  // === 服务清单(⑨,GET /api/services) ===
   const backend = useBackend();
   const cloud = backend instanceof CloudHttpBackend ? backend : null;
 

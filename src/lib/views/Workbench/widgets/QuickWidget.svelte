@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  一键操作 widget:包装 WorkbenchQuick(UV-021 注册表化)。
+  一键操作 widget:包装 WorkbenchQuick(注册表化)。
   数据自取:sessionList 订阅 kernel;后端注入经 useBackend/useWorkspaceBackend。
 -->
 

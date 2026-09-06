@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// UV-084 W3 单测:HttpBackend A-流权限策略族 9 方法
+// W3 单测:HttpBackend A-流权限策略族 9 方法
 // (list/get/create/update/delete/submit/review/version/evaluate)。
 //
 // 运行: npx vitest run src/lib/kernel/backend/__tests__/http-backend-wave4.test.ts
@@ -72,7 +72,7 @@ function sampleEntry(
 	};
 }
 
-describe("UV-084 W3 HttpBackend - 权限策略族", () => {
+describe("W3 HttpBackend - 权限策略族", () => {
 	test("listPermissions:GET /api/permissions,响应透传", async () => {
 		const fetchMock = mockFetchJson({
 			success: true,

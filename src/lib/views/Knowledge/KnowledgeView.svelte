@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  KnowledgeView — 执行侧知识数据面浏览(UV-084 W5,UV-063 实化)
+  KnowledgeView — 执行侧知识数据面浏览(W5,实化)
   数据面:执行域 :18080 /api/knowledge 端点族(只读,来自治理侧已发布
   knowledge bundle 的落盘数据;payload 零转译原样透传)。
 

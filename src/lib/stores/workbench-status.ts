@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// 工作台连接/刷新状态 store(UV-021 W1)。
+// 工作台连接/刷新状态 store。
 //
 // 职责:承载 surface 宿主(WorkbenchView)的页面级轮询产物
 //   (server/rule 连接状态、刷新中标记、上次刷新时间),

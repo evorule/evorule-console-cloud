@@ -334,7 +334,7 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 		return this.backend.listActiveBundles();
 	}
 
-	// === 治理域 API 接线(UV-062:执行域 server 直连端点,委托内部 backend) ===
+	// === 治理域 API 接线(:执行域 server 直连端点,委托内部 backend) ===
 	validateRules(content: string): Promise<ValidateRulesResult> {
 		return this.backend.validateRules(content);
 	}

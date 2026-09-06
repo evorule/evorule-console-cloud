@@ -3,7 +3,7 @@
 <!--
   HelpWorkbench — /help 的工作台速查 tab
   内容:总览页卡片速查 + 何时用 / 不用
-  UV-024:文案对齐 widgets/registry.ts 注册表现状,不再硬编码卡片数/region 数
+  :文案对齐 widgets/registry.ts 注册表现状,不再硬编码卡片数/region 数
 -->
 
 <div class="help-pane">

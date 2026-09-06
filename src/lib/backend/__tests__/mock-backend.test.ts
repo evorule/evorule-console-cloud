@@ -246,10 +246,10 @@ describe("P10 MockBackend - 错误处理", () => {
 });
 
 // ============================================================================
-// UV-062 W2:审计导出 / 自动验证 / 调试只读 / 因果深度(mock 扩充)
+// W2:审计导出 / 自动验证 / 调试只读 / 因果深度(mock 扩充)
 // ============================================================================
 
-describe("UV-062 W2 MockBackend - 审计导出", () => {
+describe("W2 MockBackend - 审计导出", () => {
 	test("exportAudit(1) 返回含完整审计链的导出对象", async () => {
 		const data = (await backend.exportAudit(1)) as {
 			session_id: number;
@@ -283,7 +283,7 @@ describe("UV-062 W2 MockBackend - 审计导出", () => {
 	});
 });
 
-describe("UV-062 W2 MockBackend - auto_verify 开关", () => {
+describe("W2 MockBackend - auto_verify 开关", () => {
 	test("getAutoVerify 默认关闭", async () => {
 		const status = await backend.getAutoVerify(1);
 		expect(status).toEqual({ session_id: 1, auto_verify: false });
@@ -322,7 +322,7 @@ describe("UV-062 W2 MockBackend - auto_verify 开关", () => {
 	});
 });
 
-describe("UV-062 W2 MockBackend - 调试只读六路", () => {
+describe("W2 MockBackend - 调试只读六路", () => {
 	test("getStep(1) 返回数据集 reactor.current_step", async () => {
 		const step = await backend.getStep(1);
 		expect(step).toEqual({ session_id: 1, current_step: 6 });
@@ -371,7 +371,7 @@ describe("UV-062 W2 MockBackend - 调试只读六路", () => {
 	});
 });
 
-describe("UV-062 W2 MockBackend - 因果深度", () => {
+describe("W2 MockBackend - 因果深度", () => {
 	test("getCausalDepth(1) 返回数据集 reactor.causal_depth", async () => {
 		const info = await backend.getCausalDepth(1);
 		expect(info).toEqual({ session_id: 1, causal_depth: 6 });
@@ -382,7 +382,7 @@ describe("UV-062 W2 MockBackend - 因果深度", () => {
 	});
 });
 
-describe("UV-084 W1 MockBackend - A 组 5 项", () => {
+describe("W1 MockBackend - A 组 5 项", () => {
         test("importAudit(1) demo 只读,返回导入成功形状", async () => {
                 const r = await backend.importAudit(1, { entries: [] });
                 expect(r).toEqual({
@@ -449,7 +449,7 @@ describe("UV-084 W1 MockBackend - A 组 5 项", () => {
         });
 });
 
-describe("UV-084 W3 MockBackend - A-流权限策略族", () => {
+describe("W3 MockBackend - A-流权限策略族", () => {
 	test("listPermissions() 返回 3 条种子条目(含版本与计数)", async () => {
 		const r = await backend.listPermissions();
 		expect(r.success).toBe(true);

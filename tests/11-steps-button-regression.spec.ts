@@ -243,7 +243,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 			.first()
 			.click();
 		await expect(page.locator('h1').first()).toHaveText('规则库');
-		// UV-067 适配:v0.2.0 规则来自 evorule-server(不再前端内置),
+		// 适配:v0.2.0 规则来自 evorule-server(不再前端内置),
 		// BusinessRuleCard 按 description 渲染(不显示规则名 set_basic),
 		// 断言列表渲染出规则卡片(app 自种的内置示例规则)
 		await expect(page.locator('.rule-list')).toBeVisible();

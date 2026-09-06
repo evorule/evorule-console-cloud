@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// Widget 注册表类型定义(UV-021 Dashboard 总览页)。
+// Widget 注册表类型定义(Dashboard 总览页)。
 //
 // 「一切皆 plugin」交互层首个落地:widget 声明式注册,
 // 渲染器(DashboardGrid)不感知具体 widget,注册即接入。
@@ -27,7 +27,7 @@ export interface WidgetDef {
 	/**
 	 * 权限门控(缺省=登录即见)。
 	 * platform 用户:服务端下发 permissions 清单;demo 用户:本地角色矩阵。
-	 * 双轨判定复用 hasPermission($currentUser,…)(UV-017 W5 响应式范式)。
+	 * 双轨判定复用 hasPermission($currentUser,…)(W5 响应式范式)。
 	 */
 	permission?: PermissionAction;
 	/**

@@ -39,7 +39,7 @@
   }
 
   /**
-   * 权限判定(UV-017 W3 双轨):
+   * 权限判定(W3 双轨):
    * - platform 登录:服务端下发的 permissions 清单为准(hasPermission)
    * - demo 登录:本地 P08 角色矩阵(logicCanPerform)
    * 未映射动作默认允许(P0 宽松策略,与 logic 层一致)。

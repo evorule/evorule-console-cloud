@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// nav-registry — 导航注册表(UV-022 首项改造:一切皆 plugin 交互层落地之二)
+// nav-registry — 导航注册表(首项改造:一切皆 plugin 交互层落地之二)
 //
 // 单一事实源:侧栏(+layout)、总览跳单卡(WorkbenchJump)、命令面板(CommandPalette)
-// 三处消费同一清单,门控天然一致(闭合 UV-023:此前侧栏仅登录门控、跳单卡按权限门控)。
+// 三处消费同一清单,门控天然一致(闭合 :此前侧栏仅登录门控、跳单卡按权限门控)。
 //
 // 契约(iterations/09-一切皆plugin-架构原则.md §2):
 //   - 注册项五要素:id/声明/门控/实现(path+requiresDb)/表面(group+jump)
@@ -77,7 +77,7 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     icon: "📚",
     path: "/knowledge",
     group: "discover",
-    title: "知识库 — 执行侧知识数据资产浏览(UV-084 W5)",
+    title: "知识库 — 执行侧知识数据资产浏览(W5)",
     loginRequired: true,
   },
   {
@@ -107,7 +107,7 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     group: "governance",
     title: "发布队列 — 规则集发布审批与紧急回滚",
     loginRequired: true,
-    // UV-023 闭合:与跳单卡同门控(view_publish_queue),无权用户侧栏/跳单卡均隐藏
+    // 闭合:与跳单卡同门控(view_publish_queue),无权用户侧栏/跳单卡均隐藏
     permissions: ["view_publish_queue"],
     jump: true,
     lockHint: "需登录并具备发布队列查看权限",

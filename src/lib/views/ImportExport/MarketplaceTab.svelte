@@ -47,7 +47,7 @@
   let uploadVersion = $state("1.0.0");
   let uploadFile = $state<File | null>(null);
 
-  // 编辑表单状态(UV-087):editing 非空时弹编辑弹窗;文件可选(不选=保留原内容)
+  // 编辑表单状态():editing 非空时弹编辑弹窗;文件可选(不选=保留原内容)
   let editing = $state<MarketTemplate | null>(null);
   let editName = $state("");
   let editDesc = $state("");
@@ -120,7 +120,7 @@
     }
   }
 
-  // ---------- UV-087 编辑 ----------
+  // ---------- 编辑 ----------
 
   function handleEditFileChange(e: Event) {
     const input = e.target as HTMLInputElement;
@@ -312,7 +312,7 @@
 
 <RulesetImporter open={showRulesetImporter} onClose={() => (showRulesetImporter = false)} />
 
-<!-- 编辑弹窗(UV-087):预填元数据;文件可选,不选=保留原内容(server 侧 hash 不变) -->
+<!-- 编辑弹窗():预填元数据;文件可选,不选=保留原内容(server 侧 hash 不变) -->
 {#if editing}
   <div
     class="mt-overlay"

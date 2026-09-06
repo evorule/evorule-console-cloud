@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:平台登录(UV-017 W3)+ bootstrap 引导 + 演示模式开关
+  职责:平台登录(W3)+ bootstrap 引导 + 演示模式开关
   - 平台登录(默认):用户名 + 密码 → evorule-server /api/platform/auth/login
   - 引导:server 尚无任何用户时(status.needs_bootstrap)显示"创建平台管理员"表单
   - 演示模式(折叠):P08 预置用户一键登录,无密码,权限走本地矩阵
@@ -37,7 +37,7 @@
   let bootPassword = $state('');
   let bootBusy = $state(false);
 
-  // === UV-020:演示登录入口开关(server 下发;不可达时保留,离线可用原则) ===
+  // === :演示登录入口开关(server 下发;不可达时保留,离线可用原则) ===
   let demoAuthAllowed = $state(true);
 
   onMount(() => {
@@ -116,7 +116,7 @@
   <header class="login-header">
     <h1>🔐 登录 evorule</h1>
     <!-- P3-02:登录前先用一句讲清 平台 vs 演示 之别,降低新人选择茫然 -->
-    <!-- UV-078 W1-A1:明示能力差异——演示角色权限矩阵不含平台管理点(用户/角色管理),避免 demo 用户直连 /users /roles 被弹回时不知所以 -->
+    <!-- W1-A1:明示能力差异——演示角色权限矩阵不含平台管理点(用户/角色管理),避免 demo 用户直连 /users /roles 被弹回时不知所以 -->
     <p>平台账号=权限由服务端实时下发,可进入用户/角色等平台管理面(生产/团队);演示模式=预置角色一键登录、不连 server,可体验规则库/执行台/审计等业务功能面,但不含平台管理入口,适合首次体验</p>
   </header>
 

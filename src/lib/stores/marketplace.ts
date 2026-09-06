@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 //
 // P09 §7 模板市场 store — builtin(本地) + 用户上传(server) + 搜索/筛选。
-// P09_IMPORT_EXPORT_INFRA_DESIGN.md §7 定义;UV-084 W4 / UV-064 完成 P1 接线。
+// P09_IMPORT_EXPORT_INFRA_DESIGN.md §7 定义;W4 / 完成 P1 接线。
 //
 // 设计:
 //   - official/builtin 模板:本地内置数据(BUILTIN_MARKET_TEMPLATES),不经 server
@@ -188,7 +188,7 @@ export async function uploadTemplate(
 }
 
 /**
- * 编辑模板(UV-087):multipart PATCH /api/marketplace/templates/:id。
+ * 编辑模板():multipart PATCH /api/marketplace/templates/:id。
  *
  * - meta(JSON,必填):普通字段整体替换(name/description/tags/version 等)
  * - content(可选):提供则替换内容并触发 server 重算 content_hash;缺省=保留原内容

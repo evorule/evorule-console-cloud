@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:平台用户管理页(UV-017 W4b)
+  职责:平台用户管理页(W4b)
     - 用户列表(server /api/platform/users,view_users 或 manage_users 可读)
     - 创建用户 / 编辑档案与角色 / 启停 / 删除(manage_users;server 端二次校验)
   设计:

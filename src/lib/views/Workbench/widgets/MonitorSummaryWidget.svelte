@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  监控摘要 widget(UV-021 W1d,MVP 粒度,§7.3 裁定):
+  监控摘要 widget(W1d,MVP 粒度,§7.3 裁定):
     - 生产状态(running/switching/offline)+ 规则集版本 两个关键数字
     - 「进入大屏」直达 /monitor(完整 MonitorDashboard)
   数据自取:getProductionState()(失败降级 offline,大屏不因一次失败而崩——

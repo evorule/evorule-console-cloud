@@ -72,7 +72,7 @@ import {
 	type VersionHistoryEntry,
 } from './production-views';
 
-// UV-016:审计档案(只读)响应类型(对齐 evorule-server audit_archive.rs)
+// :审计档案(只读)响应类型(对齐 evorule-server audit_archive.rs)
 export interface ArchiveSessionMeta {
 	session_id: number;
 	fact_count: number;
@@ -114,7 +114,7 @@ export interface ArchiveSessionsResponse {
 	active_session_ids: number[];
 }
 
-// UV-018:平台认证事件(只读)响应类型(对齐 evorule-server platform_events_handler)
+// :平台认证事件(只读)响应类型(对齐 evorule-server platform_events_handler)
 export interface PlatformEventEntry {
 	/** 共享事实 ID(链序 = 写入时间序) */
 	fact_id: number;
@@ -135,7 +135,7 @@ export interface PlatformEventsResponse {
 	total: number;
 }
 
-// UV-062 ④:bundle 导入溯源(部署历史)响应类型
+// ④:bundle 导入溯源(部署历史)响应类型
 // (对齐 evorule-server bundles.rs BundleImportsResponse + evorule-workspace models.rs BundleImportRecord)
 export interface BundleImportRecord {
 	/** 记录 ID(自增) */
@@ -167,7 +167,7 @@ export interface BundleImportsResponse {
 	count: number;
 }
 
-// UV-062 ⑨:执行侧已绑定服务能力(对齐 evorule-server server.rs BoundServiceInfo,C5 能力对账)
+// ⑨:执行侧已绑定服务能力(对齐 evorule-server server.rs BoundServiceInfo,C5 能力对账)
 export interface BoundServiceInfo {
 	/** 服务名 */
 	name: string;
@@ -291,14 +291,14 @@ export class CloudHttpBackend implements ExecutionBackend {
 	forkSession(parentId: SessionId, version: number): Promise<SessionId> {
 		return this.backend.forkSession(parentId, version);
 	}
-	// UV-062:停止/中止(abort 为条件挂载端点,server 未启用 --allow-abort 时 404)
+	// :停止/中止(abort 为条件挂载端点,server 未启用 --allow-abort 时 404)
 	interruptSession(id: SessionId): Promise<InterruptResult> {
 		return this.backend.interruptSession(id);
 	}
 	abortSession(id: SessionId): Promise<InterruptResult> {
 		return this.backend.abortSession(id);
 	}
-	// UV-062 W2:审计导出 / 自动验证(代理内核 HttpBackend,统一带 Bearer)
+	// W2:审计导出 / 自动验证(代理内核 HttpBackend,统一带 Bearer)
 	exportAudit(id: SessionId): Promise<unknown> {
 		return this.backend.exportAudit(id);
 	}
@@ -316,7 +316,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	): Promise<AutoVerifyConfigResult> {
 		return this.backend.setAutoVerify(id, enabled, threshold, interval);
 	}
-	// UV-062 W2:调试只读六路 + 因果深度(代理内核 HttpBackend)
+	// W2:调试只读六路 + 因果深度(代理内核 HttpBackend)
 	getStep(id: SessionId): Promise<StepInfo> {
 		return this.backend.getStep(id);
 	}
@@ -338,7 +338,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	getCausalDepth(id: SessionId): Promise<CausalDepthInfo> {
 		return this.backend.getCausalDepth(id);
 	}
-	// UV-084 W1:A 组 5 项(审计导入/会话派生/会话回收/payload 注入/共享事实,代理内核 HttpBackend)
+	// W1:A 组 5 项(审计导入/会话派生/会话回收/payload 注入/共享事实,代理内核 HttpBackend)
 	importAudit(id: SessionId, data: unknown): Promise<AuditImportResult> {
 		return this.backend.importAudit(id, data);
 	}
@@ -365,7 +365,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 		return this.backend.getSharedFactsVersion();
 	}
 
-	// UV-084 W3:A-流权限策略族(9,代理内核 HttpBackend)
+	// W3:A-流权限策略族(9,代理内核 HttpBackend)
 	listPermissions(): Promise<PermissionListResult> {
 		return this.backend.listPermissions();
 	}
@@ -399,7 +399,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 		return this.backend.evaluatePermission(req);
 	}
 
-	// === UV-084 W5:知识数据面(委托内核 HttpBackend;错误纪律由 HttpBackend 承担) ===
+	// === W5:知识数据面(委托内核 HttpBackend;错误纪律由 HttpBackend 承担) ===
 	listKnowledgeDatasets(): Promise<KnowledgeDatasetsResult> {
 		return this.backend.listKnowledgeDatasets();
 	}
@@ -426,7 +426,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	 * 拉取生产运行状态(委托内核 WorkspaceBackend.getProductionState)。
 	 *
 	 * cloud 版 L1 监控大屏(P05,现 /monitor 直达页)与总览 monitor-summary
-	 * widget(UV-021)需要此数据。
+	 * widget()需要此数据。
 	 *
 	 * # 错误容错(大屏不因一次拉取失败而崩)
 	 * 任何失败(网络 / 401 凭据 / 404 未初始化)→ 返回 status="offline" 默认值,
@@ -520,7 +520,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * 拉取历史会话审计档案列表(UV-016,消费 `GET /api/audit-archive/sessions`)。
+	 * 拉取历史会话审计档案列表(,消费 `GET /api/audit-archive/sessions`)。
 	 *
 	 * 只读档案:服务器重启后活跃会话清空,WAL 文件中的历史会话(含 LLM 侧车
 	 * 审计会话)经此回看。失败直接抛 Error,由调用方展示错误状态。
@@ -532,7 +532,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * 读取单会话档案审计链(UV-016,消费
+	 * 读取单会话档案审计链(,消费
 	 * `GET /api/audit-archive/sessions/{id}/audit?include_content=`)。
 	 *
 	 * @param includeContent true 时每条附 content_json 完整 Fact 内容
@@ -549,7 +549,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * 拉取平台认证事件(UV-018,消费 `GET /api/audit/platform-events`)。
+	 * 拉取平台认证事件(,消费 `GET /api/audit/platform-events`)。
 	 *
 	 * 只读报表:登录/改密/用户与角色管理事件已入共享事实 WAL(prev_hash 链),
 	 * 经此回看。失败直接抛 Error,由调用方展示错误状态(不静默返回空)。
@@ -571,7 +571,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * 拉取 bundle 导入溯源历史(UV-062 ④,消费 `GET /api/bundles/imports`)。
+	 * 拉取 bundle 导入溯源历史(④,消费 `GET /api/bundles/imports`)。
 	 *
 	 * 部署溯源:每次治理侧快照包导入执行域的记录(bundle/dataset/版本/防篡改
 	 * 哈希/导入者/导入时间)。按导入时间倒序;workspace 元数据库未接线时
@@ -588,7 +588,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * 拉取执行侧已绑定服务清单(UV-062 ⑨,消费 `GET /api/services`)。
+	 * 拉取执行侧已绑定服务清单(⑨,消费 `GET /api/services`)。
 	 *
 	 * 能力对账:原生叶子能力(native,version=1.0.0)+ service_registry.json
 	 * 显式绑定(registry)。失败(网络 / 401 / 非 2xx)→ 抛 Error,由调用方

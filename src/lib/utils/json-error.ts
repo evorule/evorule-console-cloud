@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// JSON 解析错误转译(UV-078 W1-A3)
+// JSON 解析错误转译（-A3）
 // 背景:工作台/执行台/What-If 的指令提交输入面,非 JSON 文本直接把
 // 浏览器引擎原文("Unexpected token 'u', ... is not valid JSON")抛给业务用户,
 // 对不懂 JSON 的用户是硬伤。fail-fast 是设计(Error fact 保留原文),

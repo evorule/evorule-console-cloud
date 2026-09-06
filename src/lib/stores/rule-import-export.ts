@@ -44,7 +44,7 @@ import { getCurrentUser } from "./auth";
 // ============================================================================
 
 /**
- * 导出前置:确保目标规则 content 已加载(UV-089 ③)。
+ * 导出前置:确保目标规则 content 已加载(③)。
  *
  * kernel refreshRules 的 listRules 不含 content(懒加载设计),但 exportRule
  * 强依赖 content——未经预载,任何未在编辑器中打开过的规则导出必抛
@@ -312,7 +312,7 @@ export async function importRulesBatch(
 }
 
 // ============================================================================
-// 5. 向导包 → 治理链导入辅助(UV-078 W3 方向 b)
+// 5. 向导包 → 治理链导入辅助（方向 b）
 // ============================================================================
 
 /**
@@ -377,7 +377,7 @@ export function parseWizardBatchPackage(
       const text = decodeURIComponent(escape(atob(file.content_base64)));
       // 按包内 files[].format 分流:yaml 用 yamlParse(导出中心批量默认 yaml),
       // 其余按 JSON 解析。曾一律 JSON.parse,yaml 包 13/13 条逐条解析失败
-      // (UV-078 W3 e2e 发现)。toml 暂不支持,走 catch 逐条诚实报错。
+      // （e2e 发现）。toml 暂不支持,走 catch 逐条诚实报错。
       let rule: unknown;
       if (file.format === "yaml") {
         rule = yamlParse(text);
@@ -389,7 +389,7 @@ export function parseWizardBatchPackage(
           throw new Error("YAML 解析结果非对象");
         }
         if (Object.keys(rule as Record<string, unknown>).length === 0) {
-          // yamlParse 对非 key-value 行静默跳过,垃圾内容会解析成空 {}(UV-089 ⑤ 边界防御)
+          // yamlParse 对非 key-value 行静默跳过,垃圾内容会解析成空 {}(⑤ 边界防御)
           throw new Error("YAML 解析结果为空对象(内容非法或非规则 YAML)");
         }
       } else {

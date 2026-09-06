@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// UV-078 W3 方向 b:向导批量包解析纯函数测试。
+// W3 方向 b:向导批量包解析纯函数测试。
 // 覆盖:合法包解析/entry_id 提取优先级/坏形态逐条透出/中文 UTF-8 解码。
 
 import { describe, it, expect } from 'vitest';
@@ -26,7 +26,7 @@ function makePkg(
   };
 }
 
-describe('parseWizardBatchPackage (UV-078 W3)', () => {
+describe('parseWizardBatchPackage (W3)', () => {
   it('合法包:提取 entry_id/rule_body/description', () => {
     const pkg = makePkg([
       {
@@ -99,7 +99,7 @@ describe('parseWizardBatchPackage (UV-078 W3)', () => {
     expect(errors[0]).toContain('entry_id');
   });
 
-  // UV-078 W3 e2e 发现:导出中心批量默认 yaml,曾一律 JSON.parse 导致整包失败。
+  // W3 e2e 发现:导出中心批量默认 yaml,曾一律 JSON.parse 导致整包失败。
   // 修复后按 files[].format 分流,yaml 走 yamlParse(仅支持本仓导出的 YAML 子集)。
   it('yaml 格式包(files[].format=yaml)按 format 分流解析', () => {
     const yamlText = [

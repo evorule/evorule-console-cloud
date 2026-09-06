@@ -292,10 +292,10 @@ describe("P09 marketplace 上传 + 删除", () => {
 });
 
 // ============================================================================
-// 4b. 编辑(UV-087:multipart PATCH /api/marketplace/templates/:id)
+// 4b. 编辑(:multipart PATCH /api/marketplace/templates/:id)
 // ============================================================================
 
-describe("P09 marketplace 编辑(UV-087)", () => {
+describe("P09 marketplace 编辑()", () => {
 	/** 先上传一个模板进 store,返回其 server id */
 	async function seedUserTemplate(): Promise<string> {
 		fetchMock.mockResolvedValueOnce(

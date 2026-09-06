@@ -24,7 +24,7 @@
 
   interface Props {
     template: MarketTemplate;
-    /** 编辑入口(UV-087):仅 user 来源卡片渲染编辑按钮,上抛给宿主页开编辑弹窗 */
+    /** 编辑入口():仅 user 来源卡片渲染编辑按钮,上抛给宿主页开编辑弹窗 */
     onEdit?: (template: MarketTemplate) => void;
   }
 

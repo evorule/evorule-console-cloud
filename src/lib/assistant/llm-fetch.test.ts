@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — LLM HTTP 客户端单测(UV-030:MiniMax base_resp 业务错误如实透出)
+// evorule-console-cloud — LLM HTTP 客户端单测(:MiniMax base_resp 业务错误如实透出)
 
 import { describe, test, expect, vi, afterEach } from 'vitest';
 import { callChatApi, LlmApiError, LlmAuthError } from './llm-fetch';

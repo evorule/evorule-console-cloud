@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// workspace-membership 单元测试(UV-073 ①+② 组合方案的纯逻辑层)
+// workspace-membership 单元测试(①+② 组合方案的纯逻辑层)
 //
 // 覆盖:角色映射不放大权限 / ensure 幂等(已在名单/新加入/竞态收敛/真失败不吞错)
 
@@ -26,7 +26,7 @@ function mockWb(members: WorkspaceMemberRecord[], addImpl?: (user_id: string) =>
   } as unknown as WorkspaceBackend;
 }
 
-describe('mapRoleToWorkspaceRole(UV-073:不放大权限)', () => {
+describe('mapRoleToWorkspaceRole(:不放大权限)', () => {
   test('admin(it/exec) → admin', () => {
     expect(mapRoleToWorkspaceRole('admin')).toBe('admin');
   });
@@ -42,7 +42,7 @@ describe('mapRoleToWorkspaceRole(UV-073:不放大权限)', () => {
   });
 });
 
-describe('ensureWorkspaceMembership(UV-073:幂等 ensure)', () => {
+describe('ensureWorkspaceMembership(:幂等 ensure)', () => {
   const actor = { name: 'u-admin', role: 'admin' as const };
 
   test('已在名单 → 不调用 addMember,joined=false', async () => {

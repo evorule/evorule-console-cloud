@@ -27,7 +27,7 @@
     onComplete();
   }
 
-  // UV-078 W3 方向 b:向导终点从"死胡同"变"换乘站" — 全量规则导出为标准批量包
+  // W3 方向 b:向导终点从"死胡同"变"换乘站" — 全量规则导出为标准批量包
   // (BatchExportPackage JSON,.evorule-batch.json),供治理中心「从向导包导入」消费
   let exporting = $state(false);
 
@@ -36,7 +36,7 @@
     try {
       // 'json':治理导入契约 = 包内 content_base64 解码即原生规则 JSON(零鸿沟直通)。
       // 不传 format 会走默认 'yaml',治理侧 parseWizardBatchPackage 逐条解析失败
-      // (UV-078 W3 e2e 实测发现,e2e 段2 走导出中心同样路径复现)
+      // (W3 e2e 实测发现,e2e 段2 走导出中心同样路径复现)
       const blob = await exportRulesBatch([], "json");
       const stamp = new Date().toISOString().slice(0, 10);
       downloadBlob(blob, `evorule-wizard-rules-${stamp}.evorule-batch.json`);
@@ -52,7 +52,7 @@
 <div class="step-complete">
     <div class="complete-icon">🎉</div>
     <h2>建库完成</h2>
-    <!-- UV-078 W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
+    <!-- W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
     <!-- 执行域(server)仅运行治理链发布的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
     <!-- W3 方向 b:边界明示 + 换乘动作组(导出批量包/直达治理中心),终点从死胡同变换乘站。 -->
     <p class="complete-desc">本地规则库已就绪。</p>
@@ -103,7 +103,7 @@
       🚀 进入工作台
     </button>
     <div class="gov-actions">
-      <!-- UV-078 W3 方向 b:换乘站动作组 — 导出批量包 + 直达治理中心导入 -->
+      <!-- W3 方向 b:换乘站动作组 — 导出批量包 + 直达治理中心导入 -->
       <button
         class="btn-secondary"
         onclick={handleExportRules}

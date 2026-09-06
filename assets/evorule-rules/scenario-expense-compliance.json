@@ -11,11 +11,11 @@
     "spdx_license_id": "CC0-1.0",
     "provenance": {
       "derived_from": [
-        "evorule-console-cloud docs/scenarios/rules (UV-045 社区点火 W2.2)"
+        "evorule-console-cloud docs/scenarios/rules (社区点火 W2.2)"
       ],
       "date": "2026-09-02",
-      "workstream": "UV-045 W2.2 场景示例规则",
-      "note": "与 docs/scenarios/rules 中的内核格式同 transform;本文件为 --rules-dir 可装载的 rule_set v1.0 封装;UV-075(2026-09-04)修正 sections 漂移——原第 2 条误称 noop 收尾规则,实际 transform 仅 1 条业务分支"
+      "workstream": "W2.2 场景示例规则",
+      "note": "与 docs/scenarios/rules 中的内核格式同 transform;本文件为 --rules-dir 可装载的 rule_set v1.0 封装;(2026-09-04)修正 sections 漂移——原第 2 条误称 noop 收尾规则,实际 transform 仅 1 条业务分支"
     },
     "deployment": {
       "method": "evorule-server 启动参数 --rules-dir <本目录>;变更后 POST /api/rules/reload 生效"

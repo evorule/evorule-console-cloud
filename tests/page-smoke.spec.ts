@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud e2e — UV-078 W1-E1 page-smoke 骨架(13 路由零功能覆盖补口)
+// evorule-console-cloud e2e — W1-E1 page-smoke 骨架(13 路由零功能覆盖补口)
 //
 // 目的(45 号方案 §E 组):每条路由 goto + 核心元素可见 + 零 console error,一次覆盖
 // 13 条无 e2e 功能覆盖的路由;此后每个修复项 DoD 强制含 e2e 锚定。
 //
 // 路由清单与断言锚点(选择器用稳定 class;标题元素无 class 的用标签+可见性,
-// 交互类断言禁文本匹配 —— UV-067 选择器漂移教训):
+// 交互类断言禁文本匹配 —— 选择器漂移教训):
 //   登录态(it,自由可达 10):/monitor /help /export /import-export /marketplace
 //     /governance /publish-queue /version-history /view/state /view/timetravel
 //   守卫路由(it 无权限,2):/users /roles —— W1-A1 的 e2e 锚定:
@@ -45,7 +45,7 @@ function collectConsoleErrors(page: Page): string[] {
  *   与 CI 干净环境同语义,测试确定性。
  *
  * 分层边界:page-smoke 只验渲染冒烟(路由可达 + 核心元素 + 无运行时崩溃);
- * API 契约(路径/形态防漂移)由 UV-068 补的 openapi 防漂移契约测试守护。
+ * API 契约(路径/形态防漂移)由 补的 openapi 防漂移契约测试守护。
  */
 async function mockBackendOffline(page: Page): Promise<void> {
 	await page.route('**/api/**', (route) => route.abort());
@@ -54,7 +54,7 @@ async function mockBackendOffline(page: Page): Promise<void> {
 /**
  * 已知离线噪声白名单(e2e 故意 abort 网络面时必然出现,非前端缺陷):
  *   1. /^Failed to load resource:/ —— 浏览器对网络不可达/abort 的固有 console 报告,
- *      恰是"后端不可达被如实记录"的证据(而非静默);API 路径/形态契约由 UV-068
+ *      恰是"后端不可达被如实记录"的证据(而非静默);API 路径/形态契约由 
  *      防漂移契约测试单独守护,不在本层重复。
  *   2. /^\[layout\] 规则库初始化失败/ —— 布局 bootstrap 的显式降级日志,
  *      页面同步呈现"请检查 evorule-server 是否已启动"引导(用户可见,非静默吞错)。
@@ -89,9 +89,9 @@ const SMOKE_ROUTES: ReadonlyArray<{ path: string; anchor: string; desc: string }
 	{ path: '/version-history', anchor: 'section.version-history', desc: '版本历史' },
 	{ path: '/view/state', anchor: '.empty-state', desc: '状态视图(无 session 空态)' },
 	{ path: '/view/timetravel', anchor: 'h2.btt-title', desc: '业务时间旅行(无 session 空态)' },
-	// UV-084 W3 锚定(补:W3 实施时漏挂 page-smoke,遗留 14 名实不符实际 13):
+	// W3 锚定(补:W3 实施时漏挂 page-smoke,遗留 14 名实不符实际 13):
 	{ path: '/permissions', anchor: '.permissions-view', desc: '权限策略管理' },
-	// UV-084 W5 锚定:知识数据面(mockBackendOffline 下数据面不可达,
+	// W5 锚定:知识数据面(mockBackendOffline 下数据面不可达,
 	// KnowledgeView 走 network error → listError 显式上屏,属预期形态,
 	// 无预期外 console error)
 	{ path: '/knowledge', anchor: 'h1:has-text("知识库")', desc: '知识数据面浏览' }
@@ -121,7 +121,7 @@ test.describe('page-smoke:15 路由 goto + 核心元素 + 零 console error', ()
 			await page.goto(path);
 			// 307 弹回 / (+layout.ts 守卫)
 			await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });
-			// toast「权限不足」引导(W1-A1:静默弹回 → 显式提示)
+			// toast「权限不足」引导（-A1:静默弹回 → 显式提示）
 			await expect(page.locator('.toast-title').first()).toHaveText('权限不足', { timeout: 5_000 });
 			await page.waitForTimeout(SETTLE_MS);
 			assertNoUnexpectedErrors(errors, path);

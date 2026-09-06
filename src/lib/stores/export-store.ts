@@ -313,7 +313,7 @@ function describeRange(filters: ExportFilters): string {
  * @param options     渲染选项
  * @param templateId  使用的模板 ID(写入元数据)
  * @param serverBaseUrl 服务端基地址(PDF 渲染用)
- * @param authToken   执行域 server Bearer token(UV-084 W6,PDF 服务端渲染认证用)
+ * @param authToken   执行域 server Bearer token(W6,PDF 服务端渲染认证用)
  */
 export async function executeExport(
   backend: ExecutionBackend,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// UV-084 W1 单测:HttpBackend A 组 5 项 7 方法
+// W1 单测:HttpBackend A 组 5 项 7 方法
 // (审计导入×2 / 会话派生 / 会话回收 / payload 注入 / 共享事实×2)。
 //
 // 运行: npx vitest run src/lib/kernel/backend/__tests__/http-backend-wave3.test.ts
@@ -55,7 +55,7 @@ async function expectHttpError(p: Promise<unknown>): Promise<HttpBackendError> {
 
 // ============ A1:审计导入 ============
 
-describe("UV-084 W1 HttpBackend - 审计导入", () => {
+describe("W1 HttpBackend - 审计导入", () => {
 	test("importAudit:POST /audit/import,body 透传 + Bearer + 响应解析", async () => {
 		const fetchMock = mockFetchJson({
 			session_id: 3,
@@ -148,7 +148,7 @@ describe("UV-084 W1 HttpBackend - 审计导入", () => {
 
 // ============ A2:会话派生 ============
 
-describe("UV-084 W1 HttpBackend - 会话派生", () => {
+describe("W1 HttpBackend - 会话派生", () => {
 	test("createSessionFrom:POST /sessions/from/{pid},version query + session_id 提取", async () => {
 		const fetchMock = mockFetchJson({
 			session_id: 7,
@@ -207,7 +207,7 @@ describe("UV-084 W1 HttpBackend - 会话派生", () => {
 
 // ============ A3:会话回收 ============
 
-describe("UV-084 W1 HttpBackend - 会话回收", () => {
+describe("W1 HttpBackend - 会话回收", () => {
 	test("reapSessions:POST /sessions/reap,返回计数", async () => {
 		const fetchMock = mockFetchJson({ finished: 2, expired: 1, total: 3 });
 		const backend = new HttpBackend(BASE, "tok-1");
@@ -237,7 +237,7 @@ describe("UV-084 W1 HttpBackend - 会话回收", () => {
 
 // ============ A4:payload 注入 ============
 
-describe("UV-084 W1 HttpBackend - payload 注入", () => {
+describe("W1 HttpBackend - payload 注入", () => {
 	test("updatePayload:POST body { path, value },fact_id 返回", async () => {
 		const fetchMock = mockFetchJson({
 			success: true,
@@ -310,7 +310,7 @@ describe("UV-084 W1 HttpBackend - payload 注入", () => {
 
 // ============ A5:共享事实 ============
 
-describe("UV-084 W1 HttpBackend - 共享事实", () => {
+describe("W1 HttpBackend - 共享事实", () => {
 	test("getSharedFacts:GET /shared/facts,prefix 编码 + 裸数组解析", async () => {
 		const fetchMock = mockFetchJson([
 			{

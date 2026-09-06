@@ -180,7 +180,7 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
-		// UV-067 适配:开发者模式已是占位视图(内核 RuleLibraryView 随 v0.2.0 弃用),
+		// 适配:开发者模式已是占位视图(内核 RuleLibraryView 随 v0.2.0 弃用),
 		// "🤖 AI 起草规则" 按钮在业务模式头部渲染(第一个 .btn-ai)
 		await page.locator('.btn-ai').first().click();
 
@@ -225,7 +225,7 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
-		// UV-067 适配:refreshRules 虽自动选中第一条规则,但 content 懒加载只在
+		// 适配:refreshRules 虽自动选中第一条规则,但 content 懒加载只在
 		// 点击卡片(selectRule)时触发 —— ExplainRuleDialog 需要 rule.content,
 		// 未加载会报"规则内容未加载,无法解释"。先点第一张规则卡片并等版本拉取完成。
 		const versionsLoaded = page.waitForResponse(
@@ -252,7 +252,7 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		// 授予剪贴板权限
 		await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-		// UV-067 适配:不再 mock /api/sessions —— 旧 mock 的 POST 响应形状({id:1})
+		// 适配:不再 mock /api/sessions —— 旧 mock 的 POST 响应形状({id:1})
 		// 与审计桥协议不符(需 {session_id}),导致"create_session 失败(HTTP 200)"。
 		// 现改走真实 evorule-server:LLM 审计桥自建侧车会话(create_session → SSE →
 		// call_external → io_response),与 validate-audit-bridge.mjs 同链路;
@@ -309,7 +309,7 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		await page.reload({ waitUntil: 'networkidle' });
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
-		// UV-067 适配:开发者模式已是占位视图(无 .btn-ai),
+		// 适配:开发者模式已是占位视图(无 .btn-ai),
 		// 业务模式头部 "🤖 AI 起草规则" 打开 DraftRuleDialog
 		await page.locator('.btn-ai').first().click();
 		await expect(page.locator('#draft-dialog-title')).toBeVisible({ timeout: 5000 });

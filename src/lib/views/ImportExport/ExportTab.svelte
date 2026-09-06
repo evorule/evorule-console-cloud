@@ -48,7 +48,7 @@
   // 派生:当前类型的可选对象列表
   // 注意:三个分支须一致用响应式 store 订阅($rules/$datasetStore/$businessFormSchemaStore)。
   // 曾用 getAllRules()(=get(rules) 一次性快照)导致整页直载时 rules store 异步填充后
-  // 对象列表不重算、恒为空(UV-089 ①)。
+  // 对象列表不重算、恒为空(①)。
   let availableObjects = $derived.by(() => {
     if (selectedType === "rule") {
       return $rules.map((r) => ({ id: r.id, label: r.description ?? r.id }));

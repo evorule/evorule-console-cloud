@@ -149,7 +149,7 @@ describe('CloudWorkspaceBackend 透传(部署通道)', () => {
 	});
 });
 
-describe('GovernanceBackend.buildTestsForEvidence(证据三形态构造,UV-058 W1.3)', () => {
+describe('GovernanceBackend.buildTestsForEvidence(证据三形态构造,W1.3)', () => {
 	test('sandbox-report 机器背书 → subset 引用沙盒 ID + verdict 透传(不伪造:fail 报告如实 fail)', () => {
 		expect(
 			GovernanceBackend.buildTestsForEvidence({ kind: 'sandbox-report', sandboxId: 7, verdict: 'pass' })
@@ -219,7 +219,7 @@ describe('GovernanceBackend.exportBundle(带证据导出)', () => {
 	});
 });
 
-describe('GovernanceBackend knowledge 条目在线编辑(UV-086)', () => {
+describe('GovernanceBackend knowledge 条目在线编辑()', () => {
 	const gb = new GovernanceBackend('http://localhost:18081', 't1');
 
 	/** 先 mock 登录拿 token(条目操作走认证请求) */

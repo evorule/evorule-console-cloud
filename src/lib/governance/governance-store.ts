@@ -201,7 +201,7 @@ export async function addEntry(datasetId: string, req: AddEntryRequest): Promise
 }
 
 // ====================================================================
-// 条目(knowledge 数据条目 — UV-086 在线编辑)
+// 条目(knowledge 数据条目 — 在线编辑)
 // ====================================================================
 
 /** 添加 knowledge 数据条目（payload+schema_ref 必填），成功后刷新条目列表 */
@@ -273,7 +273,7 @@ export async function unpublish(): Promise<void> {
 	await afterDatasetChanged(updated);
 }
 
-/** 更新法规锚（PATCH /datasets/{id} 元数据通道；UV-051 部署闸门的 UI 修复路径） */
+/** 更新法规锚（PATCH /datasets/{id} 元数据通道；部署闸门的 UI 修复路径） */
 export async function updateLawRef(lawRef: LawRef): Promise<void> {
     const s = get(governanceStore);
     if (!s.selectedId) throw new GovernanceError('未选中数据集', 'no_selection');

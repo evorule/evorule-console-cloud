@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- /users 路由 — 平台用户管理(UV-017 W4b) -->
+<!-- /users 路由 — 平台用户管理(W4b) -->
 <!--
   守卫(双层,+layout.ts 为第一层):
     - 未登录 → /login

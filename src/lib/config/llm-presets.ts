@@ -73,7 +73,7 @@ export const LLM_PRESETS: LlmPreset[] = [
 	{
 		provider: 'minimax',
 		label: 'MiniMax(海螺AI)',
-		// 2026-09-01(UV-030 实测):api.minimax.chat 已废弃;现网 OpenAI 兼容端点为
+		// 2026-09-01(实测):api.minimax.chat 已废弃;现网 OpenAI 兼容端点为
 		// api.minimaxi.com/v1/text/chatcompletion_v2(与 helpUrl 平台一致,实测通过)
 		apiEndpoint: 'https://api.minimaxi.com/v1/text/chatcompletion_v2',
 		defaultModel: 'MiniMax-Text-01',

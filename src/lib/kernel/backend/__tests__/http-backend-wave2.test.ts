@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// UV-062 W2 单测:HttpBackend 审计导出/自动验证/调试只读/因果深度 11 方法。
+// W2 单测:HttpBackend 审计导出/自动验证/调试只读/因果深度 11 方法。
 //
 // 运行: npx vitest run src/lib/kernel/backend/__tests__/http-backend-wave2.test.ts
 //
@@ -71,7 +71,7 @@ async function expectHttpError(p: Promise<unknown>): Promise<HttpBackendError> {
 
 // ============ 接线1:审计导出 ============
 
-describe("UV-062 W2 HttpBackend - 审计导出", () => {
+describe("W2 HttpBackend - 审计导出", () => {
 	test("exportAudit:GET /audit/export,JSON 透传 + Bearer", async () => {
 		const fetchMock = mockFetchJson({
 			session_id: 3,
@@ -139,7 +139,7 @@ describe("UV-062 W2 HttpBackend - 审计导出", () => {
 
 // ============ 接线2:auto_verify 开关 ============
 
-describe("UV-062 W2 HttpBackend - auto_verify", () => {
+describe("W2 HttpBackend - auto_verify", () => {
 	test("getAutoVerify:GET /audit/auto_verify,返回开关状态", async () => {
 		const fetchMock = mockFetchJson({ session_id: 3, auto_verify: true });
 		const backend = new HttpBackend(BASE, "tok-1");
@@ -227,7 +227,7 @@ describe("UV-062 W2 HttpBackend - auto_verify", () => {
 
 // ============ 接线3:调试六路只读 ============
 
-describe("UV-062 W2 HttpBackend - 调试只读六路", () => {
+describe("W2 HttpBackend - 调试只读六路", () => {
 	test("getStep:GET /step,返回 current_step", async () => {
 		const fetchMock = mockFetchJson({ session_id: 3, current_step: 42 });
 		const backend = new HttpBackend(BASE);
@@ -340,7 +340,7 @@ describe("UV-062 W2 HttpBackend - 调试只读六路", () => {
 
 // ============ 接线4:因果深度 ============
 
-describe("UV-062 W2 HttpBackend - causal_depth", () => {
+describe("W2 HttpBackend - causal_depth", () => {
 	test("getCausalDepth:GET /causal_depth,返回深度值", async () => {
 		const fetchMock = mockFetchJson({ session_id: 3, causal_depth: 6 });
 		const backend = new HttpBackend(BASE, "tok-1");

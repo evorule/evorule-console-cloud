@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:顶部用户菜单(头像/角色徽标 + 个人中心 + 改密码 + 登出)UV-017 W3
+  职责:顶部用户菜单(头像/角色徽标 + 个人中心 + 改密码 + 登出)W3
   - platform 登录:显示服务端资料/权限点数,支持本人改密码(需旧密码)
   - demo 登录:保留 我的工作台/看 demo 入口
   依赖:auth.ts / platform-auth-api / session.ts / home-mode.ts / toast.ts

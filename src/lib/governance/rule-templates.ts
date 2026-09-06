@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — 治理页规则模板脚手架(UV-058 W2.3/W2.4)
+// evorule-console-cloud — 治理页规则模板脚手架（/W2.4）
 //
 // 职责(43 号方案):
 //   - W2.3 模板下拉资产:空白骨架 + 4 场景(静态内嵌副本)
@@ -11,7 +11,7 @@
 //   4 场景的 transform/description 为 assets/evorule-rules/scenario-*.json 的静态内嵌副本,
 //   源文件变更时必须同步本文件(源头路径标在各模板 sourceFile 字段)。
 //   场景资产为引擎侧风格:transform 无末条 all([]) 兜底,未匹配指令由引擎产生 Error fact(fail-fast)。
-//   UV-075(2026-09-04)已修正资产侧 sections 漂移(原误称 noop 收尾规则)。
+//   (2026-09-04)已修正资产侧 sections 漂移(原误称 noop 收尾规则)。
 //   治理表单对此形态触发 G6 warning(末条非 all(inner:[]) 兜底)——不阻断,如实提示,属设计选择非缺陷。
 
 /** 治理页规则模板(W2.3 表单顶部下拉) */

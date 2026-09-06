@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- /roles 路由 — 平台角色管理 + 权限矩阵编辑器(UV-017 W4c) -->
+<!-- /roles 路由 — 平台角色管理 + 权限矩阵编辑器(W4c) -->
 <!--
   守卫(双层,+layout.ts 为第一层):
     - 未登录 → /login

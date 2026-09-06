@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 EvoRule Project
 # evorule-console-cloud 一键启动分发包打包脚本
 #
@@ -6,9 +6,9 @@
 #   evorule-server.exe       <- evorule-server release 构建(运行时 :18080)
 #   evorule-rule-serve.exe   <- evorule-rule release 构建(治理 :18081,J 族双 exe)
 #   web/                     <- 本仓 adapter-static 产物(build/)
-#   rules/                   <- 本仓 assets/evorule-rules/(业务场景规则 scenario-*;桥接归引擎 core_eval,UV-054)
-#   resources/server_eval.json <- evorule-server 仓 TCB 宪法·server 业务规则集(server 默认路径 ./resources/;UV-044 更名,旧名 core_eval.json)
-#   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,UV-033)
+#   rules/                   <- 本仓 assets/evorule-rules/(业务场景规则 scenario-*;桥接归引擎 core_eval,)
+#   resources/server_eval.json <- evorule-server 仓 TCB 宪法·server 业务规则集(server 默认路径 ./resources/;更名,旧名 core_eval.json)
+#   plugin_manifest.json     <- 插件清单缺省文件(全启用;部署方可编辑裁剪,)
 #   start-evorule.bat       <- packaging/ 启动脚本(双服务,部分保活)
 #   README-STARTUP.txt      <- packaging/ 使用说明
 #

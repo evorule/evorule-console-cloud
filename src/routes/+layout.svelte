@@ -207,8 +207,8 @@
     goto(path);
   }
 
-  // === 导航注册表(UV-022 首项):侧栏/跳单卡/命令面板消费同一清单 ===
-  // 可见项纯函数过滤(登录态 + 权限 ANY 语义);门控与跳单卡一致(闭合 UV-023)
+  // === 导航注册表(首项):侧栏/跳单卡/命令面板消费同一清单 ===
+  // 可见项纯函数过滤(登录态 + 权限 ANY 语义);门控与跳单卡一致(闭合 )
   const navVisible = $derived.by(() => {
     const loggedIn = $sessionStore.loggedIn;
     const user = $currentUser;
@@ -314,7 +314,7 @@
 
   // === 连接状态 ===
   let connected = $state<boolean | null>(null);
-  // UV-085 ④:健康检查延迟定时器 + 中止器(onMount 发起,pagehide/卸载清理)
+  // ④:健康检查延迟定时器 + 中止器(onMount 发起,pagehide/卸载清理)
   let healthTimer: number | undefined;
   let healthAbort: AbortController | undefined;
 
@@ -345,12 +345,12 @@
       rightWidth = clampWidth(window.innerWidth * 0.2);
     }
 
-    // 主题:固定深色(整体消灭白色底色),前缀统一为 evorule-console-cloud:(UV-078 W2-B6)
+    // 主题:固定深色(整体消灭白色底色),前缀统一为 evorule-console-cloud:（-B6）
     theme = "dark";
     document.documentElement.setAttribute("data-theme", "dark");
     localStorage.setItem("evorule-console-cloud:theme", "dark");
 
-    // backend 健康检查(UV-085 ④,双层防御)
+    // backend 健康检查(④,双层防御)
     // 第一层:延迟 500ms——避免请求落在 dev 水合瞬间(快速整页导航恰在此时
     // 到达);页面活不过 500ms 则定时器随文档消亡,根本不产生请求。
     // 第二层:pagehide 主动中止——实测快速导航页面生命周期可覆盖任意延迟点,
@@ -525,7 +525,7 @@
     <!-- 左导航侧栏 -->
     <aside class="sidebar sidebar-left {leftDrawerOpen ? 'drawer-open' : ''}" style:width={`${leftWidth}px`}>
       <div class="sidebar-section">
-        <!-- home 组:总览/监控(NAV_REGISTRY 驱动,UV-022) -->
+        <!-- home 组:总览/监控(NAV_REGISTRY 驱动,) -->
         {#each navVisible.home as item (item.id)}
           <button
             class="sidebar-item"
@@ -563,7 +563,7 @@
       <div class="sidebar-divider"></div>
 
       <div class="sidebar-section">
-        <!-- discover 组:市场/帮助(NAV_REGISTRY 驱动,UV-022) -->
+        <!-- discover 组:市场/帮助(NAV_REGISTRY 驱动,) -->
         {#each navVisible.discover as item (item.id)}
           <button
             class="sidebar-item"
@@ -585,9 +585,9 @@
         {#if navVisible.governance.length > 0}
           <div class="sidebar-label">治理与协作</div>
         {/if}
-        <!-- governance 组:NAV_REGISTRY 驱动(UV-022);门控在注册表过滤层统一处理
+        <!-- governance 组:NAV_REGISTRY 驱动();门控在注册表过滤层统一处理
              (发布队列 view_publish_queue / 用户管理 view_users|manage_users /
-              角色管理 manage_roles / 其余登录限定),与跳单卡同清单(闭合 UV-023) -->
+              角色管理 manage_roles / 其余登录限定),与跳单卡同清单(闭合 ) -->
         {#each navVisible.governance as item (item.id)}
           <button
             class="sidebar-item"

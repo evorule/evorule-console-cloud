@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  PermissionsView — A-流权限策略管理(UV-084 W3,UV-065 实化)
+  PermissionsView — A-流权限策略管理(W3,实化)
   数据面:执行域 :18080 /api/permissions 端点族(SharedFactsLog 持久化,
   每次写操作追加新版本,可审计回放)。
 

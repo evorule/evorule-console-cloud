@@ -460,7 +460,7 @@ export interface ActiveBundleInfo {
   entry_count: number;
 }
 
-// --- 治理域 API 接线(UV-062:执行域 server 直连端点,形状以 evorule-server utoipa 注解为准) ---
+// --- 治理域 API 接线(:执行域 server 直连端点,形状以 evorule-server utoipa 注解为准) ---
 
 /** POST /api/rules/validate 单条校验项(对齐 evorule-server api/server.rs ValidationCheckResponse) */
 export interface ValidationCheckItem {
@@ -599,7 +599,7 @@ export interface ExecutionRulesResult {
  *   - 判定契约(6): listVerdictContracts/createVerdictContract/getVerdictContract/updateVerdictContract/deleteVerdictContract/evaluateVerdict
  *   - wall-clock 旁路(2): recordClock/lookupClock
  *   - 快照包导入(3): importBundle/dryRunImportBundle/listActiveBundles (evorule-server /api/bundles/*)
- *   - 治理域 API 接线(6): validateRules/getSandboxReport/getExecutionRules/getPublishQueueItem/addMember/removeMember (UV-062)
+ *   - 治理域 API 接线(6): validateRules/getSandboxReport/getExecutionRules/getPublishQueueItem/addMember/removeMember ()
  */
 export interface WorkspaceBackend {
   // === Workspace 管理 ===
@@ -717,7 +717,7 @@ export interface WorkspaceBackend {
   /** GET /api/bundles/active — 当前激活 bundle 列表(部署徽标数据源) */
   listActiveBundles(): Promise<ActiveBundleInfo[]>;
 
-  // === 治理域 API 接线 (UV-062:执行域 server 直连端点) ===
+  // === 治理域 API 接线 (:执行域 server 直连端点) ===
   /**
    * POST /api/rules/validate — 规则体校验(静态校验+安全分析,保存前预检)。
    * 200/422/400 均返回结构化结果(passed=false 携带 server 错误详情);

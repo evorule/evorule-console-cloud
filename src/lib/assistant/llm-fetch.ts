@@ -250,7 +250,7 @@ export async function callChatApi(params: ChatApiParams): Promise<string> {
 		);
 	}
 
-	// MiniMax 形态(2026-09-01 UV-030 实测):业务错误(如 2049 invalid api key)返回
+	// MiniMax 形态(2026-09-01 实测):业务错误(如 2049 invalid api key)返回
 	// 200 + { base_resp: { status_code != 0, status_msg } } —— 无 error 字段、无 choices。
 	// 不识别会把鉴权失败误报成"响应结构异常: 无 choices[0].message.content",违反如实报错。
 	const baseResp = (data as { base_resp?: { status_code?: unknown; status_msg?: unknown } })

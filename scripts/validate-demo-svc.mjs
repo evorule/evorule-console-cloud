@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// call_service 服务调用端到端验证脚本(UV-006 验收工具)
+// call_service 服务调用端到端验证脚本(验收工具)
 //
 // 验证目标:分发包内的演示规则集(app.consolecloud.demo_svc)+
 // --service-registry 声明 + server 原生 demo-services 路由在真实 server 上走通。

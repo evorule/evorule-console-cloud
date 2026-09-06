@@ -89,18 +89,18 @@
   let showRollbackConfirm = $state(false);
   let rollbackTarget = $state<number | null>(null);
 
-  // === UV-062 W2 接线1+2:审计设置(auto_verify 开关 + 双格式导出) ===
+  // === W2 接线1+2:审计设置(auto_verify 开关 + 双格式导出) ===
   /** auto_verify 当前状态(null = 未知:无 session / 读取中 / 读取失败) */
   let autoVerifyEnabled = $state<boolean | null>(null);
   let autoVerifyToggling = $state(false);
   let autoVerifyError = $state<string | null>(null);
   let exportingFormat = $state<"json" | "compressed" | null>(null);
 
-  // === UV-062 W2 接线4:因果深度(null = 未知:无 session / 读取中 / 读取失败) ===
+  // === W2 接线4:因果深度(null = 未知:无 session / 读取中 / 读取失败) ===
   let causalDepth = $state<number | null>(null);
   let causalDepthError = $state<string | null>(null);
 
-  // === UV-084 W1-A5:共享事实(跨会话广播事实查询,GET /api/shared/facts) ===
+  // === W1-A5:共享事实(跨会话广播事实查询,GET /api/shared/facts) ===
   let sharedFactsExpanded = $state(false);
   let sharedFacts = $state<SharedFactEntry[] | null>(null);
   let sharedFactsVersionInfo = $state<SharedFactsVersionInfo | null>(null);
@@ -123,7 +123,7 @@
 
   // === 持久化 mode 到 localStorage ===
   onMount(() => {
-    // UV-078 W2-B6:键前缀统一为 evorule-console-cloud:,读旧键迁移(读旧→写新→删旧)
+    // W2-B6:键前缀统一为 evorule-console-cloud:,读旧键迁移(读旧→写新→删旧)
     const OLD_KEY = "evorule:audit-mode";
     const NEW_KEY = "evorule-console-cloud:audit-mode";
     const saved =
@@ -157,7 +157,7 @@
     await refreshAudit(backend, sessionId);
   }
 
-  // === UV-062 W2 接线2:auto_verify 开关 ===
+  // === W2 接线2:auto_verify 开关 ===
   /** 读取当前会话的审计链自动验证状态(失败显式错误态,不静默) */
   async function loadAutoVerify(): Promise<void> {
     if (sessionId === null) return;
@@ -204,7 +204,7 @@
     }
   }
 
-  // === UV-062 W2 接线4:因果深度 ===
+  // === W2 接线4:因果深度 ===
   /** 读取当前会话因果深度(GET /causal_depth;失败显式错误态,不静默) */
   async function loadCausalDepth(): Promise<void> {
     if (sessionId === null) return;
@@ -218,7 +218,7 @@
     }
   }
 
-  // === UV-084 W1-A5:共享事实(跨会话广播,只读查询面) ===
+  // === W1-A5:共享事实(跨会话广播,只读查询面) ===
   /**
    * 拉取共享事实列表 + 日志版本。跨会话全局数据,不依赖当前 session;
    * 失败显式错误态(不静默),支持前缀过滤。
@@ -251,7 +251,7 @@
     }
   }
 
-  // === UV-062 W2 接线1:审计链双格式导出 ===
+  // === W2 接线1:审计链双格式导出 ===
   /**
    * 导出审计链(JSON / 压缩)。复用 audit-export store:
    * fetch blob + Bearer(backend 层注入)+ URL.createObjectURL 下载;
@@ -326,7 +326,7 @@
       toastError("无活动 session,无法导入");
       return;
     }
-    // UV-084 W1:server 端 import 是破坏性操作(完全覆盖当前会话审计链),须二次确认
+    // W1:server 端 import 是破坏性操作(完全覆盖当前会话审计链),须二次确认
     const confirmed = confirm(
       `导入将完全覆盖 session ${sessionId} 的当前审计链,且不可撤销。\n确定导入 "${file.name}" 吗?`,
     );
@@ -479,7 +479,7 @@ ${causalChain.nodes
       onCausalSummary={handleCausalSummary}
     />
 
-    <!-- UV-062 W2 接线1+2:审计设置区(auto_verify 开关 + 双格式审计链导出) -->
+    <!-- W2 接线1+2:审计设置区(auto_verify 开关 + 双格式审计链导出) -->
     <div class="audit-settings">
       <div class="setting-item">
         <span class="setting-label">⚙️ 自动验证</span>
@@ -538,7 +538,7 @@ ${causalChain.nodes
       </div>
     </div>
 
-    <!-- UV-084 W1-A5:共享事实区块(跨会话广播事实,只读查询面;默认折叠) -->
+    <!-- W1-A5:共享事实区块(跨会话广播事实,只读查询面;默认折叠) -->
     <div class="shared-facts-section">
       <button
         class="shared-facts-toggle"
@@ -631,7 +631,7 @@ ${causalChain.nodes
         />
       </div>
       <div class="causal-col">
-        <!-- UV-062 W2 接线4:当前会话因果深度 -->
+        <!-- W2 接线4:当前会话因果深度 -->
         <div class="causal-depth-bar">
           <span class="cd-label">🌊 因果深度</span>
           {#if sessionId === null}
@@ -796,7 +796,7 @@ ${causalChain.nodes
     font-size: 12px;
   }
 
-  /* === UV-062 W2 接线1+2:审计设置区 === */
+  /* === W2 接线1+2:审计设置区 === */
   .audit-settings {
     display: flex;
     align-items: center;
@@ -850,7 +850,7 @@ ${causalChain.nodes
     background: var(--bg-page, #f9fafb);
   }
 
-  /* === UV-084 W1-A5:共享事实区块(跨会话广播,只读查询面) === */
+  /* === W1-A5:共享事实区块(跨会话广播,只读查询面) === */
   .shared-facts-section {
     background: var(--bg-card);
     border: 1px solid var(--border, #e5e7eb);
@@ -1030,7 +1030,7 @@ ${causalChain.nodes
     cursor: not-allowed;
   }
 
-  /* === UV-062 W2 接线4:因果深度显示条 === */
+  /* === W2 接线4:因果深度显示条 === */
   .causal-depth-bar {
     display: flex;
     align-items: center;

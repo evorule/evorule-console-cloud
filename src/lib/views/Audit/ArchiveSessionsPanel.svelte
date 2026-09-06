@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:历史会话审计档案面板(UV-016)
+  职责:历史会话审计档案面板()
     - 消费 GET /api/audit-archive/sessions 与 /api/audit-archive/sessions/{id}/audit
     - 归档分组:LLM 侧车审计会话 / 业务会话;活跃会话标记
     - LLM 详情:call_external Command 的 messages / audit_purpose、

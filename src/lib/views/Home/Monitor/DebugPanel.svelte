@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:内核调试只读面板(UV-062 W2 接线3)
+  职责:内核调试只读面板(W2 接线3)
     - 输入/点选 session_id 后展示六路调试信息:
       step(单步计数)/ snapshot(状态快照)/ phase(执行阶段)/
       queue(待执行队列)/ pending_io(悬挂 I/O)/ pending_io_count(计数)

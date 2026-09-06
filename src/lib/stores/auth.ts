@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// 用户身份 + 权限 store(P08 §6.1 / UV-017 W3 后端化)。
+// 用户身份 + 权限 store(P08 §6.1 / W3 后端化)。
 //
 // 两种登录身份:
 //   - platform(平台登录):POST evorule-server /api/platform/auth/login,
@@ -190,7 +190,7 @@ export function hasPermission(u: User | null, action: PermissionAction): boolean
 }
 
 /**
- * 平台登录(UV-017 W3)。
+ * 平台登录(W3)。
  *
  * 成功后:
  *   1. token 写入 netConfig.authToken → 全部后端请求自动带 Bearer
@@ -250,7 +250,7 @@ export function loginAs(username: string): { success: boolean; error?: string } 
 		return { success: false, error: `用户 "${username}" 不存在或已禁用` };
 	}
 	currentUser.set(user);
-	// 同步 session.ts(T1 HomeRouter 依赖 sessionStore.loggedIn)
+	// 同步 session.ts（HomeRouter 依赖 sessionStore.loggedIn）
 	session.login(user.id, user.displayName);
 	return { success: true };
 }
