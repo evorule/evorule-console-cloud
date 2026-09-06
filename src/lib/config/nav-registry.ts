@@ -5,7 +5,7 @@
 // 单一事实源:侧栏(+layout)、总览跳单卡(WorkbenchJump)、命令面板(CommandPalette)
 // 三处消费同一清单,门控天然一致(闭合 :此前侧栏仅登录门控、跳单卡按权限门控)。
 //
-// 契约(iterations/09-一切皆plugin-架构原则.md §2):
+// 契约:
 //   - 注册项五要素:id/声明/门控/实现(path+requiresDb)/表面(group+jump)
 //   - 过滤逻辑纯函数(visibleNavItems),单测锁定
 //   - 宿主不得特判具体项;新增导航 = 追加一行
