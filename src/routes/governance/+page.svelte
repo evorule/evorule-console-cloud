@@ -321,8 +321,8 @@
       const reachable = await probeReachable(cfg.baseUrl.trim());
       const raw = e instanceof Error ? e.message : String(e);
       connError = reachable
-        ? `服务可达但登录失败:${raw}\n请检查用户名/密码(治理凭据与主系统独立;体验包演示凭据 admin/evorule-demo,见 README-STARTUP.txt)。`
-        : `无法连接治理服务 ${cfg.baseUrl.trim()}。\n请确认 evorule-rule-serve(:18081)已启动 —— 分发包由 start-evorule.bat 自动拉起,手动部署见 README-STARTUP.txt;若刚启动请稍候重试。`;
+        ? `服务可达但登录失败:${raw}\n请检查用户名/密码(治理凭据与主系统独立)。`
+        : `无法连接治理服务 ${cfg.baseUrl.trim()}。\n请确认 evorule-rule-serve(:18081)已启动;若刚启动请稍候重试。`;
     } finally {
       connecting = false;
     }
@@ -1490,8 +1490,8 @@
       <p class="hint boundary-note">
         <strong>为什么是两个系统?</strong>治理中心是独立子系统 evorule-rule(规则资产库:
         五态生命周期、审批发布、版本链),主系统 evorule-server(:18080)负责规则执行与审计。
-        资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。体验包演示凭据:admin / evorule-demo(见 README-STARTUP.txt);
-        正式部署须先换密钥与密码(幂等引导仅首启生效,详见 README-STARTUP.txt「安全提示」)。
+        资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。
+        部署时须自行设置治理服务管理员凭据并定期换密(幂等引导仅首启生效)。
       </p>
       <label class="field">
         <span>服务地址</span>

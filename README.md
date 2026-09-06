@@ -23,7 +23,6 @@
 
 ## 🚀 新用户从这里开始
 
-- **[5 分钟跑起来（体验包路径）](./docs/tutorial/02-quickstart-package.md)** — 下载压缩包，解压即用，全截图跟做
 - **[5 分钟上手（开发者路径）](./docs/tutorial/01-quickstart.md)** — 克隆仓 + dev 环境，从 0 到跑通第一条规则
 - **[❓ 浏览器内帮助页](http://127.0.0.1:5174/help)** — 启服务后侧栏底部"❓ 帮助"按钮
 - **[一键启停指南](./README-STARTUP.md)** — 桌面双击 / 命令行两种方式
@@ -114,7 +113,7 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 - **「部署到执行域」**：治理数据集 → 执行域发布链出口 UI
 - **法规锚编辑通道**：发布闸门问题的产品内修复路径
 - **分类标签管理**：抽屉式管理 + Escape 键盘关闭通道
-- **场景示例规则 v2**：业务指令范式 + 体验包 rules 预置（4 规则 9 用例实测全过）
+- **场景示例规则 v2**：业务指令范式 + 仓内 rules 预置（4 规则 9 用例实测全过）
 - **规则编辑表单深化** + 校验器对齐权威 schema；旅程可用性整治 + 新用户体验修复
 - 完整明细见 [CHANGELOG](CHANGELOG.md)
 
@@ -128,7 +127,6 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 - 云 LLM 辅助三用途：创建规则草案 / 解释规则 / 生成测试输入（9 家厂商预设）
 - 联网模式切换（offline ↔ online）、视图选择、联网与 LLM 配置持久化
 - apiKey 安全：仅存浏览器 localStorage，不进 URL / 日志 / 错误信息
-- 单镜像双进程 Docker 一键部署（`packaging/docker/`）；分发包插件清单缺省文件 + 双平台打包接线
 
 ### Roadmap（规划中，非承诺）
 
@@ -231,7 +229,7 @@ npm run preview -- --host 127.0.0.1 --port 4173
 
 ### 认证配置（EVORULE_AUTH_TOKEN）
 
-**优先路径——平台登录**：若 server 已启用平台用户体系（bootstrap 首启创建管理员），直接在登录页登录即可，无需手工填写 token。体验包默认开 `--demo-auth` 演示入口（server 下发开关控制显隐，server 不可达时保留）。
+**优先路径——平台登录**：若 server 已启用平台用户体系（bootstrap 首启创建管理员），直接在登录页登录即可，无需手工填写 token。server 端开启 `--demo-auth` 时提供演示入口（server 下发开关控制显隐，server 不可达时保留）。
 
 直连静态 token 场景：在**设置面板 → 联网配置 → 认证 Token** 中填入与 server 一致的 token（失焦自动保存，留空 = 请求不带凭据，仅免认证 server 可用）。全链路（执行侧会话 API、workspace 规则库、发布审批/回滚、生产状态/版本历史）统一携带 `Authorization: Bearer` 头。
 
@@ -315,7 +313,6 @@ evorule-console-cloud/
 │   └── verify.test.ts         # 导入验证(vitest)
 ├── tests/                     # playwright e2e(5 套件)
 ├── docs/                      # 公开文档(Diátaxis 四类 + ADR + 场景示例)
-├── packaging/docker/          # 单镜像双进程 Docker 一键部署
 ├── package.json               # 依赖声明(内核已内联,无 npm 内核依赖)
 ├── svelte.config.js           # adapter-static
 ├── vite.config.ts             # port 5174

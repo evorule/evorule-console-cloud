@@ -5,11 +5,10 @@
 
 > **面向第一次接触 evorule-console-cloud 的用户**，手把手带你跑通。
 
-两条学习路径，按你的身份选：
+一条学习路径：
 
 | 路径 | 文档 | 适合谁 |
 | --- | --- | --- |
-| **体验包路径** | [02-quickstart-package.md](./02-quickstart-package.md) | 拿 Release 压缩包的普通用户，解压即用，零开发环境 |
 | **开发者路径** | [01-quickstart.md](./01-quickstart.md) | 要改代码/参与贡献的开发者，克隆仓 + 编译 + dev 环境 |
 
 ## 写什么
