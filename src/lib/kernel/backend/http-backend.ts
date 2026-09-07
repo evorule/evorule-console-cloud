@@ -454,6 +454,15 @@ export class HttpBackend implements ExecutionBackend {
     return this.fetchJson<T>(path);
   }
 
+  /**
+   * 公开 POST JSON(插件审批代理等 server 扩展端点使用)。
+   * 与 getJson 对称:复用统一 headers(Bearer)与错误处理,供 Cloud 层组合调用。
+   * body 为 undefined 时不带请求体(仅 POST 语义)。
+   */
+  postJsonPublic<T>(path: string, body?: unknown): Promise<T> {
+    return this.fetchJson<T>(path, this.postJson(body));
+  }
+
   // ------------------------------------------------------------------------
   // === 时间旅行 ===
   // ------------------------------------------------------------------------

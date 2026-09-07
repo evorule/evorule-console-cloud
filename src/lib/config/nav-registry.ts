@@ -118,6 +118,20 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     lockHint: "需登录并具备发布队列查看权限",
   },
   {
+    id: "plugin-approvals",
+    label: "插件审批",
+    icon: "🔌",
+    path: "/plugin-approvals",
+    group: "governance",
+    title: "插件审批 — 外部插件配置提案审批(经 server 代理插件管理面)",
+    loginRequired: true,
+    // 与发布审批同范式:同为治理审批动作,复用同一权限点对,
+    // 不新增权限面;approver 由 server 代理强制注入登录身份
+    permissions: ["view_publish_queue"],
+    jump: true,
+    lockHint: "需登录并具备发布队列查看权限",
+  },
+  {
     id: "version-history",
     label: "版本历史",
     icon: "📜",

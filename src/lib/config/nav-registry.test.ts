@@ -26,17 +26,20 @@ describe('visibleNavItems', () => {
 		expect(visibleNavItems(NAV_REGISTRY, adminCtx())).toHaveLength(NAV_REGISTRY.length);
 	});
 
-	it('wang(仅 view_users):无发布队列(view_publish_queue 门控,闭合)', () => {
+	it('wang(仅 view_users):无发布队列/插件审批(view_publish_queue 门控,闭合)', () => {
 		const ids = visibleNavItems(NAV_REGISTRY, wangCtx()).map((i) => i.id);
 		expect(ids).not.toContain('publish-queue');
+		expect(ids).not.toContain('plugin-approvals');
 		expect(ids).not.toContain('roles');
 		// 用户管理:view_users 命中(ANY 语义)
 		expect(ids).toContain('users');
 	});
 
-	it('demo exec(有 view_publish_queue 无 view_users):见发布队列,不见用户/角色管理', () => {
+	it('demo exec(有 view_publish_queue 无 view_users):见发布队列/插件审批,不见用户/角色管理', () => {
 		const ids = visibleNavItems(NAV_REGISTRY, demoExecCtx()).map((i) => i.id);
 		expect(ids).toContain('publish-queue');
+		// 插件审批与发布审批同范式,复用同一权限点对
+		expect(ids).toContain('plugin-approvals');
 		expect(ids).not.toContain('users');
 		expect(ids).not.toContain('roles');
 	});
@@ -57,15 +60,21 @@ describe('visibleNavItems', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('三组归位:home 2 / discover 3 / governance 8(W5 discover 增知识库)', () => {
+	it('三组归位:home 2 / discover 3 / governance 9(discover 不变,governance 增插件审批)', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor']);
 		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'knowledge', 'help']);
-		expect(g.governance).toHaveLength(8);
+		expect(g.governance).toHaveLength(9);
 	});
 
-	it('跳单卡子集(jump:true)为 4 项且顺序稳定:marketplace/export/publish-queue/governance', () => {
+	it('跳单卡子集(jump:true)为 5 项且顺序稳定:marketplace/export/publish-queue/plugin-approvals/governance', () => {
 		const jump = visibleNavItems(NAV_REGISTRY, adminCtx()).filter((i) => i.jump);
-		expect(jump.map((i) => i.id)).toEqual(['marketplace', 'export', 'publish-queue', 'governance']);
+		expect(jump.map((i) => i.id)).toEqual([
+			'marketplace',
+			'export',
+			'publish-queue',
+			'plugin-approvals',
+			'governance'
+		]);
 	});
 });
