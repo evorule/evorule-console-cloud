@@ -507,12 +507,25 @@ describe('CloudHttpBackend bundle 导入溯源(④)', () => {
 
 describe('CloudHttpBackend 服务清单(⑨)', () => {
   const SERVICES = [
-    { name: 'http_request', source: 'native', version: '1.0.0' },
+    {
+      name: 'http_request',
+      source: 'native',
+      version: '1.0.0',
+      description: 'HTTP 请求服务',
+    },
     {
       name: 'payroll_svc',
       source: 'registry',
       version: '1.2.0',
       description: 'payroll service',
+    },
+    {
+      name: 'finance_config_set',
+      source: 'native',
+      version: '1.0.0',
+      description: '财务配置键写入（需人审门确认后落库，走审计链）',
+      plugin: 'finance-config',
+      sensitive: true,
     },
   ];
 
@@ -532,10 +545,15 @@ describe('CloudHttpBackend 服务清单(⑨)', () => {
 
     const list = await backend.listServices();
 
-    expect(list).toHaveLength(2);
+    expect(list).toHaveLength(3);
     expect(list[0].source).toBe('native');
     expect(list[1].name).toBe('payroll_svc');
     expect(list[1].description).toBe('payroll service');
+    // 插件归属与敏感标记透传(可选字段,server 侧经 serde skip 缺省时字段缺位)
+    expect(list[0].plugin).toBeUndefined();
+    expect(list[0].sensitive).toBeUndefined();
+    expect(list[2].plugin).toBe('finance-config');
+    expect(list[2].sensitive).toBe(true);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('http://127.0.0.1:18080/api/services');
     expect((init.headers as Record<string, string>).Authorization).toBe(

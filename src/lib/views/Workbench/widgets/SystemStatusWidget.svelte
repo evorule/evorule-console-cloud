@@ -114,15 +114,21 @@
         {#each services as s (s.source + ":" + s.name)}
           <span
             class="svc"
-            title="{s.name} · {SOURCE_LABELS[s.source] ?? s.source}{s.version ? ` · v${s.version}` : ''}{s.description ? ` · ${s.description}` : ''}"
+            title="{s.name} · {SOURCE_LABELS[s.source] ?? s.source}{s.plugin ? ` · 插件:${s.plugin}` : ''}{s.version ? ` · v${s.version}` : ''}{s.description ? ` · ${s.description}` : ''}{s.sensitive ? ' · 敏感:禁止直调,须走会话审计链' : ''}"
           >
             <span class="svc-dot" aria-hidden="true"></span>
             <span class="svc-name">{s.name}</span>
             <span class="svc-tag" class:registry={s.source !== "native"}
               >{SOURCE_LABELS[s.source] ?? s.source}</span
             >
+            {#if s.plugin}
+              <span class="svc-plugin">{s.plugin}</span>
+            {/if}
             {#if s.version}
               <span class="svc-ver">v{s.version}</span>
+            {/if}
+            {#if s.sensitive}
+              <span class="svc-sensitive" title="敏感服务:REST 直调 403,须经会话 call_service 走审计与审批链">敏感</span>
             {/if}
           </span>
         {/each}
@@ -199,6 +205,22 @@
   .svc-tag.registry {
     background: var(--warning-bg, #fef3c7);
     color: var(--warning, #92400e);
+  }
+  .svc-plugin {
+    font-size: 10px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--bg-card, #f1f5f9);
+    color: var(--text-muted, #64748b);
+    font-family: ui-monospace, monospace;
+  }
+  .svc-sensitive {
+    font-size: 10px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--error-bg, #fee2e2);
+    color: var(--error, #dc2626);
+    font-weight: 600;
   }
   .svc-ver {
     color: var(--text-muted);
