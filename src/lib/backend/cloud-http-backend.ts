@@ -171,12 +171,16 @@ export interface BundleImportsResponse {
 export interface BoundServiceInfo {
 	/** 服务名 */
 	name: string;
-	/** `native`(内嵌 demo-services 叶子能力)| `registry`(service_registry.json 显式绑定) */
+	/** `native`(进程内插件原生服务)| `registry`(service_registry.json 显式绑定) */
 	source: string;
 	/** 服务版本(native 固定 1.0.0;registry 取配置,可能缺省) */
 	version?: string;
-	/** 服务描述(registry 配置,可能缺省) */
+	/** 服务描述(原生取声明表;registry 取配置,可能缺省) */
 	description?: string;
+	/** 归属插件 id(仅 native 来源;registry 服务无插件归属) */
+	plugin?: string;
+	/** 敏感服务:REST 直调被 403 拒绝,必须经会话 call_service 走审计与审批链 */
+	sensitive?: boolean;
 }
 
 export class CloudHttpBackend implements ExecutionBackend {
