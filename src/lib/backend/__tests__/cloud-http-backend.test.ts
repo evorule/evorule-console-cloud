@@ -592,3 +592,171 @@ describe('CloudHttpBackend 服务清单(⑨)', () => {
     vi.unstubAllGlobals();
   });
 });
+
+// ============================================================================
+// 插件审批代理:listExternalPlugins / listPluginProposals /
+// approvePluginProposal / rejectPluginProposal — 单通道走 server 代理端点
+// ============================================================================
+
+describe('CloudHttpBackend 插件审批代理', () => {
+  const HEALTH = {
+    success: true,
+    message: 'ok',
+    plugins: {
+      'finance-config': { external: true, status: 'online', last_probe: 1 },
+      demo_services: { external: false },
+    },
+  };
+
+  const PROPOSALS = {
+    pending: [
+      {
+        proposal_id: 'p-1',
+        key: 'config:limits.travel.max_amount',
+        new_value: 8000,
+        reason: '差旅上限调整',
+        proposed_by: 'session:42',
+        created_at: '2026-09-08T00:00:00Z',
+        status: 'pending',
+      },
+    ],
+    count: 1,
+  };
+
+  test('listExternalPlugins:GET /api/health + 过滤 external===true,透传探活状态', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(HEALTH), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const backend = new CloudHttpBackend({
+      mode: 'offline',
+      localBaseUrl: 'http://127.0.0.1:18080',
+      authToken: 'tok-1',
+    });
+
+    const list = await backend.listExternalPlugins();
+
+    // 仅 external 插件(native/registry 不在审批面)
+    expect(list).toEqual([{ id: 'finance-config', status: 'online' }]);
+    expect(fetchMock.mock.calls[0][0]).toBe('http://127.0.0.1:18080/api/health');
+    vi.unstubAllGlobals();
+  });
+
+  test('listExternalPlugins:plugins 缺省(null)→ 空数组(不抛)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ success: true, message: 'ok' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    expect(await backend.listExternalPlugins()).toEqual([]);
+    vi.unstubAllGlobals();
+  });
+
+  test('listPluginProposals:GET 代理端点 + id 编码 + Bearer 头', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(PROPOSALS), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const backend = new CloudHttpBackend({
+      mode: 'offline',
+      authToken: 'tok-2',
+    });
+
+    const res = await backend.listPluginProposals('finance-config');
+
+    expect(res.count).toBe(1);
+    expect(res.pending[0].key).toBe('config:limits.travel.max_amount');
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      'http://localhost:18080/api/plugins/finance-config/admin/proposals',
+    );
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok-2');
+    vi.unstubAllGlobals();
+  });
+
+  test('listPluginProposals:503(token 未配置)/502(不可达)→ 如实抛错(调用方区分展示)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: '未配置 admin token' }), { status: 503 }),
+      ),
+    );
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+    await expect(backend.listPluginProposals('finance-config')).rejects.toThrow('HTTP 503');
+    vi.unstubAllGlobals();
+  });
+
+  test('approvePluginProposal:POST approve,body 仅 {}(approver 由 server 强制注入,前端不传)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const backend = new CloudHttpBackend({ mode: 'offline', authToken: 'tok-3' });
+
+    await backend.approvePluginProposal('finance-config', 'p-1');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      'http://localhost:18080/api/plugins/finance-config/admin/proposals/p-1/approve',
+    );
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({});
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok-3');
+    vi.unstubAllGlobals();
+  });
+
+  test('rejectPluginProposal:POST reject,body 携带 reason(操作内容保留前端值)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await backend.rejectPluginProposal('finance-config', 'p-1', '数值超出预算');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      'http://localhost:18080/api/plugins/finance-config/admin/proposals/p-1/reject',
+    );
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ reason: '数值超出预算' });
+    vi.unstubAllGlobals();
+  });
+
+  test('提案 id 含特殊字符:URL 路径段经 encodeURIComponent 编码', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const backend = new CloudHttpBackend({ mode: 'offline' });
+
+    await backend.approvePluginProposal('finance-config', 'p/1?id=2');
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toBe(
+      'http://localhost:18080/api/plugins/finance-config/admin/proposals/p%2F1%3Fid%3D2/approve',
+    );
+    vi.unstubAllGlobals();
+  });
+});
