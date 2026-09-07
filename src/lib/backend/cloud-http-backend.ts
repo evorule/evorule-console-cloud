@@ -185,6 +185,31 @@ export interface BoundServiceInfo {
 	parameters?: Record<string, unknown>;
 }
 
+// :插件审批代理(对齐 evorule-server /api/plugins/{id}/admin/* 代理端点)
+export interface ExternalPluginInfo {
+	/** 插件 id(external 插件包 plugin.json 声明) */
+	id: string;
+	/** 探活状态(online/offline/no_probe;探活未运行或缺省 = undefined) */
+	status?: string;
+}
+
+/** 插件自持管理面提案条目(对齐 finance-config Proposal;插件侧响应原样透传) */
+export interface PluginProposal {
+	proposal_id: string;
+	key: string;
+	new_value: unknown;
+	reason: string;
+	proposed_by: string;
+	created_at: string;
+	status: string;
+	approver?: string | null;
+}
+
+export interface PluginProposalsResponse {
+	pending: PluginProposal[];
+	count: number;
+}
+
 export class CloudHttpBackend implements ExecutionBackend {
 	private backend: HttpBackend;
 	/** 内核 WorkspaceBackend 引用(读方法委托;+layout 注入同一实例) */
@@ -602,5 +627,67 @@ export class CloudHttpBackend implements ExecutionBackend {
 	 */
 	async listServices(): Promise<BoundServiceInfo[]> {
 		return this.backend.getJson<BoundServiceInfo[]>('/api/services');
+	}
+
+	// === 插件审批代理(走 server 审批代理端点,approver 由 server 强制注入) ===
+
+	/**
+	 * 拉取 external 插件清单(消费 `GET /api/health` plugins 节,过滤 external===true)。
+	 *
+	 * 用于插件审批面按插件分组;探活状态随 health 节呈现(online/offline/no_probe,
+	 * 探活未运行时缺省 = undefined)。失败 → 抛 Error,由调用方展示错误态。
+	 */
+	async listExternalPlugins(): Promise<ExternalPluginInfo[]> {
+		const health = await this.backend.getJson<{ plugins?: Record<string, unknown> | null }>(
+			'/api/health'
+		);
+		const plugins = health.plugins ?? {};
+		return Object.entries(plugins)
+			.filter(([, node]) => (node as { external?: boolean })?.external === true)
+			.map(([id, node]) => ({
+				id,
+				status: (node as { status?: string })?.status
+			}));
+	}
+
+	/**
+	 * 拉取插件待批提案(消费 `GET /api/plugins/{id}/admin/proposals` 代理端点)。
+	 *
+	 * 响应为插件自持管理面 JSON 原样透传。错误语义(与 server 对齐):
+	 * 404 未知/非 external 插件、502 插件管理面不可达、503 server 侧未配置
+	 * 该插件 admin token——统一以 HttpBackendError 抛出,由调用方区分展示。
+	 */
+	async listPluginProposals(pluginId: string): Promise<PluginProposalsResponse> {
+		return this.backend.getJson<PluginProposalsResponse>(
+			`/api/plugins/${encodeURIComponent(pluginId)}/admin/proposals`
+		);
+	}
+
+	/**
+	 * 批准插件提案(消费 `POST /api/plugins/{id}/admin/proposals/{pid}/approve`)。
+	 *
+	 * approver 由 server 代理强制注入平台登录身份(不信任前端自报),本方法
+	 * 不传操作者——前端仅展示登录 actor。审批 = 治理动作,入插件自持审计。
+	 */
+	async approvePluginProposal(pluginId: string, proposalId: string): Promise<unknown> {
+		return this.backend.postJsonPublic(
+			`/api/plugins/${encodeURIComponent(pluginId)}/admin/proposals/${encodeURIComponent(proposalId)}/approve`,
+			{}
+		);
+	}
+
+	/**
+	 * 拒绝插件提案(消费 `POST /api/plugins/{id}/admin/proposals/{pid}/reject`)。
+	 * reason 保留前端自报值(拒绝理由属操作内容,非操作者身份)。
+	 */
+	async rejectPluginProposal(
+		pluginId: string,
+		proposalId: string,
+		reason: string
+	): Promise<unknown> {
+		return this.backend.postJsonPublic(
+			`/api/plugins/${encodeURIComponent(pluginId)}/admin/proposals/${encodeURIComponent(proposalId)}/reject`,
+			{ reason }
+		);
 	}
 }
