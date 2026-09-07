@@ -1,14 +1,372 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 
-# evorule-console-cloud
+![EvoRule Console Cloud — the single user entry point of the EvoRule ecosystem](assets/evorule-console-cloud-banner.svg)
 
-> evorule 规则引擎面板 · **联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM + 平台治理）
+<div align="center">
 
-[![version](https://img.shields.io/badge/version-0.4.0-blue)](./CHANGELOG.md)
+# EvoRule Console Cloud
+
+**evorule rule-engine console · the connected public edition** — a professional starting point for secondary developers (core engine + connectivity + cloud LLM + platform governance)
+
+[![version](https://img.shields.io/badge/version-0.4.1-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
 [![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
 
+**Language / 语言**: [English](#english) · [中文 / Chinese](#chinese)
+
+</div>
+
+---
+
+<a id="english"></a>
+
+## Quick Start for New Users
+
+- **[5-Minute Quick Start (Developer Path)](./docs/tutorial/01-quickstart.md)** — clone the repo + dev environment, go from 0 to your first running rule
+- **[❓ In-browser Help Page](http://127.0.0.1:5174/help)** — the "❓ Help" button at the bottom of the sidebar after the service starts
+- **[One-Click Start/Stop Guide](./README-STARTUP.md)** — both desktop double-click and command-line methods
+
+---
+
+## For Decision Makers (30-Second Read)
+
+> evorule is the **compliance & audit layer** for AI Agents — making every decision of an AI Agent auditable, replayable, and rollable-back.
+
+### Why evorule?
+
+| Pain Point | evorule's Answer |
+| --- | --- |
+| AI Agent decisions are opaque | BLAKE3 hash-chain — every decision is tamper-evident and traceable |
+| Can't locate root cause when something breaks | Time-travel replay + causal-chain analysis, locate in seconds |
+| Compliance audits are hard to pass | Audit export satisfies EU AI Act Article 12 + China MLPS 2.0 Level 3 |
+| Rule publishing has no controls | Three-tier permission approval + rolling session hot-reload with zero downtime |
+
+### Position in the Ecosystem
+
+| Repo | Role |
+| --- | --- |
+| [evorule](https://gitee.com/evorule/evorule) | Core engine (TCB / Reactor / Governance, on crates.io) |
+| [evorule-server](https://gitee.com/evorule/evorule-server) | HTTP server (auth / audit / plugins / template marketplace) |
+| **This repo** | The single user entry point (browser console, professional starting point for secondary developers) |
+| [Online demo](https://evorule.github.io/evorule-console-cloud/) | No registration needed — medical + finance scenarios, in-browser MockBackend with zero network dependency |
+
+### 4 Guided Tasks (experience the full chain in 2–3 minutes)
+
+1. **Add a rule** (2 min): add a hospital rule "patients over 65 with fever must get a CT first"
+2. **Find a problem** (1 min): locate why patient P-1283 triggered an anomaly alert
+3. **Edit a rule** (3 min): change the fever threshold from 38°C to 37.5°C
+4. **Compliance gate** (2 min): an AI Agent calls a transfer without MFA → gate blocks it + BLAKE3 leaves a trail
+
+### Scenario Example Rules (real business semantics, reproducible)
+
+- **[Contract Payment Guard](./docs/scenarios/01-contract-payment-guard.md)** — blocks when payment prerequisites are missing
+- **[Expense Compliance Check](./docs/scenarios/02-expense-compliance.md)** — rejects duplicate invoices; escalates over-limit to approval chain
+- **[Equipment Inspection Alert](./docs/scenarios/03-equipment-inspection.md)** — threshold-linked alerting and escalation
+- **[AI Compliance Gate](./docs/scenarios/04-ai-mfa-gate.md)** — AI Agent initiates a transfer without MFA → blocked and logged
+
+Each rule ships with two sets of contrast inputs and field-by-field expected outputs — reproduce one in 3 minutes. See [Scenario Examples Overview](./docs/scenarios/README.md).
+
+### Core Capabilities
+
+- **BLAKE3 tamper-evident audit chain**: every Fact is hash-linked; any tampering is detected
+- **Time-travel replay**: rewind to any version, diff comparison + causal-chain tracing
+- **MLPS 2.0 Level-3 gate**: compliance check before AI Agent tool calls (§8.1.4.1.d MFA / §8.1.4.7.b encryption)
+- **Compliance report export**: 6 content types × 4 formats (JSON/CSV/XML/PDF); PDF prefers server-side rendering (`POST /api/export/pdf`), auto-degrades to browser print when the server doesn't support it
+- **Rolling session hot-reload**: rule-set publishing with zero downtime, monotonic version increments
+- **Platform auth & multi-user governance**: login / profile / user management / role-permission matrix / `can()` permission judgment moved server-side
+- **Governance Center**: connects directly to the evorule-rule asset library (:18081), entry 5-state lifecycle (Draft→Candidate→Active→Published→Rejected) + version chain + online knowledge-entry editing
+- **Template marketplace**: template upload / online edit / download
+- **Collaborative approval workflow**: three-tier permissions (admin/lead/auditor), rule publishing requires approval
+
+---
+
+## Positioning
+
+evorule-console-cloud is the **single user entry point of the entire evorule ecosystem**: every browser-user operation on evorule — rule library, execution, audit, replay, approval — converges in this console. At the same time it is also a professional starting-point tool for **secondary developers**: developers build their own products on top of this repo (different products, same starting point).
+
+| Layer | Repo | Positioning | LLM | Network | Kernel relation |
+| --- | --- | --- | --- | --- | --- |
+| evorule-console (kernel) | standalone | rule-engine console kernel — execution only, no intelligence | ❌ none | ❌ none (local HTTP only) | 0 (consumes evorule core) |
+| **evorule-console-cloud (this repo)** | standalone | professional starting point for secondary developers | cloud LLM | ✅ connected | kernel snapshot inlined (`src/lib/kernel/`), no npm dependency |
+| Advanced edition | standalone | confidential-industry customization | local GPU LLM | ✅ connected / Tauri | kernel snapshot inlined |
+
+This repo and the kernel repo each have independent semver. The kernel is inlined as a **source snapshot** in `src/lib/kernel/`; this repo evolves independently; the kernel repo remains the upstream reference, and subsequent snapshot syncs are done manually on demand.
+
+---
+
+## Version Capability Boundaries
+
+### v0.4.1 released (2026-09-06)
+
+- **Unauthenticated-access redirect fix**: when accessing marketplace / runtime / workspace / export / import-export / view pages without logging in, users are now uniformly redirected to the login page (previously silently bounced to the home page, easily mistaken for "page broken"); page reachability after login is unchanged
+
+### v0.4.0 released (2026-09-06)
+
+- **Test workbench**: rule dry-run + structured deployment-evidence stream (verify rule behavior before deployment)
+- **Knowledge data plane**: `/knowledge` route + governance-center online knowledge-entry editing (Draft edit/delete + new version chain)
+- **Permission management UI**: permission-entry lifecycle + judgment test bench
+- **Template marketplace server wiring**: user templates use the server as single source of truth + template online-edit UI
+- **PDF server-side render wiring**: Bearer-auth passthrough + explicit on-screen degradation reason
+- **15 governance/execution API wirings**: audit import / session derivation / reap / payload injection / shared facts, executor stop / interrupt, rule pre-check, sandbox report, deployment provenance, execution-domain rules, queue detail, session list, member add/remove, service list, etc.
+- **Platform-user integration**: platform users connected to workspace members (idempotent auto-join + explicit 403 retry)
+- **"Deploy to execution domain"**: governance dataset → execution-domain publishing-chain export UI
+- **Regulation-anchor edit channel**: in-product fix path for publishing-gate issues
+- **Category-label management**: drawer-style management + Escape keyboard close channel
+- **Scenario example rules v2**: business-instruction paradigm + in-repo rules pre-seeded (4 rules, 9 cases, all passing)
+- **Rule-edit form deepening** + validator aligned to authoritative schema; journey usability cleanup + new-user experience fixes
+- Full details in [CHANGELOG](CHANGELOG.md)
+
+### v0.2.0 released (2026-09-02)
+
+- Rule-library view usable offline (built-in demo dataset + 4 guided tasks)
+- Executor / state / audit / time-travel: connect to evorule-server to run (local / remote addresses supported)
+- **Platform-login integration** (server unified auth) + profile + server-side permission judgment; user-management / role-management pages (permission-matrix editor)
+- Overview Dashboard (widget-registry-based); navigation registry-based (sidebar / jump-card / command-palette share one manifest and one gate)
+- Historical-session audit-archive panel + platform-auth event panel
+- Cloud LLM assist, three uses: create rule drafts / explain rules / generate test inputs (9 vendor presets)
+- Online-mode switch (offline ↔ online), view selection, network & LLM config persistence
+- apiKey security: stored only in browser localStorage, never in URL / logs / error messages
+
+### Roadmap (planned, not promised)
+
+| Goal | Version | Notes |
+| --- | --- | --- |
+| Local LLM (L2) | later | paid extension, local GPU LLM |
+| Ongoing optimization | continuous | refine UI / features / docs per community feedback |
+
+> Version semantics: `0.x` is the pre-release series; `v1.0.0` corresponds to feature-complete. Feedback and defects are welcome via [Issues](https://gitee.com/evorule/evorule-console-cloud/issues).
+
+---
+
+## Kernel Snapshot
+
+This repo does not depend on the kernel via npm. The kernel's (evorule-console v0.2.0) actual dependency closure is inlined as a source snapshot in `src/lib/kernel/`:
+
+- Entry: `src/lib/kernel/index.ts` (export surface aligned with the kernel package, omitting unused modules)
+- Contents: backend abstractions & types, rules/session/audit/view stores, AssistantProvider extension slot, RuleValidator, executor/state/audit/time-travel views & ttd components
+- Boundary: after the snapshot, it evolves together with this repo; subsequent kernel-repo changes are **not** auto-synced and require manual reconciliation
+
+---
+
+## Install & Use
+
+```bash
+git clone https://gitee.com/evorule/evorule-console-cloud.git
+cd evorule-console-cloud
+npm install
+npm run dev    # developer mode: http://localhost:5174 (for daily use prefer the one-click starter, see below)
+```
+
+> The rule-library view needs no backend and can be tried offline; the executor/state/audit/time-travel views need evorule-server running on `localhost:18080` (online mode can be configured for a remote address).
+
+## GitHub Pages Online Demo Deployment
+
+`.github/workflows/deploy-demo.yml` automatically builds and deploys to GitHub Pages on every `push` to the `main` branch.
+
+**First-time enable steps**:
+1. Go to the GitHub repo → **Settings** → **Pages**
+2. Set **Source** to **GitHub Actions** (not "Deploy from a branch")
+3. Push a commit to `main` (or manually trigger `workflow_dispatch`) to trigger the first build
+4. Once deployed, the URL looks like `https://<owner>.github.io/evorule-console-cloud/`
+
+**Features**: adapter-static full pre-render + MockBackend, zero network dependency in-browser, experience the 4 guided tasks (medical / finance demo datasets).
+
+---
+
+## Local Development (with evorule-server co-debug)
+
+To fully run the executor/state/audit views you need evorule-server running. **Mind the CORS config** (a key pitfall, pick one of two):
+
+- **Option A** (direct connect + `--allowed-origins`): evorule-server explicitly allows the public-edition dev/preview origins at startup (see startup order below). For online mode or production deployment.
+- **Option C** (vite proxy, zero config): leave `localBaseUrl` in net-config empty (same-origin); vite dev/preview auto-proxies `/api` to `127.0.0.1:18080` (see `server.proxy` in `vite.config.ts`). Dev/preview only, no server config needed.
+
+### Startup order
+
+1. **Start evorule-server** (with CORS allowing public-edition dev/preview origins) — in the evorule-server repo directory (release binary already built):
+
+   ```bash
+   target\release\evorule-server.exe --addr 127.0.0.1:18080 \
+     --allowed-origins "http://localhost:5174,http://localhost:4173,http://127.0.0.1:5174,http://127.0.0.1:4173"
+   ```
+
+2. **Start the public-edition dev server** — in this repo directory:
+
+   ```bash
+   npm run dev    # http://localhost:5174
+   ```
+
+3. **Create an initial session** (so the executor UI shows the submit area):
+
+   ```bash
+   curl -X POST http://127.0.0.1:18080/api/sessions
+   # → {"message":"Session created","session_id":1}
+   ```
+
+4. **Open in browser**: `http://localhost:5174/`
+
+### Production preview mode
+
+```bash
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4173
+```
+
+### Known Pitfalls (must read)
+
+| Pitfall | Symptom | Fix |
+| --- | --- | --- |
+| **CORS cross-origin** | evorule-server defaults to strict same-origin, cross-port rejected | Option A: add `--allowed-origins` at startup; Option C: leave `localBaseUrl` empty (same-origin), vite proxy auto-proxies `/api` → `127.0.0.1:18080` (dev/preview only) |
+| **Host alignment** | `localhost` and `127.0.0.1` are different origins | public-edition `net-config` defaults to `localhost:18080` (aligned with vite dev); when preview uses `--host 127.0.0.1`, update net-config accordingly |
+| **Port in use** | after e2e tests, `npm run dev` reports `Port 5174 is in use` or browser shows "This site can't be reached" | `npm run clean && npm run dev` (kill zombie processes) |
+| **Empty sessions** | after evorule-server starts, sessions are empty, executor UI shows no submit area | manually `POST /api/sessions` to create the initial session |
+
+### LLM Configuration
+
+The public-edition LLM apiKey goes **only** to the browser localStorage (`evorule-console-cloud:llm-config`), never read from `.env`. Fill it in Settings panel → LLM config tab.
+
+Nine built-in vendor presets: Zhipu GLM (recommended, has free quota) / Tongyi Qianwen / DeepSeek / MiniMax / Kimi / OpenAI / Ollama (local) / ERNIE / Custom (any OpenAI-compatible endpoint). Recommended starting point: get an apiKey from [Zhipu Open Platform](https://open.bigmodel.cn/usercenter/apikeys).
+
+### Auth Configuration (EVORULE_AUTH_TOKEN)
+
+**Preferred path — platform login**: if the server has the platform-user system enabled (admin created on first-run bootstrap), just log in on the login page — no manual token entry needed. When the server enables `--demo-auth`, a demo entry is provided (server controls visibility via a switch; retained when server is unreachable).
+
+For the static-token direct-connect scenario: in **Settings panel → Network config → Auth Token**, enter the token matching the server (auto-saved on blur; empty = no credentials sent, usable only with an unauthenticated server). The whole chain (executor session API, workspace rule library, publish-approval/rollback, production state/version history) uniformly carries the `Authorization: Bearer` header.
+
+Two server-side token env vars (see evorule-server README "Environment Variables / CLI Args" for details):
+
+| Env var | Semantics |
+| --- | --- |
+| `EVORULE_AUTH_TOKEN` | ordinary Bearer token (browser-user identity); **must be configured for production** — when unset, auth is fully off and protected-domain write admission fails (dev bypass semantics) |
+| `EVORULE_SERVICE_TOKEN` | service-identity token (for inter-service calls, e.g. evo-agent sidecar); protected domains `stable.llm.*` / `stable.system.*` writable only by this identity, **should not** be used on the browser side |
+
+Notes:
+
+- The token is saved in the local browser localStorage (same trust level as the LLM apiKey); don't enter it on a shared device; for higher assurance, deploy the public edition behind a reverse proxy same-origin with the server and restrict access
+- The connection test (Settings panel "Test Connection") carries the currently entered token, so you can directly verify credential validity
+- when the server enables auth but this side hasn't entered a token, the API returns 401 — first check whether the two tokens match
+
+---
+
+## Testing
+
+Full testing instructions (environment setup → 4 kinds of automated tests → evorule-server co-debug → LLM co-debug → troubleshooting) are in **[CONTRIBUTING.md §Testing Requirements](./CONTRIBUTING.md)**.
+
+**Run the full test suite quickly** (must be all-green before a PR):
+
+```bash
+npm run check && npx vitest run && npm run test && npm run build
+```
+
+| Test | Command | Measured result (2026-09-06) |
+| --- | --- | --- |
+| Type check | `npm run check` | 0 errors / 0 warnings |
+| Unit tests | `npx vitest run` | 1214/1214 (60 test files) |
+| e2e tests | `npm run test` | 5 suites: navigation / settings-flow / assistant-flow / page-smoke / step-button regression |
+| Production build | `npm run build` | ✅ build/ |
+
+> **e2e needs a browser installed on first run**: `npx playwright install chromium`
+> **Why e2e uses `workers: 1`?** See [CONTRIBUTING.md §e2e testing](./CONTRIBUTING.md)
+
+---
+
+## Verification
+
+```bash
+npm run verify     # vitest: verify $lib/kernel snapshot import path (CONSOLE_VERSION=0.2.0 + all exports available)
+npm run check      # svelte-check: 0 errors / 0 warnings
+npm run test:unit  # vitest: unit tests (assistant + backend + types + stores + governance …)
+npm run test       # playwright: e2e (navigation + settings-flow + assistant-flow + page-smoke + regression)
+npm run build      # adapter-static: output static files to build/
+```
+
+---
+
+## Tech Stack
+
+- SvelteKit 5 + Svelte 5 (runes mode) — aligned with the kernel
+- TypeScript (strict)
+- Vite + adapter-static
+- vitest (unit tests + import verification) + playwright (e2e)
+- kernel snapshot `src/lib/kernel/` (taken from evorule-console v0.2.0)
+
+---
+
+## Directory Structure
+
+```
+evorule-console-cloud/
+├── src/
+│   ├── routes/                # 17 routes (workbench / governance / audit / knowledge /
+│   │                          #   marketplace / users / roles / permissions / monitor /
+│   │                          #   publish-queue / version-history / export / login / help …)
+│   ├── lib/
+│   │   ├── backend/           # CloudHttpBackend (connected / offline dual mode)
+│   │   ├── assistant/         # CloudLlmAssistant + llm-fetch + prompts + types
+│   │   ├── config/            # net-config + llm-config + llm-presets (9 presets) + governance-config + nav-registry
+│   │   ├── data/              # demo datasets + templates + guided tasks
+│   │   ├── governance/        # governance backend + store (publish / approve / audit, connects to evorule-rule :18081)
+│   │   ├── stores/            # cross-view shared state (session / dataset / export / rule-library / settings …)
+│   │   ├── kernel/            # kernel source snapshot (from evorule-console v0.2.0)
+│   │   └── views/             # 25 view components
+│   ├── app.css                # design tokens (aligned with kernel, dark theme)
+│   └── verify.test.ts         # import verification (vitest)
+├── tests/                     # playwright e2e (5 suites)
+├── docs/                      # public docs (Diátaxis 4 types + ADR + scenario examples)
+├── package.json               # dependency declaration (kernel inlined, no npm kernel dependency)
+├── svelte.config.js           # adapter-static
+├── vite.config.ts             # port 5174
+└── README.md (this file)
+```
+
+---
+
+## License & Governance
+
+**AGPL-3.0-or-later** + commercial dual-license — see [LICENSE](./LICENSE) / [DUAL_LICENSE.md](./DUAL_LICENSE.md).
+
+| File | Description |
+| --- | --- |
+| [NOTICE.md](./NOTICE.md) | Notice (relationship with the evorule-console kernel) |
+| [CHANGELOG.md](./CHANGELOG.md) | Change log |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guide (core principles + prohibited items) |
+| [SECURITY.md](./SECURITY.md) | Security policy (incl. LLM apiKey security design) |
+| [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) | Release process |
+| [AUTHORS.md](./AUTHORS.md) | Authors |
+| [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Contributor covenant |
+| [TRADEMARK.md](./TRADEMARK.md) | Trademark policy |
+| [CLA-individual.md](./CLA-individual.md) | Individual Contributor License Agreement |
+| [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md) | Commercial license |
+| [FREE_COMMERCIAL_LICENSE.md](./FREE_COMMERCIAL_LICENSE.md) | Free commercial-exemption eligibility |
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+> This ecosystem uses **Gitee as the primary repo** and GitHub as a sync mirror — please submit Issues and PRs to [Gitee](https://gitee.com/evorule/evorule-console-cloud/issues).
+
+---
+
+Copyright (C) 2026 EvoRule Project. All rights reserved.
+<a id="chinese"></a>
+
+<div align="center">
+
+# evorule-console-cloud
+
+**evorule 规则引擎面板 · 联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM + 平台治理）
+
+[![version](https://img.shields.io/badge/version-0.4.1-blue)](./CHANGELOG.md)
+[![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
+[![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
+
+[English](#english) · [中文](#chinese)
+
+</div>
+
+---
 `evorule-console-cloud` 基于 evorule-console 内核快照（`src/lib/kernel/`，取自内核 v0.2.0）扩展：
 
 - **联网**：可连接远程 evorule-server（非仅本地 loopback）
