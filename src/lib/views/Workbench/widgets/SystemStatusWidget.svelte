@@ -74,6 +74,7 @@
 
   const SOURCE_LABELS: Record<string, string> = {
     native: "原生",
+    plugin: "插件",
     registry: "注册",
   };
 </script>

@@ -521,11 +521,26 @@ describe('CloudHttpBackend 服务清单(⑨)', () => {
     },
     {
       name: 'finance_config_set',
-      source: 'native',
-      version: '1.0.0',
-      description: '财务配置键写入（需人审门确认后落库，走审计链）',
+      source: 'plugin',
+      version: '0.1.0',
+      description: '财务配置键写入（只创建提案不落库，需人审门确认后生效，走审计链）',
       plugin: 'finance-config',
       sensitive: true,
+    },
+    {
+      name: 'finance_config_get',
+      source: 'plugin',
+      version: '0.1.0',
+      description: '财务配置键读取',
+      plugin: 'finance-config',
+      sensitive: false,
+      parameters: {
+        type: 'object',
+        properties: {
+          key: { type: 'string', description: '配置键，例: config:limits.travel.max_amount' },
+        },
+        required: ['key'],
+      },
     },
   ];
 
@@ -545,15 +560,19 @@ describe('CloudHttpBackend 服务清单(⑨)', () => {
 
     const list = await backend.listServices();
 
-    expect(list).toHaveLength(3);
+    expect(list).toHaveLength(4);
     expect(list[0].source).toBe('native');
     expect(list[1].name).toBe('payroll_svc');
     expect(list[1].description).toBe('payroll service');
     // 插件归属与敏感标记透传(可选字段,server 侧经 serde skip 缺省时字段缺位)
     expect(list[0].plugin).toBeUndefined();
     expect(list[0].sensitive).toBeUndefined();
+    expect(list[2].source).toBe('plugin');
     expect(list[2].plugin).toBe('finance-config');
     expect(list[2].sensitive).toBe(true);
+    // 参数契约透传(外部插件包 plugin.json 声明,消费方据此生成带参工具 schema)
+    expect(list[3].parameters).toEqual(SERVICES[3].parameters);
+    expect(list[0].parameters).toBeUndefined();
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('http://127.0.0.1:18080/api/services');
     expect((init.headers as Record<string, string>).Authorization).toBe(

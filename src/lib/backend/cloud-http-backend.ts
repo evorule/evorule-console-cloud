@@ -171,16 +171,18 @@ export interface BundleImportsResponse {
 export interface BoundServiceInfo {
 	/** 服务名 */
 	name: string;
-	/** `native`(进程内插件原生服务)| `registry`(service_registry.json 显式绑定) */
+	/** `native`(进程内插件原生服务)| `plugin`(外部插件包 plugin.json 声明)| `registry`(service_registry.json 显式绑定) */
 	source: string;
 	/** 服务版本(native 固定 1.0.0;registry 取配置,可能缺省) */
 	version?: string;
 	/** 服务描述(原生取声明表;registry 取配置,可能缺省) */
 	description?: string;
-	/** 归属插件 id(仅 native 来源;registry 服务无插件归属) */
+	/** 归属插件 id(native 取声明表;plugin 取 plugin.json;registry 服务无插件归属) */
 	plugin?: string;
 	/** 敏感服务:REST 直调被 403 拒绝,必须经会话 call_service 走审计与审批链 */
 	sensitive?: boolean;
+	/** 参数契约(OpenAI function parameters 子集;外部插件包 plugin.json 声明,消费方据此生成带参工具 schema;缺省=服务未声明参数) */
+	parameters?: Record<string, unknown>;
 }
 
 export class CloudHttpBackend implements ExecutionBackend {
