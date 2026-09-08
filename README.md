@@ -325,6 +325,8 @@ evorule-console-cloud/
 
 **AGPL-3.0-or-later** + commercial dual-license — see [LICENSE](./LICENSE) / [DUAL_LICENSE.md](./DUAL_LICENSE.md).
 
+Commercial license inquiries: evorulelab@gmail.com
+
 | File | Description |
 | --- | --- |
 | [NOTICE.md](./NOTICE.md) | Notice (relationship with the evorule-console kernel) |
@@ -682,6 +684,8 @@ evorule-console-cloud/
 ## 许可与治理
 
 **AGPL-3.0-or-later** + 商业双许可 — 详见 [LICENSE](./LICENSE) / [DUAL_LICENSE.md](./DUAL_LICENSE.md)。
+
+商业许可咨询：evorulelab@gmail.com
 
 | 文件 | 说明 |
 | --- | --- |
