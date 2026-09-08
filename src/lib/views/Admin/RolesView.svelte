@@ -42,6 +42,7 @@
     manage_users: "用户管理",
     manage_roles: "角色管理",
     view_users: "查看用户列表",
+    manage_apps: "应用凭据管理",
   };
 
   /** 权限点分组(编辑器矩阵按组渲染) */
@@ -60,7 +61,7 @@
     },
     {
       label: "平台管理",
-      actions: ["manage_users", "manage_roles"],
+      actions: ["manage_users", "manage_roles", "manage_apps"],
     },
   ];
 

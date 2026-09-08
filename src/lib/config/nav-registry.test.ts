@@ -16,13 +16,13 @@ function ctx(loggedIn: boolean, perms: PermissionAction[]): NavVisibilityContext
 }
 
 // 三类典型身份(与浏览器联测账号对齐)
-const adminCtx = () => ctx(true, ['view_users', 'manage_users', 'manage_roles', 'view_publish_queue', 'view_monitor']);
+const adminCtx = () => ctx(true, ['view_users', 'manage_users', 'manage_roles', 'manage_apps', 'view_publish_queue', 'view_monitor']);
 const wangCtx = () => ctx(true, ['view_users']);
 const demoExecCtx = () => ctx(true, ['view_publish_queue', 'view_monitor']);
 const anonCtx = () => ctx(false, []);
 
 describe('visibleNavItems', () => {
-	it('admin(全权):全部 11 项可见', () => {
+	it('admin(全权):全部项可见', () => {
 		expect(visibleNavItems(NAV_REGISTRY, adminCtx())).toHaveLength(NAV_REGISTRY.length);
 	});
 
@@ -31,17 +31,20 @@ describe('visibleNavItems', () => {
 		expect(ids).not.toContain('publish-queue');
 		expect(ids).not.toContain('plugin-approvals');
 		expect(ids).not.toContain('roles');
+		// 应用管理:manage_apps 单点门控(58 号专项)
+		expect(ids).not.toContain('apps');
 		// 用户管理:view_users 命中(ANY 语义)
 		expect(ids).toContain('users');
 	});
 
-	it('demo exec(有 view_publish_queue 无 view_users):见发布队列/插件审批,不见用户/角色管理', () => {
+	it('demo exec(有 view_publish_queue 无 view_users):见发布队列/插件审批,不见用户/角色/应用管理', () => {
 		const ids = visibleNavItems(NAV_REGISTRY, demoExecCtx()).map((i) => i.id);
 		expect(ids).toContain('publish-queue');
 		// 插件审批与发布审批同范式,复用同一权限点对
 		expect(ids).toContain('plugin-approvals');
 		expect(ids).not.toContain('users');
 		expect(ids).not.toContain('roles');
+		expect(ids).not.toContain('apps');
 	});
 
 	it('未登录:登录限定项全部隐藏,公开项保留', () => {
@@ -60,11 +63,11 @@ describe('visibleNavItems', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('三组归位:home 2 / discover 3 / governance 9(discover 不变,governance 增插件审批)', () => {
+	it('三组归位:home 2 / discover 3 / governance 10(discover 不变,governance 增插件审批/应用管理)', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor']);
 		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'knowledge', 'help']);
-		expect(g.governance).toHaveLength(9);
+		expect(g.governance).toHaveLength(10);
 	});
 
 	it('跳单卡子集(jump:true)为 5 项且顺序稳定:marketplace/export/publish-queue/plugin-approvals/governance', () => {
