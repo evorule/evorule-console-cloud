@@ -795,4 +795,12 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
       this.delete()
     );
   }
+
+  /** POST /api/workspaces/{id}/members/join — 自助加入(身份服务端注入,viewer,幂等) */
+  async joinWorkspace(workspaceId: string): Promise<{ joined: boolean }> {
+    return this.fetchJson<{ joined: boolean }>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}/members/join`,
+      { method: 'POST', headers: this.headers() }
+    );
+  }
 }

@@ -350,6 +350,9 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 	addMember(workspaceId: string, req: AddMemberRequest): Promise<WorkspaceMemberRecord> {
 		return this.backend.addMember(workspaceId, req);
 	}
+	joinWorkspace(workspaceId: string): Promise<{ joined: boolean }> {
+		return this.backend.joinWorkspace(workspaceId);
+	}
 	removeMember(workspaceId: string, userId: string): Promise<void> {
 		return this.backend.removeMember(workspaceId, userId);
 	}
