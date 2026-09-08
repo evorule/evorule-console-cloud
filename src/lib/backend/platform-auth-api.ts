@@ -414,12 +414,22 @@ export interface PlatformAppView {
 	status: string;
 	description: string;
 	createdAtMs: number;
+	/** 速率限制(次/秒);null=不限 */
+	rateLimitPerSec: number | null;
+	/** 每日总量配额(UTC 日窗口);null=不限 */
+	dailyQuota: number | null;
+	/** 今日已用量(server 内存计数,UTC 日重置) */
+	todayUsage: number;
 }
 
 export interface IssueAppInput {
 	/** 应用 id(字母/数字/_-.,1-64 位;全局唯一,含已吊销——身份不复用) */
 	appId: string;
 	description?: string;
+	/** 速率限制(次/秒);省略/null=不限 */
+	rateLimitPerSec?: number | null;
+	/** 每日总量配额;省略/null=不限 */
+	dailyQuota?: number | null;
 }
 
 /** 签发响应(key 明文仅此一次返回,遗失只能吊销后换新 app_id 重签) */
@@ -442,6 +452,9 @@ export async function listApps(
 			status: string;
 			description: string;
 			created_at_ms: number;
+			rate_limit_per_sec: number | null;
+			daily_quota: number | null;
+			today_usage: number;
 		}[];
 	}>(baseUrl, '/api/platform/apps', { token });
 	return {
@@ -451,6 +464,9 @@ export async function listApps(
 			status: a.status,
 			description: a.description,
 			createdAtMs: a.created_at_ms,
+			rateLimitPerSec: a.rate_limit_per_sec,
+			dailyQuota: a.daily_quota,
+			todayUsage: a.today_usage,
 		})),
 	};
 }
@@ -473,9 +489,39 @@ export async function issueApp(
 		body: JSON.stringify({
 			app_id: input.appId,
 			description: input.description ?? '',
+			rate_limit_per_sec: input.rateLimitPerSec ?? null,
+			daily_quota: input.dailyQuota ?? null,
 		}),
 	});
 	return { appId: v.app_id, key: v.key, createdAtMs: v.created_at_ms };
+}
+
+/** 配额更新输入(全量覆盖语义:两字段均须给定,null=不限;已用量保留不清零) */
+export interface UpdateAppQuotaInput {
+	rateLimitPerSec: number | null;
+	dailyQuota: number | null;
+}
+
+/** `POST /api/platform/apps/{id}/quota` — 更新应用配额(manage_apps;即时生效) */
+export async function updateAppQuota(
+	baseUrl: string,
+	token: string,
+	appId: string,
+	input: UpdateAppQuotaInput
+): Promise<void> {
+	await request<{ success: boolean }>(
+		baseUrl,
+		`/api/platform/apps/${encodeURIComponent(appId)}/quota`,
+		{
+			method: 'POST',
+			token,
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				rate_limit_per_sec: input.rateLimitPerSec,
+				daily_quota: input.dailyQuota,
+			}),
+		}
+	);
 }
 
 /** `POST /api/platform/apps/{id}/revoke` — 吊销应用凭据(manage_apps;即时生效,幂等) */

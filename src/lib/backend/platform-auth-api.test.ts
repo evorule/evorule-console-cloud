@@ -3,7 +3,8 @@
 //
 // platform-auth-api 单元测试(vitest,node 环境,stub 全局 fetch)。
 // 覆盖:字段映射(snake_case → camelCase)/ 错误体解析 / 网络错误 status=0 /
-//       Authorization 头注入 / needs_bootstrap 映射。
+//       Authorization 头注入 / needs_bootstrap 映射 / 应用凭据与配额契约
+//       (58 W3 签发吊销;59 W2 配额透出与全量覆盖更新)。
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
@@ -13,6 +14,10 @@ import {
 	platformLogout,
 	fetchMe,
 	platformChangePassword,
+	listApps,
+	issueApp,
+	updateAppQuota,
+	revokeApp,
 	PlatformAuthError,
 } from './platform-auth-api';
 
@@ -158,5 +163,101 @@ describe('platform-auth-api', () => {
 			old_password: 'old-pass-1',
 			new_password: 'new-pass-1',
 		});
+	});
+
+	// --- 应用凭据与配额(58 W3 / 59 W2) ---
+
+	it('listApps:配额字段透出映射(snake_case → camelCase,null=不限)', async () => {
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse(200, {
+				success: true,
+				apps: [
+					{
+						app_id: 'evo-agent',
+						key_hash: 'blake3:aa',
+						status: 'ACTIVE',
+						description: '外部应用',
+						created_at_ms: 1759999999999,
+						rate_limit_per_sec: 5,
+						daily_quota: 1000,
+						today_usage: 42,
+					},
+					{
+						app_id: 'legacy',
+						key_hash: 'blake3:bb',
+						status: 'REVOKED',
+						description: '',
+						created_at_ms: 1759999999998,
+						rate_limit_per_sec: null,
+						daily_quota: null,
+						today_usage: 0,
+					},
+				],
+			})
+		);
+		const r = await listApps(BASE, 'tok');
+		expect(fetchMock.mock.calls[0][0]).toBe('http://127.0.0.1:18080/api/platform/apps');
+		expect(r.apps).toHaveLength(2);
+		expect(r.apps[0].rateLimitPerSec).toBe(5);
+		expect(r.apps[0].dailyQuota).toBe(1000);
+		expect(r.apps[0].todayUsage).toBe(42);
+		// null=不限如实透传(不默认 0/不省略)
+		expect(r.apps[1].rateLimitPerSec).toBeNull();
+		expect(r.apps[1].dailyQuota).toBeNull();
+	});
+
+	it('issueApp:签发请求体携带配额(缺省=null 透传)', async () => {
+		fetchMock.mockResolvedValue(
+			jsonResponse(201, {
+				success: true,
+				app_id: 'evo-agent',
+				key: 'evorule-key-plain',
+				created_at_ms: 1759999999999,
+			})
+		);
+		// 带配额签发
+		await issueApp(BASE, 'tok', {
+			appId: 'evo-agent',
+			description: '外部应用',
+			rateLimitPerSec: 5,
+			dailyQuota: 1000,
+		});
+		expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+			app_id: 'evo-agent',
+			description: '外部应用',
+			rate_limit_per_sec: 5,
+			daily_quota: 1000,
+		});
+		// 缺省签发(不限) → null(非 undefined——JSON 序列化后 server 侧 serde default 语义等价)
+		await issueApp(BASE, 'tok', { appId: 'plain-app' });
+		expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string)).toEqual({
+			app_id: 'plain-app',
+			description: '',
+			rate_limit_per_sec: null,
+			daily_quota: null,
+		});
+	});
+
+	it('updateAppQuota:POST {id}/quota,全量覆盖语义 body 为 snake_case', async () => {
+		fetchMock.mockResolvedValue(jsonResponse(200, { success: true }));
+		await updateAppQuota(BASE, 'tok', 'evo-agent', {
+			rateLimitPerSec: 10,
+			dailyQuota: null,
+		});
+		const [url, init] = fetchMock.mock.calls[0];
+		expect(url).toBe('http://127.0.0.1:18080/api/platform/apps/evo-agent/quota');
+		expect((init as RequestInit).method).toBe('POST');
+		expect(JSON.parse((init as RequestInit).body as string)).toEqual({
+			rate_limit_per_sec: 10,
+			daily_quota: null,
+		});
+	});
+
+	it('revokeApp:POST {id}/revoke,无请求体', async () => {
+		fetchMock.mockResolvedValue(jsonResponse(200, { success: true }));
+		await revokeApp(BASE, 'tok', 'legacy-app');
+		const [url, init] = fetchMock.mock.calls[0];
+		expect(url).toBe('http://127.0.0.1:18080/api/platform/apps/legacy-app/revoke');
+		expect((init as RequestInit).method).toBe('POST');
 	});
 });

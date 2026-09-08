@@ -1,13 +1,15 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:平台应用凭据管理页(58 号专项 W3)
+  职责:平台应用凭据管理页(58 号专项 W3;59 号专项 W2 补配额管理)
     - 应用列表(server GET /api/platform/apps,manage_apps 可读)
-    - 签发应用凭据 / 吊销(manage_apps;server 端二次校验)
+    - 签发应用凭据 / 吊销 / 配额调整(manage_apps;server 端二次校验)
+    - 配额列(限速/今日用量):server 下发 null=不限;用量达日配额标红
   设计:
     - 数据唯一来源是 evorule-server;demo 登录无服务端 → 页面不可达(路由守卫拦截)
     - key 明文仅签发响应返回一次(遗失只能吊销后换新 app_id 重签,身份不复用),
       前端在签发成功弹窗一次性展示 + 复制,不落任何持久状态
+    - 配额更新为全量覆盖语义(两字段均下发,null=不限),已用量保留不清零
     - 错误如实提示(403 权限不足 / 409 冲突 / 网络不可达),不静默降级
 -->
 
@@ -17,6 +19,7 @@
     listApps,
     issueApp,
     revokeApp,
+    updateAppQuota,
     PlatformAuthError,
     type PlatformAppView,
   } from "$lib/backend/platform-auth-api";
@@ -35,6 +38,8 @@
   // === 弹窗状态 ===
   let showCreate = $state(false);
   let revokeTarget = $state<PlatformAppView | null>(null);
+  /** 配额调整目标(ACTIVE 行;null=弹窗关闭) */
+  let quotaTarget = $state<PlatformAppView | null>(null);
   /** 签发成功结果(key 明文仅此一次展示;关闭即不可再取) */
   let issuedKey = $state<{ appId: string; key: string } | null>(null);
   let keyCopied = $state(false);
@@ -42,6 +47,34 @@
   // === 签发表单 ===
   let cAppId = $state("");
   let cDescription = $state("");
+  // 配额输入:空串=不限;数字字符串=限定值
+  let cRate = $state("");
+  let cDaily = $state("");
+
+  // === 配额调整弹窗表单(预填当前值) ===
+  let qRate = $state("");
+  let qDaily = $state("");
+
+  /**
+   * 配额输入解析:空串→null(不限);其余须为 >=1 整数。
+   * Number.NaN 作非法标记(调用方提示,不提交)。
+   */
+  function parseQuotaInput(s: string): number | null {
+    const t = s.trim();
+    if (t === "") return null;
+    if (!/^\d+$/.test(t)) return Number.NaN;
+    const n = Number(t);
+    if (!Number.isSafeInteger(n) || n < 1) return Number.NaN;
+    return n;
+  }
+
+  function quotaLabel(a: PlatformAppView): string {
+    return a.rateLimitPerSec == null ? "不限" : `${a.rateLimitPerSec}/s`;
+  }
+
+  function usageLabel(a: PlatformAppView): string {
+    return a.dailyQuota == null ? String(a.todayUsage) : `${a.todayUsage} / ${a.dailyQuota}`;
+  }
 
   function statusLabel(s: string): string {
     return s === "ACTIVE" ? "启用" : s === "REVOKED" ? "已吊销" : s;
@@ -81,21 +114,64 @@
 
   async function handleIssue(): Promise<void> {
     if (!cAppId.trim()) return;
+    const rate = parseQuotaInput(cRate);
+    const daily = parseQuotaInput(cDaily);
+    if (Number.isNaN(rate) || Number.isNaN(daily)) {
+      toastError("配额须为正整数,留空表示不限", "应用管理");
+      return;
+    }
     busy = true;
     try {
       const r = await issueApp($netConfig.remoteBaseUrl, $netConfig.authToken, {
         appId: cAppId.trim(),
         description: cDescription.trim(),
+        rateLimitPerSec: rate,
+        dailyQuota: daily,
       });
       toastSuccess(`应用凭据 ${r.appId} 已签发`, "应用管理");
       showCreate = false;
       cAppId = "";
       cDescription = "";
+      cRate = "";
+      cDaily = "";
       keyCopied = false;
       issuedKey = { appId: r.appId, key: r.key };
       await reload();
     } catch (e) {
       toastError(authErrMsg(e, "签发应用凭据失败"), "应用管理");
+    } finally {
+      busy = false;
+    }
+  }
+
+  /** 打开配额调整弹窗(预填当前值;已吊销应用无意义,入口仅在 ACTIVE 行) */
+  function openQuota(a: PlatformAppView): void {
+    quotaTarget = a;
+    qRate = a.rateLimitPerSec == null ? "" : String(a.rateLimitPerSec);
+    qDaily = a.dailyQuota == null ? "" : String(a.dailyQuota);
+  }
+
+  async function handleQuotaConfirm(): Promise<void> {
+    if (!quotaTarget) return;
+    const rate = parseQuotaInput(qRate);
+    const daily = parseQuotaInput(qDaily);
+    if (Number.isNaN(rate) || Number.isNaN(daily)) {
+      toastError("配额须为正整数,留空表示不限", "应用管理");
+      return;
+    }
+    const id = quotaTarget.appId;
+    busy = true;
+    try {
+      // 全量覆盖语义:两字段均下发,null=不限;已用量保留(调整配额≠重置用量)
+      await updateAppQuota($netConfig.remoteBaseUrl, $netConfig.authToken, id, {
+        rateLimitPerSec: rate,
+        dailyQuota: daily,
+      });
+      toastSuccess(`应用 ${id} 配额已更新(即时生效)`, "应用管理");
+      quotaTarget = null;
+      await reload();
+    } catch (e) {
+      toastError(authErrMsg(e, "更新应用配额失败"), "应用管理");
     } finally {
       busy = false;
     }
@@ -153,6 +229,8 @@
             <th>应用 ID</th>
             <th>描述</th>
             <th>状态</th>
+            <th>限速</th>
+            <th>今日用量</th>
             <th>签发时间</th>
             <th>操作</th>
           </tr>
@@ -167,10 +245,19 @@
                   {statusLabel(a.status)}
                 </span>
               </td>
+              <td class="dim">{quotaLabel(a)}</td>
+              <td>
+                <span class="usage" class:over={a.dailyQuota != null && a.todayUsage >= a.dailyQuota}>
+                  {usageLabel(a)}
+                </span>
+              </td>
               <td class="dim">{fmtDate(a.createdAtMs)}</td>
               <td class="row-actions">
                 {#if canManage}
                   {#if a.status === 'ACTIVE'}
+                    <button class="btn btn-sm" onclick={() => openQuota(a)} disabled={busy}>
+                      配额
+                    </button>
                     <button class="btn btn-sm btn-danger" onclick={() => (revokeTarget = a)} disabled={busy}>
                       吊销
                     </button>
@@ -185,7 +272,7 @@
           {/each}
           {#if apps.length === 0}
             <tr>
-              <td colspan="5" class="empty-row">尚无应用凭据,点击右上角签发。</td>
+              <td colspan="7" class="empty-row">尚无应用凭据,点击右上角签发。</td>
             </tr>
           {/if}
         </tbody>
@@ -211,6 +298,16 @@
         <span>描述(用途/负责人等,便于审计回溯)</span>
         <input type="text" bind:value={cDescription} placeholder="如 财务助手接入" />
       </label>
+      <div class="quota-fields">
+        <label class="field">
+          <span>限速(次/秒,留空=不限)</span>
+          <input type="text" inputmode="numeric" bind:value={cRate} placeholder="如 10" />
+        </label>
+        <label class="field">
+          <span>日配额(次/天,UTC 日窗口,留空=不限)</span>
+          <input type="text" inputmode="numeric" bind:value={cDaily} placeholder="如 10000" />
+        </label>
+      </div>
       <div class="modal-actions">
         <button class="btn" onclick={() => (showCreate = false)} disabled={busy}>取消</button>
         <button class="btn btn-primary" onclick={handleIssue} disabled={busy || !cAppId.trim()}>
@@ -252,6 +349,34 @@
         <button class="btn" onclick={() => (revokeTarget = null)} disabled={busy}>取消</button>
         <button class="btn btn-danger" onclick={handleRevokeConfirm} disabled={busy}>
           {busy ? '吊销中…' : '确认吊销'}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- 配额调整弹窗(全量覆盖语义:null=不限;已用量保留不清零) -->
+{#if quotaTarget}
+  <div class="modal-mask" role="dialog" aria-modal="true" aria-label="调整应用配额">
+    <div class="modal">
+      <h3>调整配额:{quotaTarget.appId}</h3>
+      <p class="hint-note">
+        今日已用量 {usageLabel(quotaTarget)};调整配额即时生效,已用量保留不清零。留空表示不限。
+      </p>
+      <div class="quota-fields">
+        <label class="field">
+          <span>限速(次/秒)</span>
+          <input type="text" inputmode="numeric" bind:value={qRate} placeholder="留空=不限" />
+        </label>
+        <label class="field">
+          <span>日配额(次/天)</span>
+          <input type="text" inputmode="numeric" bind:value={qDaily} placeholder="留空=不限" />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick={() => (quotaTarget = null)} disabled={busy}>取消</button>
+        <button class="btn btn-primary" onclick={handleQuotaConfirm} disabled={busy}>
+          {busy ? '更新中…' : '更新配额'}
         </button>
       </div>
     </div>
@@ -455,5 +580,26 @@
     gap: 8px;
     justify-content: flex-end;
     margin-top: 8px;
+  }
+  .quota-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .usage {
+    font-family: monospace;
+    font-size: 12px;
+  }
+  .usage.over {
+    color: var(--danger);
+    font-weight: 600;
+  }
+  .hint-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 0 0 12px;
   }
 </style>
