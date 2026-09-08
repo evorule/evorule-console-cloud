@@ -480,4 +480,9 @@ export class MockWorkspaceBackend implements WorkspaceBackend {
 	async removeMember(_workspaceId: string, _userId: string): Promise<void> {
 		unsupported('removeMember');
 	}
+
+	/** 自助加入 — 写操作,离线不支持 */
+	async joinWorkspace(_workspaceId: string): Promise<{ joined: boolean }> {
+		unsupported('joinWorkspace');
+	}
 }

@@ -732,6 +732,11 @@ export interface WorkspaceBackend {
   getPublishQueueItem(queueId: number): Promise<PublishQueueItem>;
   /** POST /api/workspaces/{id}/members(body {user_id, role}) — 添加成员 → 201 WorkspaceMemberRecord */
   addMember(workspaceId: string, req: AddMemberRequest): Promise<WorkspaceMemberRecord>;
+  /**
+   * 自助加入(幂等):当前登录用户以 viewer 加入工作空间。
+   * 身份由 server 端认证中间件注入(不信任前端自报);已在名单时 joined=false 收敛。
+   */
+  joinWorkspace(workspaceId: string): Promise<{ joined: boolean }>;
   /** DELETE /api/workspaces/{id}/members/{user_id} — 移除成员 → 204 */
   removeMember(workspaceId: string, userId: string): Promise<void>;
 }

@@ -839,21 +839,24 @@
 
   /**
    * ② 一键加入并重试(显式治理动作,成员落库留痕):
-   * ensure 成功后自动重拉沙盒列表。
+   * 走 server 自助加入端点(身份服务端注入,viewer 最小权限,幂等),成功后自动重拉沙盒列表。
    */
   async function joinWorkspaceAndRetry(): Promise<void> {
     const wb = workspaceBackend;
     const ws = get(currentWorkspace);
-    const actor = platformActor();
-    if (!wb || !ws || !actor) {
-      toastError('执行域通道或登录态不可用,无法加入工作空间(请确认 evorule-server 已启动且已登录主系统)', '沙盒测试');
+    if (!wb || !ws) {
+      toastError('执行域通道不可用,无法加入工作空间(请确认 evorule-server 已启动)', '沙盒测试');
+      return;
+    }
+    if (!get(currentUser)) {
+      toastError('加入工作空间需要平台登录身份(请先登录主系统)', '沙盒测试');
       return;
     }
     joiningWs = true;
     try {
-      const r = await ensureWorkspaceMembership(wb, ws.id, actor);
+      const r = await wb.joinWorkspace(ws.id);
       toastSuccess(
-        r.joined ? `已加入工作空间(角色 ${r.role}),重新拉取沙盒列表…` : '已是工作空间成员,重新拉取沙盒列表…',
+        r.joined ? '已加入工作空间(角色 viewer),重新拉取沙盒列表…' : '已是工作空间成员,重新拉取沙盒列表…',
         '沙盒测试'
       );
       joinOffered = false;
