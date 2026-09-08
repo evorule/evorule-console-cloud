@@ -66,7 +66,7 @@ export const BUILTIN_RULES: BuiltinRuleSeed[] = [
           {
             type: 'branch',
             params: {
-              domain: { type: 'all', domains: [] },
+              domain: { type: 'all', inner: [] },
               on_true: []
             }
           }
@@ -118,7 +118,7 @@ export const BUILTIN_RULES: BuiltinRuleSeed[] = [
           {
             type: 'branch',
             params: {
-              domain: { type: 'all', domains: [] },
+              domain: { type: 'all', inner: [] },
               on_true: []
             }
           }
@@ -168,7 +168,7 @@ export const BUILTIN_RULES: BuiltinRuleSeed[] = [
           {
             type: 'branch',
             params: {
-              domain: { type: 'all', domains: [] },
+              domain: { type: 'all', inner: [] },
               on_true: []
             }
           }

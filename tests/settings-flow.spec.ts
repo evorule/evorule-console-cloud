@@ -128,15 +128,20 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		const urlInput = page.locator('#remote-url');
 		await urlInput.fill('https://my-test-server.example.com');
 		await urlInput.blur(); // 失焦保存
-		// 刷新(用 networkidle:等待 SPA 模块图加载完成。
-		// 注意 data-theme 是 app.html 里的静态属性,不能作为 hydration 完成信号;
-		// 否则刷新后首次点击会被吞,设置面板打不开。)
-		await page.reload({ waitUntil: 'networkidle' });
-		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, {
-			timeout: 10_000
-		});
+		// 刷新:裸 reload(load 事件)。联网模式存在常驻健康检查轮询,
+		// networkidle 永不满足(30s 超时假失败);data-theme 是 app.html 静态属性,
+		// 不能作为 hydration 信号。hydration 完成以"设置面板可打开"为准(toPass 重试
+		// 点击,hydration 中被吞的点击自动补偿)。
+		await page.reload();
+		const settingsBtn = page.locator('.sidebar-item', { hasText: '设置' });
+		await expect(settingsBtn).toBeVisible();
+		await expect(async () => {
+			await settingsBtn.click();
+			await expect(page.locator('.mode-btn', { hasText: '联网模式' })).toBeVisible({
+				timeout: 2_000
+			});
+		}).toPass({ timeout: 15_000 });
 		// 重新打开设置面板,验证状态
-		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await expect(page.locator('.mode-btn', { hasText: '联网模式' })).toHaveClass(/active/);
 		// 注:顶部联网切换按钮也应反映联网模式(☁️)
 		await expect(page.getByRole('button', { name: /切换联网/ })).toContainText('☁️');
