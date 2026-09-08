@@ -432,7 +432,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 - **等保 2.0 三级门禁**：AI Agent 工具调用前合规检查（§8.1.4.1.d MFA / §8.1.4.7.b 加密）
 - **合规报告导出**：6 种内容 × 4 种格式（JSON/CSV/XML/PDF）；PDF 优先服务端渲染（`POST /api/export/pdf`），server 不支持时自动降级浏览器打印
 - **滚动 session 热更新**：规则集发布零停机，版本单调递增
-- **平台认证与多用户治理**：登录 / 个人中心 / 用户管理 / 角色权限矩阵 / `can()` 权限判定后端化
+- **平台认证与多用户治理**：登录 / 个人中心 / 用户管理 / 角色权限矩阵 / 应用凭据管理 / `can()` 权限判定后端化
 - **治理中心**：直连 evorule-rule 资产库（:18081），条目 5 态生命周期（Draft→Candidate→Active→Published→Rejected）+ 版本链 + 知识条目在线编辑
 - **模板市场**：模板上传 / 在线编辑 / 下载
 - **协作审批工作流**：三级权限（admin/lead/auditor），规则发布需审批
