@@ -179,6 +179,15 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     permissions: ["manage_roles"],
   },
   {
+    id: "apps",
+    label: "应用管理",
+    icon: "🔑",
+    path: "/apps",
+    group: "governance",
+    title: "应用管理 — 外部应用 API Key 签发/吊销(manage_apps)",
+    permissions: ["manage_apps"],
+  },
+  {
     id: "permissions",
     label: "权限策略",
     icon: "🔐",

@@ -114,6 +114,12 @@ export const load: LayoutLoad = ({ url }) => {
 		if (!session.loggedIn) throw redirect(307, '/login');
 	}
 
+	// /apps 应用凭据管理(58 号专项 W3):同 /users 范式 — 布局层拦未登录,
+	// 权限不足交页面级守卫(onMount toast + goto);需 manage_apps
+	if (url.pathname === '/apps') {
+		if (!session.loggedIn) throw redirect(307, '/login');
+	}
+
 	// /login / /demo 不守卫
 	// /(首页)不守卫:HomeRouter 自动决策
 

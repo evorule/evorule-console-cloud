@@ -401,3 +401,92 @@ export async function deleteRole(
 		{ method: 'DELETE', token }
 	);
 }
+
+// ---------------------------------------------------------------------------
+// 应用级凭据管理(58 号 W3;需 manage_apps 权限)
+// ---------------------------------------------------------------------------
+
+/** 应用凭据视图(server /api/platform/apps 下发字段;key_hash 为 blake3: 前缀哈希,明文不落库) */
+export interface PlatformAppView {
+	appId: string;
+	keyHash: string;
+	/** ACTIVE | REVOKED */
+	status: string;
+	description: string;
+	createdAtMs: number;
+}
+
+export interface IssueAppInput {
+	/** 应用 id(字母/数字/_-.,1-64 位;全局唯一,含已吊销——身份不复用) */
+	appId: string;
+	description?: string;
+}
+
+/** 签发响应(key 明文仅此一次返回,遗失只能吊销后换新 app_id 重签) */
+export interface IssueAppResult {
+	appId: string;
+	key: string;
+	createdAtMs: number;
+}
+
+/** `GET /api/platform/apps` — 应用凭据列表(manage_apps) */
+export async function listApps(
+	baseUrl: string,
+	token: string
+): Promise<{ apps: PlatformAppView[] }> {
+	const v = await request<{
+		success: boolean;
+		apps: {
+			app_id: string;
+			key_hash: string;
+			status: string;
+			description: string;
+			created_at_ms: number;
+		}[];
+	}>(baseUrl, '/api/platform/apps', { token });
+	return {
+		apps: (v.apps ?? []).map((a) => ({
+			appId: a.app_id,
+			keyHash: a.key_hash,
+			status: a.status,
+			description: a.description,
+			createdAtMs: a.created_at_ms,
+		})),
+	};
+}
+
+/** `POST /api/platform/apps` — 签发应用凭据(manage_apps;409=app_id 已存在) */
+export async function issueApp(
+	baseUrl: string,
+	token: string,
+	input: IssueAppInput
+): Promise<IssueAppResult> {
+	const v = await request<{
+		success: boolean;
+		app_id: string;
+		key: string;
+		created_at_ms: number;
+	}>(baseUrl, '/api/platform/apps', {
+		method: 'POST',
+		token,
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			app_id: input.appId,
+			description: input.description ?? '',
+		}),
+	});
+	return { appId: v.app_id, key: v.key, createdAtMs: v.created_at_ms };
+}
+
+/** `POST /api/platform/apps/{id}/revoke` — 吊销应用凭据(manage_apps;即时生效,幂等) */
+export async function revokeApp(
+	baseUrl: string,
+	token: string,
+	appId: string
+): Promise<void> {
+	await request<{ success: boolean }>(
+		baseUrl,
+		`/api/platform/apps/${encodeURIComponent(appId)}/revoke`,
+		{ method: 'POST', token }
+	);
+}
