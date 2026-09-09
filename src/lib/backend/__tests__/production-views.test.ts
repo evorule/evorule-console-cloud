@@ -42,7 +42,7 @@ describe('roleToBackend 角色映射', () => {
     expect(roleToBackend('auditor')).toBe('doctor');
     expect(roleToBackend('unknown')).toBe('doctor');
   });
-  test('平台角色:administrator/approver → admin,rule_engineer → department_head,viewer → doctor(UV-151)', () => {
+  test('平台角色:administrator/approver → admin,rule_engineer → department_head,viewer → doctor', () => {
     expect(roleToBackend('administrator')).toBe('admin');
     expect(roleToBackend('approver')).toBe('admin');
     expect(roleToBackend('rule_engineer')).toBe('department_head');

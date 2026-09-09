@@ -185,7 +185,7 @@ export interface PublishQueueItem {
   published_at: string | null;
   status: PublishStatus;
   description: string | null;
-  /** 队列项类型 (normal=普通发布 / meta_promotion=元规则晋升; UV-145 W3) */
+  /** 队列项类型 (normal=普通发布 / meta_promotion=元规则晋升) */
   kind: 'normal' | 'meta_promotion';
   /** 转写后的元规则内容 (JSON 字符串, 仅 meta_promotion 时非空) */
   meta_rule_content: string | null;
@@ -325,7 +325,7 @@ export interface SubmitPublishRequest {
   rule_version_ids: string[];
   test_report_sandbox_id?: number;
   description?: string;
-  /** 队列项类型 (缺省 normal; UV-145 W3 元规则晋升通道) */
+  /** 队列项类型 (缺省 normal; meta_promotion 元规则晋升通道) */
   kind?: 'normal' | 'meta_promotion';
   /** 转写后的元规则内容 (JSON 字符串; 仅 kind=meta_promotion 时必填) */
   meta_rule_content?: string;

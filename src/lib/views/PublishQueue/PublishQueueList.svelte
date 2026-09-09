@@ -521,7 +521,7 @@
     color: var(--text-secondary, #94a3b8);
     margin-left: auto;
   }
-  /* 元规则晋升队列项徽标(UV-148) */
+  /* 元规则晋升队列项徽标 */
   .item-kind {
     padding: 2px 10px;
     border-radius: 12px;
