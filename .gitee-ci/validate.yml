@@ -1,0 +1,25 @@
+# Gitee Go pipeline for evorule-console-cloud
+# 与本仓 .github/workflows/ci.yml 的 verify job 对齐（Node 20 / SvelteKit）。
+
+stages:
+  - verify
+
+variables:
+  GIT_DEPTH: "20"
+
+verify:
+  stage: verify
+  image: node:20
+  cache:
+    paths:
+      - .npm/
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run check
+    - npx vitest run
+    - npm run build
+    - if grep -rnE "UV-[0-9]+|CR-[0-9]+|AUDIT-[0-9]+|INC-[0-9]+" --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build . ; then echo "Internal identifier found in public surface"; exit 1; fi
+  rules:
+    - changes:
+        - "**/*"
+        - ".gitee-ci/**"
