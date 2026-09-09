@@ -42,6 +42,7 @@
   import { activeTermsByIndustry } from "$lib/stores/business-terms";
   import { explainStructured } from "./business-preview-explainer";
   import DeveloperModeToggle from "./DeveloperModeToggle.svelte";
+  import DevJsonEditor from "./DevJsonEditor.svelte";
   import BusinessTermFilter from "./BusinessTermFilter.svelte";
   import BusinessRuleCard from "./BusinessRuleCard.svelte";
   import BusinessForm from "./BusinessForm.svelte";
@@ -221,8 +222,8 @@
 </script>
 
 {#if devMode}
-  <!-- 开发者模式:内核 v0.2.0 RuleLibraryView 已弃用(仅重定向 /workspace,
-       cloud 无此路由),JSON 直接编辑暂以占位提示,待 workspace 视图专项接入 -->
+  <!-- 开发者模式:UV-164 落地 — JSON 直接编辑(替代原占位提示)。
+       编辑器基于内核 rules store:列表 → 选中(懒加载 content)→ 编辑 → 校验 → 保存(draft 限定) -->
   <div class="business-lib">
     <header class="lib-header">
       <div class="title-group">
@@ -233,13 +234,12 @@
         <DeveloperModeToggle bind:devMode />
       </div>
     </header>
-    <div class="dev-mode-placeholder">
-      <p>📋 开发者 JSON 编辑视图正在适配内核 v0.2.0 workspace 化重构</p>
-      <p class="hint">
-        内核 RuleLibraryView 已弃用(原为 /workspace 重定向壳),本视图将在
-        workspace 视图专项中补齐。当前请使用业务模式编辑规则。
-      </p>
-    </div>
+    <DevJsonEditor
+      rules={$rules}
+      {wb}
+      selectedRuleId={$selectedRuleId}
+      onSelect={handleSelect}
+    />
   </div>
 {:else}
   <!-- 业务模式:业务表单 + 业务预览 -->
@@ -321,9 +321,9 @@
             <BusinessPreview {structured} />
           {:else}
             <div class="no-schema">
-              <p>📋 此规则无业务表单关联</p>
+              <p>📋 此规则尚未关联业务表单</p>
               <p class="hint">
-                可从上方下拉选择业务场景,或切到开发者模式直接编辑 JSON
+                从上方下拉选择业务场景,即可用表单方式查看与编辑;通用规则也可切到开发者模式直接编辑 JSON
               </p>
             </div>
           {/if}
@@ -508,19 +508,6 @@
   .empty-list .hint {
     font-size: 11px;
     margin-top: 4px;
-  }
-  .dev-mode-placeholder {
-    margin: 60px auto;
-    max-width: 480px;
-    padding: 24px;
-    text-align: center;
-    color: var(--text-secondary, #64748b);
-    border: 1px dashed var(--border, #cbd5e1);
-    border-radius: 8px;
-  }
-  .dev-mode-placeholder .hint {
-    font-size: 12px;
-    margin-top: 8px;
   }
   .lib-detail {
     overflow-y: auto;

@@ -21,8 +21,8 @@
   } = $props();
 
   function handleEnterWorkbench() {
-    toastSuccess("建库完成,已进入工作台", "向导完成");
-    // autoMode 让 HomeRouter 自动决策(此时有库 → 状态 C)
+    // UV-155:完成提示统一由 OnboardingWizard.handleComplete 弹一条「下一步」toast,
+    // 避免此处与父组件各弹一条导致提示叠加。
     autoMode();
     onComplete();
   }
@@ -55,11 +55,13 @@
     <!-- W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
     <!-- 执行域(server)仅运行治理链发布的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
     <!-- W3 方向 b:边界明示 + 换乘动作组(导出批量包/直达治理中心),终点从死胡同变换乘站。 -->
-    <p class="complete-desc">本地规则库已就绪。</p>
+    <!-- UV-153:措辞通俗化 — 用「本地草稿 vs 正式规则」替代技术术语 -->
+    <p class="complete-desc">本地规则库已就绪,规则已保存为「本地草稿」。</p>
     <div class="boundary-note">
-      <strong>注意:</strong>规则目前存于<strong>浏览器本地</strong>,执行域(server)仅运行
-      <strong>治理链发布</strong>的规则——要让规则真正驱动执行台,需前往
-      <a href="/governance" class="gov-link">治理中心</a>走数据集→发布→导入链路。
+      <strong>注意:</strong>你刚才创建的规则目前只是<strong>本地草稿</strong>(保存在当前浏览器中),
+      尚未生效。要让规则真正驱动业务执行,请前往
+      <a href="/governance" class="gov-link">治理中心</a>将规则<strong>发布</strong>为正式规则——
+      发布并部署后,新会话即按新规则执行。
     </div>
 
   <div class="summary-card">
@@ -91,8 +93,8 @@
   <div class="next-steps">
     <h4>下一步建议</h4>
     <ul>
-      <li>📊 进入 <strong>L1 监控大屏</strong> 查看实时 Fact 流(T3 实现)</li>
-      <li>✏️ 进入 <strong>L2 编辑台</strong> 继续添加 / 编辑规则</li>
+      <li>📊 进入 <strong>监控大屏</strong> 查看实时业务事件流</li>
+      <li>✏️ 在 <strong>工作台「一键操作」</strong> 中继续添加 / 编辑规则</li>
       <li>🤖 配置 LLM 设置,启用自然语言生成规则草案</li>
       <li>📁 在规则库中导入 / 导出规则 JSON</li>
     </ul>

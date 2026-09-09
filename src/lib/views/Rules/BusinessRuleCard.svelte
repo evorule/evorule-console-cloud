@@ -49,7 +49,8 @@
       {/each}
     </div>
   {:else}
-    <div class="card-hint">无业务元数据(开发者模式可编辑 JSON)</div>
+    <!-- UV-165:无业务元数据提示通俗化,并指出关联入口 -->
+    <div class="card-hint">通用规则 · 未关联业务场景(选中后可在右侧选择业务场景)</div>
   {/if}
 
   <div class="card-footer">

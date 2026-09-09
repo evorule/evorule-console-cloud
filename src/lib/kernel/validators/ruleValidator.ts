@@ -40,6 +40,53 @@ export interface ValidationIssue {
   path?: string;
 }
 
+/**
+ * 校验错误通俗化(UV-151:普通消费者看不懂 "exists.path 必填" 这类技术术语)。
+ * 仅用于 UI 展示层(业务表单/建库向导),不改动 L_console 校验逻辑本身;
+ * 未命中的消息原样透出(不静默、不丢信息)。
+ */
+export function friendlyRuleError(message: string): string {
+  const m = message;
+
+  if (m.includes('exists.path')) {
+    return '请选择规则适用的业务对象路径(存在性检查缺少目标字段)';
+  }
+  if (m.includes('set.attr')) {
+    return '请填写要修改的业务字段(如 报销金额),当前填写的路径格式不正确';
+  }
+  if (m.includes('has_fields.path')) {
+    return '请填写要检查的字段所在位置,当前填写的路径格式不正确';
+  }
+  if (m.includes('collect.from')) {
+    return '请填写要收集数据的来源位置,当前填写的路径格式不正确';
+  }
+  if (m.includes('merge.messages') || m.includes('merge.tool_result')) {
+    return '请检查"汇总消息"相关配置,当前填写的路径格式不正确';
+  }
+  if (m.includes('branch.on_true')) {
+    return '条件成立时要执行的操作不能为空,请补充一条或多条操作';
+  }
+  if (m.includes('缺少 params')) {
+    return '规则缺少必要的参数,请检查规则结构是否完整';
+  }
+  if (m.includes('无效的元指令类型')) {
+    return '规则使用了不支持的指令类型,请检查规则结构';
+  }
+  if (m.includes('无效的域类型')) {
+    return '规则使用了不支持的条件类型,请检查规则结构';
+  }
+  if (m.includes('JSON 格式错误')) {
+    return '规则内容不是合法的 JSON 格式,请检查标点符号';
+  }
+  if (m.includes('递归深度') || m.includes('嵌套深度')) {
+    return '规则嵌套层级过深,请简化规则结构';
+  }
+  if (m.includes('必填')) {
+    return '规则缺少必填信息,请补充完整后再保存';
+  }
+  return m;
+}
+
 export type ValidationError = ValidationIssue;
 export type ValidationWarning = ValidationIssue;
 

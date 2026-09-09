@@ -32,6 +32,11 @@
   } from "$lib/kernel";
   import { workbenchStatus, patchWorkbenchStatus, setWorkbenchRefreshAction } from "$lib/stores/workbench-status";
   import { governanceConfig } from "$lib/config/governance-config";
+  import { onboardingStore } from "$lib/stores/onboarding";
+
+  // UV-155:首访引导去重 —— 新手横幅可见时,不再叠加 GuidedHint 与推荐卡,
+  // 关闭横幅后才逐个出现,避免 3 个引导提示同时堆叠。
+  const bannerVisible = $derived(!$onboardingStore.bannerDismissed);
 
   /**
    * 读 rule-serve(18081)运行时版本(P2-01)。
@@ -144,19 +149,21 @@
 </script>
 
 <div class="workbench">
-  <!-- 首屏引导横幅(W2 自 RealWorkbench 迁移到新着陆路径) -->
+  <!-- 首屏引导横幅(W2 自 RealWorkbench 迁移到新着陆路径;UV-155:可见时不叠加其他引导) -->
   <OnboardingBanner />
 
-  <!-- 极简工作台首访提示 -->
-  <GuidedHint
-    hintId="workbench"
-    variant="tip"
-    title="总览 · 一屏看全貌"
-    body="这里汇总身份、生产状态、规则数、session、待审与最近操作。想深入某一块,点卡片或侧栏即可单页跳转。"
-  />
+  <!-- 极简工作台首访提示(UV-155:新手横幅关闭后才显示,避免提示堆叠) -->
+  {#if !bannerVisible}
+    <GuidedHint
+      hintId="workbench"
+      variant="tip"
+      title="总览 · 一屏看全貌"
+      body="这里汇总身份、生产状态、规则数、session、待审与最近操作。想深入某一块,点卡片或侧栏即可单页跳转。"
+    />
 
-  <!-- 角色视图默认推荐 -->
-  <RecommendationCard />
+    <!-- 角色视图默认推荐 -->
+    <RecommendationCard />
+  {/if}
 
   <h1 class="workbench-title">🧭 总览</h1>
   <p class="workbench-subtitle">

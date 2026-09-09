@@ -43,11 +43,12 @@
 	const backend = useBackendOrNull();
 
 	// 输入框内容(可由规则模板填充,也可自由编辑)
+	// UV-157:默认示例改用业务语义(报销金额),并保留 payload.x 示意在 placeholder 说明里
 	let instructionText = $state(
 		JSON.stringify(
 			{
 				type: 'set',
-				params: { attr: '__exec__.payload.x', operation: 'set', value: 1 }
+				params: { attr: '__exec__.payload.amount', operation: 'set', value: 10000 }
 			},
 			null,
 			2
@@ -295,8 +296,13 @@
 							<h2>提交命令</h2>
 							<div class="section-actions">
 								{#if $selectedRule}
-									<button class="btn-mini" onclick={handleApplyRule}>
-										应用规则: {$selectedRule.name}
+									<!-- UV-157:规则按钮优先显示中文描述,技术 id 降级为 title 提示 -->
+									<button
+										class="btn-mini"
+										onclick={handleApplyRule}
+										title="将选中的规则填入指令编辑区: {$selectedRule.name}"
+									>
+										应用规则: {$selectedRule.description || $selectedRule.name}
 									</button>
 								{/if}
 								{#if assistant && onaiGenerateInput}
@@ -313,11 +319,16 @@
 								bind:value={instructionText}
 								spellcheck="false"
 								autocomplete="off"
-								placeholder="在此输入 instruction JSON..."
+								placeholder="在此输入 instruction JSON,例如设置业务字段: __exec__.payload.amount = 10000"
 							></textarea>
 							{#if instructionError}
 								<div class="parse-error">JSON 错误: <code>{instructionError}</code></div>
 							{/if}
+							<p class="editor-hint">
+								<!-- UV-157:默认命令业务化说明 — attr 指业务字段路径,value 为要设置的值 -->
+								💡 上面的示例表示:将业务事件中的「报销金额(amount)」设为 10000。
+								<code>__exec__.payload.</code> 是业务数据所在的位置前缀,一般保持默认即可。
+							</p>
 						</div>
 
 						<div class="submit-bar">
@@ -346,10 +357,10 @@
 								class="payload-toggle"
 								onclick={() => (payloadSectionOpen = !payloadSectionOpen)}
 								aria-expanded={payloadSectionOpen}
-								title="直接向当前会话注入 payload 字段(path 以 shared. 开头时跨会话广播)"
+								title="向当前会话写入业务数据(路径以 shared. 开头时会同步到所有会话)"
 							>
 								<span class="toggle-arrow" class:open={payloadSectionOpen}>▸</span>
-								Payload 注入
+								修改业务数据(Payload)
 							</button>
 						</header>
 
@@ -654,6 +665,20 @@
 		font-size: var(--text-xs);
 		color: var(--text-secondary);
 		font-weight: var(--font-semibold);
+	}
+
+	.editor-hint {
+		margin: var(--spacing-xs) 0 0;
+		font-size: var(--text-xs);
+		color: var(--text-secondary);
+		line-height: 1.6;
+	}
+	.editor-hint code {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		background: var(--bg-primary);
+		padding: 0 4px;
+		border-radius: 3px;
 	}
 
 	textarea {

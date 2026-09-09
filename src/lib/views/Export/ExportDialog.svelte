@@ -165,7 +165,8 @@
   // === 执行导出 ===
   async function handleExport(): Promise<void> {
     if (sessionId === null) {
-      toastError("无活动 session,无法导出");
+      // UV-159:与审计页一致,提示下一步动作
+      toastError("暂无记录可导出。请先在执行台提交一条命令产生记录。");
       return;
     }
     if (selectedContents.size === 0) {

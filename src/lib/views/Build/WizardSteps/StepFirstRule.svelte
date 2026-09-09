@@ -16,6 +16,7 @@
   import {
     addRule,
     RuleValidator,
+    friendlyRuleError,
     useAssistantOrNull,
     useWorkspaceBackend,
     currentWorkspace,
@@ -306,6 +307,14 @@
     </button>
   </div>
 
+  {#if !assistant}
+    <!-- UV-154:LLM 按钮 disabled 时给出明确配置指引,避免用户不知去哪里启用 -->
+    <div class="llm-guide">
+      💡 LLM 辅助需要先配置 AI 服务:点击页面右侧的「💬 配置 LLM」按钮(或左侧导航「设置 → LLM 配置」),
+      填写 API Key 后即可用自然语言生成规则草案;未配置也可直接使用下方「业务表单」模式。
+    </div>
+  {/if}
+
   {#if inputMode === "llm"}
     <div class="llm-section">
       <label for="nl-input">用自然语言描述规则:</label>
@@ -358,12 +367,12 @@
               class:invalid={!validation.valid}
             >
               {#if validation.valid}
-                ✅ 校验通过(7 门禁全过)
+                ✅ 校验通过
               {:else}
-                ❌ 校验失败:
+                ❌ 校验失败,请根据以下提示修正:
                 <ul>
                   {#each validation.errors as error}
-                    <li>{error}</li>
+                    <li>{friendlyRuleError(error)}</li>
                   {/each}
                 </ul>
               {/if}
@@ -448,6 +457,16 @@
     color: var(--brand, #2563eb);
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .llm-guide {
+    padding: 8px 12px;
+    background: var(--info-bg, #eff6ff);
+    border: 1px solid var(--info, #93c5fd);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-primary, #1e293b);
+    line-height: 1.6;
   }
 
   .llm-section {
