@@ -1583,7 +1583,7 @@
   hintId="governance"
   variant="tip"
   title="治理中心 · 规则即资产"
-  body="先连接规则资产库(:18081),再建数据集、灌入规则,走 Draft → Candidate → Active → Published 五态生命周期。完整的生命周期说明见「帮助」页。"
+  body="先连接规则资产库(:18081),再建数据集、灌入规则,走 Draft → Candidate → Active → Published → Rejected 五态生命周期。完整的生命周期说明见「帮助」页。"
 />
 
 <!-- ==================== 未连接:连接面板 ==================== -->
@@ -1641,7 +1641,7 @@
             autocomplete="current-password"
             value={$governanceConfig.password}
             oninput={(e) => updateGovernanceConfig({ password: (e.currentTarget as HTMLInputElement).value })}
-            placeholder="••••••••"
+            placeholder="请输入密码"
           />
         </label>
       </div>

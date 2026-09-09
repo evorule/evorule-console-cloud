@@ -10,7 +10,7 @@
 // 正反例移植自 _shared/v1.0.json 各 $defs 描述与 rule_schema 测试语义。
 
 import { describe, expect, test } from 'vitest';
-import { RuleValidator } from '../ruleValidator';
+import { RuleValidator, friendlyRuleError } from '../ruleValidator';
 
 /** 便捷:校验 JSON 字符串并断言 valid */
 function v(json: string) {
@@ -395,5 +395,29 @@ describe('场景级黄金向量(assets/evorule-rules 形态)', () => {
     expect(r.errors.some((e) => e.gate === 'G5' && e.message.includes('__io_result__'))).toBe(true);
     expect(r.errors.some((e) => e.gate === 'G4' && e.message.includes('inner'))).toBe(true);
     expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('io_type'))).toBe(true);
+  });
+});
+
+describe('friendlyRuleError 通俗化(UV-151)', () => {
+  // 校验逻辑不变,仅 UI 展示层消息通俗化;未命中原样透出
+  test('exists.path 技术术语 → 通俗文案', () => {
+    expect(friendlyRuleError('exists.path 必填且必须是合法路径(当前: undefined)')).toContain(
+      '请选择规则适用的业务对象路径',
+    );
+  });
+
+  test('set.attr 路径错误 → 通俗文案', () => {
+    expect(friendlyRuleError('set.attr 必须是合法路径(当前: __exec__)')).toContain(
+      '请填写要修改的业务字段',
+    );
+  });
+
+  test('JSON 格式错误 → 通俗文案', () => {
+    expect(friendlyRuleError('JSON 格式错误: Unexpected token }')).toContain('JSON');
+  });
+
+  test('未命中规则原样透出(不丢信息)', () => {
+    const raw = 'G6 warning: 末条规则不是兜底';
+    expect(friendlyRuleError(raw)).toBe(raw);
   });
 });

@@ -79,8 +79,18 @@
         <span class="metric-value {statusClass}">{statusLabel}</span>
       </div>
       <div class="metric">
-        <span class="metric-label">规则集版本</span>
-        <span class="metric-value">v{prod.rulesetVersion}</span>
+        <!-- UV-153:澄清「正式规则集版本」= 服务端已发布版本,与本地草稿区分 -->
+        <span
+          class="metric-label"
+          title="服务端正式规则集已发布的版本;0 表示尚未从治理中心发布任何规则(与本地草稿无关)"
+        >正式规则集版本</span>
+        <span class="metric-value">
+          {#if prod.rulesetVersion > 0}
+            v{prod.rulesetVersion}
+          {:else}
+            <span class="metric-unpublished">未发布</span>
+          {/if}
+        </span>
       </div>
       <div class="metric">
         <span class="metric-label">生产 Session</span>
@@ -135,6 +145,11 @@
   }
   .metric-value.off {
     color: var(--text-muted);
+  }
+  .metric-unpublished {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
   }
   .enter-btn {
     margin-left: auto;

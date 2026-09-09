@@ -17,6 +17,10 @@
 
   let { data, rootLabel, defaultExpanded = true }: Props = $props();
 
+  // UV-158:绑定展开态,summary 上给出明确的「点击展开/收起」提示
+  // svelte-ignore state_referenced_locally — 仅需捕获 defaultExpanded 初始值(展开态由用户点击接管)
+  let open = $state(Boolean(defaultExpanded));
+
   function getType(value: unknown): string {
     if (value === null) return "null";
     if (Array.isArray(value)) return "array";
@@ -37,11 +41,12 @@
 
 <div class="json-tree">
   {#if rootLabel !== undefined && isContainer(data)}
-    <details open={defaultExpanded}>
+    <details bind:open>
       <summary class="tree-root">
         <span class="root-label">{rootLabel}</span>
         <span class="type-tag">{getType(data)}</span>
         <span class="count">({countEntries(data)})</span>
+        <span class="toggle-hint">{open ? "点击收起 ▲" : "点击展开 ▼"}</span>
       </summary>
       <div class="tree-children">
         <JsonNode {data} level={1} />
@@ -84,6 +89,13 @@
     color: var(--text-secondary);
     font-size: var(--text-xs);
     margin-left: var(--spacing-xs);
+  }
+
+  .toggle-hint {
+    color: var(--text-secondary);
+    font-size: 10px;
+    margin-left: var(--spacing-sm);
+    opacity: 0.8;
   }
 
   .tree-children {

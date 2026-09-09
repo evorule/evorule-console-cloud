@@ -249,7 +249,7 @@ export { default as VerdictBadge } from './components/VerdictBadge.svelte';
 // ============================================================================
 // 5. L_console 预校验（G1-G7，与核心仓 TCB 对齐）
 // ============================================================================
-export { RuleValidator } from './validators/ruleValidator';
+export { RuleValidator, friendlyRuleError } from './validators/ruleValidator';
 export type { ValidationError, ValidationResult } from './validators/ruleValidator';
 
 // ============================================================================

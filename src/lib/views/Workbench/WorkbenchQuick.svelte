@@ -27,15 +27,29 @@
   let activeTab = $state<Tab>("rule");
 
   // Tab 1 state
+  // UV-157:默认示例改用业务语义(报销金额 ≥ 10000 时标记需 CFO 审批),降低纯技术命名门槛
   let ruleJson = $state(`{
-  "type": "set",
+  "type": "branch",
   "params": {
-    "attr": "__exec__.payload.x",
-    "operation": "set",
-    "value": 42
+    "domain": {
+      "type": "lt",
+      "path": "__exec__.payload.amount",
+      "value": 10000
+    },
+    "on_true": [],
+    "on_false": [
+      {
+        "type": "set",
+        "params": {
+          "attr": "__exec__.payload.approval_level",
+          "operation": "set",
+          "value": "CFO"
+        }
+      }
+    ]
   }
 }`);
-  let ruleId = $state("rule.user.demo");
+  let ruleId = $state("rule.user.expense_approval");
 
   // P1-01:一键插入一个完整可提交的示例(P2-03 同类:inline JSON 校验)
   const EXAMPLE_RULE_ID = "rule.medical.triage";

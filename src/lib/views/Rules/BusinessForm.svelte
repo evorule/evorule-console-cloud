@@ -12,7 +12,7 @@
 -->
 
 <script lang="ts">
-  import { RuleValidator } from "$lib/kernel";
+  import { RuleValidator, friendlyRuleError } from "$lib/kernel";
   import type {
     BusinessFormSchema,
     BusinessFormField,
@@ -298,10 +298,10 @@
 
       {#if kernelValidation && !kernelValidation.valid}
         <div class="kernel-errors">
-          <strong>内核校验(7 门禁):</strong>
+          <strong>校验未通过:</strong>
           <ul>
             {#each kernelValidation.errors as err}
-              <li>{err}</li>
+              <li>{friendlyRuleError(err)}</li>
             {/each}
           </ul>
         </div>

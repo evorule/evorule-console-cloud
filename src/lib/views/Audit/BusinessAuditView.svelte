@@ -259,7 +259,8 @@
    */
   async function handleExportChain(compressed: boolean): Promise<void> {
     if (sessionId === null) {
-      toastError("无活动 session,无法导出审计链");
+      // UV-159:通俗化提示,指明下一步动作
+      toastError("暂无审计记录可导出。请先在执行台提交一条命令产生审计记录。");
       return;
     }
     exportingFormat = compressed ? "compressed" : "json";
@@ -286,7 +287,8 @@
 
   async function handleVerify(): Promise<void> {
     if (sessionId === null) {
-      toastError("无活动 session,无法验证");
+      // UV-159:通俗化提示,指明下一步动作
+      toastError("暂无审计记录可验证。请先在执行台提交一条命令产生审计记录后再验证。");
       return;
     }
     verifying = true;
@@ -315,7 +317,8 @@
     }
     // 兜底:直接调用 P06 §5.4 简版导出(JSON)
     if (sessionId === null) {
-      toastError("无活动 session,无法导出");
+      // UV-159:通俗化提示
+      toastError("暂无审计记录可导出。请先在执行台提交命令产生审计记录。");
       return;
     }
     void exportAudit(sessionId, backend, false);
@@ -323,7 +326,8 @@
 
   async function handleImportFile(file: File): Promise<void> {
     if (sessionId === null) {
-      toastError("无活动 session,无法导入");
+      // UV-159:通俗化提示
+      toastError("暂无审计记录可导入。请先在执行台提交命令产生审计记录。");
       return;
     }
     // W1:server 端 import 是破坏性操作(完全覆盖当前会话审计链),须二次确认
@@ -484,7 +488,8 @@ ${causalChain.nodes
       <div class="setting-item">
         <span class="setting-label">⚙️ 自动验证</span>
         {#if sessionId === null}
-          <span class="setting-hint">无活动 session</span>
+          <!-- UV-159:内联提示通俗化 -->
+          <span class="setting-hint">请先在执行台提交命令</span>
         {:else if autoVerifyError}
           <span class="setting-error" title={autoVerifyError}
             >⚠️ {autoVerifyError}</span
@@ -635,7 +640,8 @@ ${causalChain.nodes
         <div class="causal-depth-bar">
           <span class="cd-label">🌊 因果深度</span>
           {#if sessionId === null}
-            <span class="setting-hint">无活动 session</span>
+            <!-- UV-159:内联提示通俗化 -->
+            <span class="setting-hint">请先在执行台提交命令</span>
           {:else if causalDepthError}
             <span class="setting-error" title={causalDepthError}
               >⚠️ {causalDepthError}</span
