@@ -9,7 +9,7 @@
 
 **evorule rule-engine console · the connected public edition** — a professional starting point for secondary developers (core engine + connectivity + cloud LLM + platform governance)
 
-[![version](https://img.shields.io/badge/version-0.4.1-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.4.2-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
 [![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
 
@@ -96,6 +96,12 @@ This repo and the kernel repo each have independent semver. The kernel is inline
 ---
 
 ## Version Capability Boundaries
+
+### v0.4.2 released (2026-09-10)
+
+- **First-user experience fixes**: user-friendly rule-validation messages; plain-language onboarding/wizard/workbench wording; "local draft vs published" semantics clarified; rule-library developer-mode JSON editor; executor default command business-ized; JSON-tree expand/collapse hint; audit/export empty-state guidance; governance password placeholder and five-state lifecycle completion; `--insecure-serve` in start-all.ps1
+- **App credential & quota management**: platform `/apps` entry for issuing/listing/revoking app API keys, per-app rate-limit and daily quota with usage column
+- **Plugin approval workbench**: centralized plugin runtime health (online/offline badges) + grouped pending config-approval proposals, approval enforced server-side
 
 ### v0.4.1 released (2026-09-06)
 
@@ -360,7 +366,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 
 **evorule 规则引擎面板 · 联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM + 平台治理）
 
-[![version](https://img.shields.io/badge/version-0.4.1-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.4.2-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
 [![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
 

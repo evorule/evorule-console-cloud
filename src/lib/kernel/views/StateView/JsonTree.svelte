@@ -17,7 +17,7 @@
 
   let { data, rootLabel, defaultExpanded = true }: Props = $props();
 
-  // UV-158:绑定展开态,summary 上给出明确的「点击展开/收起」提示
+  // 绑定展开态,summary 上给出明确的「点击展开/收起」提示
   // svelte-ignore state_referenced_locally — 仅需捕获 defaultExpanded 初始值(展开态由用户点击接管)
   let open = $state(Boolean(defaultExpanded));
 

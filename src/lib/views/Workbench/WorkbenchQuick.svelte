@@ -27,7 +27,7 @@
   let activeTab = $state<Tab>("rule");
 
   // Tab 1 state
-  // UV-157:默认示例改用业务语义(报销金额 ≥ 10000 时标记需 CFO 审批),降低纯技术命名门槛
+  // 默认示例改用业务语义(报销金额 ≥ 10000 时标记需 CFO 审批),降低纯技术命名门槛
   let ruleJson = $state(`{
   "type": "branch",
   "params": {

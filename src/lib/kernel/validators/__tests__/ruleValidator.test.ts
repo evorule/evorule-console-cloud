@@ -398,7 +398,7 @@ describe('场景级黄金向量(assets/evorule-rules 形态)', () => {
   });
 });
 
-describe('friendlyRuleError 通俗化(UV-151)', () => {
+describe('friendlyRuleError 通俗化(首次体验反馈:校验错误对非技术用户可读)', () => {
   // 校验逻辑不变,仅 UI 展示层消息通俗化;未命中原样透出
   test('exists.path 技术术语 → 通俗文案', () => {
     expect(friendlyRuleError('exists.path 必填且必须是合法路径(当前: undefined)')).toContain(

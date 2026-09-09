@@ -64,7 +64,7 @@ if ($env:EVORULE_SERVER_ARGS) {
 } else {
     $SRV_DIR = Join-Path $PARENT 'evorule-server'
     # 18080 与前端 DEFAULT_LOCAL_BASE_URL(src/lib/backend/types.ts)保持一致
-    # v0.5.0 起 loopback + 无 token 必须显式 --insecure-serve 才允许无认证启动(UV-150 同类缺陷);
+    # v0.5.0 起 loopback + 无 token 必须显式 --insecure-serve 才允许无认证启动(启动脚本缺陷同类);
     # 本脚本面向本机开发/演示,显式声明豁免(仅限本机回环)。正式部署应改用 --auth-token。
     $SERVER_ARGS = "--addr 127.0.0.1:$PORT_SERVER " +
         "--rules-dir `"$(Join-Path $SRV_DIR 'rules')`" " +

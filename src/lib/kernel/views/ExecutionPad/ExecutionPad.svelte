@@ -43,7 +43,7 @@
 	const backend = useBackendOrNull();
 
 	// 输入框内容(可由规则模板填充,也可自由编辑)
-	// UV-157:默认示例改用业务语义(报销金额),并保留 payload.x 示意在 placeholder 说明里
+	// 默认示例改用业务语义(报销金额),并保留 payload.x 示意在 placeholder 说明里
 	let instructionText = $state(
 		JSON.stringify(
 			{
@@ -296,7 +296,7 @@
 							<h2>提交命令</h2>
 							<div class="section-actions">
 								{#if $selectedRule}
-									<!-- UV-157:规则按钮优先显示中文描述,技术 id 降级为 title 提示 -->
+									<!-- 规则按钮优先显示中文描述,技术 id 降级为 title 提示 -->
 									<button
 										class="btn-mini"
 										onclick={handleApplyRule}
@@ -325,7 +325,7 @@
 								<div class="parse-error">JSON 错误: <code>{instructionError}</code></div>
 							{/if}
 							<p class="editor-hint">
-								<!-- UV-157:默认命令业务化说明 — attr 指业务字段路径,value 为要设置的值 -->
+								<!-- 默认命令业务化说明 — attr 指业务字段路径,value 为要设置的值 -->
 								💡 上面的示例表示:将业务事件中的「报销金额(amount)」设为 10000。
 								<code>__exec__.payload.</code> 是业务数据所在的位置前缀,一般保持默认即可。
 							</p>

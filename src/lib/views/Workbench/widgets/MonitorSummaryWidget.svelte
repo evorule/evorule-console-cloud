@@ -79,7 +79,7 @@
         <span class="metric-value {statusClass}">{statusLabel}</span>
       </div>
       <div class="metric">
-        <!-- UV-153:澄清「正式规则集版本」= 服务端已发布版本,与本地草稿区分 -->
+        <!-- 澄清「正式规则集版本」= 服务端已发布版本,与本地草稿区分 -->
         <span
           class="metric-label"
           title="服务端正式规则集已发布的版本;0 表示尚未从治理中心发布任何规则(与本地草稿无关)"
