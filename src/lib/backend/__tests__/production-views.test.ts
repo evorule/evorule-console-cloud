@@ -42,6 +42,12 @@ describe('roleToBackend 角色映射', () => {
     expect(roleToBackend('auditor')).toBe('doctor');
     expect(roleToBackend('unknown')).toBe('doctor');
   });
+  test('平台角色:administrator/approver → admin,rule_engineer → department_head,viewer → doctor(UV-151)', () => {
+    expect(roleToBackend('administrator')).toBe('admin');
+    expect(roleToBackend('approver')).toBe('admin');
+    expect(roleToBackend('rule_engineer')).toBe('department_head');
+    expect(roleToBackend('viewer')).toBe('doctor');
+  });
 });
 
 // ============================================================================
@@ -63,6 +69,8 @@ const SERVER_ITEM: PublishQueueItem = {
   published_at: '2026-08-24T01:00:00Z',
   status: 'published',
   description: '内科规则发布',
+  kind: 'normal',
+  meta_rule_content: null,
 };
 
 describe('mapPublishQueueItem 字段映射', () => {
@@ -92,6 +100,20 @@ describe('mapPublishQueueItem 字段映射', () => {
     expect(v.reviewedBy).toBeUndefined();
     expect(v.reviewComment).toBeUndefined();
     expect(v.publishedAt).toBeUndefined();
+  });
+
+  test('meta_promotion 项:kind 透传,meta_rule_content 不进视图(详情走 getPublishQueueItem)', () => {
+    const v = mapPublishQueueItem({
+      ...SERVER_ITEM,
+      status: 'pending',
+      published_version: null,
+      published_at: null,
+      kind: 'meta_promotion',
+      meta_rule_content: '{"kind":"rule_set","metadata":{"tier":"meta","title":"t"},"transform":[]}',
+    });
+    expect(v.kind).toBe('meta_promotion');
+    expect(v.rulesetVersion).toBe(0);
+    expect((v as unknown as Record<string, unknown>).meta_rule_content).toBeUndefined();
   });
 });
 
