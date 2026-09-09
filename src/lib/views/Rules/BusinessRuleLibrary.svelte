@@ -222,7 +222,7 @@
 </script>
 
 {#if devMode}
-  <!-- 开发者模式:UV-164 落地 — JSON 直接编辑(替代原占位提示)。
+  <!-- 开发者模式:JSON 直接编辑(替代原占位提示)。
        编辑器基于内核 rules store:列表 → 选中(懒加载 content)→ 编辑 → 校验 → 保存(draft 限定) -->
   <div class="business-lib">
     <header class="lib-header">

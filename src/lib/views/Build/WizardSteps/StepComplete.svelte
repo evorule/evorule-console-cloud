@@ -21,7 +21,7 @@
   } = $props();
 
   function handleEnterWorkbench() {
-    // UV-155:完成提示统一由 OnboardingWizard.handleComplete 弹一条「下一步」toast,
+    // 完成提示统一由 OnboardingWizard.handleComplete 弹一条「下一步」toast,
     // 避免此处与父组件各弹一条导致提示叠加。
     autoMode();
     onComplete();
@@ -55,7 +55,7 @@
     <!-- W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
     <!-- 执行域(server)仅运行治理链发布的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
     <!-- W3 方向 b:边界明示 + 换乘动作组(导出批量包/直达治理中心),终点从死胡同变换乘站。 -->
-    <!-- UV-153:措辞通俗化 — 用「本地草稿 vs 正式规则」替代技术术语 -->
+    <!-- 措辞通俗化 — 用「本地草稿 vs 正式规则」替代技术术语 -->
     <p class="complete-desc">本地规则库已就绪,规则已保存为「本地草稿」。</p>
     <div class="boundary-note">
       <strong>注意:</strong>你刚才创建的规则目前只是<strong>本地草稿</strong>(保存在当前浏览器中),

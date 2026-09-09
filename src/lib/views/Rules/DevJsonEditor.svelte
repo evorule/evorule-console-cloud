@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:规则库开发者模式 JSON 编辑器(UV-164 落地)。
+  职责:规则库开发者模式 JSON 编辑器(首次体验反馈落地:开发者模式不可用)。
     - 左侧规则列表(技术 id + 中文描述),点击选中(懒加载 content)
     - 右侧 JSON 编辑区 + 校验(复用 RuleValidator G1-G7,错误通俗化)+ 保存
     - 只读规则(内置)不可保存,给出提示

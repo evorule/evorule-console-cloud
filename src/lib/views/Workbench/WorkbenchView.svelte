@@ -34,7 +34,7 @@
   import { governanceConfig } from "$lib/config/governance-config";
   import { onboardingStore } from "$lib/stores/onboarding";
 
-  // UV-155:首访引导去重 —— 新手横幅可见时,不再叠加 GuidedHint 与推荐卡,
+  // 首访引导去重 —— 新手横幅可见时,不再叠加 GuidedHint 与推荐卡,
   // 关闭横幅后才逐个出现,避免 3 个引导提示同时堆叠。
   const bannerVisible = $derived(!$onboardingStore.bannerDismissed);
 
@@ -149,10 +149,10 @@
 </script>
 
 <div class="workbench">
-  <!-- 首屏引导横幅(W2 自 RealWorkbench 迁移到新着陆路径;UV-155:可见时不叠加其他引导) -->
+  <!-- 首屏引导横幅(W2 自 RealWorkbench 迁移到新着陆路径;可见时不叠加其他引导) -->
   <OnboardingBanner />
 
-  <!-- 极简工作台首访提示(UV-155:新手横幅关闭后才显示,避免提示堆叠) -->
+  <!-- 极简工作台首访提示(新手横幅关闭后才显示,避免提示堆叠) -->
   {#if !bannerVisible}
     <GuidedHint
       hintId="workbench"

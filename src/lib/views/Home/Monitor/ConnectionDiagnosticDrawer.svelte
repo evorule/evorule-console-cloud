@@ -222,7 +222,7 @@
         >
       </div>
       <div class="diag-row">
-        <!-- UV-153:与总览摘要一致,澄清为「正式规则集版本」 -->
+        <!-- 与总览摘要一致,澄清为「正式规则集版本」 -->
         <span class="diag-k" title="服务端正式规则集已发布的版本;0 表示尚未发布(与本地草稿无关)">正式规则集版本</span>
         <span class="diag-v"
           >{productionState.rulesetVersion > 0

@@ -110,7 +110,7 @@
       const result = await submitCommand(backend, instruction);
 
       if (result && result.accepted) {
-        // UV-152:submitCommand 返回可能不含 version,改用提交后刷新的 reactor 版本
+        // submitCommand 返回可能不含 version,改用提交后刷新的 reactor 版本
         const version = result.version ?? get(reactorVersion) ?? 0;
         runStatus = "success";
         runResult = `事件已提交(session=${sessionId},version=${version})。
