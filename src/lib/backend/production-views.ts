@@ -95,7 +95,7 @@ export interface PublishQueueItemView {
 	reviewComment?: string;
 	publishedAt?: string;
 	description?: string;
-	/** 队列项类型(normal=普通发布 / meta_promotion=元规则晋升;UV-145 W3) */
+	/** 队列项类型(normal=普通发布 / meta_promotion=元规则晋升) */
 	kind: 'normal' | 'meta_promotion';
 }
 
@@ -115,7 +115,7 @@ export interface PublishWriteResult {
  *   - it(信息科)       → admin(可审批+回滚)
  *   - exec(院领导)     → admin(可审批+回滚)
  *   - auditor(审计)    → doctor(只读)
- * 平台 4 角色(UV-151 增补,2026-09-09):
+ * 平台 4 角色(2026-09-09 增补):
  *   - administrator → admin(可提交+审批+回滚)
  *   - approver      → admin(审批者可审批;并保留提交能力)
  *   - rule_engineer → department_head(规则工程师可提交)

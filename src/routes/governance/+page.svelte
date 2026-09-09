@@ -1342,7 +1342,7 @@
     return `status-${s}`;
   }
 
-  // ===== 元规则晋升提名(UV-148:UV-145 W3 晋升通道 console 入口接线) =====
+  // ===== 元规则晋升提名(console 入口接线) =====
   // 提交 POST /api/publish/queue,kind=meta_promotion,meta_rule_content=用户转写的
   // L2 元规则 JSON(须含 metadata.tier="meta"+title+transform)。零报警证据/Admin
   // 审批/内容深校验/原子落盘由 server 侧把关(63 号方案 §W1),前端只做轻量预校验。
@@ -3591,7 +3591,7 @@
     color: inherit;
     font-size: var(--text-sm);
   }
-  /* 元规则晋升提名内联表单(UV-148):竖排 + 等宽 JSON 编辑区 */
+  /* 元规则晋升提名内联表单:竖排 + 等宽 JSON 编辑区 */
   .nominate-form {
     flex-direction: column;
     align-items: stretch;
