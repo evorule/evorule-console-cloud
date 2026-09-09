@@ -39,6 +39,8 @@ const QUEUE_ITEM: PublishQueueItem = {
   published_at: null,
   status: 'pending',
   description: null,
+  kind: 'normal',
+  meta_rule_content: null,
 };
 
 // ============================================================================

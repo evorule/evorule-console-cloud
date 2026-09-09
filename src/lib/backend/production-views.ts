@@ -95,6 +95,8 @@ export interface PublishQueueItemView {
 	reviewComment?: string;
 	publishedAt?: string;
 	description?: string;
+	/** 队列项类型(normal=普通发布 / meta_promotion=元规则晋升;UV-145 W3) */
+	kind: 'normal' | 'meta_promotion';
 }
 
 /** 写入操作结果(approve/reject/rollback 共用)。 */
@@ -107,22 +109,31 @@ export interface PublishWriteResult {
  * 前端角色 → 后端 PublishRole 映射。
  *
  * evorule-server PublishRole:doctor / department_head / admin。
- * 前端 5 角色:
+ * 前端 5 角色(演示):
  *   - user(医生)      → doctor(不可提交/审批)
  *   - lead(科室主任)   → department_head(可提交)
  *   - it(信息科)       → admin(可审批+回滚)
  *   - exec(院领导)     → admin(可审批+回滚)
  *   - auditor(审计)    → doctor(只读)
+ * 平台 4 角色(UV-151 增补,2026-09-09):
+ *   - administrator → admin(可提交+审批+回滚)
+ *   - approver      → admin(审批者可审批;并保留提交能力)
+ *   - rule_engineer → department_head(规则工程师可提交)
+ *   - viewer        → doctor(只读)
  */
 export function roleToBackend(role: string): PublishRole {
 	switch (role) {
 		case 'it':
 		case 'exec':
+		case 'administrator':
+		case 'approver':
 			return 'admin';
 		case 'lead':
+		case 'rule_engineer':
 			return 'department_head';
 		case 'user':
 		case 'auditor':
+		case 'viewer':
 		default:
 			return 'doctor';
 	}
@@ -141,6 +152,7 @@ export function mapPublishQueueItem(item: PublishQueueItem): PublishQueueItemVie
 		reviewComment: item.review_comment ?? undefined,
 		publishedAt: item.published_at ?? undefined,
 		description: item.description ?? undefined,
+		kind: item.kind,
 	};
 }
 

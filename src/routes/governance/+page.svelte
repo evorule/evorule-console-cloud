@@ -1342,6 +1342,110 @@
     return `status-${s}`;
   }
 
+  // ===== 元规则晋升提名(UV-148:UV-145 W3 晋升通道 console 入口接线) =====
+  // 提交 POST /api/publish/queue,kind=meta_promotion,meta_rule_content=用户转写的
+  // L2 元规则 JSON(须含 metadata.tier="meta"+title+transform)。零报警证据/Admin
+  // 审批/内容深校验/原子落盘由 server 侧把关(63 号方案 §W1),前端只做轻量预校验。
+  let nominateTargetId = $state<string | null>(null);
+  let metaRuleContent = $state('');
+  let nominating = $state(false);
+
+  /** 元规则内容轻量预校验(与 server validate_meta_rule_content 同源的骨架检查;最终以 server 判定为准) */
+  function validateMetaRuleContent(text: string): string | null {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return '不是合法 JSON';
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return '顶层必须是 JSON 对象';
+    }
+    const obj = parsed as Record<string, unknown>;
+    const meta = obj.metadata;
+    if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) {
+      return '缺少 metadata 对象';
+    }
+    const m = meta as Record<string, unknown>;
+    if (m.tier !== 'meta') return 'metadata.tier 必须为 "meta"(L2 层级声明,伪造会被层级门禁拒载)';
+    if (typeof m.title !== 'string' || !m.title.trim()) return 'metadata.title 必填(非空标题)';
+    if (!Array.isArray(obj.transform) || obj.transform.length === 0) {
+      return 'transform 必须是非空数组(引擎 Schema 门禁要求至少 1 条;空骨架提交必被 400 拒)';
+    }
+    return null;
+  }
+
+  /** 打开内联晋升提名表单(预填 L2 元规则骨架,transform 预填一条合法最小 set 指令,用户可改写) */
+  function startNominate(rule: RuleRecord): void {
+    nominateTargetId = rule.id;
+    metaRuleContent = JSON.stringify(
+      {
+        kind: 'rule_set',
+        metadata: {
+          tier: 'meta',
+          title: `元规则:${rule.name}`,
+          description: `晋升自业务规则 ${rule.id}(${rule.name})`
+        },
+        transform: [
+          {
+            type: 'set',
+            params: {
+              attr: 'result',
+              operation: 'set',
+              value: 'ok'
+            }
+          }
+        ]
+      },
+      null,
+      2
+    );
+  }
+
+  async function handleNominate(rule: RuleRecord): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      toastError('执行域通道不可用,无法提交晋升提名', '元规则晋升');
+      return;
+    }
+    if (!rule.current_version_id) {
+      toastError('源规则无当前版本,无法晋升', '元规则晋升');
+      return;
+    }
+    const content = metaRuleContent.trim();
+    if (!content) {
+      toastError('元规则内容必填(转写后的 L2 元规则 JSON)', '元规则晋升');
+      return;
+    }
+    const preErr = validateMetaRuleContent(content);
+    if (preErr) {
+      toastError(`元规则内容预校验失败:${preErr}(最终以 server 深校验为准)`, '元规则晋升');
+      return;
+    }
+    nominating = true;
+    try {
+      const item = await wb.submitPublish({
+        workspace_id: ws.id,
+        rule_version_ids: [rule.current_version_id],
+        description: `元规则晋升提名:自业务规则 ${rule.id}(${rule.name})转写`,
+        kind: 'meta_promotion',
+        meta_rule_content: content
+      });
+      toastSuccess(
+        `已提交晋升提名(队列 #${item.id}),等待 Admin 审批;通过后落盘 00_meta_promoted_*.json`,
+        '元规则晋升'
+      );
+      nominateTargetId = null;
+      metaRuleContent = '';
+      await loadWsRules();
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '元规则晋升');
+    } finally {
+      nominating = false;
+    }
+  }
+
   // ===== 派生 =====
   // 注意:必须用 $governanceStore 直接引用(Svelte 5 $derived 不追踪 get(store)),
   //       否则选中数据集/角色在 store 变化后不会更新。
@@ -2235,11 +2339,53 @@
                       <span class="entry-id" title={r.id}>{r.name}</span>
                       <span class="badge {ruleStateClass(r.state)}">{r.state}</span>
                       <button class="btn btn-sm" onclick={() => startFork(r)}>fork</button>
+                      {#if r.state === 'candidate' && r.current_version_id}
+                        <button class="btn btn-sm btn-primary" onclick={() => startNominate(r)}>
+                          提名晋升
+                        </button>
+                      {/if}
                     </div>
                     <p class="ws-item-sub">
                       id {r.id} · 创建 {fmtTime(r.created_at)} · 更新 {fmtTime(r.updated_at)}
                       · 创建者 {r.created_by || '-'}
                     </p>
+                    {#if nominateTargetId === r.id}
+                      <div class="member-form nominate-form">
+                        <label class="nominate-label" for="nominate-meta-content">
+                          元规则内容(L2 转写 JSON:metadata.tier="meta" + title + transform;
+                          禁止携带 enforce 以外的 L2 专属原语由 server 层级门禁把关)
+                        </label>
+                        <textarea
+                          id="nominate-meta-content"
+                          class="nominate-textarea"
+                          bind:value={metaRuleContent}
+                          rows="12"
+                          spellcheck="false"
+                          aria-label="元规则内容 JSON"
+                        ></textarea>
+                        <div class="ws-item-top">
+                          <button
+                            class="btn btn-sm btn-primary"
+                            onclick={() => handleNominate(r)}
+                            disabled={nominating}
+                          >
+                            {nominating ? '提交中…' : `提交晋升提名「${r.name}」`}
+                          </button>
+                          <button
+                            class="btn btn-sm btn-ghost"
+                            onclick={() => (nominateTargetId = null)}
+                            disabled={nominating}
+                          >
+                            取消
+                          </button>
+                        </div>
+                        <p class="ws-item-sub">
+                          晋升语义(server):Candidate 业务规则 → L2 元规则转写提名 → Admin 审批
+                          (零报警证据) → 原子落盘 rules_dir 根目录 00_meta_promoted_*.json;
+                          不推业务 ruleset 版本。前端仅骨架预校验,内容深校验以 server 为准。
+                        </p>
+                      </div>
+                    {/if}
                     {#if forkTargetId === r.id}
                       <div class="member-form">
                         <input
@@ -3444,5 +3590,25 @@
     background: var(--bg-page);
     color: inherit;
     font-size: var(--text-sm);
+  }
+  /* 元规则晋升提名内联表单(UV-148):竖排 + 等宽 JSON 编辑区 */
+  .nominate-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nominate-label {
+    font-size: var(--text-xs);
+    color: var(--text-secondary, #64748b);
+  }
+  .nominate-textarea {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-page);
+    color: inherit;
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-xs);
+    resize: vertical;
   }
 </style>

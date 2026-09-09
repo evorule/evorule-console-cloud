@@ -224,6 +224,14 @@
             <span class="item-status {statusClass(req.status)}">
               {statusLabel(req.status)}
             </span>
+            {#if req.kind === "meta_promotion"}
+              <span
+                class="item-kind"
+                title="元规则晋升:L3 业务规则 → L2 元规则转写提名,审批通过后落盘 rules_dir 根目录 00_meta_promoted_*.json(不推业务 ruleset 版本)"
+              >
+                元规则晋升
+              </span>
+            {/if}
             <span class="item-id">{req.id}</span>
           </div>
           <div class="item-meta">
@@ -277,6 +285,14 @@
                     <dd>{statusLabel(d.status)}</dd>
                   </div>
                   <div>
+                    <dt>队列项类型</dt>
+                    <dd>
+                      {d.kind === "meta_promotion"
+                        ? "元规则晋升"
+                        : "普通发布"}
+                    </dd>
+                  </div>
+                  <div>
                     <dt>规则集哈希</dt>
                     <dd class="mono">{d.ruleset_hash}</dd>
                   </div>
@@ -307,6 +323,14 @@
                   </summary>
                   <pre>{prettyRules(d.final_candidate_rules)}</pre>
                 </details>
+                {#if d.kind === "meta_promotion"}
+                  <details class="detail-rules">
+                    <summary>
+                      元规则内容 meta_rule_content(转写后的 L2 元规则,审批通过后原子落盘)
+                    </summary>
+                    <pre>{prettyRules(d.meta_rule_content)}</pre>
+                  </details>
+                {/if}
               </div>
             {/if}
           {/if}
@@ -496,6 +520,15 @@
     font-size: 11px;
     color: var(--text-secondary, #94a3b8);
     margin-left: auto;
+  }
+  /* 元规则晋升队列项徽标(UV-148) */
+  .item-kind {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--info-bg, #dbeafe);
+    color: var(--info, #1e40af);
   }
   .item-meta {
     display: flex;
