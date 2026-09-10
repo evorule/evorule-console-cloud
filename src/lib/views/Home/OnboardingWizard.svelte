@@ -61,6 +61,11 @@
 
   // === Step 1 → 2 ===
   function handleTemplateSelect(id: "blank" | "finance" | "compliance"): void {
+    // 切换模板时重置业务对象:避免从「财务模板」切到「空白库」时,
+    // 财务模板预填的 报销单/审批流/财务凭证 残留(体验反馈:消费者困惑空白库为何有业务对象)
+    if (id !== template) {
+      businessObjects = [];
+    }
     template = id;
     step = 2;
   }
@@ -79,7 +84,13 @@
         // 默认指向模板第一条规则,允许 Step 3 直接跳过
         createdRuleId = templateLoadedRuleIds[0] ?? null;
       } catch (e) {
-        toastInfo(`模板加载失败: ${(e as Error).message}`, "建库向导");
+        // 模板加载失败不给消费者透原始 HTTP 报文技术术语。
+        // 友好文案引导降级(空白库);原始错误保留在第二行供内部诊断(阶段1内部角色)。
+        const raw = (e as Error).message;
+        toastWarning(
+          `模板加载失败:请稍后重试,或返回改用「空白库」从零创建。\n详细原因: ${raw}`,
+          "建库向导",
+        );
         return;
       }
     } else {
