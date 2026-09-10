@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:marketplace「官方资产」分区(47 号接线专项)
-    - 从治理服务(evorule-rule :18081)发现官方数据集(公开 + 已发布)
+    - 从治理服务(evorule-rule :18081)发现官方数据集(公开 + 已上架)
     - 四态:未连接引导 / 加载中 / 空态(准入口径说明) / 资产卡片网格
     - 下载预览包(evidence=none,执行域必拒导入,语义如实标注)
     - 部署到执行域(导航治理页既有证据门禁面板,市场不绕闸)
@@ -92,7 +92,7 @@
     <div class="oa-empty">
       🔌 尚未连接治理服务
       <p class="oa-empty-hint">
-        官方资产来自治理中心 evorule-rule(:18081)已发布的数据集。
+        官方资产来自治理中心 evorule-rule(:18081)已上架的数据集。
         请先在治理中心完成连接(凭据与主系统独立)。
       </p>
       {#if $governanceConfig.username && $governanceConfig.password}
@@ -119,10 +119,10 @@
 
     {#if $officialAssets.length === 0}
       <div class="oa-empty">
-        🏛️ 官方资产尚未发布
+        🏛️ 尚未上架
         <p class="oa-empty-hint">
-          准入口径:数据集在治理中心标记为「公开」且生命周期为「已发布」(独立审批通过)。
-          运营方在治理中心完成 authoring → 沙盒验收 → 发布后,资产会出现在此处。
+          准入口径:数据集在治理中心标记为「公开」且生命周期为「已上架」(独立审批通过)。
+          运营方在治理中心完成 authoring → 沙盒验收 → 上架后,资产会出现在此处。
         </p>
         <button class="oa-btn" onclick={handleRefresh} disabled={$officialAssetsUi.loading}>
           ↻ 重新检查
@@ -141,7 +141,7 @@
               {#if ds.dataset_kind}
                 <span class="oa-chip kind">{KIND_LABELS[ds.dataset_kind] ?? ds.dataset_kind}</span>
               {/if}
-              <span class="oa-chip lifecycle">已发布</span>
+              <span class="oa-chip lifecycle">已上架</span>
               {#each ds.domain as dom (dom)}
                 <span class="oa-chip">{dom}</span>
               {/each}

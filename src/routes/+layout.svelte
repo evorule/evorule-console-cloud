@@ -373,6 +373,19 @@
     // 规则库启动引导(workspace → 内置示例 → 规则列表)
     bootstrapRuleLibrary();
 
+    // 体验反馈:凭直觉访问 /settings 应能打开设置面板而非 404。
+    // settings 是 in-page modal(非独立路由),此处消费 ?openSettings= 打开对应面板,
+    // 由 /settings 重定向页落地;query 一次性消费后从地址栏清除,避免刷新重复弹窗。
+    if (browser) {
+      const sp = new URLSearchParams(window.location.search);
+      const tab = sp.get("openSettings");
+      if (tab === "llm" || tab === "onboarding" || tab === "network") {
+        openSettings(tab);
+        const clean = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, "", clean);
+      }
+    }
+
     return () => {
       window.clearTimeout(healthTimer);
       window.removeEventListener("pagehide", abortHealthOnHide);

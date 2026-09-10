@@ -258,12 +258,12 @@
     </div>
   </header>
 
-  <!-- PR6: 后端未起 / 未发布规则集 → 统一空态 + 诊断入口 -->
+  <!-- PR6: 后端未起 / 尚未部署规则集 → 统一空态 + 诊断入口 -->
   {#if productionState.status === "offline"}
     <EmptyState
       type="not_configured"
       noun="生产环境"
-      description="evorule-server 未运行或未发布规则集,监控大屏暂无实时数据。"
+      description="evorule-server 未运行或尚未部署规则集,监控大屏暂无实时数据。"
       detail="确认本地服务已启动(默认 127.0.0.1:18080),或在「设置 → 联网」切换远程地址后重试。"
       ctaLabel="打开连接诊断"
       ctaAction={() => (diagOpen = true)}

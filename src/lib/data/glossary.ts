@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+﻿// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
 // evorule 术语表数据(PR4)。
@@ -45,7 +45,7 @@ export const GLOSSARY: GlossaryTerm[] = [
 		id: "ruleset",
 		term: "规则集",
 		alias: ["规则库"],
-		definition: "一组规则 + 元数据的集合,带版本号,发布后版本号单调递增,支持回滚到旧版本。",
+		definition: "一组规则 + 元数据的集合,带版本号,部署后版本号单调递增,支持回滚到旧版本。",
 	},
 	{
 		id: "fact",
@@ -64,7 +64,7 @@ export const GLOSSARY: GlossaryTerm[] = [
 		id: "governance",
 		term: "治理",
 		alias: ["治理中心"],
-		definition: "规则的“审批 → 发布 → 回滚”工作流,以及 5 态生命周期管理,确保改动受控、可审计。",
+		definition: "规则的“审批 → 部署 → 回滚”工作流,以及 5 态生命周期管理,确保改动受控、可审计。",
 	},
 	{
 		id: "workspace",
@@ -83,7 +83,7 @@ export const GLOSSARY: GlossaryTerm[] = [
 		id: "five_state",
 		term: "5 态生命周期",
 		alias: ["生命周期"],
-		definition: "规则从生到灭的五个状态:草稿 → 评审 → 发布 → 生效 → 停用。每态切换都留痕。",
+		definition: "规则从生到灭的五个状态:草稿 → 评审 → 上架 → 部署 → 停用。每态切换都留痕。",
 	},
 	{
 		id: "dengbao",

@@ -42,7 +42,7 @@
   import { governanceStore } from "$lib/governance/governance-store";
   import { get } from "svelte/store";
 
-  /** 分区视图:模板(既有) | 官方资产(治理中心公开+已发布数据集,47 号接线专项) */
+  /** 分区视图:模板(既有) | 官方资产(治理中心公开+已上架数据集,47 号接线专项) */
   type MarketViewMode = "templates" | "official";
   let viewMode = $state<MarketViewMode>("templates");
 

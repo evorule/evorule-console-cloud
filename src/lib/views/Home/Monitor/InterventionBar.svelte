@@ -1,10 +1,10 @@
-<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:13 按钮干预栏(右侧操作区,所有操作走二次确认)
     13 操作:
       常规(4):暂停 reactor / 恢复 reactor / 手动 GC / 触发 invariant 检查
-      发布(3):开始发布会话 / 进入审批模式 / 导出发布包
+      发布(3):开始部署会话 / 进入审批模式 / 导出部署包
       Session(2):切换 session / 紧急回滚
       IO(2):取消全部待处理 IO / 注入心跳
       审计(2):导出审计链 / 强制轮换 WAL
@@ -149,7 +149,7 @@
 
   <!-- 发布 -->
   <section class="iv-section">
-    <div class="iv-sec-title">发布 / 审批</div>
+    <div class="iv-sec-title">部署 / 审批</div>
     <div class="iv-grid">
       <button
         class={`${btnBaseCls} iv-primary`}
@@ -157,7 +157,7 @@
         title={permissionTooltip("publish.start_session")}
         onclick={() => request("publish.start_session")}
       >
-        🆕 发布会话
+        🆕 部署会话
       </button>
       <button
         class={`${btnBaseCls} iv-warning`}
@@ -173,7 +173,7 @@
         title={permissionTooltip("publish.export_package")}
         onclick={() => request("publish.export_package")}
       >
-        📦 导出发布包
+        📦 导出部署包
       </button>
     </div>
   </section>

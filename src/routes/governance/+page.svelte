@@ -1,9 +1,9 @@
-<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   /governance 路由 — Phase 2 F1 治理接线(真实后端,非 mock)。
   通过 GovernanceBackend 直连 evorule-rule(:18081) REST:
-    连接 → 数据集列表/创建 → 条目(规则)灌入 → 5 态生命周期 + 独立审批发布 → 版本链。
+    连接 → 数据集列表/创建 → 条目(规则)灌入 → 5 态生命周期 + 独立审批上架 → 版本链。
   生命周期:Draft → Candidate → Active → Published → Rejected(权限由 evorule-rule 后端强制,
   错误不静默,toast 展示后端 error.message)。
   边界:本页治理数据来自 evorule-rule(资产库),与 evorule-server(执行)解耦。
@@ -230,7 +230,7 @@
     }
   }
 
-  // ===== 发布确认 =====
+  // ===== 上架确认 =====
   let publishConfirm = $state(false);
   let publishReason = $state('');
 
@@ -382,37 +382,37 @@
 
   async function handlePublish(): Promise<void> {
     if (!publishConfirm) {
-      toastError('独立发布需二次确认:请勾选确认框', '发布审批');
+      toastError('独立上架需二次确认:请勾选确认框', '上架审批');
       return;
     }
     // W1-A6:生效基准前置显式化——版本选择缺省为 auto_by_effective_date,
-    // 缺 law_ref.effective_from 的发布必被 server 前置校验 400 拦截;
+    // 缺 law_ref.effective_from 的上架必被 server 前置校验 400 拦截;
     // 与其事后撞墙,不如事前拦截并一步引导到法规锚编辑器补齐(不替代 server 权威闸门)
     if (!selected?.law_ref?.effective_from) {
       toastError(
-        '缺生效基准(law_ref.effective_from):发布与部署必需 — 已打开法规锚编辑,补齐生效日后再发布',
-        '发布前置校验'
+        '缺生效基准(law_ref.effective_from):上架与部署必需 — 已打开法规锚编辑,补齐生效日后再上架',
+        '上架前置校验'
       );
       openLawEdit();
       return;
     }
     try {
       await publish(publishReason.trim() || undefined);
-      toastSuccess('已发布(Published)', '治理');
+      toastSuccess('已上架(Published)', '治理');
       publishConfirm = false;
       publishReason = '';
     } catch (e) {
-      toastError(e instanceof Error ? e.message : String(e), '发布审批');
+      toastError(e instanceof Error ? e.message : String(e), '上架审批');
     }
   }
 
   async function handleUnpublish(): Promise<void> {
-    if (!confirm('确认撤销发布(Published → Rejected)?仅管理员可操作。')) return;
+    if (!confirm('确认撤销上架(Published → Rejected)?仅管理员可操作。')) return;
     try {
       await unpublish();
-      toastSuccess('已撤销发布(Rejected)', '治理');
+      toastSuccess('已撤销上架(Rejected)', '治理');
     } catch (e) {
-      toastError(e instanceof Error ? e.message : String(e), '撤销发布');
+      toastError(e instanceof Error ? e.message : String(e), '撤销上架');
     }
   }
 
@@ -438,7 +438,7 @@
   /** 当前执行域激活 bundle(按 dataset_id 匹配选中数据集,部署徽标数据源) */
   let activeBundles = $state<ActiveBundleInfo[]>([]);
 
-  // ===== 法规锚编辑(:生效基准 UI 编辑通道——发布闸门 400 的产品内修复路径) =====
+  // ===== 法规锚编辑(:生效基准 UI 编辑通道——上架闸门 400 的产品内修复路径) =====
   let showLawEdit = $state(false);
   let lawSaving = $state(false);
   let lawForm = $state({ document_id: '', law_version: '', effective_from: '', effective_to: '' });
@@ -1458,9 +1458,9 @@
     role === 'admin'
       ? '管理员:全部操作'
       : role === 'approver'
-        ? '审批者:可 激活/发布(二次确认)/驳回;不可建数据集'
+        ? '审批者:可 激活/上架(二次确认)/驳回;不可建数据集'
         : role === 'rule_engineer'
-          ? '规则工程师:可 建数据集/灌规则/提交候选/打版本;激活与发布需审批者'
+          ? '规则工程师:可 建数据集/灌规则/提交候选/打版本;激活与上架需审批者'
           : '查看者:只读'
   );
 
@@ -1468,7 +1468,7 @@
     Draft: '草稿',
     Candidate: '候选',
     Active: '激活',
-    Published: '已发布',
+    Published: '已上架',
     Rejected: '已驳回'
   };
 
@@ -1592,11 +1592,11 @@
     <div class="card conn-card">
       <h2>治理服务连接(evorule-rule)</h2>
       <p class="hint">
-        连接规则资产库(:18081)以管理数据集、规则与发布。密码仅存本地(localStorage),不上传。
+        连接规则资产库(:18081)以管理数据集、规则与上架。密码仅存本地(localStorage),不上传。
       </p>
       <p class="hint boundary-note">
         <strong>为什么是两个系统?</strong>治理中心是独立子系统 evorule-rule(规则资产库:
-        五态生命周期、审批发布、版本链),主系统 evorule-server(:18080)负责规则执行与审计。
+        五态生命周期、审批上架、版本链),主系统 evorule-server(:18080)负责规则执行与审计。
         资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。
         部署时须自行设置治理服务管理员凭据并定期换密(幂等引导仅首启生效)。
       </p>
@@ -1777,27 +1777,27 @@
           {:else if selectedStatus === 'Active'}
             <div class="publish-box">
               {#if !selected.law_ref?.effective_from}
-                <!-- W1-A6:把缺基准警示放在发布动作发生处,而非只留在法规锚区块 -->
+                <!-- W1-A6:把缺基准警示放在上架动作发生处,而非只留在法规锚区块 -->
                 <p class="law-missing">
-                  ⚠ 缺生效基准(law_ref.effective_from)— 发布将被前置校验拦截,
+                  ⚠ 缺生效基准(law_ref.effective_from)— 上架将被前置校验拦截,
                   <button class="link-btn" onclick={openLawEdit}>立即设置</button>
                 </p>
               {/if}
               <label class="check">
                 <input type="checkbox" bind:checked={publishConfirm} />
-                <span>我确认已完成独立发布审批(发布后对外可见可拉取)</span>
+                <span>我确认已完成独立上架审批(上架后对外可见可拉取)</span>
               </label>
               <input
                 class="reason"
                 type="text"
                 bind:value={publishReason}
-                placeholder="发布原因(可选,进审计 cause)"
+                placeholder="上架原因(可选,进审计 cause)"
               />
-              <button class="btn btn-sm btn-primary" onclick={handlePublish}>发布(Published)</button>
+              <button class="btn btn-sm btn-primary" onclick={handlePublish}>上架(Published)</button>
             </div>
           {:else if selectedStatus === 'Published'}
             <button class="btn btn-sm btn-primary" onclick={openDeploy}>🚀 部署到执行域</button>
-            <button class="btn btn-sm btn-danger" onclick={handleUnpublish}>撤销发布(Rejected,需管理员)</button>
+            <button class="btn btn-sm btn-danger" onclick={handleUnpublish}>撤销上架(Rejected,需管理员)</button>
           {:else if selectedStatus === 'Rejected'}
             <button class="btn btn-sm" onclick={() => handleTransition('candidate')}>重新提交候选</button>
           {/if}
@@ -1924,7 +1924,7 @@
           </div>
         {/if}
 
-        <!-- 法规锚(:生效基准编辑通道;auto_by_effective_date 模式发布/部署需 effective_from) -->
+        <!-- 法规锚(:生效基准编辑通道;auto_by_effective_date 模式上架/部署需 effective_from) -->
         <div class="sec">
           <div class="sec-head">
             <span>法规锚(law_ref)</span>
@@ -1941,7 +1941,7 @@
               {#if selected.law_ref.effective_from}
                 <span class="chip">生效 {selected.law_ref.effective_from}</span>
               {:else}
-                <span class="chip chip-warn">⚠ 缺生效基准 — 发布将被前置校验拦截</span>
+                <span class="chip chip-warn">⚠ 缺生效基准 — 上架将被前置校验拦截</span>
               {/if}
               {#if selected.law_ref.effective_to}
                 <span class="chip">失效 {selected.law_ref.effective_to}</span>
@@ -1949,8 +1949,8 @@
             </div>
           {:else}
             <p class="muted">
-              未设置 —— 版本选择缺省为 auto_by_effective_date 模式,发布与部署需
-              law_ref.effective_from 作为生效基准(前置校验)。建议发布前先设置。
+              未设置 —— 版本选择缺省为 auto_by_effective_date 模式,上架与部署需
+              law_ref.effective_from 作为生效基准(前置校验)。建议上架前先设置。
             </p>
           {/if}
 

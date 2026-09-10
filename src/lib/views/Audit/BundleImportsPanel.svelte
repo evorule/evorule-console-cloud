@@ -95,7 +95,7 @@
     <div class="error-box" role="alert">部署历史拉取失败:{loadError}</div>
   {:else if imports.length === 0 && !loading}
     <div class="hint-box">
-      暂无导入记录(尚未导入快照包,或 server 侧 workspace 元数据库未接线)。治理侧发布经部署通道导入后会出现在这里。
+      暂无导入记录(尚未导入快照包,或 server 侧 workspace 元数据库未接线)。治理侧上架经部署通道导入后会出现在这里。
     </div>
   {:else}
     <div class="table-wrap">

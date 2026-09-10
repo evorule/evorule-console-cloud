@@ -58,7 +58,7 @@
     </div>
   </button>
 
-  <button class="stat-card" onclick={onOpenPublishQueue} title="打开发布队列">
+  <button class="stat-card" onclick={onOpenPublishQueue} title="打开部署审批">
     <div class="stat-icon">📥</div>
     <div class="stat-label">待审</div>
     <div class="stat-value">
@@ -66,7 +66,7 @@
       {#if stats.pendingCount > 0}<span class="stat-badge">待处理</span>{/if}
     </div>
     <div class="stat-meta">
-      {#if stats.pendingCount === 0}无待审 · 全部已发布
+      {#if stats.pendingCount === 0}无待审 · 队列已清空
       {:else}需要审批 / 回滚
       {/if}
       <span class="link">去审批 →</span>

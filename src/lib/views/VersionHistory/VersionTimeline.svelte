@@ -66,7 +66,7 @@
   {:else if error}
     <EmptyState type="load_failed" noun="版本历史" description={error} />
   {:else if history.length === 0}
-    <EmptyState type="no_data" noun="发布版本" />
+    <EmptyState type="no_data" noun="部署版本" />
   {:else}
     <div class="timeline">
       {#each history as entry, i (entry.version)}
@@ -83,7 +83,7 @@
               </span>
             </div>
             <div class="version-meta">
-              <span>发布人:{entry.publishedBy}</span>
+              <span>部署人:{entry.publishedBy}</span>
               <span class="version-hash" title={entry.rulesetHash}>
                 hash:{entry.rulesetHash.slice(0, 12)}...
               </span>

@@ -164,12 +164,12 @@
       <div class="capability">
         <span class="cap-icon">🔄</span>
         <span class="cap-name">滚动 session 热更新</span>
-        <span class="cap-desc">规则集发布零停机,版本单调递增</span>
+        <span class="cap-desc">规则集部署零停机,版本单调递增</span>
       </div>
       <div class="capability">
         <span class="cap-icon">✅</span>
         <span class="cap-name">协作审批工作流</span>
-        <span class="cap-desc">三级权限,规则发布需审批</span>
+        <span class="cap-desc">三级权限,规则部署需审批</span>
       </div>
     </div>
   </div>

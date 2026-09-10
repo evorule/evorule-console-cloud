@@ -1,10 +1,10 @@
-<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:数据集操作按钮(按 status 显示不同按钮)
     - draft:    [测试] [编辑] [复制] [删除]
     - testing:  [查看测试] [标记就绪] [回草稿]
-    - ready:    [发布] [编辑] [回草稿]
+    - ready:    [部署] [编辑] [回草稿]
     - published:[查看运行时] [回草稿]
   关联设计:P03_DATASET_DESIGN.md §6.3(DatasetActions 按状态显示)
 -->
@@ -46,7 +46,7 @@
     <button type="button" class="btn btn-primary" onclick={onMarkReady}>✅ 标记就绪</button>
     <button type="button" class="btn" onclick={onRevertDraft}>↩ 回草稿</button>
   {:else if status === "ready"}
-    <button type="button" class="btn btn-primary" onclick={onPublish}>🚀 发布</button>
+    <button type="button" class="btn btn-primary" onclick={onPublish}>🚀 部署</button>
     <button type="button" class="btn" onclick={onEdit}>✏️ 编辑</button>
     <button type="button" class="btn" onclick={onRevertDraft}>↩ 回草稿</button>
   {:else if status === "published"}

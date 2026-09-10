@@ -155,8 +155,8 @@
     <p class="kv-error" role="alert">⚠ {listError}</p>
   {:else if datasets.length === 0}
     <p class="kv-empty">
-      当前实例尚未承载任何知识数据资产。数据经由治理中心发布 knowledge
-      bundle 后落盘至此执行实例 —— 发布链路见治理中心「发布队列」。
+      当前实例尚未承载任何知识数据资产。数据经由治理中心上架 knowledge
+      bundle 后落盘至此执行实例 —— 上架链路见治理中心「部署审批」。
     </p>
   {:else if !selectedDataset}
     <!-- 段 1:数据集卡片 -->

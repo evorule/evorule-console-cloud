@@ -222,12 +222,12 @@
         >
       </div>
       <div class="diag-row">
-        <!-- 与总览摘要一致,澄清为「正式规则集版本」 -->
-        <span class="diag-k" title="服务端正式规则集已发布的版本;0 表示尚未发布(与本地草稿无关)">正式规则集版本</span>
+        <!-- 执行层语义词:已部署(生效)规则集版本,与本地草稿区分 -->
+        <span class="diag-k" title="执行域已部署(生效)的版本;0 表示尚未部署任何规则到执行器(与本地草稿无关)">已部署版本</span>
         <span class="diag-v"
           >{productionState.rulesetVersion > 0
             ? `v${productionState.rulesetVersion}`
-            : "未发布"}</span
+            : "未部署"}</span
         >
       </div>
       <div class="diag-row">

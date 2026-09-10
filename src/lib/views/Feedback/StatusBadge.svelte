@@ -31,10 +31,10 @@
 
   const config: Record<StatusKind, { label: string; color: string }> = {
     draft: { label: "草稿", color: "gray" },
-    final: { label: "已发布", color: "green" },
+    final: { label: "已定稿", color: "green" },
     testing: { label: "测试中", color: "yellow" },
     ready: { label: "就绪", color: "blue" },
-    published: { label: "已发布", color: "green" },
+    published: { label: "已部署", color: "green" },
     running: { label: "运行中", color: "blue" },
     completed: { label: "已完成", color: "green" },
     cancelled: { label: "已取消", color: "gray" },

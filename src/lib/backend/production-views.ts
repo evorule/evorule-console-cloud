@@ -1,16 +1,16 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+﻿// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — 生产域视图模型与映射层(B5 旁路 store 收敛)
 //
 // 职责:
-//   - 定义发布队列/生产状态/版本历史的 UI 视图类型(camelCase)
+//   - 定义部署队列/生产状态/版本历史的 UI 视图类型(camelCase)
 //   - 内核 WorkspaceBackend 记录类型(snake_case,对齐 server models.rs)→ 视图模型映射
 //   - 前端角色 → 后端 PublishRole 映射
 //
 // 收敛历史(2026-08-28,旁路 store 收敛专项):
 //   本文件承接原 stores/publish-queue-api.ts、stores/production-audit.ts 的类型与
 //   纯映射函数;server 访问统一收敛到内核 WorkspaceBackend 方法(带 Bearer token),
-//   旁路 fetch 函数已删除。原"双通道发布审批"的 localStorage 本地状态机
+//   旁路 fetch 函数已删除。原"双通道部署审批"的 localStorage 本地状态机
 //   (stores/publish-queue.ts)已废弃删除,审批链路单通道走 server。
 
 import type {
@@ -27,7 +27,7 @@ import type {
 export interface ProductionState {
 	/** 当前生产 session 的 tcb session_id(SessionManager 返回) */
 	currentSessionId: number | null;
-	/** 当前规则集版本号(单调递增,0 = 未发布) */
+	/** 当前规则集版本号(单调递增,0 = 未部署) */
 	rulesetVersion: number;
 	/** 当前规则集 BLAKE3 哈希 */
 	rulesetHash: string | null;
@@ -49,7 +49,7 @@ export const DEFAULT_PRODUCTION_STATE: ProductionState = {
  * server ProductionStateRecord → cloud ProductionState。
  *
  * # status 推导(server 记录不含 status 字段)
- * - `current_session_id == null` → "offline"(未发布或 session 已关闭)
+ * - `current_session_id == null` → "offline"(未部署或 session 已关闭)
  * - `current_session_id != null` → "running"(有活跃生产 session)
  * - "switching" 是瞬态,仅由 SSE `session_switched` 事件临时设置,不来自轮询
  */
@@ -70,10 +70,10 @@ export function mapProductionStateRecord(
 }
 
 // ============================================================================
-// 发布队列
+// 部署队列
 // ============================================================================
 
-/** 后端发布队列状态(与前端 mock 状态对齐映射后使用)。 */
+/** 后端部署队列状态(与前端 mock 状态对齐映射后使用)。 */
 export type BackendPublishStatus =
 	| 'pending'
 	| 'approved'
@@ -81,11 +81,11 @@ export type BackendPublishStatus =
 	| 'rejected'
 	| 'cancelled';
 
-/** 适配后的发布队列项(UI 消费,camelCase)。 */
+/** 适配后的部署队列项(UI 消费,camelCase)。 */
 export interface PublishQueueItemView {
 	/** 队列项 ID(后端数字转字符串,便于与 mock 的字符串 ID 统一) */
 	id: string;
-	/** 展示用版本号(published 后为实际发布版本,pending 为 0) */
+	/** 展示用版本号(published 后为实际部署版本,pending 为 0) */
 	rulesetVersion: number;
 	submittedBy: string;
 	submittedAt: string;
@@ -95,7 +95,7 @@ export interface PublishQueueItemView {
 	reviewComment?: string;
 	publishedAt?: string;
 	description?: string;
-	/** 队列项类型(normal=普通发布 / meta_promotion=元规则晋升) */
+	/** 队列项类型(normal=普通部署 / meta_promotion=元规则晋升) */
 	kind: 'normal' | 'meta_promotion';
 }
 

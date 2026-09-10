@@ -62,11 +62,11 @@
   </div>
 
   <div class="faq">
-    <h3>Q:跳治理页(导出/发布队列/治理中心)显示 404 怎么办?</h3>
+    <h3>Q:跳治理页(导出/部署审批/治理中心)显示 404 怎么办?</h3>
     <p>这些页面是 in-page modal 触发(<code>openSettings</code> 模式),<strong>不是真路由</strong>。直接从侧栏点,或访问:</p>
     <ul>
       <li>导出 → <code>/export</code></li>
-      <li>发布队列 → <code>/publish-queue</code></li>
+      <li>部署审批 → <code>/publish-queue</code></li>
       <li>治理中心 → <code>/governance</code></li>
     </ul>
     <p>需要登录 + workspace 存在(否则路由守卫 307 弹回首页)。</p>

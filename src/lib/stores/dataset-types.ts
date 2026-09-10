@@ -7,7 +7,7 @@
 
 import type { JsonPatch } from "$lib/types/json-patch";
 
-/** 数据集状态机:草稿 → 测试中 → 就绪 → 已发布 */
+/** 数据集状态机:草稿 → 测试中 → 就绪 → 已部署 */
 export type DatasetStatus = "draft" | "testing" | "ready" | "published";
 
 /** 数据集内单条规则的参数覆盖(JSON Patch 格式) */
@@ -44,6 +44,6 @@ export interface Dataset {
   updatedAt: string;
   /** 最后测试时间(L3 Sandbox 测试后更新) */
   lastTestedAt: string | null;
-  /** 发布版本号(published 后有值,对应 production ruleset_version) */
+  /** 部署版本号(published 后有值,对应 production ruleset_version) */
   publishedVersion: number | null;
 }
