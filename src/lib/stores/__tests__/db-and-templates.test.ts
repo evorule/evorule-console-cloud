@@ -22,7 +22,7 @@ import {
   FINANCE_TEMPLATE,
   COMPLIANCE_TEMPLATE,
 } from "$lib/views/Build/templates";
-import { rules, resetRulesStore } from "$lib/kernel";
+import { rules, resetRulesStore, RuleValidator } from "$lib/kernel";
 import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
 import { tagStore } from "$lib/stores/tag";
 import { categoryStore } from "$lib/stores/category";
@@ -292,6 +292,20 @@ describe("templates - builtinRules 每条符合内核 transform 数组格式", (
   test("每个模板的 ruleMetaTemplate 非空", () => {
     expect(FINANCE_TEMPLATE.ruleMetaTemplate.length).toBeGreaterThan(0);
     expect(COMPLIANCE_TEMPLATE.ruleMetaTemplate.length).toBeGreaterThan(0);
+  });
+
+  test("模板规则不含已废弃的 domains 字段,且通过 RuleValidator 门禁(防回归:模板加载曾因 domains 致 server 400)", () => {
+    // 体验反馈:财务/合规模板兜底分支曾用 `{ type:all, domains:[] }`,违反自身 P0-03
+    // (嵌套禁止 domains,须用 inner),导致建库向导模板加载被 server 以 HTTP 400 schema 校验拒绝。
+    const allRules = [...FINANCE_TEMPLATE.builtinRules, ...COMPLIANCE_TEMPLATE.builtinRules];
+    for (const rule of allRules) {
+      const raw = rule.content;
+      // P0-03 门禁:不得出现 domains/domain 嵌套字段
+      expect(raw).not.toMatch(/["']domains["']/);
+      // 校验通过(结构合法;若含非法字段此处 valid=false)
+      const v = RuleValidator.validate(raw);
+      expect(v.errors).toEqual([]);
+    }
   });
 });
 

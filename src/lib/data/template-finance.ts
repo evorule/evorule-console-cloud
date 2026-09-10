@@ -80,7 +80,7 @@ const FINANCE_RULE_CFO = {
         },
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     },
@@ -144,7 +144,7 @@ const FINANCE_RULE_MULTI_LEVEL = {
         },
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     },

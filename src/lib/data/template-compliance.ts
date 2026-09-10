@@ -46,7 +46,7 @@ const COMPLIANCE_RULE_SOX = {
         },
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     },
@@ -89,7 +89,7 @@ const COMPLIANCE_RULE_REGULATOR = {
         },
         {
           type: "branch",
-          params: { domain: { type: "all", domains: [] }, on_true: [] },
+          params: { domain: { type: "all", inner: [] }, on_true: [] },
         },
       ],
     },
