@@ -24,7 +24,7 @@
 		currentWorkspace,
 		type AssistantProvider
 	} from '$lib/kernel';
-	import { RuleValidator, type ValidationResult } from '$lib/kernel';
+	import { RuleValidator, friendlyRuleError, type ValidationResult } from '$lib/kernel';
 	import { get } from 'svelte/store';
 	import { closeAssistantDialog } from '$lib/stores/assistant-ui';
 	import { LlmError } from '$lib/assistant/llm-fetch';
@@ -204,11 +204,11 @@
 									<strong>⚠️ 校验未通过(共 {validation.errors.length} 项):</strong>
 									<ul>
 										{#each validation.errors as err}
-											<li>
-												<code>{err.gate}</code>
-												{err.message}
-											</li>
-										{/each}
+										<li>
+											<code>{err.gate}</code>
+											{friendlyRuleError(err.message)}
+										</li>
+									{/each}
 									</ul>
 									<small>请修改草案或重新生成,采用后仍可编辑</small>
 								</div>
