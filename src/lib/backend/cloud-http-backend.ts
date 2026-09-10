@@ -475,21 +475,21 @@ export class CloudHttpBackend implements ExecutionBackend {
 	}
 
 	/**
-	 * 拉取发布队列(委托内核 WorkspaceBackend.listPublishQueue)。
+	 * 拉取部署审批队列(委托内核 WorkspaceBackend.listPublishQueue)。
 	 *
 	 * 失败(网络错误 / 401 凭据 / 非 2xx)→ 抛 Error,
 	 * 由调用方 catch 后展示错误状态(不静默返回空数组,见 F3 偏差修正)。
 	 */
 	async getPublishQueue(): Promise<PublishQueueItemView[]> {
 		if (!this.workspace) {
-			throw new Error('发布队列不可用:未注入 WorkspaceBackend');
+			throw new Error('部署审批不可用:未注入 WorkspaceBackend');
 		}
 		const items = await this.workspace.listPublishQueue();
 		return items.map(mapPublishQueueItem);
 	}
 
 	/**
-	 * 审批发布(委托内核 WorkspaceBackend.reviewPublish,
+	 * 审批部署(委托内核 WorkspaceBackend.reviewPublish,
 	 * 消费 `POST /api/publish/queue/{queue_id}/review`)。
 	 *
 	 * 操作者身份/角色来自 backend actor(+layout 按登录用户注入),
@@ -504,7 +504,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 		comment: string,
 	): Promise<PublishWriteResult> {
 		if (!this.workspace) {
-			return { ok: false, error: '发布审批不可用:未注入 WorkspaceBackend' };
+			return { ok: false, error: '部署审批不可用:未注入 WorkspaceBackend' };
 		}
 		try {
 			await this.workspace.reviewPublish(queueId, { decision, comment });

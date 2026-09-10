@@ -64,7 +64,7 @@ describe('CloudHttpBackend 读方法', () => {
   test('getPublishQueue:未注入 workspace → 如实抛错(不静默返回空数组)', async () => {
     const backend = new CloudHttpBackend({ mode: 'offline' }, null);
 
-    await expect(backend.getPublishQueue()).rejects.toThrow('发布队列不可用');
+    await expect(backend.getPublishQueue()).rejects.toThrow('部署审批不可用');
   });
 
   test('getProductionAudit:委托 workspace.listProductionAudit 并过滤映射', async () => {
