@@ -111,9 +111,11 @@
 
       if (result && result.accepted) {
         // submitCommand 返回可能不含 version,改用提交后刷新的 reactor 版本
-        const version = result.version ?? get(reactorVersion) ?? 0;
+        // 取不到时为 null(不落 0 避免向消费者展示误导性的 version=0)
+        const version = result.version ?? get(reactorVersion) ?? null;
         runStatus = "success";
-        runResult = `事件已提交(session=${sessionId},version=${version})。
+        const versionNote = version != null ? `(规则集版本 ${version})` : "";
+        runResult = `事件已提交${versionNote}。
 注意:规则目前存于浏览器本地草稿,服务端规则集尚未包含此规则,本次提交主要演示事件提交机制。
 要让规则真正驱动执行:完成向导后用「导出规则 JSON」→ 治理中心「从向导包导入」→ 上架 → 部署,新会话即生效。`;
         toastSuccess("事件已提交(演示事件提交机制)", "试运行");
