@@ -1,9 +1,9 @@
-<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:数据集卡片(列表项)
     - 展示名称 + 状态徽标 + 描述 + 规则数 + 标签 chips + 分类路径
-    - 最后测试时间 + 发布版本
+    - 最后测试时间 + 部署版本
     - 操作按钮(DatasetActions,按状态显示)
   关联设计:P03_DATASET_DESIGN.md §6.2(DatasetCard)
 -->
@@ -64,7 +64,7 @@
   <div class="card-meta">
     <span class="meta-item" title="规则数">📋 {ruleCount} 条规则</span>
     {#if dataset.publishedVersion !== null}
-      <span class="meta-item" title="发布版本">v{dataset.publishedVersion}</span>
+      <span class="meta-item" title="部署版本">v{dataset.publishedVersion}</span>
     {/if}
     {#if dataset.lastTestedAt}
       <span class="meta-item" title="最后测试时间">

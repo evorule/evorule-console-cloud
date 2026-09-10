@@ -79,16 +79,16 @@
         <span class="metric-value {statusClass}">{statusLabel}</span>
       </div>
       <div class="metric">
-        <!-- 澄清「正式规则集版本」= 服务端已发布版本,与本地草稿区分 -->
+        <!-- 执行层语义词:规则真正下发执行器、版本+1 才是"部署生效";0=尚未部署过任何版本 -->
         <span
           class="metric-label"
-          title="服务端正式规则集已发布的版本;0 表示尚未从治理中心发布任何规则(与本地草稿无关)"
-        >正式规则集版本</span>
+          title="执行域已部署(生效)的规则集版本;0 表示尚未部署任何规则到执行器(与本地草稿无关)"
+        >已部署版本</span>
         <span class="metric-value">
           {#if prod.rulesetVersion > 0}
             v{prod.rulesetVersion}
           {:else}
-            <span class="metric-unpublished">未发布</span>
+            <span class="metric-unpublished">尚未部署</span>
           {/if}
         </span>
       </div>

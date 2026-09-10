@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+﻿// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 // nav-registry — 导航注册表(首项改造:一切皆 plugin 交互层落地之二)
 //
@@ -106,16 +106,16 @@ export const NAV_REGISTRY: readonly NavDef[] = [
   },
   {
     id: "publish-queue",
-    label: "发布队列",
+    label: "部署审批",
     icon: "📥",
     path: "/publish-queue",
     group: "governance",
-    title: "发布队列 — 规则集发布审批与紧急回滚",
+    title: "部署审批 — 规则集部署审批与紧急回滚",
     loginRequired: true,
     // 闭合:与跳单卡同门控(view_publish_queue),无权用户侧栏/跳单卡均隐藏
     permissions: ["view_publish_queue"],
     jump: true,
-    lockHint: "需登录并具备发布队列查看权限",
+    lockHint: "需登录并具备部署审批查看权限",
   },
   {
     id: "plugin-approvals",
@@ -125,11 +125,11 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     group: "governance",
     title: "插件审批 — 外部插件配置提案审批(经 server 代理插件管理面)",
     loginRequired: true,
-    // 与发布审批同范式:同为治理审批动作,复用同一权限点对,
+    // 与部署审批同范式:同为治理审批动作,复用同一权限点对,
     // 不新增权限面;approver 由 server 代理强制注入登录身份
     permissions: ["view_publish_queue"],
     jump: true,
-    lockHint: "需登录并具备发布队列查看权限",
+    lockHint: "需登录并具备部署审批查看权限",
   },
   {
     id: "version-history",

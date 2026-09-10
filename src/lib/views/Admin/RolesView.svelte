@@ -34,10 +34,10 @@
     create_workspace: "创建工作区",
     edit_draft: "编辑草稿",
     review_in_workspace: "工作区内审核",
-    submit_to_publish: "提交发布",
+    submit_to_publish: "提交上架",
     start_sandbox: "启动沙盒",
-    approve_publish: "审批发布",
-    view_publish_queue: "查看发布队列",
+    approve_publish: "审批上架",
+    view_publish_queue: "查看部署审批",
     view_test_report: "查看测试报告",
     manage_users: "用户管理",
     manage_roles: "角色管理",
@@ -56,7 +56,7 @@
       actions: ["create_workspace", "edit_draft", "review_in_workspace", "start_sandbox", "submit_to_publish"],
     },
     {
-      label: "运行时干预与发布",
+      label: "运行时干预与上架",
       actions: ["intervene_runtime", "rollback_ruleset", "approve_publish"],
     },
     {

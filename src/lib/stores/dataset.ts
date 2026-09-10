@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+﻿// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
 // 数据集 store(CRUD + 4 状态机 + 派生筛选 + 级联清理)。
@@ -112,7 +112,7 @@ export function deleteDataset(id: string): void {
 }
 
 /**
- * 复制数据集(深拷贝,新 ID,状态回 draft,清空测试/发布信息)。
+ * 复制数据集(深拷贝,新 ID,状态回 draft,清空测试/部署信息)。
  * @returns 新数据集 ID
  */
 export function duplicateDataset(sourceId: string): string {
@@ -165,7 +165,7 @@ export function markReady(id: string, lastTestedAt?: string): void {
   );
 }
 
-/** ready → published(发布到 L1,需权限校验在调用方完成) */
+/** ready → published(部署到 L1,需权限校验在调用方完成) */
 export function publishDataset(id: string, publishedVersion: number): void {
   datasetStore.update((all) =>
     all.map((ds) =>
@@ -196,7 +196,7 @@ export function revertToDraft(id: string): void {
 
 /**
  * 规则删除时:从所有数据集移除该规则 ID + 对应参数覆盖。
- * published 的数据集自动回退到 draft(已发布规则变了,需重新测试)。
+ * published 的数据集自动回退到 draft(已部署规则变了,需重新测试)。
  * @returns 受影响的数据集 ID 列表
  */
 export function removeRuleFromAllDatasets(ruleId: string): string[] {

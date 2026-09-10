@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:数据集管理主视图(L2 Workspace 内)
@@ -72,14 +72,14 @@
 
   function handleMarkReady(id: string): void {
     markReady(id);
-    pushToast("数据集已标记为就绪,可发布到生产环境", "success");
+    pushToast("数据集已标记为就绪,可部署到生产环境", "success");
   }
 
   function handlePublish(id: string): void {
-    // P0 简化:直接发布(权限校验在调用方/上层)
+    // P0 简化:直接部署(权限校验在调用方/上层)
     // publishDataset 需要版本号,这里用时间戳派生单调版本
     publishDataset(id, Math.floor(Date.now() / 1000));
-    pushToast("数据集已发布到生产环境", "success");
+    pushToast("数据集已部署到生产环境", "success");
   }
 
   function handleDuplicate(id: string): void {
@@ -122,7 +122,7 @@
         <option value="draft">草稿</option>
         <option value="testing">测试中</option>
         <option value="ready">就绪</option>
-        <option value="published">已发布</option>
+        <option value="published">已部署</option>
       </select>
       <button type="button" class="btn btn-primary" onclick={handleNew}>
         + 新建数据集

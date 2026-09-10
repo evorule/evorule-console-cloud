@@ -1,7 +1,7 @@
-<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:发布队列列表 + 状态徽标 + approve/reject 按钮(权限守卫)
+  职责:部署审批列表 + 状态徽标 + approve/reject 按钮(权限守卫)
   依赖:publish-queue-api.ts / auth.ts / notifications.ts / toast.ts / net-config.ts
   关联设计:P08_COLLAB_WORKFLOW_DESIGN.md §7.5(PublishQueueList)
 
@@ -9,9 +9,9 @@
     - 在线(联网模式):数据来自远程 evorule-server(remoteBaseUrl)GET /api/publish/queue;
       审批/驳回走 POST /review,回滚走 POST /publish/rollback(单步,pending→published/rejected)。
     - 离线(本地模式):连本地 evorule-server(localBaseUrl,默认 http://localhost:18080)。
-      本地服务器不可达时展示明确错误状态,不静默显示"暂无发布请求"。
+      本地服务器不可达时展示明确错误状态,不静默显示"暂无待审请求"。
     - 不再回退 localStorage mock store(mock 两步流 submitted→reviewing→published
-      仅存于 Collab 演示视图 ReviewActions/DecisionMaker,发布队列页已全部走后端)。
+      仅存于 Collab 演示视图 ReviewActions/DecisionMaker,部署审批页已全部走后端)。
     - 后端状态机 pending/approved/published/rejected/cancelled 统一映射展示。
 -->
 
@@ -108,7 +108,7 @@
       pending: "待审核",
       approved: "已批准",
       rejected: "已驳回",
-      published: "已发布",
+      published: "已部署",
       cancelled: "已取消",
       rolled_back: "已回滚",
     };
@@ -143,10 +143,10 @@
     const comment = reviewComment[item.id] ?? "通过";
     const res = await backend.reviewPublishRequest(Number(item.id), "approved", comment);
     if (!res.ok) {
-      toastError(res.error ?? "审批失败", "发布队列");
+      toastError(res.error ?? "审批失败", "部署审批");
       return;
     }
-    toastSuccess("已批准发布", "发布队列");
+    toastSuccess("已批准部署", "部署审批");
     await reloadQueue();
   }
 
@@ -155,10 +155,10 @@
     const id = rejectingId;
     const res = await backend.reviewPublishRequest(Number(id), "rejected", rejectComment || "驳回");
     if (!res.ok) {
-      toastError(res.error ?? "驳回失败", "发布队列");
+      toastError(res.error ?? "驳回失败", "部署审批");
       return;
     }
-    toastSuccess("已驳回发布请求", "发布队列");
+    toastSuccess("已驳回待审请求", "部署审批");
     rejectingId = null;
     rejectComment = "";
     await reloadQueue();
@@ -166,15 +166,15 @@
 
   async function handleRollback(item: PublishQueueItemView): Promise<void> {
     if (!confirm("确认紧急回滚?此操作将立即生效。")) return;
-    // 后端回滚按"目标版本"操作:回滚到该发布项的发布版本(rulesetVersion = published_version)
+    // 后端回滚按"目标版本"操作:回滚到该部署项的部署版本(rulesetVersion = published_version)
     const targetVersion = item.rulesetVersion;
     if (targetVersion == null || targetVersion === 0) {
-      toastError("该发布项无发布版本,无法回滚", "发布队列");
+      toastError("该待审项无可回滚部署版本", "部署审批");
       return;
     }
-    const res = await backend.emergencyRollbackRequest(targetVersion, "发布队列紧急回滚");
+    const res = await backend.emergencyRollbackRequest(targetVersion, "部署审批紧急回滚");
     if (!res.ok) {
-      toastError(res.error ?? "回滚失败", "发布队列");
+      toastError(res.error ?? "回滚失败", "部署审批");
       return;
     }
     pushNotification({
@@ -183,14 +183,14 @@
       body: `已回滚到 v${targetVersion} (新版本号递增)`,
       link: "/version-history",
     });
-    toastSuccess("已紧急回滚", "发布队列");
+    toastSuccess("已紧急回滚", "部署审批");
     await reloadQueue();
   }
 </script>
 
 <section class="publish-queue">
   <header class="queue-header">
-    <h2>📤 发布队列</h2>
+    <h2>📤 部署审批</h2>
     <span class="queue-count">{queue.length} 条请求</span>
     <span
       class="source-badge"
@@ -204,14 +204,14 @@
   </header>
 
   {#if loading}
-    <div class="queue-empty">⏳ 加载发布队列...</div>
+    <div class="queue-empty">⏳ 加载部署审批...</div>
   {:else if error}
     <div class="queue-error">⚠️ {error}</div>
   {:else if queue.length === 0}
     <div class="queue-empty">
-      📭 暂无发布请求
+      📭 暂无待审请求
       <p class="queue-empty-hint">
-        发布请求经治理审批流产生:在「治理中心」将数据集推进到 Active 后提交发布,
+        待审请求经治理审批流产生:在「治理中心」将数据集推进到 Active 后提交部署,
         请求会出现在这里等待处理。当前队列健康为空属正常状态。
       </p>
     </div>
@@ -289,7 +289,7 @@
                     <dd>
                       {d.kind === "meta_promotion"
                         ? "元规则晋升"
-                        : "普通发布"}
+                        : "常规部署"}
                     </dd>
                   </div>
                   <div>
@@ -301,7 +301,7 @@
                     <dd>{d.test_report_sandbox_id ?? "未关联"}</dd>
                   </div>
                   <div>
-                    <dt>发布版本</dt>
+                    <dt>部署版本</dt>
                     <dd>{d.published_version ?? "—"}</dd>
                   </div>
                   <div>
@@ -319,7 +319,7 @@
                 </dl>
                 <details class="detail-rules">
                   <summary>
-                    完整请求体 final_candidate_rules(待发布规则集原文)
+                    完整请求体 final_candidate_rules(待部署规则集原文)
                   </summary>
                   <pre>{prettyRules(d.final_candidate_rules)}</pre>
                 </details>
@@ -375,7 +375,7 @@
   {#if rejectingId}
     <div class="reject-modal" role="dialog" aria-modal="true">
       <div class="modal-content">
-        <h3>驳回发布请求</h3>
+        <h3>驳回待审请求</h3>
         <textarea
           bind:value={rejectComment}
           placeholder="请输入驳回原因..."

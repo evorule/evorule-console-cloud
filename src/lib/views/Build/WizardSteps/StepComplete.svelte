@@ -53,15 +53,15 @@
     <div class="complete-icon">🎉</div>
     <h2>建库完成</h2>
     <!-- W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
-    <!-- 执行域(server)仅运行治理链发布的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
+    <!-- 执行域(server)仅运行治理链上架的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
     <!-- W3 方向 b:边界明示 + 换乘动作组(导出批量包/直达治理中心),终点从死胡同变换乘站。 -->
     <!-- 措辞通俗化 — 用「本地草稿 vs 正式规则」替代技术术语 -->
     <p class="complete-desc">本地规则库已就绪,规则已保存为「本地草稿」。</p>
     <div class="boundary-note">
       <strong>注意:</strong>你刚才创建的规则目前只是<strong>本地草稿</strong>(保存在当前浏览器中),
       尚未生效。要让规则真正驱动业务执行,请前往
-      <a href="/governance" class="gov-link">治理中心</a>将规则<strong>发布</strong>为正式规则——
-      发布并部署后,新会话即按新规则执行。
+      <a href="/governance" class="gov-link">治理中心</a>将规则<strong>上架</strong>为正式规则——
+      上架并部署后,新会话即按新规则执行。
     </div>
 
   <div class="summary-card">
@@ -119,12 +119,12 @@
         class="btn-link"
         data-testid="wizard-goto-governance"
       >
-        🏛 前往治理中心发布
+        🏛 前往治理中心上架
       </a>
     </div>
     <p class="gov-hint">
       导出 .evorule-batch.json 后,在治理中心规则条目区「从向导包导入」一键入库,
-      再走 发布 → 部署到执行域 链路,规则即可驱动真实执行台。
+      再走 上架 → 部署到执行域 链路,规则即可驱动真实执行台。
     </p>
   </div>
 </div>

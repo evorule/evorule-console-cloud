@@ -36,7 +36,7 @@
   function reasonToText(r: string): string {
     switch (r) {
       case "ruleset_published":
-        return "新规则集发布";
+        return "新规则集已部署";
       case "rollback":
         return "紧急回滚";
       case "manual_switch":
