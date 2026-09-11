@@ -24,6 +24,7 @@
 		resetViewHints,
 		resetAllOnboarding,
 	} from '$lib/stores/onboarding';
+	import { t } from '$lib/locale';
 
 	// 关闭回调(由 +layout.svelte 传入,点击"返回"按钮时调用)
 	// initialTab: 外部(命令面板 / 右栏折叠条)指定打开时默认选中的标签页
@@ -93,13 +94,13 @@
 			netTestResult = {
 				ok,
 				message: ok
-					? `连接成功(${url})`
-					: `连接失败(${url}) — 检查 evorule-server 是否启动`
+					? t('settings.network.testSuccess', { url })
+					: t('settings.network.testFail', { url })
 			};
 		} catch (e) {
 			netTestResult = {
 				ok: false,
-				message: `连接失败: ${(e as Error).message}`
+				message: t('settings.network.testError', { message: (e as Error).message })
 			};
 		} finally {
 			isTestingNet = false;
@@ -125,7 +126,7 @@
 	// 重新显示引导横幅(下次进入工作台即出现)
 	function handleReshowBanner() {
 		resetBanner();
-		toastInfo('引导横幅已重置,进入「工作台」即可看到', '新手引导');
+		toastInfo(t('settings.toast.bannerReset'), t('settings.onboarding.title'));
 	}
 
 	// 重新播放 5 步交互式 Tour(全局 overlay 已挂载,从设置里也能直接看到)
@@ -137,218 +138,216 @@
 	// 重置上手清单(6 步全部回到未完成)
 	function handleResetChecklist() {
 		resetChecklist();
-		toastInfo('上手清单已重置', '新手引导');
+		toastInfo(t('settings.toast.checklistReset'), t('settings.onboarding.title'));
 	}
 
 	// 重置所有视图首访提示(含遗留 GuidedHint 键)
 	function handleResetViewHints() {
 		resetViewHints();
 		sweepLegacyViewHints();
-		toastInfo('视图首访提示已重置,下次进入各视图会再次出现', '新手引导');
+		toastInfo(t('settings.toast.viewHintsReset'), t('settings.onboarding.title'));
 	}
 
 	// 重置全部引导态(危险操作,二次确认)
 	function handleResetAllOnboarding() {
-		if (!browser || !window.confirm('确定要重置全部新手引导状态吗?这会清除横幅、Tour、清单与视图提示的记录。')) {
+		if (!browser || !window.confirm(t('settings.confirm.resetAll'))) {
 			return;
 		}
 		resetAllOnboarding();
 		sweepLegacyViewHints();
-		toastInfo('已全部重置新手引导状态', '新手引导');
+		toastInfo(t('settings.toast.allOnboardingReset'), t('settings.onboarding.title'));
 	}
 </script>
 
 <div class="settings-page">
 	<header class="settings-header">
-		<div class="header-row">
-			<div>
-				<h1>⚙️ 设置</h1>
-				<p class="subtitle">联网模式 + LLM 配置</p>
+			<div class="header-row">
+				<div>
+					<h1>{t('settings.title')}</h1>
+					<p class="subtitle">{t('settings.subtitle')}</p>
+				</div>
+				{#if onclose}
+					<button class="btn-close" onclick={onclose} aria-label={t('settings.backLabel')} title={t('settings.backLabel')}>
+						{t('settings.back')}
+					</button>
+				{/if}
 			</div>
-			{#if onclose}
-				<button class="btn-close" onclick={onclose} aria-label="返回视图" title="返回视图">
-					← 返回
-				</button>
-			{/if}
+		</header>
+
+		<!-- Tab 切换 -->
+		<div class="settings-tabs" role="tablist">
+			<button
+				class="settings-tab"
+				class:active={activeTab === 'network'}
+				onclick={() => (activeTab = 'network')}
+				role="tab"
+				aria-selected={activeTab === 'network'}
+			>
+				{t('settings.tab.network')}
+			</button>
+			<button
+				class="settings-tab"
+				class:active={activeTab === 'llm'}
+				onclick={() => (activeTab = 'llm')}
+				role="tab"
+				aria-selected={activeTab === 'llm'}
+			>
+				{t('settings.tab.llm')}
+			</button>
+			<button
+				class="settings-tab"
+				class:active={activeTab === 'onboarding'}
+				onclick={() => (activeTab = 'onboarding')}
+				role="tab"
+				aria-selected={activeTab === 'onboarding'}
+			>
+				{t('settings.tab.onboarding')}
+			</button>
 		</div>
-	</header>
 
-	<!-- Tab 切换 -->
-	<div class="settings-tabs" role="tablist">
-		<button
-			class="settings-tab"
-			class:active={activeTab === 'network'}
-			onclick={() => (activeTab = 'network')}
-			role="tab"
-			aria-selected={activeTab === 'network'}
-		>
-			🌐 联网配置
-		</button>
-		<button
-			class="settings-tab"
-			class:active={activeTab === 'llm'}
-			onclick={() => (activeTab = 'llm')}
-			role="tab"
-			aria-selected={activeTab === 'llm'}
-		>
-			🤖 LLM 配置
-		</button>
-		<button
-			class="settings-tab"
-			class:active={activeTab === 'onboarding'}
-			onclick={() => (activeTab = 'onboarding')}
-			role="tab"
-			aria-selected={activeTab === 'onboarding'}
-		>
-			🚀 新手引导
-		</button>
-	</div>
+		<main class="settings-content">
+			{#if activeTab === 'network'}
+				<section class="network-settings">
+					<header class="section-header">
+						<h2>{t('settings.network.title')}</h2>
+						<p class="section-desc">
+							{t('settings.network.desc')}
+						</p>
+					</header>
 
-	<main class="settings-content">
-		{#if activeTab === 'network'}
-			<section class="network-settings">
-				<header class="section-header">
-					<h2>🌐 联网模式</h2>
-					<p class="section-desc">
-						切换连本地 evorule-server(loopback)或远程 evorule-server。
-						切换后 backend 立即用新 baseUrl(无需重启)。
-					</p>
-				</header>
+					<!-- 模式选择 -->
+					<div class="mode-toggle">
+						<button
+							class="mode-btn"
+							class:active={$netConfig.mode === 'offline'}
+							onclick={() => handleNetModeChange('offline')}
+						>
+							{t('settings.network.localMode')}
+						</button>
+						<button
+							class="mode-btn"
+							class:active={$netConfig.mode === 'online'}
+							onclick={() => handleNetModeChange('online')}
+						>
+							{t('settings.network.onlineMode')}
+						</button>
+					</div>
 
-				<!-- 模式选择 -->
-				<div class="mode-toggle">
-					<button
-						class="mode-btn"
-						class:active={$netConfig.mode === 'offline'}
-						onclick={() => handleNetModeChange('offline')}
-					>
-						🖥️ 本地模式(127.0.0.1:18080)
-					</button>
-					<button
-						class="mode-btn"
-						class:active={$netConfig.mode === 'online'}
-						onclick={() => handleNetModeChange('online')}
-					>
-						☁️ 联网模式
-					</button>
-				</div>
+					<!-- 远程 URL 输入(仅 online 模式可见) -->
+					{#if $netConfig.mode === 'online'}
+						<div class="form-row">
+							<label for="remote-url">{t('settings.network.remoteUrlLabel')}</label>
+							<input
+								id="remote-url"
+								type="text"
+								value={remoteUrlInput}
+								oninput={handleRemoteUrlInput}
+								onblur={handleRemoteUrlBlur}
+								placeholder="https://your-server.example.com"
+							/>
+							<small class="hint">{t('settings.network.remoteUrlHint')}</small>
+						</div>
+					{/if}
 
-				<!-- 远程 URL 输入(仅 online 模式可见) -->
-				{#if $netConfig.mode === 'online'}
+					<!-- 认证 token(两模式通用:server 开启 EVORULE_AUTH_TOKEN 时必填) -->
 					<div class="form-row">
-						<label for="remote-url">远程 evorule-server URL</label>
+						<label for="auth-token">{t('settings.network.tokenLabel')}</label>
 						<input
-							id="remote-url"
-							type="text"
-							value={remoteUrlInput}
-							oninput={handleRemoteUrlInput}
-							onblur={handleRemoteUrlBlur}
-							placeholder="https://your-server.example.com"
+							id="auth-token"
+							type="password"
+							value={authTokenInput}
+							oninput={handleAuthTokenInput}
+							onblur={handleAuthTokenBlur}
+							placeholder={t('settings.network.tokenPlaceholder')}
+							autocomplete="off"
 						/>
-						<small class="hint">修改后失焦自动保存,backend 会立即用新 URL</small>
+						<small class="hint">
+							{t('settings.network.tokenHint')}
+						</small>
 					</div>
-				{/if}
 
-				<!-- 认证 token(两模式通用:server 开启 EVORULE_AUTH_TOKEN 时必填) -->
-				<div class="form-row">
-					<label for="auth-token">认证 Token(evorule-server EVORULE_AUTH_TOKEN)</label>
-					<input
-						id="auth-token"
-						type="password"
-						value={authTokenInput}
-						oninput={handleAuthTokenInput}
-						onblur={handleAuthTokenBlur}
-						placeholder="server 未开启认证可留空"
-						autocomplete="off"
-					/>
-					<small class="hint">
-						server 开启认证时必填,失焦自动保存;留空则请求不带凭据(仅免认证 server 可用)。
-						凭据保存在本机浏览器 localStorage,请勿在共享设备上填写。
-					</small>
-				</div>
-
-				<!-- 测试连接 -->
-				<div class="form-actions">
-					<button class="btn btn-secondary" onclick={handleTestNetConnection} disabled={isTestingNet}>
-						{isTestingNet ? '⏳ 测试中...' : '🔌 测试连接'}
-					</button>
-				</div>
-
-				{#if netTestResult}
-					<div
-						class="alert"
-						class:alert-success={netTestResult.ok}
-						class:alert-error={!netTestResult.ok}
-					>
-						{netTestResult.ok ? '✅' : '❌'} {netTestResult.message}
+					<!-- 测试连接 -->
+					<div class="form-actions">
+						<button class="btn btn-secondary" onclick={handleTestNetConnection} disabled={isTestingNet}>
+							{isTestingNet ? t('common.testing') : t('settings.network.testBtn')}
+						</button>
 					</div>
-				{/if}
 
-				<!-- 当前状态 -->
-				<div class="current-status">
-					<h3>当前状态</h3>
-					<dl>
-						<dt>模式</dt>
-						<dd>{$netConfig.mode === 'online' ? '☁️ 联网' : '🖥️ 本地'}</dd>
-						<dt>baseUrl</dt>
-						<dd><code>{$netConfig.mode === 'online' ? $netConfig.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL}</code></dd>
-					</dl>
-				</div>
-			</section>
+					{#if netTestResult}
+						<div
+							class="alert"
+							class:alert-success={netTestResult.ok}
+							class:alert-error={!netTestResult.ok}
+						>
+							{netTestResult.ok ? '✅' : '❌'} {netTestResult.message}
+						</div>
+					{/if}
+
+					<!-- 当前状态 -->
+					<div class="current-status">
+						<h3>{t('settings.network.currentStatus')}</h3>
+						<dl>
+							<dt>{t('settings.network.mode')}</dt>
+							<dd>{$netConfig.mode === 'online' ? t('settings.network.modeOnline') : t('settings.network.modeLocal')}</dd>
+							<dt>baseUrl</dt>
+							<dd><code>{$netConfig.mode === 'online' ? $netConfig.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL}</code></dd>
+						</dl>
+					</div>
+				</section>
 		{:else if activeTab === 'llm'}
 			<LlmSettings />
 		{:else if activeTab === 'onboarding'}
-			<section class="onboarding-settings">
-				<header class="section-header">
-					<h2>🚀 新手引导</h2>
-					<p class="section-desc">
-						关掉了引导又想再看?这里可以重新显示各类新手引导,无需重装或清缓存。
-					</p>
-				</header>
+				<section class="onboarding-settings">
+					<header class="section-header">
+						<h2>{t('settings.onboarding.pageTitle')}</h2>
+						<p class="section-desc">
+							{t('settings.onboarding.desc')}
+						</p>
+					</header>
 
-				<div class="ob-reshow-list">
-					<div class="ob-reshow-row">
-						<div class="ob-reshow-info">
-							<h4>引导横幅</h4>
-							<p>工作台顶部的欢迎横幅,含上手三步与快捷任务流入口。</p>
+					<div class="ob-reshow-list">
+						<div class="ob-reshow-row">
+							<div class="ob-reshow-info">
+								<h4>{t('settings.onboarding.banner')}</h4>
+								<p>{t('settings.onboarding.bannerDesc')}</p>
+							</div>
+							<button class="btn btn-secondary" onclick={handleReshowBanner}>{t('settings.onboarding.reshow')}</button>
 						</div>
-						<button class="btn btn-secondary" onclick={handleReshowBanner}>重新显示</button>
-					</div>
 
-					<div class="ob-reshow-row">
-						<div class="ob-reshow-info">
-							<h4>5 步交互式 Tour</h4>
-							<p>带聚光灯的高亮引导,带你跑通「连接 → 建库 → 规则 → 执行 → 审计」。</p>
+						<div class="ob-reshow-row">
+							<div class="ob-reshow-info">
+								<h4>{t('settings.onboarding.tour')}</h4>
+								<p>{t('settings.onboarding.tourDesc')}</p>
+							</div>
+							<button class="btn btn-secondary" onclick={handleReplayTour}>{t('settings.onboarding.replay')}</button>
 						</div>
-						<button class="btn btn-secondary" onclick={handleReplayTour}>立即重播</button>
-					</div>
 
-					<div class="ob-reshow-row">
-						<div class="ob-reshow-info">
-							<h4>上手清单</h4>
-							<p>首页「开始使用」里的 6 步勾选清单,可一键复位重勾。</p>
+						<div class="ob-reshow-row">
+							<div class="ob-reshow-info">
+								<h4>{t('settings.onboarding.checklist')}</h4>
+								<p>{t('settings.onboarding.checklistDesc')}</p>
+							</div>
+							<button class="btn btn-secondary" onclick={handleResetChecklist}>{t('settings.onboarding.resetChecklist')}</button>
 						</div>
-						<button class="btn btn-secondary" onclick={handleResetChecklist}>重置清单</button>
-					</div>
 
-					<div class="ob-reshow-row">
-						<div class="ob-reshow-info">
-							<h4>视图首访提示</h4>
-							<p>各视图首次进入时的小提示(如规则、审计等),关闭后会记住不再弹。</p>
+						<div class="ob-reshow-row">
+							<div class="ob-reshow-info">
+								<h4>{t('settings.onboarding.viewHints')}</h4>
+								<p>{t('settings.onboarding.viewHintsDesc')}</p>
+							</div>
+							<button class="btn btn-secondary" onclick={handleResetViewHints}>{t('settings.onboarding.resetHints')}</button>
 						</div>
-						<button class="btn btn-secondary" onclick={handleResetViewHints}>重置提示</button>
 					</div>
-				</div>
 
-				<div class="ob-danger">
-					<div class="ob-reshow-info">
-						<h4>重置全部引导</h4>
-						<p>一次性清除横幅、Tour、清单与视图提示的全部记录(不可撤销)。</p>
+					<div class="ob-danger">
+						<div class="ob-reshow-info">
+							<h4>{t('settings.onboarding.resetAll')}</h4>
+							<p>{t('settings.onboarding.resetAllDesc')}</p>
+						</div>
+						<button class="btn btn-danger" onclick={handleResetAllOnboarding}>{t('settings.onboarding.resetAllBtn')}</button>
 					</div>
-					<button class="btn btn-danger" onclick={handleResetAllOnboarding}>重置全部</button>
-				</div>
-			</section>
-		{/if}
+				</section>
+			{/if}
 	</main>
 </div>
 

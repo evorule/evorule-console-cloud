@@ -1,4 +1,4 @@
-﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   /governance 路由 — Phase 2 F1 治理接线(真实后端,非 mock)。
@@ -13,6 +13,7 @@
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { toastSuccess, toastError, toastInfo, toastWarning } from '$lib/stores/toast';
+  import { fmtDateTime } from '$lib/locale';
   import {
     governanceStore,
     connect,
@@ -1488,7 +1489,7 @@
   function fmtTime(iso?: string | null): string {
     if (!iso) return '-';
     const d = new Date(iso);
-    return isNaN(d.getTime()) ? iso : d.toLocaleString('zh-CN');
+    return isNaN(d.getTime()) ? iso : fmtDateTime(d);
   }
 
   function rulePreview(body: unknown): string {

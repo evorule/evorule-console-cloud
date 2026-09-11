@@ -9,6 +9,7 @@
 
 <script lang="ts">
   import type { BusinessTemplate } from "$lib/data/template-finance";
+  import { t } from "$lib/locale";
 
   let {
     template,
@@ -59,36 +60,36 @@
 </script>
 
 <div class="step-db-config">
-  <h2>步骤 2:配置库元数据</h2>
+  <h2>{t("dbConfig.title")}</h2>
   <p class="step-desc">
     {#if template}
-      基于「{template.displayName}」模板,可调整库名与业务对象。
+      {t("dbConfig.basedOnTemplate", { templateName: template.displayName })}
     {:else}
-      为你的库命名并添加业务对象(如:订单、用户、报销单)。
+      {t("dbConfig.noTemplateDesc")}
     {/if}
   </p>
 
   <div class="form-row">
-    <label for="db-name">库名</label>
+    <label for="db-name">{t("dbConfig.dbName")}</label>
     <input
       id="db-name"
       type="text"
       bind:value={dbName}
-      placeholder="例如:财务审批库"
+      placeholder={t("dbConfig.dbNamePlaceholder")}
     />
   </div>
 
   <div class="form-row">
-    <label for="biz-obj">业务对象</label>
+    <label for="biz-obj">{t("dbConfig.businessObjects")}</label>
     <div class="biz-obj-input">
       <input
         id="biz-obj"
         type="text"
         bind:value={businessObjectInput}
         onkeydown={handleKeydown}
-        placeholder="输入业务对象名,回车添加"
+        placeholder={t("dbConfig.addPlaceholder")}
       />
-      <button type="button" onclick={addBusinessObject}>添加</button>
+      <button type="button" onclick={addBusinessObject}>{t("dbConfig.add")}</button>
     </div>
     <div class="biz-obj-list">
       {#each businessObjects as obj, idx}
@@ -98,19 +99,19 @@
             type="button"
             class="chip-remove"
             onclick={() => removeBusinessObject(idx)}
-            aria-label="移除"
+            aria-label={t("dbConfig.remove")}
           >×</button>
         </span>
       {:else}
-        <span class="empty-hint">尚未添加业务对象</span>
+        <span class="empty-hint">{t("dbConfig.emptyHint")}</span>
       {/each}
     </div>
   </div>
 
   <div class="actions">
-    <button class="btn-ghost" onclick={onBack}>上一步</button>
+    <button class="btn-ghost" onclick={onBack}>{t("common.back")}</button>
     <button class="btn-primary" onclick={onConfirm} disabled={!canConfirm}>
-      确认并继续
+      {t("dbConfig.confirmContinue")}
     </button>
   </div>
 </div>

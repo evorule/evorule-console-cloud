@@ -49,6 +49,7 @@
     stopMetricsPolling,
   } from "$lib/stores/performance-metrics";
   import { toastInfo } from "$lib/stores/toast";
+  import { fmtTime } from "$lib/locale";
   // T4: P07 ExportDialog(InterventionBar 的 audit.export_chain 触发)
   import ExportDialog from "$lib/views/Export/ExportDialog.svelte";
   import type { ExportContentType } from "$lib/stores/export-types";
@@ -246,9 +247,7 @@
         {/if}
         {#if productionState.updatedAt}
           <span class="md-prod-updated"
-            >更新 {new Date(
-              productionState.updatedAt,
-            ).toLocaleTimeString()}</span
+            >更新 {fmtTime(productionState.updatedAt)}</span
           >
         {/if}
       </div>

@@ -9,6 +9,7 @@
 <script lang="ts">
 	import { taskHistoryStore, clearHistory } from "$lib/stores/task-history";
 	import { toastInfo } from "$lib/stores/toast";
+	import { fmtDate } from "$lib/locale";
 
 	const entries = $derived($taskHistoryStore);
 
@@ -20,7 +21,7 @@
 	function formatTime(iso: string): string {
 		try {
 			const d = new Date(iso);
-			return d.toLocaleString("zh-CN", {
+			return fmtDate(d, {
 				month: "2-digit",
 				day: "2-digit",
 				hour: "2-digit",

@@ -90,6 +90,28 @@ describe('platform-auth-api', () => {
 		expect((err as PlatformAuthError).hasServerMessage).toBe(true);
 	});
 
+	it('platformLogin:server 错误体带 code → message 本地化(i18n 阶段2)', async () => {
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse(401, { success: false, message: '无权限', code: 'UNAUTHORIZED' })
+		);
+		const err = await platformLogin(BASE, 'root', 'wrong').catch((e) => e);
+		expect(err).toBeInstanceOf(PlatformAuthError);
+		// 命中 err.UNAUTHORIZED 字典 → 展示本地化文案
+		expect((err as PlatformAuthError).message).toBe(
+			'无权限执行此操作，请登录或确认权限。'
+		);
+	});
+
+	it('platformLogin:server 错误体带未知 code → 回退原始 message', async () => {
+		fetchMock.mockResolvedValueOnce(
+			jsonResponse(400, { success: false, message: '原始中文兜底', code: 'NO_SUCH_CODE_XYZ' })
+		);
+		const err = await platformLogin(BASE, 'root', 'bad').catch((e) => e);
+		expect(err).toBeInstanceOf(PlatformAuthError);
+		// translateServerError 未命中 → 原样回退,不丢信息
+		expect((err as PlatformAuthError).message).toBe('原始中文兜底');
+	});
+
 	it('网络不可达 → status=0 + 连接提示(如实报错,不静默)', async () => {
 		fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
 		const err = await fetchAuthStatus(BASE).catch((e) => e);

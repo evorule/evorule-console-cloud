@@ -18,6 +18,8 @@
 //   - 响应字段与 server 对齐:login/me 返回
 //     { user{username,displayName,email,department,role}, permissions[], permissions_version }
 
+import { translateServerError } from '$lib/locale';
+
 /** 平台用户(server 下发字段,camelCase 对齐) */
 export interface PlatformUserInfo {
 	username: string;
@@ -87,15 +89,18 @@ async function request<T>(
 		if (!ct.includes('json')) return undefined as T;
 		return (await r.json()) as T;
 	}
-	// 非 2xx:统一错误体 {success:false,message}
+	// 非 2xx:统一错误体 {success:false,message,code}
+	// 展示层本地化:err.message 按 err.code 映射,i18n 阶段2(无 code/未命中回退原 message)。
 	let message = `HTTP ${r.status}`;
 	let hasServerMessage = false;
 	try {
-		const body = (await r.json()) as { message?: string };
+		const body = (await r.json()) as { message?: string; code?: string };
 		if (body && typeof body.message === 'string' && body.message.length > 0) {
 			message = body.message;
 			hasServerMessage = true;
 		}
+		const code = body?.code ?? null;
+		message = translateServerError(message, code);
 	} catch {
 		// 无 JSON 体,保留 HTTP 状态码消息
 	}

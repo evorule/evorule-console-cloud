@@ -34,6 +34,7 @@
 	import { useBackendOrNull } from '$lib/kernel/backend/backend-context';
 	import { useAssistantOrNull } from '$lib/kernel/assistant/assistant-context';
 	import JsonTree from '../StateView/JsonTree.svelte';
+	import { fmtTime } from '$lib/locale';
 
 	// LLM 扩展槽:大众版注入 assistant + callback 后,渲染 AI 生成输入按钮
 	// evorule-console 自身不注入(assistant 为 null),按钮不渲染
@@ -215,7 +216,7 @@
 	}
 
 	function formatTime(ts: number): string {
-		return new Date(ts).toLocaleTimeString('zh-CN');
+		return fmtTime(ts);
 	}
 
 	let isSameResult = $derived(

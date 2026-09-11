@@ -13,6 +13,7 @@
     markAsRead,
     markAllAsRead,
   } from '$lib/stores/notifications';
+  import { fmtDateTime } from '$lib/locale';
 
   let open = $state(false);
 
@@ -82,7 +83,7 @@
               <div class="item-content">
                 <div class="item-title">{n.title}</div>
                 <div class="item-body">{n.body}</div>
-                <div class="item-time">{new Date(n.createdAt).toLocaleString('zh-CN')}</div>
+                <div class="item-time">{fmtDateTime(n.createdAt)}</div>
               </div>
               {#if !n.read}
                 <span class="unread-dot"></span>

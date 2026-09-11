@@ -20,6 +20,7 @@
   import type { ExternalPluginInfo, PluginProposal } from '$lib/backend/cloud-http-backend';
   import { can, currentUser } from '$lib/stores/auth';
   import { toastSuccess, toastError } from '$lib/stores/toast';
+  import { fmtDateTime } from '$lib/locale';
 
   let plugins = $state<ExternalPluginInfo[]>([]);
   /** 插件 id → 待批提案(插件离线/不可达时为 null,与空列表区分) */
@@ -48,7 +49,7 @@
 
   function fmtTime(raw: string): string {
     const d = new Date(raw);
-    return isNaN(d.getTime()) ? raw : d.toLocaleString('zh-CN');
+    return isNaN(d.getTime()) ? raw : fmtDateTime(d);
   }
 
   /** new_value 原文 → pretty JSON(解析失败时原样展示,不静默) */

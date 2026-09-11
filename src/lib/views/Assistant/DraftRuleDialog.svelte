@@ -28,6 +28,7 @@
 	import { get } from 'svelte/store';
 	import { closeAssistantDialog } from '$lib/stores/assistant-ui';
 	import { LlmError } from '$lib/assistant/llm-fetch';
+	import { t } from '$lib/locale';
 
 	const assistant: AssistantProvider | null = useAssistantOrNull();
 	// backend 在组件初始化期捕获(Svelte 5 context 不支持事件处理器内调用)
@@ -43,11 +44,11 @@
 
 	async function handleGenerate() {
 		if (!assistant) {
-			errorMsg = 'LLM 未注入(配置不完备?)';
+			errorMsg = t('draft.err.noAssistant');
 			return;
 		}
 		if (!description.trim()) {
-			errorMsg = '请先输入自然语言描述';
+			errorMsg = t('draft.err.enterDescription');
 			return;
 		}
 		isLoading = true;
@@ -64,7 +65,7 @@
 			validation = RuleValidator.validate(draftJson);
 		} catch (e) {
 			const err = e as LlmError;
-			errorMsg = err.message || '生成失败,请检查 LLM 配置';
+			errorMsg = err.message || t('draft.err.genFail');
 		} finally {
 			isLoading = false;
 		}
@@ -76,13 +77,13 @@
 		try {
 			JSON.parse(draftJson);
 		} catch (e) {
-			errorMsg = `草案 JSON 不合法: ${(e as Error).message}`;
+			errorMsg = t('draft.err.invalidJson', { message: (e as Error).message });
 			return;
 		}
 		// 加入 workspace 规则库(用户可后续编辑)
 		const ws = get(currentWorkspace);
 		if (!ws) {
-			errorMsg = '当前没有 workspace,无法保存规则';
+			errorMsg = t('draft.err.noWorkspace');
 			return;
 		}
 		const id = `user.ai_draft.${Date.now()}`;
@@ -93,7 +94,7 @@
 				description: `AI 草案: ${description.slice(0, 50)}${description.length > 50 ? '...' : ''}`
 			});
 		} catch (e) {
-			errorMsg = `保存规则失败: ${(e as Error).message}`;
+			errorMsg = t('draft.err.saveFailed', { message: (e as Error).message });
 			return;
 		}
 		adopted = true;
@@ -129,7 +130,7 @@
 	onkeydown={(e) => e.key === 'Enter' && handleGiveUp()}
 	role="button"
 	tabindex="0"
-	aria-label="点击空白处关闭对话框"
+	aria-label={t('draft.closeOverlayAria')}
 >
 	<div
 		class="dialog"
@@ -141,24 +142,24 @@
 		aria-labelledby="draft-dialog-title"
 	>
 		<header class="dialog-header">
-			<h2 id="draft-dialog-title">🤖 AI 辅助创建规则</h2>
-			<button class="close-btn" onclick={handleGiveUp} aria-label="关闭">×</button>
+			<h2 id="draft-dialog-title">{t('draft.title')}</h2>
+			<button class="close-btn" onclick={handleGiveUp} aria-label={t('draft.closeBtnAria')}>×</button>
 		</header>
 
 		<main class="dialog-body">
 			<!-- 1. 描述输入 -->
 			<section class="step">
-				<label for="draft-description">1. 用自然语言描述你想要的规则:</label>
+				<label for="draft-description">{t('draft.step1Label')}</label>
 				<textarea
 					id="draft-description"
 					bind:value={description}
-					placeholder="例如:用户注册时,如果年龄 < 18 岁,设置 status='minor',否则 status='adult'"
+					placeholder={t('draft.descPlaceholder')}
 					rows="3"
 					disabled={isLoading}
 				></textarea>
 				<div class="actions">
 					<button class="btn btn-primary" onclick={handleGenerate} disabled={isLoading || !description.trim()}>
-						{isLoading ? '⏳ 生成中...' : '✨ 生成草案'}
+						{isLoading ? t('common.generating') : t('draft.generateBtn')}
 					</button>
 				</div>
 			</section>
@@ -166,15 +167,15 @@
 			<!-- 2. 错误提示 -->
 			{#if errorMsg}
 				<div class="alert alert-error">
-					<strong>❌ 出错了:</strong> {errorMsg}
-					<button class="btn btn-mini" onclick={handleRetry}>重试</button>
+					<strong>{t('draft.errorLabel')}</strong> {errorMsg}
+					<button class="btn btn-mini" onclick={handleRetry}>{t('draft.retry')}</button>
 				</div>
 			{/if}
 
 			<!-- 3. 草案展示 + 校验 -->
 			{#if draftJson}
 				<section class="step">
-					<label for="draft-json">2. 草案(JSON,可手动修改):</label>
+					<label for="draft-json">{t('draft.step2Label')}</label>
 					<textarea
 						id="draft-json"
 						value={draftJson}
@@ -186,7 +187,7 @@
 
 					<!-- 置信度 -->
 					<div class="confidence">
-						<span class="label">LLM 置信度:</span>
+						<span class="label">{t('draft.confidenceLabel')}</span>
 						<span class="value" class:high={confidence >= 0.7} class:low={confidence < 0.4}>
 							{(confidence * 100).toFixed(0)}%
 						</span>
@@ -197,11 +198,11 @@
 						<div class="validation">
 							{#if validation.valid}
 								<div class="alert alert-success">
-									✅ 草案通过 G1-G7 预校验(注意:核心仓 build.rs 仍是最终拦截)
+									{t('draft.validPass')}
 								</div>
 							{:else}
 								<div class="alert alert-warning">
-									<strong>⚠️ 校验未通过(共 {validation.errors.length} 项):</strong>
+									<strong>{t('draft.validFail', { count: validation.errors.length })}</strong>
 									<ul>
 										{#each validation.errors as err}
 										<li>
@@ -210,7 +211,7 @@
 										</li>
 									{/each}
 									</ul>
-									<small>请修改草案或重新生成,采用后仍可编辑</small>
+									<small>{t('draft.editHint')}</small>
 								</div>
 							{/if}
 						</div>
@@ -220,17 +221,17 @@
 
 			<!-- 4. 采用反馈 -->
 			{#if adopted}
-				<div class="alert alert-success">✅ 已采用!规则已加入"用户规则"列表,可在规则库查看 / 编辑</div>
+				<div class="alert alert-success">{t('draft.adopted')}</div>
 			{/if}
 		</main>
 
 		<footer class="dialog-footer">
 			<button class="btn btn-secondary" onclick={handleGiveUp} disabled={isLoading}>
-				放弃
+				{t('draft.giveUp')}
 			</button>
 			{#if draftJson && !adopted}
 				<button class="btn btn-primary" onclick={handleAdopt} disabled={isLoading}>
-					✅ 采用并加入规则库
+					{t('draft.adopt')}
 				</button>
 			{/if}
 		</footer>

@@ -33,6 +33,7 @@
   import { workbenchStatus, patchWorkbenchStatus, setWorkbenchRefreshAction } from "$lib/stores/workbench-status";
   import { governanceConfig } from "$lib/config/governance-config";
   import { onboardingStore } from "$lib/stores/onboarding";
+  import { t } from "$lib/locale";
 
   // 首访引导去重 —— 新手横幅可见时,不再叠加 GuidedHint 与推荐卡,
   // 关闭横幅后才逐个出现,避免 3 个引导提示同时堆叠。
@@ -157,17 +158,17 @@
     <GuidedHint
       hintId="workbench"
       variant="tip"
-      title="总览 · 一屏看全貌"
-      body="这里汇总身份、生产状态、规则数、session、待审与最近操作。想深入某一块,点卡片或侧栏即可单页跳转。"
+      title={t("workbench.guideTitle")}
+      body={t("workbench.guideBody")}
     />
 
     <!-- 角色视图默认推荐 -->
     <RecommendationCard />
   {/if}
 
-  <h1 class="workbench-title">🧭 总览</h1>
+  <h1 class="workbench-title">{t("workbench.title")}</h1>
   <p class="workbench-subtitle">
-    一屏看到所有状态 + 高频操作 · 卡片按角色与权限自动显隐
+    {t("workbench.subtitle")}
   </p>
 
   <!-- 注册表驱动渲染():新增卡片 = widgets/registry.ts 追加一行 -->

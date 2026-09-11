@@ -11,6 +11,7 @@
 <script lang="ts">
   import type { BusinessTemplate } from "$lib/data/template-finance";
   import { FINANCE_TEMPLATE, COMPLIANCE_TEMPLATE } from "$lib/views/Build/templates";
+  import { t } from "$lib/locale";
 
   let {
     selected,
@@ -26,42 +27,42 @@
     icon: string;
     tag: string;
   }> = [
-    { id: "blank", tpl: null, icon: "📄", tag: "从零开始" },
-    { id: "finance", tpl: FINANCE_TEMPLATE, icon: "💰", tag: "推荐" },
-    { id: "compliance", tpl: COMPLIANCE_TEMPLATE, icon: "🛡️", tag: "推荐" },
+    { id: "blank", tpl: null, icon: "📄", tag: t("templatePicker.blankTag") },
+    { id: "finance", tpl: FINANCE_TEMPLATE, icon: "💰", tag: t("templatePicker.recommended") },
+    { id: "compliance", tpl: COMPLIANCE_TEMPLATE, icon: "🛡️", tag: t("templatePicker.recommended") },
   ];
 </script>
 
 <div class="step-template-picker">
-  <h2>步骤 1:选择行业模板</h2>
-  <p class="step-desc">模板会预填业务术语、表单场景和示例规则,帮助快速起步。</p>
+  <h2>{t("templatePicker.title")}</h2>
+  <p class="step-desc">{t("templatePicker.desc")}</p>
 
   <div class="template-grid">
-    {#each templates as t (t.id)}
+    {#each templates as tpl (tpl.id)}
       <button
         class="template-card"
-        class:selected={selected === t.id}
-        onclick={() => onSelect(t.id)}
+        class:selected={selected === tpl.id}
+        onclick={() => onSelect(tpl.id)}
       >
         <div class="card-header">
-          <span class="card-icon">{t.icon}</span>
-          {#if t.tpl}
-            <span class="card-tag">{t.tag}</span>
+          <span class="card-icon">{tpl.icon}</span>
+          {#if tpl.tpl}
+            <span class="card-tag">{tpl.tag}</span>
           {/if}
         </div>
-        <h3>{t.tpl?.displayName ?? "空白库"}</h3>
-        <p class="card-desc">{t.tpl?.description ?? "不预填任何内容,完全自定义"}</p>
-        {#if t.tpl}
+        <h3>{tpl.tpl?.displayName ?? t("templatePicker.blankTitle")}</h3>
+        <p class="card-desc">{tpl.tpl?.description ?? t("templatePicker.blankDesc")}</p>
+        {#if tpl.tpl}
           <ul class="card-meta">
-            <li>{t.tpl.builtinRules.length} 条示例规则</li>
-            <li>{t.tpl.businessTerms.length} 个业务术语</li>
-            <li>{t.tpl.formSchemas.length} 个表单场景</li>
+            <li>{t("templatePicker.exampleRules", { count: tpl.tpl.builtinRules.length })}</li>
+            <li>{t("templatePicker.businessTerms", { count: tpl.tpl.businessTerms.length })}</li>
+            <li>{t("templatePicker.formScenarios", { count: tpl.tpl.formSchemas.length })}</li>
           </ul>
         {:else}
           <ul class="card-meta">
-            <li>无预填内容</li>
-            <li>手动配置业务对象</li>
-            <li>手动创建首条规则</li>
+            <li>{t("templatePicker.noPrefill")}</li>
+            <li>{t("templatePicker.manualConfigBizObj")}</li>
+            <li>{t("templatePicker.manualCreateRule")}</li>
           </ul>
         {/if}
       </button>

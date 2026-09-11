@@ -13,6 +13,7 @@
   import { toastSuccess, toastError } from "$lib/stores/toast";
   import { exportRulesBatch } from "$lib/stores/rule-import-export";
   import { downloadBlob } from "$lib/stores/export-store";
+  import { t } from "$lib/locale";
 
   let {
     onComplete,
@@ -40,9 +41,9 @@
       const blob = await exportRulesBatch([], "json");
       const stamp = new Date().toISOString().slice(0, 10);
       downloadBlob(blob, `evorule-wizard-rules-${stamp}.evorule-batch.json`);
-      toastSuccess(`已导出 ${$ruleCount} 条规则(批量包 JSON)`, "导出完成");
+      toastSuccess(t("complete.toast.exported", { count: $ruleCount }), t("complete.toast.exportTitle"));
     } catch (e) {
-      toastError(e instanceof Error ? e.message : String(e), "导出失败");
+      toastError(e instanceof Error ? e.message : String(e), t("complete.toast.exportFail"));
     } finally {
       exporting = false;
     }
@@ -51,58 +52,56 @@
 
 <div class="step-complete">
     <div class="complete-icon">🎉</div>
-    <h2>建库完成</h2>
+    <h2>{t("complete.title")}</h2>
     <!-- W1-A5:原措辞"可以开始正式使用了"误导 — 本地向导产物存于浏览器 localStorage, -->
     <!-- 执行域(server)仅运行治理链上架的规则,直接去执行台提交会撞"未匹配指令" Error fact。 -->
     <!-- W3 方向 b:边界明示 + 换乘动作组(导出批量包/直达治理中心),终点从死胡同变换乘站。 -->
     <!-- 措辞通俗化 — 用「本地草稿 vs 正式规则」替代技术术语 -->
-    <p class="complete-desc">本地规则库已就绪,规则已保存为「本地草稿」。</p>
+    <p class="complete-desc">{t("complete.desc")}</p>
     <div class="boundary-note">
-      <strong>注意:</strong>你刚才创建的规则目前只是<strong>本地草稿</strong>(保存在当前浏览器中),
-      尚未生效。要让规则真正驱动业务执行,请前往
-      <a href="/governance" class="gov-link">治理中心</a>将规则<strong>上架</strong>为正式规则——
-      上架并部署后,新会话即按新规则执行。
+      <strong>{t("complete.noticeLabel")}</strong>{t("complete.notePart1")}<strong>{t("complete.localDraft")}</strong>{t("complete.notePart2")}
+      <a href="/governance" class="gov-link">{t("complete.governanceCenter")}</a>{t("complete.notePart3")}<strong>{t("complete.publish")}</strong>{t("complete.notePart4")}
     </div>
 
   <div class="summary-card">
-    <h3>建库摘要</h3>
+    <h3>{t("complete.summaryTitle")}</h3>
     <dl class="summary-list">
       <div class="summary-row">
-        <dt>库名</dt>
-        <dd>{$dbStore.dbName || "(未命名)"}</dd>
+        <dt>{t("complete.dbName")}</dt>
+        <dd>{$dbStore.dbName || t("complete.unnamed")}</dd>
       </div>
       <div class="summary-row">
-        <dt>行业</dt>
+        <dt>{t("complete.industry")}</dt>
         <dd>{$dbStore.industry}</dd>
       </div>
       <div class="summary-row">
-        <dt>业务对象</dt>
-        <dd>{$dbStore.businessObjects.join(" / ") || "(无)"}</dd>
+        <dt>{t("complete.businessObjects")}</dt>
+        <dd>{$dbStore.businessObjects.join(" / ") || t("complete.none")}</dd>
       </div>
       <div class="summary-row">
-        <dt>规则数</dt>
+        <dt>{t("complete.ruleCount")}</dt>
         <dd>{$ruleCount}</dd>
       </div>
       <div class="summary-row">
-        <dt>创建时间</dt>
+        <dt>{t("complete.createdAt")}</dt>
         <dd>{$dbStore.createdAt ?? "—"}</dd>
       </div>
     </dl>
   </div>
 
   <div class="next-steps">
-    <h4>下一步建议</h4>
+    <h4>{t("complete.nextStepsTitle")}</h4>
     <ul>
-      <li>📊 进入 <strong>监控大屏</strong> 查看实时业务事件流</li>
-      <li>✏️ 在 <strong>工作台「一键操作」</strong> 中继续添加 / 编辑规则</li>
-      <li>🤖 配置 LLM 设置,启用自然语言生成规则草案</li>
-      <li>📁 在规则库中导入 / 导出规则 JSON</li>
+      <li>{@html t("complete.nextStep1", { term: `<strong>${t("complete.monitorBoard")}</strong>` })}</li>
+      <li>{@html t("complete.nextStep2", { term: `<strong>${t("complete.workbenchQuick")}</strong>` })}</li>
+      <li>{t("complete.nextStep3")}</li>
+      <li>{t("complete.nextStep4")}</li>
     </ul>
   </div>
 
   <div class="actions">
     <button class="btn-primary btn-large" onclick={handleEnterWorkbench}>
-      🚀 进入工作台
+      {t("complete.enterWorkbench")}
     </button>
     <div class="gov-actions">
       <!-- W3 方向 b:换乘站动作组 — 导出批量包 + 直达治理中心导入 -->
@@ -112,19 +111,18 @@
         disabled={exporting || $ruleCount === 0}
         data-testid="wizard-export-rules"
       >
-        {exporting ? "⏳ 导出中…" : `📤 导出规则 JSON(${$ruleCount} 条)`}
+        {exporting ? t("complete.exporting") : t("complete.exportJson", { count: $ruleCount })}
       </button>
       <a
         href="/governance"
         class="btn-link"
         data-testid="wizard-goto-governance"
       >
-        🏛 前往治理中心上架
+        {t("complete.gotoGovernance")}
       </a>
     </div>
     <p class="gov-hint">
-      导出 .evorule-batch.json 后,在治理中心规则条目区「从向导包导入」一键入库,
-      再走 上架 → 部署到执行域 链路,规则即可驱动真实执行台。
+      {t("complete.govHint")}
     </p>
   </div>
 </div>

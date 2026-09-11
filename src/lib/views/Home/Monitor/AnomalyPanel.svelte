@@ -16,6 +16,7 @@
     criticalAnomalyCount,
     clearAnomalies,
   } from "$lib/stores/anomaly";
+  import { fmtTime } from "$lib/locale";
 
   interface Props {
     maxShownPerLevel?: number;
@@ -123,7 +124,7 @@
                     <div class="ap-item-head">
                       <span class="ap-rule">规则:<code>{a.rule_id}</code></span>
                       <span class="ap-time"
-                        >{new Date(a.timestamp).toLocaleTimeString()}</span
+                        >{fmtTime(a.timestamp)}</span
                       >
                     </div>
                     <div class="ap-message">{a.message}</div>

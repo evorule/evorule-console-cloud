@@ -22,6 +22,7 @@
   import { governanceConfig } from "$lib/config/governance-config";
   import { governanceStore } from "$lib/governance/governance-store";
   import { toastError, toastSuccess } from "$lib/stores/toast";
+  import { fmtDate } from "$lib/locale";
 
   const KIND_LABELS: Record<string, string> = {
     rule_set: "规则集",
@@ -79,10 +80,10 @@
     }
   }
 
-  function fmtDate(v: string | null | undefined): string {
+  function fmtAssetDate(v: string | null | undefined): string {
     if (!v) return "—";
     const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
+    return Number.isNaN(d.getTime()) ? "—" : fmtDate(d);
   }
 </script>
 
@@ -150,7 +151,7 @@
               {/each}
             </div>
             <p class="oa-meta">
-              维护者:{ds.meta.created_by || "—"} · 更新:{fmtDate(ds.meta.updated_at ?? ds.meta.created_at)}
+              维护者:{ds.meta.created_by || "—"} · 更新:{fmtAssetDate(ds.meta.updated_at ?? ds.meta.created_at)}
             </p>
             <footer class="oa-actions">
               <button
