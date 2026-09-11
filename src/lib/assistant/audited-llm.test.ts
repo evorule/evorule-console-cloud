@@ -17,7 +17,11 @@
 
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
-import { callChatApiAudited, AuditedBridgeError } from './audited-llm';
+import {
+	callChatApiAudited,
+	callChatApiServerChannel,
+	AuditedBridgeError
+} from './audited-llm';
 import { netConfig } from '$lib/config/net-config';
 import { LlmAuthError } from './llm-fetch';
 
@@ -134,6 +138,143 @@ function mountSidecarMocks(opts: {
 }
 
 // ============ happy path ============
+
+// ============ server 执行通道(UV-172 P2) ============
+
+describe('server 执行通道 callChatApiServerChannel', () => {
+	const INVOKE_URL = `${SERVER_BASE}/api/services/ai_plugin_chat/invoke`;
+
+	function mockInvoke(handler: (init?: RequestInit) => Response) {
+		const bodies: unknown[] = [];
+		mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
+			if (url === INVOKE_URL) {
+				bodies.push(JSON.parse(String(init?.body)));
+				return handler(init);
+			}
+			throw new Error(`mock fetch 未处理的请求: ${url}`);
+		});
+		return bodies;
+	}
+
+	test('invoke POST 插件服务端点:messages+audit_purpose 入体,返回 reply', async () => {
+		const bodies = mockInvoke(
+			() =>
+				({
+					ok: true,
+					status: 200,
+					json: async () => ({ reply: '服务端回复', session_id: 7 })
+				}) as unknown as Response
+		);
+
+		const reply = await callChatApiServerChannel({
+			...BASE_PARAMS,
+			systemMessage: '你是助手',
+			auditPurpose: 'draft_rule'
+		});
+
+		expect(reply).toBe('服务端回复');
+		expect(bodies).toHaveLength(1);
+		const body = bodies[0] as {
+			messages: Array<{ role: string; content: string }>;
+			model?: string;
+			temperature: number;
+			audit_purpose: string;
+		};
+		// prompt 构造与 browser 通道同一单一构造点(buildMessages)
+		expect(body.messages).toEqual([
+			{ role: 'system', content: '你是助手' },
+			{ role: 'user', content: '帮我写一条规则' }
+		]);
+		expect(body.model).toBe('test-model');
+		expect(body.temperature).toBe(0.2);
+		expect(body.audit_purpose).toBe('draft_rule');
+	});
+
+	test('model 空白 = 不进 body(用插件服务端缺省模型)', async () => {
+		const bodies = mockInvoke(
+			() =>
+				({
+					ok: true,
+					status: 200,
+					json: async () => ({ reply: 'ok', session_id: 8 })
+				}) as unknown as Response
+		);
+		await callChatApiServerChannel({
+			...BASE_PARAMS,
+			model: '   ',
+			auditPurpose: 'chat'
+		});
+		expect((bodies[0] as { model?: string }).model).toBeUndefined();
+	});
+
+	test('HttpHandler 字符串包裹形态双层解包', async () => {
+		mockInvoke(
+			() =>
+				({
+					ok: true,
+					status: 200,
+					json: async () =>
+						JSON.stringify({ reply: '包裹回复', session_id: 9 }) as unknown as object
+				}) as unknown as Response
+		);
+		const reply = await callChatApiServerChannel({ ...BASE_PARAMS, auditPurpose: 'chat' });
+		expect(reply).toBe('包裹回复');
+	});
+
+	test('非 2xx → AuditedBridgeError(protocol,含状态码与截断响应体)', async () => {
+		mockInvoke(
+			() =>
+				({
+					ok: false,
+					status: 502,
+					text: async () => '{"error":"LLM 执行失败: bad gateway"}'
+				}) as unknown as Response
+		);
+		try {
+			await callChatApiServerChannel({ ...BASE_PARAMS, auditPurpose: 'chat' });
+			expect.unreachable('应抛出 AuditedBridgeError');
+		} catch (e) {
+			expect(e).toBeInstanceOf(AuditedBridgeError);
+			const err = e as AuditedBridgeError;
+			expect(err.kind).toBe('protocol');
+			expect(err.message).toContain('502');
+			expect(err.message).toContain('LLM 执行失败');
+		}
+	});
+
+	test('网络不可达 → server_unreachable(无静默兜底)', async () => {
+		mockFetch.mockImplementation(async () => {
+			throw new TypeError('fetch failed');
+		});
+		try {
+			await callChatApiServerChannel({ ...BASE_PARAMS, auditPurpose: 'chat' });
+			expect.unreachable('应抛出 AuditedBridgeError');
+		} catch (e) {
+			expect(e).toBeInstanceOf(AuditedBridgeError);
+			expect((e as AuditedBridgeError).kind).toBe('server_unreachable');
+		}
+	});
+
+	test('2xx 但无 reply 字段 → protocol 错误(如实报,不静默)', async () => {
+		mockInvoke(
+			() =>
+				({
+					ok: true,
+					status: 200,
+					json: async () => ({ unexpected: true })
+				}) as unknown as Response
+		);
+		try {
+			await callChatApiServerChannel({ ...BASE_PARAMS, auditPurpose: 'chat' });
+			expect.unreachable('应抛出 AuditedBridgeError');
+		} catch (e) {
+			expect(e).toBeInstanceOf(AuditedBridgeError);
+			expect((e as AuditedBridgeError).kind).toBe('protocol');
+		}
+	});
+});
+
+// ============ 审计桥 happy path(原) ============
 
 describe('审计桥 happy path', () => {
 	test('全协议走通:命令带 messages 全文,io_response 带结果全文,返回回复', async () => {

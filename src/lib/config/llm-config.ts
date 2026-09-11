@@ -16,10 +16,16 @@ import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import {
 	DEFAULT_LLM_CONFIG,
-	type CloudLlmConfig
+	type CloudLlmConfig,
+	type LlmChannel
 } from '$lib/assistant/types';
 
 const STORAGE_KEY = 'evorule-console-cloud:llm-config';
+
+/** channel 白名单解析(老配置无此字段/非法值 → 缺省 browser,向后兼容) */
+function parseChannel(v: unknown): LlmChannel {
+	return v === 'server' ? 'server' : 'browser';
+}
 
 function loadConfig(): CloudLlmConfig {
 	if (!browser) return { ...DEFAULT_LLM_CONFIG };
@@ -29,6 +35,7 @@ function loadConfig(): CloudLlmConfig {
 		const parsed = JSON.parse(raw) as Partial<CloudLlmConfig>;
 		return {
 			enabled: parsed.enabled === true,
+			channel: parseChannel(parsed.channel),
 			provider:
 				typeof parsed.provider === 'string' && parsed.provider.length > 0
 					? parsed.provider
@@ -60,6 +67,11 @@ llmConfig.subscribe((cfg) => {
 
 export function setLlmEnabled(enabled: boolean): void {
 	llmConfig.update((c) => ({ ...c, enabled }));
+}
+
+/** 切换执行通道(browser=浏览器直连自有 key;server=服务端托管 key) */
+export function setLlmChannel(channel: LlmChannel): void {
+	llmConfig.update((c) => ({ ...c, channel }));
 }
 
 export function setLlmProvider(provider: string): void {
@@ -96,12 +108,16 @@ export function clearLlmApiKey(): void {
 /**
  * 检查配置是否完备(用于决定是否注入 provider)。
  *
- * 完备 = enabled && apiEndpoint 非空 && apiKey 非空 && model 非空
+ * browser 通道:完备 = enabled && apiEndpoint 非空 && apiKey 非空 && model 非空
+ * server 通道:完备 = enabled(凭据在 ai-plugin 服务端配置,model 可选覆盖)
  *
- * 注意:此处只做"形式完备性"检查,不验证 apiKey 是否有效。
- * apiKey 有效性由 testConnection() 在用户主动测试时验证。
+ * 注意:此处只做"形式完备性"检查,不验证 key/服务是否真正可用。
+ * 有效性由 testConnection() 在用户主动测试时验证。
  */
 export function isLlmConfigured(cfg: CloudLlmConfig): boolean {
+	if (cfg.channel === 'server') {
+		return cfg.enabled;
+	}
 	return (
 		cfg.enabled &&
 		cfg.apiEndpoint.trim().length > 0 &&

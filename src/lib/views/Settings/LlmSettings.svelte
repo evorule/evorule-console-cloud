@@ -31,6 +31,7 @@
 	} from '$lib/config/llm-config';
 	import { LLM_PRESETS, findPreset, getPresetOptions } from '$lib/config/llm-presets';
 	import { CloudLlmAssistant } from '$lib/assistant/cloud-llm-assistant';
+	import { t } from '$lib/locale';
 
 	let apiKeyInput = $state('');
 	let showApiKey = $state(false);
@@ -97,10 +98,11 @@
 
 	async function handleTestConnection() {
 		const cfg = $llmConfig;
-		if (!cfg.apiEndpoint || !cfg.apiKey || !cfg.model) {
+		// server 通道:凭据在服务端,只要求 enabled(browser 通道仍要求三项齐备)
+		if (cfg.channel !== 'server' && (!cfg.apiEndpoint || !cfg.apiKey || !cfg.model)) {
 			testResult = {
 				ok: false,
-				message: '请先填写完整配置(endpoint + apiKey + model)'
+				message: t('llm.err.incompleteConfig')
 			};
 			return;
 		}
@@ -114,7 +116,7 @@
 		} catch (e) {
 			testResult = {
 				ok: false,
-				message: `测试失败: ${(e as Error).message}`
+				message: t('llm.err.testFail', { message: (e as Error).message })
 			};
 		} finally {
 			isTesting = false;
@@ -130,12 +132,7 @@
 			isSaving = false;
 			// 现取语义下配置改动即时生效;唯一例外:页面加载时 LLM 尚未配置的
 			// 场景,注入的是 null(按钮不渲染),需刷新一次让 AI 按钮出现
-			if (
-				confirm(
-					'配置已保存并即时生效。\n\n' +
-						'例外:若本页加载时 LLM 尚未启用,需刷新页面以渲染 AI 按钮。\n\n是否立即刷新页面?'
-				)
-			) {
+			if (confirm(t('llm.confirmSave'))) {
 				location.reload();
 			} else {
 				savedNotice = false;
@@ -144,7 +141,7 @@
 	}
 
 	function handleReset() {
-		if (confirm('确定要重置 LLM 配置吗?apiKey 会被清空。')) {
+		if (confirm(t('llm.confirmReset'))) {
 			resetLlmConfig();
 			apiKeyInput = '';
 			testResult = null;
@@ -157,10 +154,9 @@
 
 <section class="llm-settings">
 	<header class="section-header">
-		<h2>🤖 LLM 配置</h2>
+		<h2>{t('llm.title')}</h2>
 		<p class="section-desc">
-			配置云 LLM 实现自然语言 → 规则草案 / 解释 / 测试输入 三大辅助功能。
-			LLM 仅作辅助层,不参与确定性执行,所有输出需用户审核采用。
+			{t('llm.desc')}
 		</p>
 	</header>
 
@@ -172,15 +168,33 @@
 				checked={$llmConfig.enabled}
 				onchange={handleToggleEnabled}
 			/>
-			<span>启用 LLM 辅助</span>
+			<span>{t('llm.enableLabel')}</span>
 		</label>
-		<small class="hint">关闭后行为与 evorule-console 内核一致(LLM 按钮不渲染)</small>
+		<small class="hint">{t('llm.disableHint')}</small>
 	</div>
 
 	{#if $llmConfig.enabled}
-		<!-- 2. 厂商预设 -->
+		<!-- 2. 执行通道(UV-172 P2:browser=现状;server=ai-plugin 托管执行) -->
+	<div class="form-row">
+		<label for="llm-channel">{t('llm.channelLabel')}</label>
+		<select
+			id="llm-channel"
+			value={$llmConfig.channel}
+			onchange={(e) =>
+				updateLlmConfig({ channel: (e.target as HTMLSelectElement).value as 'browser' | 'server' })}
+		>
+			<option value="browser">{t('llm.channelBrowser')}</option>
+			<option value="server">{t('llm.channelServer')}</option>
+		</select>
+		{#if $llmConfig.channel === 'server'}
+			<small class="hint">{t('llm.channelServerHint')}</small>
+		{/if}
+	</div>
+
+	{#if $llmConfig.channel === 'browser'}
+		<!-- 3. 厂商预设 -->
 		<div class="form-row">
-			<label for="llm-provider">厂商预设</label>
+			<label for="llm-provider">{t('llm.providerLabel')}</label>
 			<select id="llm-provider" onchange={handleProviderChange} value={$llmConfig.provider}>
 				{#each getPresetOptions() as opt (opt.value)}
 					<option value={opt.value} disabled={opt.disabled}>
@@ -195,7 +209,7 @@
 					rel="noopener noreferrer"
 					class="help-link"
 				>
-					如何获取 apiKey? ↗
+					{t('llm.helpLink')}
 				</a>
 			{/if}
 		</div>
@@ -206,9 +220,9 @@
 			</div>
 		{/if}
 
-		<!-- 3. apiEndpoint -->
+		<!-- 4. apiEndpoint -->
 		<div class="form-row">
-			<label for="llm-endpoint">API Endpoint(OpenAI 兼容)</label>
+			<label for="llm-endpoint">{t('llm.endpointLabel')}</label>
 			<input
 				id="llm-endpoint"
 				type="text"
@@ -219,9 +233,9 @@
 			/>
 		</div>
 
-		<!-- 4. apiKey -->
+		<!-- 5. apiKey -->
 		<div class="form-row">
-			<label for="llm-apikey">API Key</label>
+			<label for="llm-apikey">{t('llm.apikeyLabel')}</label>
 			<div class="api-key-row">
 				<input
 					id="llm-apikey"
@@ -237,20 +251,20 @@
 					class="toggle-visibility"
 					onclick={() => (showApiKey = !showApiKey)}
 					tabindex="0"
-					aria-label={showApiKey ? '隐藏 apiKey' : '显示 apiKey'}
+					aria-label={showApiKey ? t('llm.hideKey') : t('llm.showKey')}
 				>
 					{showApiKey ? '🙈' : '👁️'}
 				</button>
 			</div>
 			<small class="hint">
-				🔒 apiKey 存于浏览器本地(localStorage),不上传到任何服务器。
-				请避免在共享电脑上使用,或定期清理浏览器数据。
+				{t('llm.keyHint')}
 			</small>
 		</div>
+	{/if}
 
-		<!-- 5. model -->
+		<!-- 6. model(两通道共用:server 通道为可选覆盖,留空用插件缺省) -->
 		<div class="form-row">
-			<label for="llm-model">模型</label>
+			<label for="llm-model">{t('llm.modelLabel')}</label>
 			{#if currentPreset && currentPreset.models.length > 0}
 				<select id="llm-model" onchange={handleModelChange} value={$llmConfig.model}>
 					{#each currentPreset.models as m (m)}
@@ -277,11 +291,11 @@
 				onclick={handleTestConnection}
 				disabled={isTesting || currentPreset?.needsAdapter}
 			>
-				{isTesting ? '⏳ 测试中...' : '🔌 测试连接'}
+				{isTesting ? t('common.testing') : t('llm.testBtn')}
 			</button>
-			<button class="btn btn-secondary" onclick={handleReset}>重置</button>
+			<button class="btn btn-secondary" onclick={handleReset}>{t('llm.reset')}</button>
 			<button class="btn btn-primary" onclick={handleSave} disabled={isSaving}>
-				{isSaving ? '⏳ 保存中...' : '💾 保存并应用'}
+				{isSaving ? t('llm.saving') : t('llm.saveApply')}
 			</button>
 		</div>
 
@@ -294,26 +308,25 @@
 
 		<!-- 8. 保存提示 -->
 		{#if savedNotice}
-			<div class="alert alert-info">ℹ️ 配置已保存,刷新页面以应用新配置...</div>
+			<div class="alert alert-info">{t('llm.savedNotice')}</div>
 		{/if}
 	{:else}
 		<div class="alert alert-info">
-			ℹ️ LLM 已禁用。规则库/执行台视图将与 evorule-console 内核一致,不渲染 AI 按钮。
-			启用后可配置云 LLM 厂商;若无 API Key,可选「Ollama(本机)」预设,
-			本机安装 Ollama 后无需联网、无需 Key 即可使用(智谱 GLM 有免费额度)。
+			{t('llm.disabledNotice')}
 		</div>
 	{/if}
 
 	<!-- 本地 LLM:Ollama 预设已可用(OpenAI 兼容端点直连本机);L2 指 llama.cpp 等深度集成 -->
 	<hr class="divider" />
 	<div class="l2-placeholder">
-		<h3>🖥️ 本地 LLM</h3>
+		<h3>{t('llm.localTitle')}</h3>
 		<p class="hint">
-			已支持:厂商预设选择「Ollama(本机,无需联网/Key)」——本机安装并运行
-			<code>ollama serve</code> 后,启用 LLM 并选中该预设即可使用本地模型,数据不出本机。
+			{t('llm.localSupport')}
+			<code>ollama serve</code>
+			{t('llm.localSupport2')}
 		</p>
 		<p class="hint muted">
-			深度集成(模型管理/推理参数/自动启停)为后续版本规划。
+			{t('llm.localDeep')}
 		</p>
 	</div>
 </section>

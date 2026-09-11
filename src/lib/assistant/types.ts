@@ -33,6 +33,14 @@ export interface LlmAssistant extends AssistantProvider {
 }
 
 /**
+ * LLM 执行通道(UV-172 P2,2026-09-12 裁定双通道并存):
+ *   - 'browser':浏览器直连 LLM API(用户自有 key,经审计桥侧车协议入链)——现状默认
+ *   - 'server':服务端执行者(ai-plugin 托管凭据,自编排审计回路;服务端点
+ *     /api/services/ai_plugin_chat/invoke 返回 reply+session_id)——凭据不落浏览器
+ */
+export type LlmChannel = 'browser' | 'server';
+
+/**
  * 云 LLM 配置(大众版)。
  *
  * 持久化在 localStorage(key: evorule-console-cloud:llm-config)。
@@ -42,18 +50,22 @@ export interface LlmAssistant extends AssistantProvider {
  *   - apiKey 存在 localStorage(明文,大众版可接受;高级版用 Tauri 加密)
  *   - apiKey 不进日志/错误/URL(详见 cloud-llm-assistant.ts)
  *   - 设置面板提示"key 存于本地,不上传"
+ *   - channel='server' 时 apiEndpoint/apiKey 不使用(凭据在 ai-plugin 配置文件),
+ *     model 作为可选覆盖传给服务端点(空=用插件配置缺省模型)
  */
 export interface CloudLlmConfig {
 	enabled: boolean;
+	channel: LlmChannel;
 	provider: string; // 'openai' | 'qwen' | 'ernie' | 'glm' | 'custom'
 	apiEndpoint: string; // 完整 URL,如 https://api.openai.com/v1/chat/completions
 	apiKey: string; // 明文(localStorage)
 	model: string; // 如 gpt-4o-mini / qwen-plus / ernie-4.0-turbo
 }
 
-/** 默认配置:LLM 关闭 + OpenAI 预设 */
+/** 默认配置:LLM 关闭 + OpenAI 预设 + 浏览器通道(向后兼容:老配置无 channel 字段) */
 export const DEFAULT_LLM_CONFIG: CloudLlmConfig = {
 	enabled: false,
+	channel: 'browser',
 	provider: 'openai',
 	apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 	apiKey: '',
