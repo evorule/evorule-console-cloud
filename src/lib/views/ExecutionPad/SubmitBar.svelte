@@ -12,6 +12,7 @@
 <script lang="ts">
   import type { CommandResult } from "$lib/kernel";
   import type { TranslateStatus } from "$lib/stores/business-event";
+  import { fmtTime } from "$lib/locale";
 
   interface Props {
     translateStatus: TranslateStatus;
@@ -74,7 +75,7 @@
             {lastResult.accepted ? "提交成功" : "提交失败"}
             {#if lastSubmittedAt}
               <span class="result-time">
-                · {new Date(lastSubmittedAt).toLocaleTimeString()}
+                · {fmtTime(lastSubmittedAt)}
               </span>
             {/if}
           </div>

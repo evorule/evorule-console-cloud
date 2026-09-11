@@ -28,6 +28,7 @@
   import { impactPreview } from "$lib/stores/impact-preview";
   import type { BusinessEventTemplate } from "$lib/stores/business-event-templates";
   import { pushToast } from "$lib/stores/toast";
+  import { fmtDate } from "$lib/locale";
   import type { LlmAssistant } from "$lib/assistant/types";
   import EventFormPanel from "./EventFormPanel.svelte";
   import InstructionPanel from "./InstructionPanel.svelte";
@@ -249,7 +250,7 @@
         <option value={null}>-- 新建事件 --</option>
         {#each $businessEventStore as e (e.id)}
           <option value={e.id}>
-            {e.name} ({new Date(e.createdAt).toLocaleDateString()})
+            {e.name} ({fmtDate(e.createdAt)})
             {e.lastSubmittedAt ? " ✔" : ""}
           </option>
         {/each}

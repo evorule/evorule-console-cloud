@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import type { ImpactPreview, RuleMatchResult } from "$lib/stores/impact-preview";
+  import { fmtTime } from "$lib/locale";
 
   interface Props {
     preview: ImpactPreview | null;
@@ -92,7 +93,7 @@
     </div>
 
     <div class="generated-at">
-      生成时间:{new Date(preview.generatedAt).toLocaleTimeString()}
+      生成时间:{fmtTime(preview.generatedAt)}
     </div>
 
     <!-- 命中规则 -->

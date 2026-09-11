@@ -29,6 +29,7 @@
     setWizardInProgress,
   } from "$lib/stores/home-mode";
   import { toastInfo, toastWarning } from "$lib/stores/toast";
+  import { t } from "$lib/locale";
   import { loadTemplate, getTemplate } from "$lib/views/Build/templates";
   import StepTemplatePicker from "$lib/views/Build/WizardSteps/StepTemplatePicker.svelte";
   import StepDbConfig from "$lib/views/Build/WizardSteps/StepDbConfig.svelte";
@@ -154,20 +155,20 @@
 
   // === 步骤定义(用于头部进度指示) ===
   const STEPS = [
-    { num: 1, title: "选择行业模板", desc: "空白 / 财务 / 合规模板" },
-    { num: 2, title: "配置库元数据", desc: "库名 / 业务对象 / 行业" },
-    { num: 3, title: "创建首条规则", desc: "LLM 辅助 / 业务表单" },
-    { num: 4, title: "试运行验证", desc: "提交事件,看触发结果" },
-    { num: 5, title: "完成建库", desc: "进入工作台" },
+    { num: 1, title: () => t("wizard.step1.title"), desc: () => t("wizard.step1.desc") },
+    { num: 2, title: () => t("wizard.step2.title"), desc: () => t("wizard.step2.desc") },
+    { num: 3, title: () => t("wizard.step3.title"), desc: () => t("wizard.step3.desc") },
+    { num: 4, title: () => t("wizard.step4.title"), desc: () => t("wizard.step4.desc") },
+    { num: 5, title: () => t("wizard.step5.title"), desc: () => t("wizard.step5.desc") },
   ] as const;
 </script>
 
 <section class="onboarding-wizard">
   <div class="wizard-header">
-    <h2>🏗️ 建库向导</h2>
-    <p>5 分钟跑通你的第一条 evorule 规则</p>
+    <h2>🏗️ {t("wizard.title")}</h2>
+    <p>{t("wizard.subtitle")}</p>
     <button class="cancel-link" onclick={handleCancel} type="button">
-      取消,回 demo
+      {t("wizard.cancelDemo")}
     </button>
   </div>
 
@@ -181,8 +182,8 @@
       >
         <span class="progress-num">{s.num}</span>
         <div class="progress-content">
-          <div class="progress-title">{s.title}</div>
-          <div class="progress-desc">{s.desc}</div>
+          <div class="progress-title">{s.title()}</div>
+          <div class="progress-desc">{s.desc()}</div>
         </div>
       </li>
     {/each}

@@ -10,6 +10,7 @@
 
 <script lang="ts">
   import type { DecisionSuggestion } from "$lib/stores/decision-support";
+  import { fmtDateTime } from "$lib/locale";
 
   interface Props {
     decision: DecisionSuggestion;
@@ -21,7 +22,7 @@
 
   let formattedTime = $derived.by(() => {
     try {
-      return new Date(decision.generatedAt).toLocaleString("zh-CN");
+      return fmtDateTime(decision.generatedAt);
     } catch {
       return decision.generatedAt;
     }

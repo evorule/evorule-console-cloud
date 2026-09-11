@@ -12,6 +12,7 @@
 
 <script lang="ts">
   import type { ConnectionState } from "$lib/stores/sse-connection";
+  import { fmtTime } from "$lib/locale";
 
   interface Props {
     state: ConnectionState;
@@ -39,7 +40,7 @@
           icon: "✅",
           text: "已连接",
           sub: state.lastConnectedAt
-            ? `自 ${new Date(state.lastConnectedAt).toLocaleTimeString()} 起`
+            ? `自 ${fmtTime(state.lastConnectedAt)} 起`
             : "",
           pulse: true,
         };

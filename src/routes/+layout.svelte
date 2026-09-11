@@ -53,6 +53,12 @@
   import Glossary from "$lib/views/Help/Glossary.svelte";
   import TourOverlay from "$lib/views/Home/TourOverlay.svelte";
   import CommandPalette from "$lib/views/Home/CommandPalette.svelte";
+  import {
+    locale,
+    initI18n,
+    switchLocale,
+    t,
+  } from "$lib/locale";
 
   let { children } = $props();
 
@@ -327,6 +333,10 @@
   let theme = $state<"dark">("dark");
 
   onMount(() => {
+    // 初始化 i18n:读持久化语言,并同步 <html lang>(红线:语言为纯 UI 状态,不入会话事实)
+    initI18n();
+    document.documentElement.lang = $locale;
+
     // 恢复三栏宽度(无持久化值则默认 20%/60%/20%)
     try {
       const raw = localStorage.getItem(LAYOUT_KEY);
@@ -397,9 +407,30 @@
   function isActive(pathname: string): boolean {
     return $page.url.pathname === pathname && !showSettings;
   }
+
+  // === document.title 管理:基于路径映射到 i18n 标题(未命中用品牌名) ===
+  const PAGE_TITLE_KEYS: Record<string, string> = {
+    "/workbench": "nav.overview",
+    "/monitor": "nav.monitor",
+    "/marketplace": "nav.marketplace",
+    "/knowledge": "nav.knowledge",
+    "/help": "nav.help",
+    "/export": "nav.export",
+    "/publish-queue": "nav.publishQueue",
+    "/plugin-approvals": "nav.pluginApprovals",
+    "/version-history": "nav.versionHistory",
+    "/audit": "nav.auditLog",
+    "/governance": "nav.governance",
+    "/users": "nav.users",
+    "/roles": "nav.roles",
+    "/apps": "nav.apps",
+    "/permissions": "nav.permissions",
+  };
+  const pageTitleKey = $derived(PAGE_TITLE_KEYS[$page.url.pathname] ?? "app.title");
 </script>
 
 <svelte:head>
+  <title>{t(pageTitleKey)} · evorule</title>
   <style>
     /* 强制深色:覆盖内核 $lib/kernel 附带全局浅色变量(执行台/状态等内核组件)
        内核自带 app.css 在 :root 定义 --bg-card:#ffffff,复用其组件时会把该页全局变量覆盖为白;
@@ -526,6 +557,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
 
+      <!-- 语言切换(展示层;红线:语言状态不入会话事实) -->
+      <button
+        class="icon-btn locale-switch"
+        onclick={() => switchLocale($locale === "zh" ? "en" : "zh")}
+        title={t("i18n.lang")}
+        aria-label={t("i18n.lang")}
+      >
+        {$locale === "zh" ? t("i18n.switchToEn") : t("i18n.switchToZh")}
+      </button>
+
       <UserMenu />
     </div>
   </header>
@@ -549,7 +590,7 @@
             aria-pressed={isActive(item.path)}
           >
             <span class="nav-icon">{item.icon}</span>
-            <span class="nav-label">{item.label}</span>
+            <span class="nav-label">{t(`nav.${item.id}`)}</span>
           </button>
         {/each}
       </div>
@@ -557,7 +598,7 @@
       <div class="sidebar-divider"></div>
 
       <div class="sidebar-section">
-        <div class="sidebar-label">分析视图</div>
+        <div class="sidebar-label">{t("nav.viewSection")}</div>
         {#each VIEW_LIST as view (view.id)}
           <button
             class="sidebar-item"
@@ -587,7 +628,7 @@
             aria-pressed={isActive(item.path)}
           >
             <span class="nav-icon">{item.icon}</span>
-            <span class="nav-label">{item.label}</span>
+            <span class="nav-label">{t(`nav.${item.id}`)}</span>
           </button>
         {/each}
       </div>
@@ -596,7 +637,7 @@
 
       <div class="sidebar-section">
         {#if navVisible.governance.length > 0}
-          <div class="sidebar-label">治理与协作</div>
+          <div class="sidebar-label">{t("nav.collabSection")}</div>
         {/if}
         <!-- governance 组:NAV_REGISTRY 驱动();门控在注册表过滤层统一处理
              (发布队列 view_publish_queue / 用户管理 view_users|manage_users /
@@ -611,7 +652,7 @@
             aria-pressed={isActive(item.path)}
           >
             <span class="nav-icon">{item.icon}</span>
-            <span class="nav-label">{item.label}</span>
+            <span class="nav-label">{t(`nav.${item.id}`)}</span>
           </button>
         {/each}
       </div>
@@ -628,7 +669,7 @@
           aria-pressed={showSettings}
         >
           <span class="nav-icon">⚙️</span>
-          <span class="nav-label">设置</span>
+          <span class="nav-label">{t("nav.settings")}</span>
         </button>
       </div>
 

@@ -10,6 +10,7 @@
 
 <script lang="ts">
   import type { FactData } from "$lib/stores/sse-events";
+  import { fmtTime } from "$lib/locale";
 
   interface Props {
     fact: FactData;
@@ -27,7 +28,7 @@
       : JSON.stringify(fact.content, null, 2),
   );
 
-  const timeStr = $derived(new Date(fact.timestamp).toLocaleTimeString());
+  const timeStr = $derived(fmtTime(fact.timestamp));
 
   const typeColor = $derived(typeToColor(fact.fact_type));
 

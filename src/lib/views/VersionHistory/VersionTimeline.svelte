@@ -14,6 +14,7 @@
   import { can, getCurrentUser } from '$lib/stores/auth';
   import { toastSuccess, toastError } from '$lib/stores/toast';
   import EmptyState from '$lib/views/Feedback/EmptyState.svelte';
+  import { fmtDateTime } from '$lib/locale';
 
   const canRollback = $derived(can('rollback_ruleset'));
 
@@ -79,7 +80,7 @@
                 <span class="rollback-badge">⏮️ 回滚自 v{entry.rollbackOf}</span>
               {/if}
               <span class="version-time">
-                {new Date(entry.publishedAt).toLocaleString('zh-CN')}
+                {fmtDateTime(entry.publishedAt)}
               </span>
             </div>
             <div class="version-meta">

@@ -21,6 +21,7 @@
   import { getSchemaById } from "$lib/stores/business-form-schema";
   import { toastInfo, toastSuccess, toastWarning } from "$lib/stores/toast";
   import { get } from "svelte/store";
+  import { t } from "$lib/locale";
 
   let {
     createdRuleId,
@@ -65,8 +66,8 @@
   async function handleTrialRun(): Promise<void> {
     if (!backend) {
       runStatus = "offline";
-      runError = "未注入后端(backend=null),无法试运行";
-      toastWarning("后端不可用,可跳过此步", "试运行");
+      runError = t("trialRun.err.noBackend");
+      toastWarning(t("trialRun.toast.backendUnavailable"), t("trialRun.name"));
       return;
     }
 
@@ -76,7 +77,7 @@
       eventPayload = JSON.parse(eventInput);
     } catch (e) {
       runStatus = "failed";
-      runError = `事件 JSON 解析失败:${(e as Error).message}`;
+      runError = t("trialRun.err.jsonParse", { message: (e as Error).message });
       return;
     }
 
@@ -89,9 +90,8 @@
       const healthy = await backend.health();
       if (!healthy) {
         runStatus = "offline";
-        runError =
-          "服务未响应(请检查服务地址或启动服务)。可跳过此步,规则已保存为本地草稿,稍后可经治理中心上架后生效。";
-        toastWarning("服务器离线,可跳过", "试运行");
+        runError = t("trialRun.err.serverUnresponsive");
+        toastWarning(t("trialRun.toast.serverOffline"), t("trialRun.name"));
         return;
       }
 
@@ -99,7 +99,7 @@
       const sessionId = await createSession(backend);
       if (sessionId === null) {
         runStatus = "failed";
-        runError = "创建 session 失败(服务器返回 null)";
+        runError = t("trialRun.err.sessionFail");
         return;
       }
 
@@ -114,14 +114,12 @@
         // 取不到时为 null(不落 0 避免向消费者展示误导性的 version=0)
         const version = result.version ?? get(reactorVersion) ?? null;
         runStatus = "success";
-        const versionNote = version != null ? `(规则集版本 ${version})` : "";
-        runResult = `事件已提交${versionNote}。
-注意:规则目前存于浏览器本地草稿,服务端规则集尚未包含此规则,本次提交主要演示事件提交机制。
-要让规则真正驱动执行:完成向导后用「导出规则 JSON」→ 治理中心「从向导包导入」→ 上架 → 部署,新会话即生效。`;
-        toastSuccess("事件已提交(演示事件提交机制)", "试运行");
+        const versionNote = version != null ? t("trialRun.result.versionNote", { version }) : "";
+        runResult = t("trialRun.result.submitted", { versionNote });
+        toastSuccess(t("trialRun.toast.submitted"), t("trialRun.name"));
       } else {
         runStatus = "failed";
-        runError = result?.error ?? "提交被拒绝";
+        runError = result?.error ?? t("trialRun.err.rejected");
       }
     } catch (e) {
       runStatus = "failed";
@@ -131,32 +129,31 @@
 </script>
 
 <div class="step-trial-run">
-  <h2>步骤 4:试运行</h2>
+  <h2>{t("trialRun.title")}</h2>
   <p class="step-desc">
-    用一条业务事件测试规则提交。当前规则还是「本地草稿」,这里只演示事件如何提交;
-    要让规则真正生效,完成向导后走 导出 → 治理中心上架 → 部署 链路即可。
+    {t("trialRun.desc")}
   </p>
 
   {#if createdRuleId && meta}
     <div class="rule-summary">
-      <strong>已创建规则:</strong>
+      <strong>{t("trialRun.createdRule")}</strong>
       <span class="rule-id">{createdRuleId}</span>
       <span class="rule-meta"
-        >行业:{meta.industry} · 业务对象:{meta.businessObject}</span
+        >{t("trialRun.industry", { industry: meta.industry })} · {t("trialRun.businessObject", { businessObject: meta.businessObject })}</span
       >
       {#if meta.schemaId}
         <span class="rule-meta"
-          >场景:{getSchemaById(meta.schemaId)?.scenario ?? meta.schemaId}</span
+          >{t("trialRun.scenario", { scenario: getSchemaById(meta.schemaId)?.scenario ?? meta.schemaId })}</span
         >
       {/if}
     </div>
   {/if}
 
   <div class="event-input-section">
-    <label for="event-input">业务事件(JSON)</label>
+    <label for="event-input">{t("trialRun.eventLabel")}</label>
     {#if schema}
       <small class="hint">
-        基于「{schema.scenario}」字段提示,可改。条件字段:
+        {t("trialRun.fieldHint", { scenario: schema.scenario })}
         {schema.fields
           .filter((f) => f.group === "condition")
           .map((f) => f.id.split(".").pop())
@@ -177,27 +174,27 @@
       onclick={handleTrialRun}
       disabled={runStatus === "running"}
     >
-      {runStatus === "running" ? "运行中..." : "▶ 提交事件试运行"}
+      {runStatus === "running" ? t("common.running") : t("trialRun.submitBtn")}
     </button>
   </div>
 
   {#if runStatus === "offline" || runStatus === "failed"}
     <div class="result-box error">
-      <strong>⚠ {runStatus === "offline" ? "服务器离线" : "试运行失败"}</strong
+      <strong>⚠ {runStatus === "offline" ? t("trialRun.offlineTitle") : t("trialRun.failedTitle")}</strong
       >
       <p>{runError}</p>
-      <p class="hint">规则已保存到本地,可跳过此步进入工作台。</p>
+      <p class="hint">{t("trialRun.savedLocalHint")}</p>
     </div>
   {:else if runStatus === "success"}
     <div class="result-box success">
-      <strong>✅ 试运行完成</strong>
+      <strong>{t("trialRun.successTitle")}</strong>
       <pre>{runResult}</pre>
     </div>
   {/if}
 
   <div class="actions">
-    <button class="btn-ghost" onclick={onBack}>上一步</button>
-    <button class="btn-primary" onclick={onNext}>下一步</button>
+    <button class="btn-ghost" onclick={onBack}>{t("common.back")}</button>
+    <button class="btn-primary" onclick={onNext}>{t("common.next")}</button>
   </div>
 </div>
 

@@ -16,6 +16,7 @@
     exportJobsStore,
     exportTemplatesStore,
   } from "$lib/stores/export-store";
+  import { fmtDateTime } from "$lib/locale";
 
   interface Props {
     /** 关闭回调(嵌入式路由用) */
@@ -129,7 +130,7 @@
               >
                 {job.status}
               </td>
-              <td>{new Date(job.createdAt).toLocaleString("zh-CN")}</td>
+              <td>{fmtDateTime(job.createdAt)}</td>
             </tr>
           {/each}
         </tbody>

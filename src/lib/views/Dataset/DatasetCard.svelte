@@ -1,4 +1,4 @@
-﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:数据集卡片(列表项)
@@ -14,6 +14,7 @@
   import { ancestorsOf } from "$lib/stores/category";
   import StatusBadge from "$lib/views/Feedback/StatusBadge.svelte";
   import DatasetActions from "./DatasetActions.svelte";
+  import { fmtDate } from "$lib/locale";
 
   let {
     dataset,
@@ -68,7 +69,7 @@
     {/if}
     {#if dataset.lastTestedAt}
       <span class="meta-item" title="最后测试时间">
-        🧪 {new Date(dataset.lastTestedAt).toLocaleDateString()}
+        🧪 {fmtDate(dataset.lastTestedAt)}
       </span>
     {/if}
   </div>

@@ -8,6 +8,7 @@
 <script lang="ts">
   import type { WorkspaceRecord } from "$lib/kernel";
   import type { NetMode } from "$lib/backend/types";
+  import { fmtTime } from "$lib/locale";
 
   interface Props {
     serverConnected: boolean | null;
@@ -35,9 +36,9 @@
     onShowOnboarding,
   }: Props = $props();
 
-  function fmtTime(d: Date | null): string {
+  function fmtLastRefresh(d: Date | null): string {
     if (!d) return "—";
-    return d.toLocaleTimeString("zh-CN", { hour12: false });
+    return fmtTime(d, { hour12: false });
   }
 </script>
 
@@ -77,7 +78,7 @@
 
   <div class="status-divider"></div>
 
-  <span class="status-meta">最近刷新: {fmtTime(lastRefreshAt)}</span>
+  <span class="status-meta">最近刷新: {fmtLastRefresh(lastRefreshAt)}</span>
   <button
     class="status-btn"
     onclick={onRefresh}

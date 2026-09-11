@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import type { PerformanceMetricsData } from "$lib/stores/performance-metrics";
+  import { fmtTime } from "$lib/locale";
 
   interface Props { data: PerformanceMetricsData; }
   let { data }: Props = $props();
@@ -26,7 +27,7 @@
   <header class="perf-header">
     <h3 class="perf-title">📊 性能指标</h3>
     {#if data.updatedAt}
-      <span class="perf-updated">{new Date(data.updatedAt).toLocaleTimeString()}</span>
+      <span class="perf-updated">{fmtTime(data.updatedAt)}</span>
     {/if}
   </header>
 

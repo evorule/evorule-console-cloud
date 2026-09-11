@@ -15,6 +15,7 @@
 //   - 不改 fact log,不重写哈希链
 
 import { derived } from "svelte/store";
+import { fmtDate } from "$lib/locale";
 import {
   auditData,
   verifyResult,
@@ -174,7 +175,7 @@ function formatBusinessTime(timestamp: string | undefined, logicalTime: number):
     try {
       const date = new Date(timestamp);
       if (!Number.isNaN(date.getTime())) {
-        return date.toLocaleString("zh-CN", {
+        return fmtDate(date, {
           month: "2-digit",
           day: "2-digit",
           hour: "2-digit",

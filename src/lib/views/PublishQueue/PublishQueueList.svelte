@@ -1,4 +1,4 @@
-﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   职责:部署审批列表 + 状态徽标 + approve/reject 按钮(权限守卫)
@@ -22,6 +22,7 @@
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { netConfig } from "$lib/config/net-config";
+  import { fmtDateTime } from "$lib/locale";
   import {
     type PublishQueueItemView,
   } from "$lib/backend/production-views";
@@ -94,7 +95,7 @@
   function fmtTime(iso?: string | null): string {
     if (!iso) return "—";
     const d = new Date(iso);
-    return isNaN(d.getTime()) ? iso : d.toLocaleString("zh-CN");
+    return isNaN(d.getTime()) ? iso : fmtDateTime(d);
   }
 
   const canApprove = $derived(can("approve_publish"));

@@ -48,6 +48,7 @@
   import BusinessForm from "$lib/views/Rules/BusinessForm.svelte";
   import BusinessPreview from "$lib/views/Rules/BusinessPreview.svelte";
   import SchemaSelector from "$lib/views/Rules/SchemaSelector.svelte";
+  import { t } from "$lib/locale";
 
   let {
     template,
@@ -114,11 +115,11 @@
   // === LLM 生成规则草案 ===
   async function handleGenerate(): Promise<void> {
     if (!assistant) {
-      llmError = "LLM 未配置,请切换到业务表单模式或前往设置配置 LLM";
+      llmError = t("firstRule.err.llmNotConfigured");
       return;
     }
     if (!naturalLanguage.trim()) {
-      llmError = "请输入规则描述";
+      llmError = t("firstRule.err.enterDescription");
       return;
     }
 
@@ -226,12 +227,12 @@
   // === 保存规则到 workspace(内核 v0.2.0:经 WorkspaceBackend 异步写入) ===
   async function handleSave(): Promise<void> {
     if (!savedKernelContent || !validation?.valid) {
-      llmError = "规则未校验通过,无法保存";
+      llmError = t("firstRule.err.notValid");
       return;
     }
     const ws = get(currentWorkspace);
     if (!ws) {
-      llmError = "当前没有 workspace,无法保存规则";
+      llmError = t("firstRule.err.noWorkspace");
       return;
     }
 
@@ -246,7 +247,7 @@
         description,
       });
     } catch (e) {
-      llmError = `保存规则失败: ${(e as Error).message}`;
+      llmError = t("firstRule.err.saveFailed", { message: (e as Error).message });
       return;
     }
 
@@ -281,7 +282,7 @@
 </script>
 
 <div class="step-first-rule">
-  <h2>步骤 3:加第一条规则</h2>
+  <h2>{t("firstRule.title")}</h2>
 
   <!-- SchemaSelector -->
   <SchemaSelector
@@ -295,33 +296,32 @@
       class:active={inputMode === "llm"}
       onclick={() => (inputMode = "llm")}
       disabled={!assistant}
-      title={assistant ? "LLM 辅助模式" : "LLM 未配置"}
+      title={assistant ? t("firstRule.llmModeTitle") : t("firstRule.llmNotConfiguredTitle")}
     >
-      🤖 LLM 辅助 {!assistant && "(未配置)"}
+      {t("firstRule.llmAssisted")} {!assistant && t("firstRule.notConfigured")}
     </button>
     <button
       class:active={inputMode === "form"}
       onclick={() => (inputMode = "form")}
     >
-      📝 业务表单
+      {t("firstRule.businessForm")}
     </button>
   </div>
 
   {#if !assistant}
     <!-- LLM 按钮 disabled 时给出明确配置指引,避免用户不知去哪里启用 -->
     <div class="llm-guide">
-      💡 LLM 辅助需要先配置 AI 服务:点击页面右侧的「💬 配置 LLM」按钮(或左侧导航「设置 → LLM 配置」),
-      填写 API Key 后即可用自然语言生成规则草案;未配置也可直接使用下方「业务表单」模式。
+      {t("firstRule.llmGuide")}
     </div>
   {/if}
 
   {#if inputMode === "llm"}
     <div class="llm-section">
-      <label for="nl-input">用自然语言描述规则:</label>
+      <label for="nl-input">{t("firstRule.describeRule")}</label>
       <textarea
         id="nl-input"
         bind:value={naturalLanguage}
-        placeholder="例如:报销金额超过 10000 元需要 CFO 批准"
+        placeholder={t("firstRule.nlPlaceholder")}
         rows="3"
       ></textarea>
 
@@ -330,7 +330,7 @@
         onclick={handleGenerate}
         disabled={isGenerating}
       >
-        {isGenerating ? "生成中..." : "✨ 生成规则草案"}
+        {isGenerating ? t("common.generating") : t("firstRule.generateDraft")}
       </button>
 
       {#if llmError}
@@ -339,7 +339,7 @@
 
       {#if generatedRule}
         <div class="generated-rule">
-          <h3>生成的规则</h3>
+          <h3>{t("firstRule.generatedRule")}</h3>
 
           <!-- 置信度可视化 -->
           <div
@@ -350,13 +350,13 @@
                 ? "mid"
                 : "low"}
           >
-            置信度: {confidence.toFixed(2)}
+            {t("firstRule.confidence", { confidence: confidence.toFixed(2) })}
             {#if confidence >= 0.7}
-              🟢 高(可直接保存)
+              {t("firstRule.confHigh")}
             {:else if confidence >= 0.3}
-              🟡 中(建议在业务表单模式核对)
+              {t("firstRule.confMid")}
             {:else}
-              🔴 低(建议切换到业务表单模式重填)
+              {t("firstRule.confLow")}
             {/if}
           </div>
 
@@ -367,9 +367,9 @@
               class:invalid={!validation.valid}
             >
               {#if validation.valid}
-                ✅ 校验通过
+                {t("firstRule.validPass")}
               {:else}
-                ❌ 校验失败,请根据以下提示修正:
+                {t("firstRule.validFail")}
                 <ul>
                   {#each validation.errors as error}
                     <li>{friendlyRuleError(error)}</li>
@@ -381,9 +381,9 @@
 
           {#if confidence < 0.7 && Object.keys(formValues).length > 0}
             <div class="reverse-parse-hint">
-              💡 已将 LLM 草案解析到业务表单,
+              {t("firstRule.reverseParse")}
               <button onclick={() => (inputMode = "form")}>
-                切换到业务表单核对 →
+                {t("firstRule.switchToForm")}
               </button>
             </div>
           {/if}
@@ -411,9 +411,9 @@
 
   <!-- 操作按钮 -->
   <div class="actions">
-    <button class="btn-ghost" onclick={onBack}>上一步</button>
+    <button class="btn-ghost" onclick={onBack}>{t("common.back")}</button>
     <button class="btn-primary" onclick={handleSave} disabled={!canSave}>
-      保存并下一步
+      {t("firstRule.saveNext")}
     </button>
   </div>
 </div>
