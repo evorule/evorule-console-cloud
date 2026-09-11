@@ -30,6 +30,9 @@ import {
 // 审计桥 mock:委托真实 callChatApi(走全局 fetch mock)。
 // 协议回路本身由 audited-llm.test.ts 单测覆盖;本文件聚焦三方法的
 // prompt 组装/JSON 提取/校验/错误映射,不重复 mock 侧车协议。
+// server 通道(UV-172 P2)用 hoisted mock 独立可断言(路由测试只验证
+// "走没走服务端点",协议细节由 audited-llm.test.ts 覆盖)。
+const serverChannelMock = vi.hoisted(() => vi.fn());
 vi.mock('./audited-llm', () => ({
 	callChatApiAudited: async (
 		params: Record<string, unknown> & { auditPurpose?: string }
@@ -38,7 +41,8 @@ vi.mock('./audited-llm', () => ({
 		const { auditPurpose: _auditPurpose, ...rest } = params;
 		void _auditPurpose;
 		return callChatApi(rest as unknown as Parameters<typeof callChatApi>[0]);
-	}
+	},
+	callChatApiServerChannel: serverChannelMock
 }));
 
 // ============ mock fetch ============
@@ -48,6 +52,7 @@ vi.stubGlobal('fetch', mockFetch);
 
 beforeEach(() => {
 	mockFetch.mockReset();
+	serverChannelMock.mockReset();
 });
 
 afterEach(() => {
@@ -59,6 +64,7 @@ afterEach(() => {
 const TEST_API_KEY = 'sk-test-key-secret-12345';
 const FULL_CONFIG: CloudLlmConfig = {
 	enabled: true,
+	channel: 'browser',
 	provider: 'openai',
 	apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 	apiKey: TEST_API_KEY,
@@ -122,6 +128,101 @@ describe('isConfigured', () => {
 	test('apiKey 全空白 返回 false', () => {
 		const a = makeAssistant({ apiKey: '   ' });
 		expect(a.isConfigured()).toBe(false);
+	});
+});
+
+// ============ 执行通道路由(UV-172 P2)+ UV-118 注入时效 ============
+
+const VALID_RULE_JSON = JSON.stringify({
+	transform: [
+		{
+			type: 'branch',
+			params: {
+				domain: { type: 'eq', path: '__exec__.instruction.type', value: 'register' },
+				on_true: [
+					{ type: 'set', params: { attr: '__exec__.payload.status', operation: 'set', value: 'ok' } }
+				],
+				on_false: []
+			}
+		}
+	]
+});
+
+describe('执行通道路由(UV-172 P2)', () => {
+	test('channel=server 三方法走 callChatApiServerChannel(不经浏览器直连)', async () => {
+		serverChannelMock.mockResolvedValueOnce(VALID_RULE_JSON);
+		const a = makeAssistant({ channel: 'server', apiKey: '', apiEndpoint: '' });
+		const result = await a.generateRuleDraft('写一条阈值规则');
+
+		expect(serverChannelMock).toHaveBeenCalledTimes(1);
+		const arg = serverChannelMock.mock.calls[0][0] as Record<string, unknown>;
+		expect(arg.auditPurpose).toBe('draft_rule');
+		expect(arg.model).toBe(FULL_CONFIG.model);
+		// 结果语义与 browser 通道一致(校验通过 → 0.7)
+		expect(result.confidence).toBe(0.7);
+		// 全局 fetch(浏览器直连面)未被触碰
+		expect(mockFetch).not.toHaveBeenCalled();
+	});
+
+	test('channel=server isConfigured 只看 enabled(凭据在服务端)', () => {
+		const a = makeAssistant({ channel: 'server', apiKey: '', apiEndpoint: '' });
+		expect(a.isConfigured()).toBe(true);
+		const b = makeAssistant({ channel: 'server', enabled: false });
+		expect(b.isConfigured()).toBe(false);
+	});
+
+	test('channel=server testConnection 探针=真实执行路径', async () => {
+		serverChannelMock.mockResolvedValueOnce('pong');
+		const a = makeAssistant({ channel: 'server', apiKey: '' });
+		const r = await a.testConnection();
+		expect(r.ok).toBe(true);
+		expect(serverChannelMock).toHaveBeenCalledTimes(1);
+		// 探针参数:ping + chat 用途
+		const arg = serverChannelMock.mock.calls[0][0] as Record<string, unknown>;
+		expect(arg.userMessage).toBe('ping');
+		expect(arg.auditPurpose).toBe('chat');
+	});
+
+	test('channel=server testConnection 失败如实透出', async () => {
+		serverChannelMock.mockRejectedValueOnce(new Error('server 通道 invoke 失败(HTTP 502)'));
+		const a = makeAssistant({ channel: 'server' });
+		const r = await a.testConnection();
+		expect(r.ok).toBe(false);
+		expect(r.message).toContain('502');
+	});
+
+	test('channel=browser 行为不变(走审计桥,不经服务端点 mock)', async () => {
+		mockFetch.mockResolvedValue(mockOkResponse(VALID_RULE_JSON));
+		const a = makeAssistant({ channel: 'browser' });
+		await a.generateRuleDraft('x');
+		expect(serverChannelMock).not.toHaveBeenCalled();
+		expect(mockFetch).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('UV-118 注入时效(现取语义)', () => {
+	test('store 配置变更后无需新实例/刷新即生效', async () => {
+		// 无参构造 = store 现取(注入场景)
+		const a = new CloudLlmAssistant();
+		llmConfig.set({ ...FULL_CONFIG });
+		mockFetch.mockResolvedValue(mockOkResponse(VALID_RULE_JSON));
+		await a.generateRuleDraft('第一次调用');
+		expect(mockFetch.mock.calls[0][0]).toBe(FULL_CONFIG.apiEndpoint);
+
+		// 改端点+key:同一实例,下一次调用立即用新值(UV-118 缺陷已修)
+		llmConfig.set({
+			...FULL_CONFIG,
+			apiEndpoint: 'https://api.changed.example/v1/chat/completions',
+			apiKey: 'sk-new-key'
+		});
+		mockFetch.mockClear();
+		mockFetch.mockResolvedValue(mockOkResponse(VALID_RULE_JSON));
+		await a.generateRuleDraft('第二次调用');
+		expect(mockFetch.mock.calls[0][0]).toBe('https://api.changed.example/v1/chat/completions');
+		const headers = mockFetch.mock.calls[0][1].headers as Record<string, string>;
+		expect(headers['Authorization']).toBe('Bearer sk-new-key');
+
+		resetLlmConfig();
 	});
 });
 

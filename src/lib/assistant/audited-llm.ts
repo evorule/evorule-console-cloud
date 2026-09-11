@@ -368,3 +368,102 @@ async function closeSession(
 		// 尽力而为:会话残留由 server 会话上限兜底
 	}
 }
+
+// ============================================================================
+// server 执行通道(UV-172 P2):LLM 执行整体委托 ai-plugin 服务端点
+// ============================================================================
+
+/**
+ * server 通道整体超时(毫秒)。契约 v1.2 服务 timeout_ms 钳制上限 120s
+ * (ai-plugin 声明即此值):单次 invoke 内含插件自编排审计回路(LLM 可达
+ * 60s+),客户端须 ≥ 服务端上限,否则服务端仍在执行而客户端已放弃。
+ */
+export const SERVER_CHANNEL_TIMEOUT_MS = 120_000;
+
+/**
+ * 经 server 执行通道执行一次 LLM 对话(审计链内,服务端托管凭据)。
+ *
+ * 与 callChatApiAudited 的区别:LLM 不在浏览器执行 —— 调用 ai-plugin 服务
+ * 端点(POST /api/services/ai_plugin_chat/invoke),插件进程自编排完整
+ * sidecar 审计回路(call_external → LLM → io_response → Stable),prompt
+ * 与结果全文入审计链。浏览器只拿 reply 与 session_id(供审计对账)。
+ *
+ * @param params 与 callChatApiAudited 相同的聊天参数;apiEndpoint/apiKey
+ *        在此通道不使用(凭据在 ai-plugin 配置),model 可选覆盖插件缺省
+ * @returns assistant 回复文本
+ * @throws AuditedBridgeError(server 不可达 / 协议失败)
+ */
+export async function callChatApiServerChannel(
+	params: ChatApiParams & { auditPurpose: AuditPurpose }
+): Promise<string> {
+	const { auditPurpose, apiEndpoint: _ep, apiKey: _key, ...chatParams } = params;
+	void _ep;
+	void _key;
+	const base = resolveBaseUrl();
+	const headers = buildHeaders();
+
+	const body = {
+		messages: buildMessages({
+			userMessage: chatParams.userMessage,
+			systemMessage: chatParams.systemMessage,
+			history: chatParams.history
+		}),
+		// model 空串 = 不覆盖,用 ai-plugin 配置的缺省模型
+		...(chatParams.model?.trim() ? { model: chatParams.model.trim() } : {}),
+		temperature: chatParams.temperature ?? 0.2,
+		audit_purpose: auditPurpose
+	};
+
+	let r: Response;
+	try {
+		r = await fetch(`${base}/api/services/ai_plugin_chat/invoke`, {
+			method: 'POST',
+			headers,
+			body: JSON.stringify(body),
+			signal: AbortSignal.timeout(SERVER_CHANNEL_TIMEOUT_MS)
+		});
+	} catch {
+		// 网络错误/超时(含 AbortSignal.timeout 触发的 TimeoutError DOMException)
+		throw new AuditedBridgeError(
+			`无法连接 evorule-server(server 通道 invoke),请确认服务已启动:${base}`,
+			'server_unreachable'
+		);
+	}
+
+	if (!r.ok) {
+		let detail = '';
+		try {
+			detail = (await r.text()).slice(0, 200);
+		} catch {
+			// 响应体不可读时留空
+		}
+		throw new AuditedBridgeError(
+			`server 通道 invoke 失败(HTTP ${r.status})${detail ? `: ${detail}` : ''}`,
+			'protocol'
+		);
+	}
+
+	let json: unknown = null;
+	try {
+		json = await r.json();
+	} catch {
+		json = null;
+	}
+	// HttpHandler 机制层语义可能把服务返回体再包一层 JSON 字符串(e2e 同款双层解析)
+	if (typeof json === 'string') {
+		try {
+			json = JSON.parse(json);
+		} catch {
+			// 解不开就按结构异常如实报错
+			json = null;
+		}
+	}
+	const payload = json as { reply?: unknown } | null;
+	if (!payload || typeof payload.reply !== 'string') {
+		throw new AuditedBridgeError(
+			'server 通道响应结构异常: 无 reply 字段(协议失败,无静默兜底)',
+			'protocol'
+		);
+	}
+	return payload.reply;
+}

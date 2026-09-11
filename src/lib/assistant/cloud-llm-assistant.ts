@@ -20,7 +20,11 @@ import { RuleValidator, type ValidationResult } from '$lib/kernel';
 import type { LlmAssistant, CloudLlmConfig } from './types';
 import { llmConfig } from '$lib/config/llm-config';
 import { callChatApi, type ChatApiParams, LlmError } from './llm-fetch';
-import { callChatApiAudited, type AuditPurpose } from './audited-llm';
+import {
+	callChatApiAudited,
+	callChatApiServerChannel,
+	type AuditPurpose
+} from './audited-llm';
 import {
 	promptGenerateRuleDraft,
 	promptExplainRule,
@@ -67,30 +71,63 @@ export class CloudLlmAssistant implements LlmAssistant {
 		return this.snapshot ?? get(llmConfig);
 	}
 
-	/** 当前配置是否完备 */
+	/** 当前配置是否完备(通道感知:server 通道凭据在服务端,只看 enabled) */
 	isConfigured(): boolean {
+		const cfg = this.config;
+		if (cfg.channel === 'server') {
+			return cfg.enabled;
+		}
 		return (
-			this.config.enabled &&
-			this.config.apiEndpoint.trim().length > 0 &&
-			this.config.apiKey.trim().length > 0 &&
-			this.config.model.trim().length > 0
+			cfg.enabled &&
+			cfg.apiEndpoint.trim().length > 0 &&
+			cfg.apiKey.trim().length > 0 &&
+			cfg.model.trim().length > 0
 		);
 	}
 
 	/** 测试连接(返回成功/失败 + 信息;不产生草案) */
 	async testConnection(): Promise<{ ok: boolean; message: string }> {
 		if (!this.isConfigured()) {
+			const cfg = this.config;
 			return {
 				ok: false,
-				message: '配置不完备: 请填写 apiEndpoint + apiKey + model 并启用'
+				message:
+					cfg.channel === 'server'
+						? '配置不完备: 请启用 LLM(server 通道凭据由 ai-plugin 服务端配置)'
+						: '配置不完备: 请填写 apiEndpoint + apiKey + model 并启用'
 			};
+		}
+
+		const cfg = this.config;
+		// server 通道:探针=真实执行路径(经 ai-plugin 服务端点,审计链内),
+		// 连通即证明 server+插件+托管凭据整链可用
+		if (cfg.channel === 'server') {
+			try {
+				const reply = await callChatApiServerChannel({
+					userMessage: 'ping',
+					temperature: 0,
+					auditPurpose: 'chat',
+					apiEndpoint: '',
+					apiKey: '',
+					model: cfg.model
+				});
+				return {
+					ok: true,
+					message: `连接成功(server 通道经 ai-plugin,回复 ${reply.length} 字符)`
+				};
+			} catch (e) {
+				return {
+					ok: false,
+					message: `连接失败: ${(e as Error).message}`
+				};
+			}
 		}
 
 		try {
 			const reply = await callChatApi({
-				apiEndpoint: this.config.apiEndpoint,
-				apiKey: this.config.apiKey,
-				model: this.config.model,
+				apiEndpoint: cfg.apiEndpoint,
+				apiKey: cfg.apiKey,
+				model: cfg.model,
 				userMessage: promptTestConnection(),
 				temperature: 0,
 				timeoutMs: 10_000
@@ -98,7 +135,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 			// 只要能拿到回复就算连接成功(不验证内容)
 			return {
 				ok: true,
-				message: `连接成功(model=${this.config.model},回复 ${reply.length} 字符)`
+				message: `连接成功(model=${cfg.model},回复 ${reply.length} 字符)`
 			};
 		} catch (e) {
 			const err = e as LlmError;
@@ -115,20 +152,40 @@ export class CloudLlmAssistant implements LlmAssistant {
 	// ========================================================================
 
 	/**
-	 * 经审计桥执行一次 LLM 对话(业务 LLM 调用统一入口)。
+	 * 经审计链执行一次 LLM 对话(业务 LLM 调用统一入口,按 channel 路由)。
 	 *
-	 * 三个定向任务(草案/解释/输入)不走直连:每次调用创建一次性 sidecar
-	 * 会话,prompt 全文与 LLM 结果都进 evorule 审计链(与 evo-agent
-	 * AuditedLlm 同契约)。testConnection 除外 —— 它是配置连通性探针,
-	 * 可在 server 未启动时独立验证 LLM 端点。
+	 * 三个定向任务(草案/解释/输入)不走直连,prompt 全文与 LLM 结果都进
+	 * evorule 审计链(与 evo-agent AuditedLlm 同契约)。testConnection 除外
+	 * —— browser 通道它是配置连通性探针,可在 server 未启动时独立验证 LLM
+	 * 端点;server 通道探针即真实执行路径。
 	 *
-	 * @throws LlmError 子类(LLM 执行失败) / AuditedBridgeError(协议失败)
+	 * 通道(UV-172 P2 双通道并存):
+	 *   - browser:审计桥侧车协议,浏览器本地执行 LLM(用户自有 key)——现状
+	 *   - server:ai-plugin 服务端点,服务端托管凭据自编排审计回路
+	 *
+	 * @throws LlmError 子类(browser 通道 LLM 执行失败) /
+	 *         AuditedBridgeError(server 不可达 / 协议失败)
 	 */
 	private auditedChat(params: Omit<ChatApiParams, 'apiEndpoint' | 'apiKey' | 'model'> & { auditPurpose: AuditPurpose }): Promise<string> {
 		const cfg = this.config;
 		// 现取语义下配置可能在实例注入后被用户改动/停用:调用时点再校验,
 		// 未配置即显式报错(fail-fast),不发无凭据请求
-		if (!cfg.enabled || !cfg.apiEndpoint.trim() || !cfg.apiKey.trim() || !cfg.model.trim()) {
+		if (!cfg.enabled) {
+			return Promise.reject(
+				new LlmError('LLM 未配置或已停用:请到 设置 → LLM 配置 完成配置后再试', 'api')
+			);
+		}
+		if (cfg.channel === 'server') {
+			// server 通道:凭据在 ai-plugin 服务端,apiEndpoint/apiKey 不使用;
+			// model 可选覆盖(空 = 插件缺省模型)
+			return callChatApiServerChannel({
+				apiEndpoint: '',
+				apiKey: '',
+				model: cfg.model.trim(),
+				...params
+			});
+		}
+		if (!cfg.apiEndpoint.trim() || !cfg.apiKey.trim() || !cfg.model.trim()) {
 			return Promise.reject(
 				new LlmError('LLM 未配置或已停用:请到 设置 → LLM 配置 完成配置后再试', 'api')
 			);

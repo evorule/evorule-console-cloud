@@ -188,6 +188,7 @@ describe('isLlmConfigured', () => {
 		expect(
 			isLlmConfigured({
 				enabled: false,
+				channel: 'browser',
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: 'sk-xxx',
@@ -201,6 +202,7 @@ describe('isLlmConfigured', () => {
 		expect(
 			isLlmConfigured({
 				enabled: true,
+				channel: 'browser',
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: '',
@@ -214,6 +216,7 @@ describe('isLlmConfigured', () => {
 		expect(
 			isLlmConfigured({
 				enabled: true,
+				channel: 'browser',
 				provider: 'openai',
 				apiEndpoint: '',
 				apiKey: 'sk-xxx',
@@ -227,6 +230,7 @@ describe('isLlmConfigured', () => {
 		expect(
 			isLlmConfigured({
 				enabled: true,
+				channel: 'browser',
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: 'sk-xxx',
@@ -240,6 +244,7 @@ describe('isLlmConfigured', () => {
 		expect(
 			isLlmConfigured({
 				enabled: true,
+				channel: 'browser',
 				provider: 'qwen',
 				apiEndpoint: 'https://dashscope.aliyuncs.com/v1/chat/completions',
 				apiKey: 'sk-qwen',
@@ -253,6 +258,7 @@ describe('isLlmConfigured', () => {
 		expect(
 			isLlmConfigured({
 				enabled: true,
+				channel: 'browser',
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: '   ',
