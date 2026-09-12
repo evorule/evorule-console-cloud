@@ -31,12 +31,15 @@
 	} from '$lib/config/llm-config';
 	import { LLM_PRESETS, findPreset, getPresetOptions } from '$lib/config/llm-presets';
 	import { CloudLlmAssistant } from '$lib/assistant/cloud-llm-assistant';
+	import AiPluginActivationCard from './AiPluginActivationCard.svelte';
 	import { t } from '$lib/locale';
 
 	let apiKeyInput = $state('');
 	let showApiKey = $state(false);
 	let isTesting = $state(false);
-	let testResult = $state<{ ok: boolean; message: string } | null>(null);
+	let testResult = $state<{ ok: boolean; message: string; serverUnreachable?: boolean } | null>(
+		null
+	);
 	let isSaving = $state(false);
 	let savedNotice = $state(false);
 
@@ -191,6 +194,11 @@
 		{/if}
 	</div>
 
+		{#if $llmConfig.channel === 'server'}
+			<!-- UV-177:激活状态卡(三态检测+分步引导;逻辑在 assistant/ai-plugin-status.ts) -->
+			<AiPluginActivationCard />
+		{/if}
+
 	{#if $llmConfig.channel === 'browser'}
 		<!-- 3. 厂商预设 -->
 		<div class="form-row">
@@ -304,6 +312,11 @@
 			<div class="alert" class:alert-success={testResult.ok} class:alert-error={!testResult.ok}>
 				{testResult.ok ? '✅' : '❌'} {testResult.message}
 			</div>
+		{/if}
+
+		<!-- 7b. server 通道不可达诊断(UV-177):指向激活引导卡,不遮蔽原始错误 -->
+		{#if testResult && !testResult.ok && testResult.serverUnreachable}
+			<div class="alert alert-info">{t('llm.err.aiPluginHint')}</div>
 		{/if}
 
 		<!-- 8. 保存提示 -->
