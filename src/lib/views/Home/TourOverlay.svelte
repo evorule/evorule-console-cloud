@@ -11,6 +11,7 @@
 
 <script lang="ts">
 	import { browser } from "$app/environment";
+	import { goto } from "$app/navigation";
 	import {
 		onboardingStore,
 		TOUR_STEPS,
@@ -24,6 +25,12 @@
 	const stepIndex = $derived($onboardingStore.tour.step);
 	const step = $derived(TOUR_STEPS[Math.min(stepIndex, TOUR_STEPS.length - 1)]);
 	const isLast = $derived(stepIndex >= TOUR_STEPS.length - 1);
+
+	// 步骤声明了 route 时提供「前往」:保留引导态,spotlight 跟随路由落地后重定位
+	function handleGoto(): void {
+		if (!step?.route) return;
+		goto(step.route);
+	}
 
 	// 目标元素包围盒(用于聚光灯 + 卡片定位)
 	let targetRect = $state<{
@@ -95,18 +102,21 @@
 			<h3 class="tour-title">{step?.title}</h3>
 			<p class="tour-desc">{step?.description}</p>
 			<div class="tour-actions">
-				<button class="tour-skip" onclick={skipTour}>跳过引导</button>
-				<div class="tour-nav">
-					{#if stepIndex > 0}
-						<button class="tour-btn ghost" onclick={prevTourStep}>上一步</button>
-					{/if}
-					{#if isLast}
-						<button class="tour-btn primary" onclick={endTour}>完成 🎉</button>
-					{:else}
-						<button class="tour-btn primary" onclick={nextTourStep}>下一步 →</button>
-					{/if}
+					<button class="tour-skip" onclick={skipTour}>跳过引导</button>
+					<div class="tour-nav">
+						{#if step?.route}
+							<button class="tour-btn ghost" onclick={handleGoto}>前往 ▸</button>
+						{/if}
+						{#if stepIndex > 0}
+							<button class="tour-btn ghost" onclick={prevTourStep}>上一步</button>
+						{/if}
+						{#if isLast}
+							<button class="tour-btn primary" onclick={endTour}>完成 🎉</button>
+						{:else}
+							<button class="tour-btn primary" onclick={nextTourStep}>下一步 →</button>
+						{/if}
+					</div>
 				</div>
-			</div>
 		</div>
 	</div>
 {/if}

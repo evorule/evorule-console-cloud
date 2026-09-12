@@ -34,6 +34,10 @@
 		handleDismiss();
 	}
 
+	function handleGovernance() {
+		goto("/governance");
+	}
+
 	const username = $derived($sessionStore.username ?? "用户");
 </script>
 
@@ -44,13 +48,16 @@
 			<div class="ob-text">
 				<div class="ob-title">欢迎,{username}!这里是你的 evorule 工作台</div>
 				<div class="ob-desc">
-					新手上路建议:① 加一条业务规则 → ② 在执行台测试 → ③ 查看审计链。
-					或直接启动「任务流」向导,4 步体验完整链路。
+					新手上路建议:① 连接治理服务(体验包默认账号 admin/evorule-demo) → ② 加一条业务规则 →
+					③ 在执行台测试 → ④ 查看审计链。或直接启动「任务流」向导,4 步体验完整链路。
 				</div>
 			</div>
 			<div class="ob-actions">
 				<button class="ob-btn primary" onclick={handleStartTask}>
 					🎯 启动任务流
+				</button>
+				<button class="ob-btn" onclick={handleGovernance} title="进入治理中心完成连接">
+					🔐 连接治理服务
 				</button>
 				<button class="ob-btn" onclick={handleViewRules}>
 					📜 查看规则库

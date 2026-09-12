@@ -16,8 +16,15 @@
   import HelpWorkbench from "$lib/views/Help/HelpWorkbench.svelte";
   import HelpStart from "$lib/views/Help/HelpStart.svelte";
   import HelpFaq from "$lib/views/Help/HelpFaq.svelte";
+  import { resetWelcome } from "$lib/stores/onboarding";
 
   let activeTab = $state<"quickstart" | "workbench" | "start" | "faq">("quickstart");
+
+  /** 重新运行首跑向导(UV-179 批次A:帮助页常驻重跑入口) */
+  function rerunWelcome() {
+    resetWelcome();
+    goto("/welcome");
+  }
 
   function jumpDocs(path: string) {
     // docs/ 下的文件是 markdown,跳到 GitHub 仓
@@ -40,6 +47,12 @@
 <div class="help">
   <h1 class="help-title">❓ 帮助</h1>
   <p class="help-subtitle">5 分钟上手 + 详细使用指南 · 新用户从 quickstart 开始</p>
+
+  <!-- UV-179 批次A:首跑向导重跑入口(常驻) -->
+  <div class="welcome-rerun">
+    <span>🧭 想重新走一遍初始设置向导(连接治理服务 / AI 助手)?</span>
+    <button class="link-btn" onclick={rerunWelcome}>重新运行首跑向导</button>
+  </div>
 
   <!-- Tabs -->
   <div class="help-tabs">
@@ -174,6 +187,26 @@
     color: var(--text-secondary);
     font-size: 13px;
     margin: 0 0 20px;
+  }
+  /* UV-179 批次A:首跑向导重跑入口 */
+  .welcome-rerun {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    border-radius: var(--r-sm);
+    padding: 10px 14px;
+    margin: 0 0 20px;
+  }
+  .welcome-rerun .link-btn {
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--brand, #2563eb);
+    font-weight: 500;
   }
   .help-tabs {
     display: flex;

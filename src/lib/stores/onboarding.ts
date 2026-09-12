@@ -31,10 +31,12 @@ import { browser } from "$app/environment";
 export type TourStepId =
 	| "welcome"
 	| "connection"
+	| "governance"
 	| "library"
 	| "rule"
 	| "execute"
-	| "audit";
+	| "audit"
+	| "ai";
 
 /** 一条 Tour 步骤(数据驱动,UI 组件只负责渲染) */
 export interface TourStep {
@@ -88,6 +90,13 @@ export interface OnboardingState {
 	bannerDismissed: boolean;
 	/** 各视图首访提示记忆:viewKey -> 已看过的 ISO 时间 */
 	hints: Record<string, string>;
+	/** 首跑向导 /welcome(UV-179 批次A):完成态 + 提示条关闭态 */
+	welcome: {
+		/** 四步向导已走完(走完不再显示提示条) */
+		completed: boolean;
+		/** 非阻塞提示条被用户显式关闭(不再提示;可在帮助页重跑) */
+		dismissed: boolean;
+	};
 }
 
 // ============================================================
@@ -100,7 +109,7 @@ export const TOUR_STEPS: TourStep[] = [
 		id: "welcome",
 		title: "欢迎使用 evorule",
 		description:
-			"evorule 是给 AI 装上的「行车记录仪 + 红绿灯」——记录每一步、守住安全边界。下面用 5 步带你跑通第一条规则。",
+			"evorule 是给 AI 装上的「行车记录仪 + 红绿灯」——记录每一步、守住安全边界。下面用 6 步带你跑通第一条规则(另有 1 步可选的 AI 助手配置)。",
 	},
 	{
 		id: "connection",
@@ -111,8 +120,16 @@ export const TOUR_STEPS: TourStep[] = [
 		route: "/",
 	},
 	{
+		id: "governance",
+		title: "第 2 步 · 连接治理服务",
+		description:
+			"进入「治理中心」完成连接。本机体验包默认账号 admin / 密码 evorule-demo" +
+			"(仅限体验包,正式部署请务必更换)。凭据只保存在你的电脑上。",
+		route: "/governance",
+	},
+	{
 		id: "library",
-		title: "第 2 步 · 建立你的知识库",
+		title: "第 3 步 · 建立你的知识库",
 		description:
 			"首次进入会启动 5 步建库向导(选类型、加载模板、命名)。跟着向导走即可,也能随时跳过。",
 		target: '[data-tour="library"]',
@@ -120,7 +137,7 @@ export const TOUR_STEPS: TourStep[] = [
 	},
 	{
 		id: "rule",
-		title: "第 3 步 · 添加第一条规则",
+		title: "第 4 步 · 添加第一条规则",
 		description:
 			"在「治理中心」加一条业务规则,或用任务流 4 步体验完整链路。规则就是 evorule 要守护的行为约定。",
 		target: '[data-tour="rule"]',
@@ -128,7 +145,7 @@ export const TOUR_STEPS: TourStep[] = [
 	},
 	{
 		id: "execute",
-		title: "第 4 步 · 在执行台跑一条命令",
+		title: "第 5 步 · 在执行台跑一条命令",
 		description:
 			"「工作台」是极简 dashboard,任何时候都能进。在这里发起一次执行,看 evorule 如何实时守护。",
 		target: '[data-tour="execute"]',
@@ -136,15 +153,23 @@ export const TOUR_STEPS: TourStep[] = [
 	},
 	{
 		id: "audit",
-		title: "第 5 步 · 查看审计链",
+		title: "第 6 步 · 查看审计链",
 		description:
-			"「审计记录」里是 BLAKE3 防篡改审计链与因果回溯。每步操作都可验证、可追溯。到这里你就入门了!",
+			"「审计记录」里是 BLAKE3 防篡改审计链与因果回溯。每步操作都可验证、可追溯。",
 		target: '[data-tour="audit"]',
 		route: "/audit",
 	},
+	{
+		id: "ai",
+		title: "可选 · 配置 AI 助手",
+		description:
+			"想用自然语言指挥系统?点左侧「⚙️ 设置」→「LLM 助手」,填入你的 API Key" +
+			"(加密保存在本机,不上传)。没有 Key 也完全不影响使用,随时可跳过。",
+	},
 ];
 
-function defaultChecklist(): ChecklistItem[] {
+/** 默认上手清单(导出供测试锁定 UV-179 扩条) */
+export function defaultChecklist(): ChecklistItem[] {
 	return [
 		{
 			id: "connect",
@@ -155,10 +180,28 @@ function defaultChecklist(): ChecklistItem[] {
 			done: false,
 		},
 		{
+			id: "governance",
+			title: "连接治理服务",
+			description:
+				"进入「治理中心」完成连接。本机体验包默认账号 admin / 密码 evorule-demo(仅限体验包,正式部署请更换)。",
+			route: "/governance",
+			autoCompletable: false,
+			done: false,
+		},
+		{
 			id: "login",
 			title: "登录账号",
 			description: "点击右上角登录,以获得规则库与审计等需授权的能力。",
 			route: "/login",
+			autoCompletable: false,
+			done: false,
+		},
+		{
+			id: "ai-llm",
+			title: "配置 AI 助手(可选)",
+			description:
+				"点左侧「⚙️ 设置」→「LLM 助手」填入 API Key(加密保存在本机)。没有 Key 也可跳过,不影响使用。",
+			route: "/",
 			autoCompletable: false,
 			done: false,
 		},
@@ -203,6 +246,7 @@ function defaultState(): OnboardingState {
 		checklist: defaultChecklist(),
 		bannerDismissed: false,
 		hints: {},
+		welcome: { completed: false, dismissed: false },
 	};
 }
 
@@ -212,8 +256,8 @@ function defaultState(): OnboardingState {
 
 const STORAGE_KEY = "evorule-console-cloud:onboarding";
 
-/** 把已存数据合并进默认结构,抵御字段缺失/旧 schema */
-function mergeState(
+/** 把已存数据合并进默认结构,抵御字段缺失/旧 schema(导出供测试锁定旧数据兼容语义) */
+export function mergeState(
 	base: OnboardingState,
 	raw: Partial<OnboardingState> | null | undefined
 ): OnboardingState {
@@ -237,6 +281,11 @@ function mergeState(
 		bannerDismissed: raw.bannerDismissed === true,
 		hints:
 			raw.hints && typeof raw.hints === "object" ? (raw.hints as Record<string, string>) : {},
+		// 旧存量无 welcome 字段 → 默认未完成(老用户升级后可见首跑向导提示条)
+		welcome: {
+			completed: raw.welcome?.completed === true,
+			dismissed: raw.welcome?.dismissed === true,
+		},
 	};
 }
 
@@ -341,6 +390,40 @@ export function resetTour(): void {
 		...s,
 		tour: { active: false, step: 0, completed: false, skipped: false },
 	}));
+}
+
+// ============================================================
+// 首跑向导 /welcome(UV-179 批次A)
+// ============================================================
+
+/** 标记首跑向导已完成(走完四步或显式跳过均视为完成) */
+export function completeWelcome(): void {
+	onboardingStore.update((s) => ({
+		...s,
+		welcome: { ...s.welcome, completed: true },
+	}));
+}
+
+/** 关闭首跑向导提示条(不再提示;帮助页可重跑) */
+export function dismissWelcomeNotice(): void {
+	onboardingStore.update((s) => ({
+		...s,
+		welcome: { ...s.welcome, dismissed: true },
+	}));
+}
+
+/** 重跑首跑向导(清完成态与关闭态;供帮助页「重新运行向导」入口) */
+export function resetWelcome(): void {
+	onboardingStore.update((s) => ({
+		...s,
+		welcome: { completed: false, dismissed: false },
+	}));
+}
+
+/** 非阻塞提示条当前是否应显示(未完成且未被显式关闭) */
+export function shouldShowWelcomeNotice(): boolean {
+	const w = get(onboardingStore).welcome;
+	return !w.completed && !w.dismissed;
 }
 
 // ============================================================

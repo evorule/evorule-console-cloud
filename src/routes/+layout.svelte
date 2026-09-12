@@ -52,6 +52,7 @@
   import LlmChatSidebar from "$lib/views/Assistant/LlmChatSidebar.svelte";
   import Glossary from "$lib/views/Help/Glossary.svelte";
   import TourOverlay from "$lib/views/Home/TourOverlay.svelte";
+  import WelcomeNotice from "$lib/views/Home/WelcomeNotice.svelte";
   import CommandPalette from "$lib/views/Home/CommandPalette.svelte";
   import {
     locale,
@@ -573,6 +574,9 @@
 
   <!-- 任务流进度条 -->
   <TaskFlowWizard />
+
+  <!-- UV-179 批次A:首跑向导非阻塞提示条(登录后未完成时显示) -->
+  <WelcomeNotice />
 
   <!-- ===== 主区(三栏) ===== -->
   <div class="main">
