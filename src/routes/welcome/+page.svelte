@@ -65,7 +65,11 @@
 	let connecting = $state(false);
 	let connError = $state<string | null>(null);
 	// 连接成功后的「记住密码」子状态
-	let showRemember = $state(false);
+	// 注意:连接成功与否直接看 govConnected(store 在登录+me 成功后立即置位,早于
+	// connect() 整体 resolve——refreshDatasets 可能较慢),不依赖 handleConnect 回写,
+	// 否则记住区会在数据集拉取期间不显示(UV-179 批次F 实测发现的时序缺陷)。
+	// rememberDismissed 仅表示用户已处置过本次提醒(记住/暂不)。
+	let rememberDismissed = $state(false);
 	let rememberPassphrase = $state('');
 	let rememberMsg = $state<string | null>(null);
 	// 加密态解锁子状态(已有加密密码但本会话未解锁)
@@ -120,7 +124,6 @@
 			await connect(baseUrl.trim(), tenantId.trim() || 'default', username.trim(), password);
 			completeChecklistItem('governance', true);
 			toastSuccess('已连接治理服务', '首跑向导');
-			showRemember = true;
 		} catch (e) {
 			const reachable = await probeReachable(baseUrl.trim());
 			const raw = e instanceof Error ? e.message : String(e);
@@ -138,7 +141,7 @@
 		const r = await saveGovernancePasswordEncrypted(password, rememberPassphrase);
 		if (r.ok) {
 			toastSuccess('密码已加密保存到本机', '首跑向导');
-			showRemember = false;
+			rememberDismissed = true;
 			rememberPassphrase = '';
 			goNext();
 		} else if (r.error === 'passphrase-short') {
@@ -155,6 +158,7 @@
 		if (r.ok) {
 			completeChecklistItem('governance', true);
 			toastSuccess('已解锁并连接凭据', '首跑向导');
+			rememberDismissed = true; // 密码本已加密保存,不再提示「记住」
 			unlockPassphrase = '';
 		} else if (r.error === 'wrong-passphrase') {
 			unlockError = '口令不正确';
@@ -271,8 +275,26 @@
 
 			{#if govConnected}
 				<div class="wz-ok">✓ 已连接治理服务,可以继续。</div>
+				{#if !rememberDismissed}
+					<!-- 连接成功后内联提供一次「记住密码」(可选;保存成功或显式跳过后消失) -->
+					<div class="wz-remember">
+						<p class="wz-note">
+							想以后刷新也不用重新输密码吗?设一个主口令(至少 {GOV_PASS_MIN} 位),
+							密码将<strong>加密保存在本机</strong>。
+						</p>
+						<div class="wz-row">
+							<div class="wz-field">
+								<label class="wz-label" for="wz-gov-passphrase">主口令(用于加密,不必记住原密码)</label>
+								<input id="wz-gov-passphrase" class="wz-input" type="password" bind:value={rememberPassphrase} />
+							</div>
+							<button class="wz-btn primary" onclick={handleRemember}>加密记住</button>
+						</div>
+						{#if rememberMsg}<p class="wz-error">{rememberMsg}</p>{/if}
+						<button class="wz-link" onclick={() => { rememberDismissed = true; goNext(); }}>暂不记住,直接继续 →</button>
+					</div>
+				{/if}
 				<div class="wz-actions">
-					<button class="wz-btn ghost" onclick={() => { disconnect(); }}>断开重连</button>
+					<button class="wz-btn ghost" onclick={() => { disconnect(); rememberDismissed = false; rememberPassphrase = ''; rememberMsg = null; }}>断开重连</button>
 					<button class="wz-btn primary" onclick={goNext}>下一步 →</button>
 				</div>
 			{:else if $governanceConfig.locked}
@@ -323,31 +345,12 @@
 
 					{#if connError}<p class="wz-error wz-error-pre">{connError}</p>{/if}
 
-					{#if showRemember}
-						<!-- 连接成功:可选加密记住密码(刷新后免重输) -->
-						<div class="wz-remember">
-							<p class="wz-note">
-								✓ 连接成功!想以后刷新也不用重新输密码吗?
-								设一个主口令(至少 {GOV_PASS_MIN} 位),密码将<strong>加密保存在本机</strong>。
-							</p>
-							<div class="wz-row">
-								<div class="wz-field">
-									<label class="wz-label" for="wz-gov-passphrase">主口令(用于加密,不必记住原密码)</label>
-									<input id="wz-gov-passphrase" class="wz-input" type="password" bind:value={rememberPassphrase} />
-								</div>
-								<button class="wz-btn primary" onclick={handleRemember}>加密记住</button>
-							</div>
-							{#if rememberMsg}<p class="wz-error">{rememberMsg}</p>{/if}
-							<button class="wz-link" onclick={goNext}>暂不记住,直接继续 →</button>
-						</div>
-					{:else}
-						<button class="wz-btn primary" onclick={handleConnect} disabled={connecting}>
-							{connecting ? '连接中…' : '连接'}
-						</button>
-					{/if}
+					<button class="wz-btn primary" onclick={handleConnect} disabled={connecting}>
+						{connecting ? '连接中…' : '连接'}
+					</button>
 				</div>
 			{/if}
-			{#if govConnected || showRemember}
+			{#if govConnected}
 				<div class="wz-actions wz-actions-top">
 					<button class="wz-btn ghost" onclick={goPrev}>← 上一步</button>
 				</div>
