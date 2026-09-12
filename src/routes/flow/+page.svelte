@@ -52,6 +52,7 @@
   } from "$lib/backend/plugin-packs";
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { netConfig } from "$lib/config/net-config";
+  import { t } from "$lib/locale";
   import { useAssistantOrNull } from "$lib/kernel";
   import type { FlowTranspileContext } from "$lib/kernel";
   // NL→flow 草稿转译器（扩展槽消费,assistant=null 时按钮不渲染）
@@ -347,9 +348,9 @@
 <div class="flow-page">
   <!-- === 页头(cloud 适配:三栏布局自带导航,此处只留标题与提示) === -->
   <header class="flow-header">
-    <h2 class="flow-title">流程设计</h2>
+    <h2 class="flow-title">{t("flow.title")}</h2>
     <span class="flow-hint">
-      声明式流程画布 · 导出草稿编译为规则草稿 · 不落库,生效走既有发布链
+      {t("flow.subtitle")}
     </span>
   </header>
 
@@ -361,16 +362,16 @@
   {/if}
 
   {#if loading}
-    <div class="empty-state"><p>加载插件清单中…</p></div>
+    <div class="empty-state"><p>{t("flow.loadingPacks")}</p></div>
   {:else if packs.length === 0}
     <div class="empty-state">
       <span class="empty-icon">🧩</span>
-      <p>未装载任何声明式插件包</p>
-      <p class="empty-hint">流程画布消费 pack 的 node_types / scenes / flows 资产</p>
+      <p>{t("flow.noPacks")}</p>
+      <p class="empty-hint">{t("flow.noPacksHint")}</p>
     </div>
   {:else}
     <div class="pack-bar">
-      <label for="pack-select" class="pack-label">插件包</label>
+      <label for="pack-select" class="pack-label">{t("flow.packLabel")}</label>
       <select
         id="pack-select"
         class="pack-select"
@@ -379,35 +380,35 @@
       >
         {#each packs as p (p.id)}
           <option value={p.id}>
-            {p.id} v{p.version}（{p.assets.node_types ?? 0} 节点类型
-            {#if p.capabilities.includes("flow-compile")}· 可编译{/if}）
+            {p.id} v{p.version}（{t("flow.nodeTypeCount", { count: p.assets.node_types ?? 0 })}
+            {#if p.capabilities.includes("flow-compile")}{t("flow.compilable")}{/if}）
           </option>
         {/each}
       </select>
-      <label for="flow-load" class="pack-label">载入已有流程</label>
+      <label for="flow-load" class="pack-label">{t("flow.loadExisting")}</label>
       <select id="flow-load" class="pack-select" onchange={loadExisting}>
-        <option value="">（选择流程资产）</option>
+        <option value="">{t("flow.selectFlowAsset")}</option>
         {#each flows as f (f.flow_id)}
           <option value={f.flow_id}>{dn(f.display_name, f.flow_id)}（{f.flow_id}）</option>
         {/each}
       </select>
-      <label for="flow-id" class="pack-label">流程 ID</label>
+      <label for="flow-id" class="pack-label">{t("flow.flowIdLabel")}</label>
       <input id="flow-id" class="flow-id-input" bind:value={flowId} />
     </div>
 
     <div class="flow-layout">
       <!-- === 节点面板（来自 node_types 资产,R4） === -->
-      <aside class="node-panel" aria-label="节点面板">
-        <h3 class="panel-title">节点类型</h3>
+      <aside class="node-panel" aria-label={t("flow.nodePanelAria")}>
+        <h3 class="panel-title">{t("flow.nodeTypes")}</h3>
         {#if nodeTypes.length === 0}
-          <p class="panel-empty">当前包未声明 node_types 资产</p>
+          <p class="panel-empty">{t("flow.noNodeTypes")}</p>
         {/if}
-        {#each nodeTypes as t (t.node_type)}
-          <button class="node-row" onclick={() => addNode(t.node_type)}>
-            <span class="node-row-name">{dn(t.display_name, t.node_type)}</span>
-            <span class="node-row-id">{t.node_type}</span>
-            {#if t.compile_hint}
-              <span class="node-row-emits">→ {t.compile_hint.emits}</span>
+        {#each nodeTypes as nt (nt.node_type)}
+          <button class="node-row" onclick={() => addNode(nt.node_type)}>
+            <span class="node-row-name">{dn(nt.display_name, nt.node_type)}</span>
+            <span class="node-row-id">{nt.node_type}</span>
+            {#if nt.compile_hint}
+              <span class="node-row-emits">→ {nt.compile_hint.emits}</span>
             {/if}
           </button>
         {/each}
@@ -417,8 +418,8 @@
       <section class="canvas-col">
         <div class="canvas-toolbar">
           {#if assistant}
-            <button class="btn-ai" onclick={() => (transpileOpen = true)} title="用自然语言描述流程,AI 转译为 flow JSON 草稿填入画布(需人工确认编译)">
-              ✨ AI 转译流程
+            <button class="btn-ai" onclick={() => (transpileOpen = true)} title={t("flow.aiTranspileTitle")}>
+              {t("flow.aiTranspile")}
             </button>
           {/if}
           <button
@@ -426,26 +427,26 @@
             disabled={!selectedNode || connectFrom !== null}
             onclick={startConnect}
           >
-            {connectFrom ? "连线中:点击目标节点" : "从选中节点连线"}
+            {connectFrom ? t("flow.connecting") : t("flow.connectFromSelected")}
           </button>
           <button class="btn-secondary" disabled={!selectedId} onclick={deleteSelected}>
-            删除节点
+            {t("flow.deleteNode")}
           </button>
           <button class="btn-secondary" disabled={canvasEdges.length === 0} onclick={() => (canvasEdges = [])}>
-            清空连线
+            {t("flow.clearEdges")}
           </button>
           <button class="btn-secondary" disabled={canvasNodes.length === 0} onclick={resetCanvas}>
-            清空画布
+            {t("flow.clearCanvas")}
           </button>
           <button
             class="btn-primary"
             disabled={compiling || canvasNodes.length === 0 || !canCompile}
             onclick={() => void handleCompile()}
           >
-            {compiling ? "编译中…" : "导出并编译草稿"}
+            {compiling ? t("flow.compiling") : t("flow.exportCompile")}
           </button>
           {#if !canCompile}
-            <span class="toolbar-warn">当前包未声明 flow-compile 能力,无法编译</span>
+            <span class="toolbar-warn">{t("flow.noCompileCap")}</span>
           {/if}
         </div>
         <FlowCanvas
@@ -458,19 +459,21 @@
           onedgeclick={deleteEdge}
         />
         <p class="canvas-tip">
-          点击节点选中 · 拖动移动 · 「从选中节点连线」后点击目标完成连线 · 点击连线删除
+          {t("flow.canvasTip")}
         </p>
       </section>
 
       <!-- === 属性面板（params_form 渲染,R4） === -->
-      <aside class="props-panel" aria-label="属性面板">
-        <h3 class="panel-title">节点属性</h3>
+      <aside class="props-panel" aria-label={t("flow.propsPanelAria")}>
+        <h3 class="panel-title">{t("flow.nodeProps")}</h3>
         {#if !selectedNode}
-          <p class="panel-empty">选中一个节点编辑属性</p>
+          <p class="panel-empty">{t("flow.selectNodeHint")}</p>
         {:else if !selectedMeta || !selectedMeta.params_form || selectedMeta.params_form.length === 0}
           <p class="panel-empty">
-            节点 {selectedNode.node_id}（{dn(selectedMeta?.display_name, selectedNode.node_type)}）
-            无可编辑参数
+            {t("flow.noEditableParams", {
+              id: selectedNode.node_id,
+              name: dn(selectedMeta?.display_name, selectedNode.node_type),
+            })}
           </p>
         {:else}
           <p class="props-node-id">{selectedNode.node_id}</p>
@@ -479,7 +482,7 @@
               <label class="field-label" for="np-{p.field_id}">
                 {dn(p.display_name, p.field_id)}
                 <span class="field-type">{p.type}</span>
-                {#if p.required}<span class="field-req" title="必填">*</span>{/if}
+                {#if p.required}<span class="field-req" title={t("flow.required")}>*</span>{/if}
               </label>
               {#if p.type === "scene_field"}
                 {@const fields = pathedFields(p)}
@@ -489,7 +492,7 @@
                   value={String(fieldValue(p))}
                   onchange={(e) => setFieldValue(p, (e.target as HTMLSelectElement).value)}
                 >
-                  <option value="">（选择场景字段）</option>
+                  <option value="">{t("flow.selectSceneField")}</option>
                   {#each fields as f (f.field_id)}
                     <option value={f.field_id}>
                       {dn(f.display_name, f.field_id)}（{f.field_id}）
@@ -497,7 +500,7 @@
                   {/each}
                 </select>
                 {#if fields.length === 0}
-                  <span class="field-warn">场景中无已注册 path 的字段</span>
+                  <span class="field-warn">{t("flow.noPathedFields")}</span>
                 {/if}
               {:else if p.type === "enum"}
                 <select
@@ -506,7 +509,7 @@
                   value={String(fieldValue(p))}
                   onchange={(e) => setFieldValue(p, (e.target as HTMLSelectElement).value)}
                 >
-                  <option value="">（选择）</option>
+                  <option value="">{t("flow.selectOption")}</option>
                   {#each p.options ?? [] as opt (opt)}
                     <option value={opt}>{opt}</option>
                   {/each}
@@ -551,17 +554,17 @@
     {#if draft !== null}
       <div class="draft-section">
         <header class="section-header">
-          <h3>规则草稿预览</h3>
+          <h3>{t("flow.draftPreview")}</h3>
           {#if draftProvenance}
             <span class="provenance">
               pack {draftProvenance.pack} v{draftProvenance.pack_version}
-              · flow {draftProvenance.flow}（{draftProvenance.source === "draft" ? "画布草稿" : "已装载流程"}）
+              · flow {draftProvenance.flow}（{draftProvenance.source === "draft" ? t("flow.provCanvasDraft") : t("flow.provLoadedFlow")}）
               · compiler {draftProvenance.compiler}
               · contract {draftProvenance.contract_version}
             </span>
           {/if}
           <button class="btn-secondary" onclick={handleCopy}>
-            {copied ? "已复制" : "复制 JSON"}
+            {copied ? t("flow.copied") : t("flow.copyJson")}
           </button>
         </header>
         <div class="draft-tree">
