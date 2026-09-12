@@ -280,9 +280,9 @@ export const messagesZh: Dict = {
   "llm.aiPlugin.step2.title": "步骤 2/3：创建凭据文件",
   "llm.aiPlugin.step2.desc": "复制模板为 ai-plugin.json 并填入 llm_api_key（此文件含凭据，注意文件权限，勿提交版本库）：",
   "llm.aiPlugin.step3.title": "步骤 3/3：启动插件进程并重启 server",
-  "llm.aiPlugin.step3.desc": "在 plugins/ai-plugin 目录编译并启动插件（保持进程运行），然后重启 evorule-server：",
+  "llm.aiPlugin.step3.desc": "启动插件进程（保持进程运行；分发版已内置 exe，源码版需先 cargo build --release），然后重启 evorule-server。分发版重启 start-evorule.bat 时检测到 ai-plugin.json 会自动拉起插件：",
   "llm.aiPlugin.lastError": "最近探测错误：{error}",
-  "llm.aiPlugin.distNote": "ℹ️ 分发版安装包暂不含 ai-plugin.exe（分发面专项另行补齐），需自行编译。",
+  "llm.aiPlugin.distNote": "ℹ️ 分发版安装包已内置 ai-plugin（plugins/ai-plugin/，缺省禁用）；源码版需自行编译（cargo build --release）。",
   "llm.err.aiPluginHint": "ai-plugin 未启用或进程未启动——见上方「服务端 AI 激活状态」引导卡。",
 
   // === AI 草案对话框 ===
