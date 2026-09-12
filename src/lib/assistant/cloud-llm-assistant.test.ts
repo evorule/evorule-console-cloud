@@ -16,6 +16,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CloudLlmAssistant } from './cloud-llm-assistant';
 import type { CloudLlmConfig } from './types';
+import type { FlowTranspileContext } from '$lib/kernel';
 import { llmConfig, resetLlmConfig } from '$lib/config/llm-config';
 import {
 	LlmError,
@@ -543,6 +544,120 @@ describe('transpileCommand', () => {
 		expect(serverChannelMock).toHaveBeenCalledTimes(1);
 		const arg = serverChannelMock.mock.calls[0][0] as Record<string, unknown>;
 		expect(arg.auditPurpose).toBe('transpile_command');
+		expect(mockFetch).not.toHaveBeenCalled();
+	});
+});
+
+// ============ transpileFlow(UV-176,P3 激活,内核第 4 方法) ============
+
+describe('transpileFlow', () => {
+	const FLOW_CTX: FlowTranspileContext = {
+		nodeTypes: [
+			{
+				node_type: 'approval',
+				display_name: '审批',
+				description: '人工审批节点',
+				params_form: [
+					{ field_id: 'role', type: 'text' },
+					{ field_id: 'threshold', type: 'number' },
+					{ field_id: 'form_ref', type: 'scene_field', scene_ref: 'expense' }
+				]
+			},
+			{ node_type: 'payment', display_name: '打款' }
+		],
+		sceneFields: [
+			{ scene_id: 'expense', field_id: 'amount', path: 'expense.amount' },
+			{ scene_id: 'expense', field_id: 'applicant', path: 'expense.applicant' }
+		]
+	};
+
+	const FLOW_JSON = JSON.stringify({
+		flow_id: 'expense_flow',
+		version: 1,
+		nodes: [
+			{ node_id: 'n1', node_type: 'apply', form_ref: { scene: 'expense', field: 'amount' } },
+			{ node_id: 'n2', node_type: 'approval', threshold: 5000 },
+			{ node_id: 'n3', node_type: 'payment' }
+		],
+		edges: [
+			{ from: 'n1', to: 'n2' },
+			{ from: 'n2', to: 'n3', guard: 'approved' }
+		]
+	});
+
+	test('返回 flow JSON 对象', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse(FLOW_JSON));
+
+		const result = await a.transpileFlow('员工提交报销,主管审批后打款', FLOW_CTX);
+		expect(result).toHaveProperty('flow_id', 'expense_flow');
+		expect(result).toHaveProperty('nodes');
+		expect(result).toHaveProperty('edges');
+	});
+
+	test('prompt 携带资产上下文(白名单 node_type/场景字段取值域,R4/R2)与 flow schema 标识符(R5)', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse(FLOW_JSON));
+
+		await a.transpileFlow('员工提交报销,主管审批后打款', FLOW_CTX);
+
+		const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+		const body = JSON.parse(init.body as string) as {
+			messages: { content: string }[];
+		};
+		const prompt = body.messages.map((m) => m.content).join('\n');
+		// node_types 投影(R4)
+		expect(prompt).toContain('approval');
+		expect(prompt).toContain('审批');
+		expect(prompt).toContain('role:text');
+		expect(prompt).toContain('form_ref:scene_field(scene_ref:expense)');
+		// scene path 取值域(R2)
+		expect(prompt).toContain('expense.amount');
+		expect(prompt).toContain('expense.applicant');
+		// flow schema 协议标识符(R5)
+		for (const id of ['flow_id', 'nodes', 'edges', 'node_type', 'form_ref', 'threshold', 'guard']) {
+			expect(prompt).toContain(id);
+		}
+		// few-shot 结构示例(禁止照抄标注)
+		expect(prompt).toContain('禁止照抄');
+		// 用户 NL 原文入 prompt
+		expect(prompt).toContain('员工提交报销,主管审批后打款');
+	});
+
+	test('markdown 包裹 仍能提取', async () => {
+		const a = makeAssistant();
+		const wrapped =
+			'```json\n' +
+			JSON.stringify({ flow_id: 'f1', version: 1, nodes: [], edges: [] }) +
+			'\n```';
+		mockFetch.mockResolvedValue(mockOkResponse(wrapped));
+
+		const result = await a.transpileFlow('空流程', FLOW_CTX);
+		expect(result).toHaveProperty('flow_id', 'f1');
+	});
+
+	test('JSON 解析失败 返回 _error 对象', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse('not json'));
+
+		const result = (await a.transpileFlow('描述', FLOW_CTX)) as {
+			_error?: string;
+			_raw?: string;
+		};
+		expect(result._error).toContain('JSON 解析失败');
+		expect(result._raw).toBeDefined();
+	});
+
+	test('channel=server 走服务端点 且 purpose=transpile_flow', async () => {
+		serverChannelMock.mockResolvedValueOnce(FLOW_JSON);
+		const a = makeAssistant({ channel: 'server', apiKey: '', apiEndpoint: '' });
+
+		const result = await a.transpileFlow('描述', FLOW_CTX);
+		expect(result).toHaveProperty('flow_id', 'expense_flow');
+
+		expect(serverChannelMock).toHaveBeenCalledTimes(1);
+		const arg = serverChannelMock.mock.calls[0][0] as Record<string, unknown>;
+		expect(arg.auditPurpose).toBe('transpile_flow');
 		expect(mockFetch).not.toHaveBeenCalled();
 	});
 });

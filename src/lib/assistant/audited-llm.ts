@@ -43,7 +43,9 @@ export type AuditPurpose =
 	| 'chat'
 	| 'help_qa'
 	// L2 P2(07 立项 §2.2):执行台 NL→命令转译器,第 4 操作
-	| 'transpile_command';
+	| 'transpile_command'
+	// UV-176(P3 激活):流程画布 NL→flow 转译器,第 5 操作
+	| 'transpile_flow';
 
 /** 审计桥错误(kind 便于 UI/日志区分失败阶段) */
 export class AuditedBridgeError extends Error {

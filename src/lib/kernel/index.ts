@@ -137,7 +137,7 @@ export type {
 // ============================================================================
 // 2. AssistantProvider 扩展槽（默认 null，本仓注入 CloudLlmAssistant）
 // ============================================================================
-export type { AssistantProvider } from './assistant/types';
+export type { AssistantProvider, FlowTranspileContext } from './assistant/types';
 export { provideAssistant, useAssistantOrNull } from './assistant/assistant-context';
 
 // ============================================================================

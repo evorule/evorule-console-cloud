@@ -63,9 +63,9 @@ describe('visibleNavItems', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('三组归位:home 2 / discover 3 / governance 10(discover 不变,governance 增插件审批/应用管理)', () => {
+	it('三组归位:home 3 / discover 3 / governance 10(UV-176 增流程设计入 home;discover 不变,governance 增插件审批/应用管理)', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
-		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor']);
+		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor', 'flow']);
 		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'knowledge', 'help']);
 		expect(g.governance).toHaveLength(10);
 	});
