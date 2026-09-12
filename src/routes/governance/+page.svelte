@@ -29,7 +29,20 @@
     createVersion,
     updateLawRef
   } from '$lib/governance/governance-store';
-  import { governanceConfig, updateGovernanceConfig } from '$lib/config/governance-config';
+  import {
+    governanceConfig,
+    updateGovernanceConfig,
+    setGovernancePassword,
+    saveGovernancePasswordEncrypted,
+    saveGovernancePasswordPlain,
+    unlockGovernancePassword,
+    lockGovernancePassword,
+    clearGovernancePassword,
+    PASSPHRASE_MIN_LEN,
+    type SaveGovPasswordError,
+    type UnlockGovResult
+  } from '$lib/config/governance-config';
+  import { hasWebCrypto } from '$lib/config/key-crypto';
   import { GovernanceBackend, type ExportEvidence } from '$lib/governance/governance-backend';
   import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, GovernanceEntry, KnowledgeEntry, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
@@ -66,6 +79,75 @@
   // ===== 连接面板 =====
   let connecting = $state(false);
   let connError = $state<string | null>(null);
+
+  // ===== 治理密码加密保存(UV-178 批次E+;对齐 LlmSettings 批次B 范式) =====
+  // locked 态:密码输入框被解锁面板取代(与 LLM Key 同构——加密态明文输入口无意义)
+  let govUnlockPass = $state('');
+  let govUnlockErr = $state<string | null>(null);
+  let govSaveMode = $state<'encrypted' | 'plain'>('encrypted');
+  let govPassphrase = $state('');
+  let govPassphraseConfirm = $state('');
+  let govSaveErr = $state<string | null>(null);
+  const govCryptoOk = $state(hasWebCrypto());
+
+  const GOV_SAVE_ERR_TEXT: Record<SaveGovPasswordError, string> = {
+    'password-empty': '请先输入密码再保存',
+    'passphrase-short': `口令至少 ${PASSPHRASE_MIN_LEN} 位`,
+    'passphrase-mismatch': '两次口令不一致',
+    'crypto-unavailable':
+      '当前环境非安全上下文(https/localhost),无 WebCrypto;可用"明文保存"或每次手动输入',
+    'encrypt-failed': '加密保存失败,请重试'
+  };
+  const GOV_UNLOCK_ERR_TEXT: Record<Exclude<UnlockGovResult, { ok: true }>['error'], string> = {
+    'wrong-passphrase': '口令错误或数据已损坏',
+    'no-encrypted-password': '无已加密保存的密码',
+    'crypto-unavailable': '当前环境不支持 WebCrypto,无法解锁'
+  };
+
+  async function handleGovUnlock(): Promise<void> {
+    govUnlockErr = null;
+    const r = await unlockGovernancePassword(govUnlockPass);
+    if (r.ok) {
+      govUnlockPass = '';
+      toastSuccess('治理密码已解锁(本会话有效)', '治理');
+    } else {
+      govUnlockErr = GOV_UNLOCK_ERR_TEXT[r.error];
+    }
+  }
+
+  function handleGovLock(): void {
+    lockGovernancePassword();
+    toastInfo('治理密码已锁定', '治理');
+  }
+
+  function handleGovForgot(): void {
+    clearGovernancePassword();
+    govUnlockPass = '';
+    govUnlockErr = null;
+    toastInfo('已清除加密保存的治理密码,可重新输入', '治理');
+  }
+
+  async function handleGovSavePassword(): Promise<void> {
+    govSaveErr = null;
+    const cfg = get(governanceConfig);
+    if (govSaveMode === 'plain') {
+      saveGovernancePasswordPlain(cfg.password);
+      toastWarning('密码已明文保存到本机 localStorage(不推荐)', '治理');
+      return;
+    }
+    if (govPassphrase !== govPassphraseConfirm) {
+      govSaveErr = GOV_SAVE_ERR_TEXT['passphrase-mismatch'];
+      return;
+    }
+    const r = await saveGovernancePasswordEncrypted(cfg.password, govPassphrase);
+    if (r.ok) {
+      govPassphrase = '';
+      govPassphraseConfirm = '';
+      toastSuccess('治理密码已加密保存(下次连接请用口令解锁)', '治理');
+    } else {
+      govSaveErr = GOV_SAVE_ERR_TEXT[r.error];
+    }
+  }
 
   // ===== 创建数据集 =====
   let showCreate = $state(false);
@@ -304,7 +386,10 @@
   async function handleConnect(): Promise<void> {
     const cfg = get(governanceConfig);
     if (!cfg.baseUrl.trim() || !cfg.username || !cfg.password) {
-      connError = '请填写完整连接信息(baseUrl/用户名/密码)';
+      connError =
+        !cfg.baseUrl.trim() || !cfg.username
+          ? '请填写完整连接信息(baseUrl/用户名/密码)'
+          : '密码已加密保存且未解锁:请先解锁,或点"忘记口令?"清除加密后重新输入';
       return;
     }
     connecting = true;
@@ -1637,15 +1722,104 @@
         </label>
         <label class="field">
           <span>密码</span>
-          <input
-            type="password"
-            autocomplete="current-password"
-            value={$governanceConfig.password}
-            oninput={(e) => updateGovernanceConfig({ password: (e.currentTarget as HTMLInputElement).value })}
-            placeholder="请输入密码"
-          />
+          {#if $governanceConfig.locked}
+            <!-- 加密锁定态:解锁面板取代密码输入(对齐 LlmSettings;防"加密态明文输入"语义混淆) -->
+            <div class="gov-unlock">
+              <div class="gov-unlock-row">
+                <input
+                  type="password"
+                  autocomplete="off"
+                  bind:value={govUnlockPass}
+                  placeholder="加密口令"
+                  onkeydown={(e) => {
+                    if (e.key === 'Enter') void handleGovUnlock();
+                  }}
+                />
+                <button type="button" class="btn btn-sm" onclick={() => void handleGovUnlock()}>
+                  解锁
+                </button>
+              </div>
+              {#if govUnlockErr}<small class="gov-field-err">{govUnlockErr}</small>{/if}
+              <small class="field-hint">
+                已加密保存:输入加密口令解锁本会话(刷新免重输,关标签即失效)
+              </small>
+              <button type="button" class="btn btn-sm btn-ghost" onclick={handleGovForgot}>
+                忘记口令?清除加密密码
+              </button>
+            </div>
+          {:else}
+            <input
+              type="password"
+              autocomplete="current-password"
+              value={$governanceConfig.password}
+              oninput={(e) => setGovernancePassword((e.currentTarget as HTMLInputElement).value)}
+              placeholder="请输入密码"
+            />
+          {/if}
         </label>
       </div>
+      <!-- 密码保存形态(未锁定时;加密为缺省,明文仅显式选择) -->
+      {#if !$governanceConfig.locked}
+        <div class="gov-save-row">
+          <span class="gov-save-label">保存形态</span>
+          <label class="gov-radio"
+            ><input type="radio" bind:group={govSaveMode} value="encrypted" disabled={!govCryptoOk} />
+            加密保存</label
+          >
+          <label class="gov-radio"
+            ><input type="radio" bind:group={govSaveMode} value="plain" /> 明文保存</label
+          >
+          {#if govSaveMode === 'encrypted'}
+            <input
+              class="gov-pass-input"
+              type="password"
+              autocomplete="new-password"
+              bind:value={govPassphrase}
+              placeholder={`加密口令(≥${PASSPHRASE_MIN_LEN}位)`}
+            />
+            <input
+              class="gov-pass-input"
+              type="password"
+              autocomplete="new-password"
+              bind:value={govPassphraseConfirm}
+              placeholder="确认口令"
+            />
+            <button
+              type="button"
+              class="btn btn-sm"
+              onclick={() => void handleGovSavePassword()}
+              disabled={!$governanceConfig.password || !govCryptoOk}
+            >
+              🔐 加密保存
+            </button>
+          {:else}
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost"
+              title="明文保存不推荐:本机浏览器档案可被直接读取"
+              onclick={() => void handleGovSavePassword()}
+              disabled={!$governanceConfig.password}
+            >
+              明文保存(不推荐)
+            </button>
+          {/if}
+          {#if $governanceConfig.passwordStorage === 'encrypted'}
+            <button type="button" class="btn btn-sm btn-ghost" onclick={handleGovLock}>
+              🔒 锁定
+            </button>
+          {/if}
+        </div>
+        {#if $governanceConfig.passwordStorage === 'encrypted'}
+          <small class="field-hint">✓ 密码已加密保存(AES-256-GCM + 口令派生),明文不落盘。</small>
+        {:else if $governanceConfig.passwordStorage === 'plain'}
+          <small class="field-hint gov-warn">⚠ 密码当前明文保存在本机,建议改用加密保存。</small>
+        {:else if !govCryptoOk}
+          <small class="field-hint">
+            当前环境非安全上下文(https/localhost),无法加密保存;密码可明文保存或每次手动输入。
+          </small>
+        {/if}
+        {#if govSaveErr}<small class="gov-field-err">{govSaveErr}</small>{/if}
+      {/if}
       {#if connError}
         <div class="err-box">{connError}</div>
       {/if}
@@ -2822,6 +2996,47 @@
     font-size: var(--text-sm);
     margin-bottom: var(--spacing-md);
     white-space: pre-wrap;
+  }
+  /* 治理密码加密保存(UV-178 批次E+;解锁面板+保存形态行) */
+  .gov-unlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .gov-unlock-row {
+    display: flex;
+    gap: var(--spacing-sm);
+  }
+  .gov-unlock-row input {
+    flex: 1;
+  }
+  .gov-save-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+  }
+  .gov-save-label {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+  }
+  .gov-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+  }
+  .gov-pass-input {
+    flex: 1;
+    min-width: 140px;
+  }
+  .gov-field-err {
+    color: var(--danger);
+    font-size: var(--text-xs);
+  }
+  .gov-warn {
+    color: var(--warning, #b45309);
   }
   /* W2.2 即时校验面板 + 摘要预览 */
   .rule-body-tools {
