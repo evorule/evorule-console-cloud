@@ -328,6 +328,7 @@ export const messagesZh: Dict = {
   "flow.dlg.warnPrefix": "⚠ 提示（可仍填入，人工修正）：",
   "flow.dlg.unknownNodeType": "节点 {nodes} 的 node_type 不在当前包资产白名单",
   "flow.dlg.unknownFormRef": "节点 {nodes} 的 form_ref 不在场景字段取值域",
+  "flow.dlg.badGuard": "节点 {nodes} 的出边 guard 不在该节点类型 out_guards 声明取值域",
   "flow.dlg.allOk": "✓ JSON 合法 · node_type 在资产白名单内 · form_ref 在场景取值域内",
   "flow.dlg.footerHint": "草稿仅填入画布，需你确认后编译（不落库）",
   "flow.dlg.discard": "放弃",

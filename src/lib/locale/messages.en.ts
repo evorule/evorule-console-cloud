@@ -328,6 +328,7 @@ export const messagesEn: Dict = {
   "flow.dlg.warnPrefix": "⚠ Hint (you can still fill it in and fix manually):",
   "flow.dlg.unknownNodeType": "Node {nodes}: node_type is not in this pack's asset whitelist",
   "flow.dlg.unknownFormRef": "Node {nodes}: form_ref is outside the scene field domain",
+  "flow.dlg.badGuard": "Node {nodes}: edge guard is not within the node type's declared out_guards domain",
   "flow.dlg.allOk": "✓ JSON valid · node_type within asset whitelist · form_ref within scene field domain",
   "flow.dlg.footerHint": "The draft only fills the canvas; compilation requires your confirmation (never persisted)",
   "flow.dlg.discard": "Discard",
