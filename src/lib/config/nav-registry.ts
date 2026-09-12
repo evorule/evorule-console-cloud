@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 // nav-registry — 导航注册表(首项改造:一切皆 plugin 交互层落地之二)
 //
@@ -61,6 +61,16 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     path: "/monitor",
     group: "home",
     title: "监控大屏 — 生产运行状态实时总览",
+  },
+  {
+    id: "flow",
+    label: "流程",
+    icon: "🔀",
+    path: "/flow",
+    group: "home",
+    title: "流程设计 — 声明式流程画布,AI 转译/画布编辑 flow 草稿编译为规则草稿(不落库)",
+    // 与页面守卫(routes/+layout.ts /flow)同口径:需登录
+    loginRequired: true,
   },
   {
     id: "marketplace",

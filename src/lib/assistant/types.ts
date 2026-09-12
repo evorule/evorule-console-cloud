@@ -3,12 +3,13 @@
 // evorule-console-cloud — LLM Assistant 类型(基于内核 AssistantProvider 扩展)
 //
 // 设计:
-//   - LlmAssistant 继承内核 AssistantProvider(三方法 generateRuleDraft/explainRule/generateInput)
+//   - LlmAssistant 继承内核 AssistantProvider(kernel 镜像四方法
+//     generateRuleDraft/explainRule/generateInput/transpileFlow)
 //   - 大众版新增"配置完备性"与"测试连接"能力,用于决定是否注入内核扩展槽
 //   - CloudLlmConfig 是大众版 LLM 配置的数据契约(apiEndpoint + apiKey + model + enabled)
 //
 // 与内核边界:
-//   - 内核只看到 AssistantProvider(三方法),不知道 CloudLlmConfig
+//   - 内核只看到 AssistantProvider(四方法),不知道 CloudLlmConfig
 //   - 大众版 LlmAssistant 继承 AssistantProvider,新增 isConfigured() 等大众版独有方法
 //   - 内核 import { AssistantProvider } from '$lib/kernel' 仍是隔离的
 
@@ -17,12 +18,12 @@ import type { AssistantProvider } from '$lib/kernel';
 /**
  * LLM Assistant 抽象(大众版内部用)。
  *
- * 继承内核 AssistantProvider(三方法),新增:
+ * 继承内核 AssistantProvider(四方法),新增:
  *   - isConfigured(): 配置是否完备(apiKey/endpoint 都有)
  *   - testConnection(): 测试连接(用当前配置 ping LLM API,不产生草案)
  *
  * 这些方法大众版内部决定是否注入 provider 到内核扩展槽用,
- * 内核不感知(内核只调三方法)。
+ * 内核不感知(内核只调四方法)。
  */
 export interface LlmAssistant extends AssistantProvider {
 	/** 当前配置是否完备(apiKey 非空 + endpoint 非空 + model 非空) */

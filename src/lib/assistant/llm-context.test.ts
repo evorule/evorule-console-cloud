@@ -40,6 +40,7 @@ describe('provideLlm 转发器', () => {
 			generateRuleDraft: async () => ({ rule: {}, confidence: 0.5 }),
 			explainRule: async () => 'fake explanation',
 			generateInput: async () => ({ input: 'fake' }),
+			transpileFlow: async () => ({ flow_id: 'f1', version: 1, nodes: [], edges: [] }),
 			transpileCommand: async () => ({ type: 'noop', params: {} }),
 			isConfigured: () => true,
 			testConnection: async () => ({ ok: true, message: 'ok' })

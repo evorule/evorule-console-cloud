@@ -3,7 +3,7 @@
 //
 // 路由守卫(对应 HOME_DESIGN.md §4.3 + P08 §5 权限矩阵)。
 // - /onboarding:未登录或已有库时跳回 /(向导只对"已登录 + 空库"开放)
-// - /runtime(L1) / /workspace(L2) / /view/[id] / /export / /import-export / /marketplace:
+// - /runtime(L1) / /workspace(L2) / /view/[id] / /export / /import-export / /marketplace / /flow:
 //   未登录或库空时跳回 /(向导未完成,不允许直接访问运行时 / 编辑台 / 视图 / 导出 / 导入导出 / 市场)
 // - /publish-queue:未登录跳 /login;需 view_publish_queue 权限(lead/it/exec)
 // - /version-history:未登录跳 /login
@@ -59,6 +59,7 @@ export const load: LayoutLoad = ({ url }) => {
 		url.pathname === '/export' ||
 		url.pathname === '/import-export' ||
 		url.pathname === '/marketplace' ||
+		url.pathname === '/flow' ||
 		url.pathname.startsWith('/view/')
 	) {
 		if (!session.loggedIn) {

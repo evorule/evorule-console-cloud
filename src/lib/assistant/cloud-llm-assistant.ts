@@ -3,17 +3,17 @@
 // evorule-console-cloud — CloudLlmAssistant: 云 LLM 实现(OpenAI 兼容协议)
 //
 // 设计:
-//   - 实现 LlmAssistant 接口(继承内核 AssistantProvider 三方法 + 大众版独有方法)
-//   - 三方法:generateRuleDraft / explainRule / generateInput
+//   - 实现 LlmAssistant 接口(继承内核 AssistantProvider 四方法 + 大众版独有方法)
+//   - 内核四方法:generateRuleDraft / explainRule / generateInput / transpileFlow
 //   - 大众版独有:isConfigured(配置完备性) + testConnection(测试连接)
-//     + transpileCommand(L2 P2 第 4 操作,NL→命令草稿,内核不感知)
+//     + transpileCommand(L2 P2 第 4+1 操作,NL→命令草稿,内核不感知)
 //   - 草案校验:LLM 产出后用内核 RuleValidator 校验,失败也不抛错,返回 confidence=0 + 校验错误
 //   - apiKey 安全:不进 prompt / 不进日志 / 不进 error.message(由 llm-fetch.ts 保证)
-//   - 审计桥(2026-08-30):三方法经 callChatApiAudited 走 evorule 侧车协议,
+//   - 审计桥(2026-08-30):各方法经 callChatApiAudited 走 evorule 侧车协议,
 //     prompt 全文与 LLM 结果入审计链;testConnection 保持直连(连通性探针)
 //
 // 与内核边界:
-//   - 注入到内核扩展槽后,内核视图只调三方法,不感知 CloudLlmConfig
+//   - 注入到内核扩展槽后,内核视图只调四方法,不感知 CloudLlmConfig
 //   - LLM 只生成草案,最终规则是用户审核后的 JSON(规则即数据),不破坏执行确定性
 
 import { get } from 'svelte/store';
@@ -31,8 +31,10 @@ import {
 	promptExplainRule,
 	promptGenerateInput,
 	promptTestConnection,
-	promptTranspileCommand
+	promptTranspileCommand,
+	promptTranspileFlow
 } from './prompts';
+import type { FlowTranspileContext } from '$lib/kernel';
 
 /**
  * CloudLlmAssistant — 云 LLM 实现(OpenAI 兼容协议)。
@@ -315,6 +317,37 @@ export class CloudLlmAssistant implements LlmAssistant {
 			// 解析失败,返回带 _error 的对象,用户可手动改
 			return {
 				_error: 'LLM 命令草稿 JSON 解析失败,请人工修改',
+				_raw: reply.slice(0, 500),
+				_parseError: (e as Error).message
+			};
+		}
+	}
+
+	/**
+	 * 用途6(UV-176,P3 激活): 自然语言 → flow JSON 草稿(流程画布转译器)。
+	 *
+	 * 产物是**草稿**:调用方(TranspileFlowDialog)展示并经 loadFlowAsset 投影
+	 * 到画布,用户可见可改,人点击编译才走既有 compileFlow→Draft→Publish 链
+	 * ——LLM 永不直接 compile/publish(R3 draft-only)。ctx 由画布页从已加载
+	 * pack 资产投影(R4),经 promptTranspileFlow(few-shot 调优版,console
+	 * 公开仓 SSOT 镜像)组装;走 auditedChat 双通道入审计链
+	 * (purpose=transpile_flow)。
+	 */
+	async transpileFlow(naturalLanguage: string, context: FlowTranspileContext): Promise<object> {
+		const prompt = promptTranspileFlow(naturalLanguage, context);
+		const reply = await this.auditedChat({
+			userMessage: prompt,
+			temperature: 0.1, // 结构转译偏确定性
+			auditPurpose: 'transpile_flow'
+		});
+
+		const jsonStr = extractJson(reply);
+		try {
+			return JSON.parse(jsonStr) as object;
+		} catch (e) {
+			// 解析失败,返回带 _error 的对象,用户可手动改(dialog 展示层校验会提示非合法 JSON)
+			return {
+				_error: 'LLM 流程草稿 JSON 解析失败,请人工修改',
 				_raw: reply.slice(0, 500),
 				_parseError: (e as Error).message
 			};
