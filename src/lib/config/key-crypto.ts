@@ -33,8 +33,18 @@ export interface EncryptedKeyBlob {
 /** OWASP 2023 推荐:PBKDF2-HMAC-SHA256 ≥ 600,000 次 */
 export const PBKDF2_ITERATIONS = 600_000;
 
-/** 会话密钥缓存键（sessionStorage；仅存派生后的原始密钥字节 b64） */
-const SESSION_KEY_NAME = 'evorule-console-cloud:llm-session-key';
+/**
+ * 会话密钥缓存作用域(UV-178 批次E+ 治理凭据升级):
+ * 每个凭据面的加密块盐不同,派生密钥互不通用,缓存必须按面隔离——
+ * 跨面复用缓存键解密必然失败(认证不匹配),且会互相顶掉对方的免重输。
+ */
+export type SessionKeyScope = 'llm' | 'governance';
+
+/** 会话密钥缓存键(sessionStorage;llm 沿用批次B 既有键名,已解锁会话不失效) */
+const SESSION_KEY_NAMES: Record<SessionKeyScope, string> = {
+	llm: 'evorule-console-cloud:llm-session-key',
+	governance: 'evorule-console-cloud:governance-session-key'
+};
 
 /** 解密失败（口令错误或数据损坏）。不携带任何内部细节。 */
 export class KeyDecryptError extends Error {
@@ -163,23 +173,30 @@ function sessionCacheAvailable(): boolean {
 }
 
 /** 解锁成功后缓存会话密钥（raw 字节 b64；失败静默——缓存是便利不是保证） */
-export async function cacheSessionKey(blob: EncryptedKeyBlob, passphrase: string): Promise<void> {
+export async function cacheSessionKey(
+	blob: EncryptedKeyBlob,
+	passphrase: string,
+	scope: SessionKeyScope = 'llm'
+): Promise<void> {
 	if (!sessionCacheAvailable()) return;
 	try {
 		const salt = b64ToBuf(blob.salt);
 		const key = await deriveKey(passphrase, salt, blob.iterations, true);
 		const raw = await crypto.subtle.exportKey('raw', key);
-		sessionStorage.setItem(SESSION_KEY_NAME, bufToB64(raw));
+		sessionStorage.setItem(SESSION_KEY_NAMES[scope], bufToB64(raw));
 	} catch {
 		// 缓存失败不影响解锁结果
 	}
 }
 
 /** 读取缓存的会话密钥（无缓存/形态不符 → null；导入后不可再导出） */
-export async function readCachedSessionKey(blob: EncryptedKeyBlob): Promise<CryptoKey | null> {
+export async function readCachedSessionKey(
+	blob: EncryptedKeyBlob,
+	scope: SessionKeyScope = 'llm'
+): Promise<CryptoKey | null> {
 	if (!sessionCacheAvailable()) return null;
 	try {
-		const b64 = sessionStorage.getItem(SESSION_KEY_NAME);
+		const b64 = sessionStorage.getItem(SESSION_KEY_NAMES[scope]);
 		if (!b64) return null;
 		return await crypto.subtle.importKey(
 			'raw',
@@ -202,10 +219,10 @@ export async function decryptApiKeyWithSessionKey(
 }
 
 /** 清除会话密钥缓存（锁定/清除 Key/换 blob 时调用） */
-export function clearSessionKeyCache(): void {
+export function clearSessionKeyCache(scope: SessionKeyScope = 'llm'): void {
 	if (!sessionCacheAvailable()) return;
 	try {
-		sessionStorage.removeItem(SESSION_KEY_NAME);
+		sessionStorage.removeItem(SESSION_KEY_NAMES[scope]);
 	} catch {
 		// 忽略
 	}

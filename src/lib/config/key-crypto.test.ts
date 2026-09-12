@@ -135,3 +135,43 @@ describe('会话密钥缓存(sessionStorage)', () => {
 		expect(sessionKey.extractable).toBe(false);
 	});
 });
+
+describe('会话密钥缓存作用域(UV-178 批次E+ 治理凭据升级)', () => {
+	test('llm 缺省作用域沿用既有键名(批次B 已解锁会话不失效)', async () => {
+		const blob = await encryptApiKey(KEY, PASS);
+		await cacheSessionKey(blob, PASS);
+		expect(sessionStore.has('evorule-console-cloud:llm-session-key')).toBe(true);
+		expect(await readCachedSessionKey(blob)).not.toBeNull();
+	});
+
+	test('governance 作用域独立缓存,各自 blob 可用各自会话密钥解密', async () => {
+		const blobL = await encryptApiKey(KEY, PASS);
+		const blobG = await encryptApiKey(KEY, PASS);
+		await cacheSessionKey(blobL, PASS, 'llm');
+		await cacheSessionKey(blobG, PASS, 'governance');
+		expect(sessionStore.has('evorule-console-cloud:governance-session-key')).toBe(true);
+		const kL = (await readCachedSessionKey(blobL, 'llm')) as CryptoKey;
+		const kG = (await readCachedSessionKey(blobG, 'governance')) as CryptoKey;
+		expect(await decryptApiKeyWithSessionKey(blobL, kL)).toBe(KEY);
+		expect(await decryptApiKeyWithSessionKey(blobG, kG)).toBe(KEY);
+	});
+
+	test('跨面复用会话密钥解密必败(盐不同派生密钥不通用)', async () => {
+		const blobG = await encryptApiKey(KEY, PASS);
+		const blobL = await encryptApiKey(KEY, PASS);
+		await cacheSessionKey(blobL, PASS, 'llm');
+		const kL = (await readCachedSessionKey(blobL, 'llm')) as CryptoKey;
+		await expect(decryptApiKeyWithSessionKey(blobG, kL)).rejects.toThrow(KeyDecryptError);
+	});
+
+	test('clearSessionKeyCache 按作用域清除;缺省仅清 llm', async () => {
+		const blob = await encryptApiKey(KEY, PASS);
+		await cacheSessionKey(blob, PASS, 'llm');
+		await cacheSessionKey(blob, PASS, 'governance');
+		clearSessionKeyCache('governance');
+		expect(await readCachedSessionKey(blob, 'governance')).toBeNull();
+		expect(await readCachedSessionKey(blob, 'llm')).not.toBeNull();
+		clearSessionKeyCache();
+		expect(await readCachedSessionKey(blob, 'llm')).toBeNull();
+	});
+});

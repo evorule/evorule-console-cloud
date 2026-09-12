@@ -212,15 +212,25 @@ describe('deployOfficialAsset — 部署导航(接既有证据门禁面板)', ()
 });
 
 describe('reconnectWithSavedConfig — 已存凭据一键重连', () => {
+	// UV-178 批次E+:GovernanceConfig 增 passwordStorage/locked(plain 形态即旧版行为)
 	const fullConfig = {
 		baseUrl: 'http://127.0.0.1:18081',
 		tenantId: 'default',
 		username: 'admin',
-		password: 'secret'
+		password: 'secret',
+		passwordStorage: 'plain' as const,
+		locked: false
 	};
 
 	afterEach(() => {
-		governanceConfig.set({ baseUrl: 'http://127.0.0.1:18081', tenantId: 'default', username: '', password: '' });
+		governanceConfig.set({
+			baseUrl: 'http://127.0.0.1:18081',
+			tenantId: 'default',
+			username: '',
+			password: '',
+			passwordStorage: 'none',
+			locked: false
+		});
 		resetOfficialAssetsUi();
 	});
 
@@ -234,7 +244,14 @@ describe('reconnectWithSavedConfig — 已存凭据一键重连', () => {
 	});
 
 	test('无已存凭据:显式报错带指引,不发起连接', async () => {
-		governanceConfig.set({ baseUrl: 'http://127.0.0.1:18081', tenantId: 'default', username: '', password: '' });
+		governanceConfig.set({
+			baseUrl: 'http://127.0.0.1:18081',
+			tenantId: 'default',
+			username: '',
+			password: '',
+			passwordStorage: 'none',
+			locked: false
+		});
 		await expect(reconnectWithSavedConfig()).rejects.toThrow(/已存治理凭据/);
 		expect(get(officialAssetsUi).error).toContain('手动输入连接');
 	});
