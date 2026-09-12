@@ -101,6 +101,12 @@ export interface FlowDraftCheckContext {
   nodeTypes: ReadonlySet<string>;
   /** form_ref.field 取值域（场景已注册 path 字段;R2） */
   sceneFieldIds: ReadonlySet<string>;
+  /**
+   * 出边 guard 取值域（契约 v1.2 §4.4 out_guards 声明投影:node_type → 允许
+   * guard 集;未声明类型 = 禁 guard）。缺省 = 不做 guard 校验（旧调用方兼容）。
+   * 镜像自 evorule-console src/lib/views/FlowCanvas/flow-model.ts。
+   */
+  outGuards?: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export interface FlowDraftCheckResult {
@@ -112,6 +118,8 @@ export interface FlowDraftCheckResult {
   unknownNodeTypes: string[];
   /** form_ref.field 不在场景字段取值域的节点（R2 提示） */
   unknownFormRefs: string[];
+  /** 出边 guard 不在 from 节点类型 out_guards 声明取值域的边（v1.2 提示;记 from 节点 id） */
+  badGuards: string[];
 }
 
 /**
@@ -127,7 +135,8 @@ export function validateFlowDraft(
     parseOk: false,
     shapeOk: false,
     unknownNodeTypes: [],
-    unknownFormRefs: []
+    unknownFormRefs: [],
+    badGuards: []
   };
   let flow: unknown;
   try {
@@ -148,6 +157,7 @@ export function validateFlowDraft(
   }
   result.shapeOk = true;
 
+  const nodeTypeById = new Map<string, string>();
   for (const n of (flow as { nodes: Array<Record<string, unknown>> }).nodes) {
     if (typeof n !== "object" || n === null) continue;
     const nodeType = n.node_type;
@@ -162,6 +172,23 @@ export function validateFlowDraft(
       !ctx.sceneFieldIds.has(ref.field)
     ) {
       result.unknownFormRefs.push(String(n.node_id ?? "?"));
+    }
+    if (typeof n.node_id === "string" && typeof nodeType === "string") {
+      nodeTypeById.set(n.node_id, nodeType);
+    }
+  }
+
+  // guard 取值域提示（v1.2;ctx.outGuards 缺省时跳过,不虚构取值域）
+  if (ctx.outGuards) {
+    for (const e of (flow as { edges: Array<Record<string, unknown>> }).edges) {
+      if (typeof e !== "object" || e === null) continue;
+      const guard = e.guard;
+      if (typeof guard !== "string") continue; // 无 guard 的边不在声明面语义内
+      const fromType = typeof e.from === "string" ? nodeTypeById.get(e.from) : undefined;
+      const allowed = fromType ? ctx.outGuards.get(fromType) : undefined;
+      if (!allowed || !allowed.has(guard)) {
+        result.badGuards.push(String(e.from ?? "?"));
+      }
     }
   }
   return result;

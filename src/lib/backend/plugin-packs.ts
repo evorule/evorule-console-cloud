@@ -115,6 +115,8 @@ export interface NodeTypeAssetRaw {
   description?: string;
   params_form?: ParamFieldRaw[];
   compile_hint?: { emits: string; note?: string };
+  /** 出边 guard 取值域声明（契约 v1.2 §4.4;缺省/空 = 该类型出边禁 guard） */
+  out_guards?: string[];
 }
 
 /** flow 节点（契约 v1.1 §4.6） */

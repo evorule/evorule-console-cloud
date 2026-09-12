@@ -63,6 +63,8 @@ export interface FlowTranspileContext {
     description?: string;
     /** params_form 字段投影(field_id/type/scene_ref;R4:不含展示文案细节) */
     params_form?: Array<{ field_id: string; type: string; scene_ref?: string }>;
+    /** 出边 guard 取值域声明(契约 v1.2 §4.4;缺省/空 = 该类型出边禁 guard) */
+    out_guards?: string[];
   }>;
   /** 场景已注册 path 的字段取值域(R2:form_ref.field 只能取这里) */
   sceneFields: Array<{ scene_id: string; field_id: string; path: string }>;

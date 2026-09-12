@@ -55,6 +55,12 @@
   const checkCtx = $derived.by((): FlowDraftCheckContext => ({
     nodeTypes: new Set(context.nodeTypes.map((t) => t.node_type)),
     sceneFieldIds: new Set(context.sceneFields.map((f) => f.field_id)),
+    // guard 取值域（契约 v1.2 out_guards 声明投影;全部来自资产,缺省跳过校验）
+    outGuards: new Map(
+      context.nodeTypes
+        .filter((t) => Array.isArray(t.out_guards))
+        .map((t): [string, Set<string>] => [t.node_type, new Set(t.out_guards ?? [])]),
+    ),
   }));
   const check = $derived(validateFlowDraft(draftJson, checkCtx));
 
@@ -195,6 +201,10 @@
               {#if check.unknownFormRefs.length > 0}
                 {t("flow.dlg.unknownFormRef", { nodes: check.unknownFormRefs.join(", ") })}
               {/if}
+            </div>
+          {:else if check.badGuards.length > 0}
+            <div class="hint warn">
+              {t("flow.dlg.badGuard", { nodes: check.badGuards.join(", ") })}
             </div>
           {:else}
             <div class="hint">{t("flow.dlg.allOk")}</div>
