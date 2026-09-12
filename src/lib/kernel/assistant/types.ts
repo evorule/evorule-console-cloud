@@ -16,7 +16,7 @@
 // transpileCommand/transpileFlow 实现)在 $lib/assistant/types.ts 超集,不进本镜像。
 
 /**
- * LLM 辅助接口(单轮,不做多轮编排)。
+ * LLM 辅助接口(单方法多轮转译;不做 agent 编排)。
  *
  * evorule-console 只定义此接口,不实现。
  * - 默认 null(不注入):视图 LLM 按钮不渲染,与"无智能"基调一致
@@ -29,11 +29,25 @@
  *   - transpileFlow: 自然语言 → flow JSON 草稿(填入画布,人确认编译)
  *
  * 硬约束(MASS_EDITION §2.4):
- *   - 不做多轮 agent 编排(那是 evo-agent 仓的事)
- *   - 不做工具调用(tool calling)
+ *   - 不做多轮 agent 编排(那是 evo-agent 仓的事)。transpileFlow 的可选
+ *     history 是**用户驱动的对话式修订**(每轮由人点击触发生成,LLM 不自主
+ *     决策继续/重试),非 agent 自主编排——红线不破
+ *   - 不做工具调用(tool calling)。转译期的只读工具消费发生在 ai-plugin
+ *     服务端回路内(部署方配置白名单),本接口层不发起任何工具调用
  *   - 不做自动执行(LLM 决定跑规则)— 执行必须用户确认
  *   - 不让 LLM 改 fact log — fact log 是 evorule 机制层,不可篡改
  */
+
+/**
+ * 多轮转译历史中的一轮(纯文本对;实现方负责把它映射为通道的消息形态)。
+ *
+ * - user: 该轮用户输入**原文**(非组装后的 prompt——组装是实现方职责)
+ * - assistant: 该轮 LLM 回复原文(转译场景即 flow JSON 文本)
+ */
+export interface FlowTranspileTurn {
+  role: "user" | "assistant";
+  content: string;
+}
 
 /**
  * 流程转译上下文:画布页已加载的 pack 资产投影。
@@ -52,6 +66,12 @@ export interface FlowTranspileContext {
   }>;
   /** 场景已注册 path 的字段取值域(R2:form_ref.field 只能取这里) */
   sceneFields: Array<{ scene_id: string; field_id: string; path: string }>;
+  /**
+   * 存量规则投影(可选;UV-178 批次D)。页面从执行域规则集预取(id+描述),
+   * 供 LLM 参考既有规则的结构模式与路径约定;仅注入不引用——flow 草稿
+   * 是独立资产,不引用规则 id。缺省/为空 = 无此视野(旧实现兼容)。
+   */
+  existingRules?: Array<{ rule_id: string; description?: string }>;
 }
 
 export interface AssistantProvider {
@@ -72,9 +92,14 @@ export interface AssistantProvider {
    * 产物是**草稿**:填入画布由用户可见可改,人点击编译才走既有链
    * (draft-only,R3)——LLM 永不直接 compile/publish。实现方经
    * promptTranspileFlow 组装 prompt;本镜像只定义不实现(扩展槽)。
+   *
+   * history(UV-178 批次D,可选):此前轮次的纯文本对,按时间顺序——
+   * 修订轮实现方据此拼接对话上下文并改用修订 prompt;缺省=单轮(既有
+   * 调用方零破坏)。
    */
   transpileFlow(
     naturalLanguage: string,
     context: FlowTranspileContext,
+    history?: FlowTranspileTurn[],
   ): Promise<object>;
 }

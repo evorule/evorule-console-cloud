@@ -706,6 +706,64 @@ describe('transpileFlow', () => {
 		expect(arg.auditPurpose).toBe('transpile_flow');
 		expect(mockFetch).not.toHaveBeenCalled();
 	});
+
+	// ---- UV-178 批次D:多轮修订(history 纯文本对) ----
+
+	test('history 非空 → 修订 prompt(history 纯文本对拼入对话,入链可审计)', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse(FLOW_JSON));
+
+		const history = [
+			{ role: 'user' as const, content: '员工提交报销,主管审批后打款' },
+			{ role: 'assistant' as const, content: FLOW_JSON }
+		];
+		await a.transpileFlow('把审批阈值改成 10000', FLOW_CTX, history);
+
+		const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+		const body = JSON.parse(init.body as string) as {
+			messages: { role: string; content: string }[];
+		};
+		// 消息序:history user → history assistant → 当前修订 prompt
+		expect(body.messages.length).toBe(3);
+		expect(body.messages[0]).toMatchObject({ role: 'user', content: '员工提交报销,主管审批后打款' });
+		expect(body.messages[1]).toMatchObject({ role: 'assistant', content: FLOW_JSON });
+		const cur = body.messages[2].content;
+		// 修订框定 + 修订指令原文入当前 prompt
+		expect(cur).toContain('修订请求');
+		expect(cur).toContain('把审批阈值改成 10000');
+		// 修订轮仍保留全部规格(最新 ctx 投影)
+		expect(cur).toContain('approval');
+		expect(cur).toContain('只输出 flow JSON');
+	});
+
+	test('history 空数组 → 视为首轮(不拼修订框定)', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse(FLOW_JSON));
+
+		await a.transpileFlow('描述', FLOW_CTX, []);
+
+		const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+		const body = JSON.parse(init.body as string) as {
+			messages: { role: string; content: string }[];
+		};
+		expect(body.messages.length).toBe(1);
+		expect(body.messages[0].content).not.toContain('修订请求');
+	});
+
+	test('channel=server 多轮:history 透传服务端点(purpose 不变)', async () => {
+		serverChannelMock.mockResolvedValueOnce(FLOW_JSON);
+		const a = makeAssistant({ channel: 'server', apiKey: '', apiEndpoint: '' });
+
+		const history = [
+			{ role: 'user' as const, content: '第一轮描述' },
+			{ role: 'assistant' as const, content: FLOW_JSON }
+		];
+		await a.transpileFlow('改阈值', FLOW_CTX, history);
+
+		const arg = serverChannelMock.mock.calls[0][0] as Record<string, unknown>;
+		expect(arg.auditPurpose).toBe('transpile_flow');
+		expect(arg.history).toEqual(history);
+	});
 });
 
 // ============ 错误场景(三方法统一) ============

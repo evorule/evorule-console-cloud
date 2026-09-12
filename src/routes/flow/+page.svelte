@@ -53,7 +53,7 @@
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
   import { netConfig } from "$lib/config/net-config";
   import { t } from "$lib/locale";
-  import { useAssistantOrNull } from "$lib/kernel";
+  import { useAssistantOrNull, useWorkspaceBackend } from "$lib/kernel";
   import type { FlowTranspileContext } from "$lib/kernel";
   // NL→flow 草稿转译器（扩展槽消费,assistant=null 时按钮不渲染）
   import TranspileFlowDialog from "$lib/views/Assistant/TranspileFlowDialog.svelte";
@@ -67,6 +67,47 @@
   let nodeTypes = $state<NodeTypeAssetRaw[]>([]);
   let scenes = $state<SceneAssetRaw[]>([]);
   let flows = $state<FlowAssetRaw[]>([]);
+
+  // 存量规则投影(UV-178 批次D):执行域生效规则预取,注入转译上下文供 LLM
+  // 参考既有结构模式与路径约定;预取失败降级为空(转译仍可用,不阻断画布),
+  // 零领域硬编码——条目字段投影是通用读取,R4 不受影响
+  let existingRules = $state<Array<{ rule_id: string; description?: string }>>([]);
+  const EXISTING_RULES_CAP = 20;
+
+  const wb = useWorkspaceBackend();
+
+  // 执行域 transform 原始结构无规则名字段——展示名/摘要派生与规则库页
+  // (BusinessRuleLibrary)同一策略:rule_id/id/name/type 键探测 → 序号兜底;
+  // 摘要为 JSON 截断(给 LLM 看结构模式与路径约定,非领域文案)
+  function execRuleName(entry: unknown, idx: number): string {
+    if (entry && typeof entry === "object") {
+      const o = entry as Record<string, unknown>;
+      for (const k of ["rule_id", "id", "name", "type"]) {
+        const v = o[k];
+        if (typeof v === "string" && v) return v;
+      }
+    }
+    return `transform-${idx + 1}`;
+  }
+
+  function execRuleSummary(entry: unknown): string {
+    const s = JSON.stringify(entry);
+    return s && s.length > 120 ? `${s.slice(0, 120)}…` : (s ?? "");
+  }
+
+  async function loadExistingRules() {
+    try {
+      const result = await wb.getExecutionRules();
+      existingRules = result.core_eval
+        .slice(0, EXISTING_RULES_CAP)
+        .map((r, i) => ({
+          rule_id: execRuleName(r, i),
+          description: execRuleSummary(r),
+        }));
+    } catch {
+      existingRules = []; // 降级为空:无存量规则视野,转译仍可用
+    }
+  }
 
   // 画布模型（协议 schema + 展示坐标;零领域语义,R4）
   let canvasNodes = $state<CanvasNode[]>([]);
@@ -110,6 +151,7 @@
     const baseUrl = cfg.mode === "online" ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
     client = new PluginPacksClient(baseUrl, cfg.authToken.trim() || null);
     void load();
+    void loadExistingRules(); // 存量规则与 pack 无关(执行域全局),挂载时预取一次
   });
 
   async function load() {
@@ -264,6 +306,7 @@
         })),
       )
       .filter((f) => f.path.length > 0),
+    existingRules, // UV-178 批次D:存量规则面注入(prompt 侧仅供学习不引用)
   }));
 
   // ---- 属性面板（params_form → 节点位映射,flow 协议知识） ----

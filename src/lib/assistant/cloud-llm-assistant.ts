@@ -33,9 +33,10 @@ import {
 	promptGenerateInput,
 	promptTestConnection,
 	promptTranspileCommand,
-	promptTranspileFlow
+	promptTranspileFlow,
+	promptReviseFlow
 } from './prompts';
-import type { FlowTranspileContext } from '$lib/kernel';
+import type { FlowTranspileContext, FlowTranspileTurn } from '$lib/kernel';
 
 /**
  * CloudLlmAssistant — 云 LLM 实现(OpenAI 兼容协议)。
@@ -334,19 +335,33 @@ export class CloudLlmAssistant implements LlmAssistant {
 	}
 
 	/**
-	 * 用途6(UV-176,P3 激活): 自然语言 → flow JSON 草稿(流程画布转译器)。
+	 * 用途6(UV-176,P3 激活;UV-178 批次D 多轮扩展): 自然语言 → flow JSON
+	 * 草稿(流程画布转译器,支持用户驱动的对话式修订)。
 	 *
 	 * 产物是**草稿**:调用方(TranspileFlowDialog)展示并经 loadFlowAsset 投影
 	 * 到画布,用户可见可改,人点击编译才走既有 compileFlow→Draft→Publish 链
 	 * ——LLM 永不直接 compile/publish(R3 draft-only)。ctx 由画布页从已加载
-	 * pack 资产投影(R4),经 promptTranspileFlow(few-shot 调优版,console
-	 * 公开仓 SSOT 镜像)组装;走 auditedChat 双通道入审计链
-	 * (purpose=transpile_flow)。
+	 * pack 资产投影+执行域存量规则预取(R4),经 promptTranspileFlow(首轮)/
+	 * promptReviseFlow(修订轮,few-shot 调优版,console 公开仓 SSOT 镜像)组装;
+	 * 走 auditedChat 双通道入审计链(purpose=transpile_flow)。
+	 *
+	 * 多轮语义(UV-178 批次D):每轮由用户点击触发(非 agent 自主编排,红线不破)。
+	 * history 非空时判定为修订轮——当前消息用修订框定 prompt,history 以纯文本对
+	 * 拼入对话(前轮草稿供参照),输出仍为完整修订后的 flow JSON。
 	 */
-	async transpileFlow(naturalLanguage: string, context: FlowTranspileContext): Promise<object> {
-		const prompt = promptTranspileFlow(naturalLanguage, context);
+	async transpileFlow(
+		naturalLanguage: string,
+		context: FlowTranspileContext,
+		history?: FlowTranspileTurn[]
+	): Promise<object> {
+		const isRevision = Array.isArray(history) && history.length > 0;
+		const prompt = isRevision
+			? promptReviseFlow(naturalLanguage, context)
+			: promptTranspileFlow(naturalLanguage, context);
 		const reply = await this.auditedChat({
 			userMessage: prompt,
+			// FlowTranspileTurn 与 ChatHistoryMessage 结构同形(role/content 纯文本对)
+			...(isRevision ? { history } : {}),
 			temperature: 0.1, // 结构转译偏确定性
 			auditPurpose: 'transpile_flow'
 		});
