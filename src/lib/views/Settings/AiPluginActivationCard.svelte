@@ -7,7 +7,7 @@
       (未启用→三步引导含可复制片段 / 已启用未达→拉起进程指引 / 就绪)
     - 仅在 LlmSettings 选中「服务端执行」通道时渲染(父级控制)
     - 明示"插件清单为启动期读盘注册,改后需重启 server"(不承诺热切换)
-    - 如实标注分发版暂不含 ai-plugin.exe(分发面专项另行补齐)
+    - 分发版已内置 ai-plugin 分发件(UV-178 批次A):片段区分分发版/源码版两形态
 
   边界:
     - 纯展示层:只读 /api/health,不提供任何写配置/收凭据表单
@@ -57,15 +57,16 @@
 			});
 	}
 
-	// ---- 可复制片段(与 evorule-server 仓库/缺省清单逐字对齐) ----
+	// ---- 可复制片段(与 evorule-server 分发包/源码仓两种布局逐字对齐) ----
 	const MANIFEST_SNIPPET =
 		'"ai-plugin": { "enabled": true, "manifest": "plugins/ai-plugin/plugin.json" }';
 	const CFG_SNIPPET = 'cp plugins/ai-plugin/config.example.json plugins/ai-plugin/ai-plugin.json';
 	const RUN_SNIPPET = [
-		'# 编译(首次;在 evorule-server 仓 plugins/ai-plugin 目录)',
-		'cargo build --release',
-		'# 启动(保持进程运行,默认监听 127.0.0.1:9130)',
-		'.\\target\\release\\evorule-ai-plugin.exe --config ai-plugin.json'
+		'# 分发版(包内已内置 exe;在 evorule 所在目录执行)',
+		'cd plugins\\ai-plugin',
+		'.\\evorule-ai-plugin.exe --config ai-plugin.json',
+		'# 源码版:先在 plugins/ai-plugin 目录 cargo build --release,',
+		'#   再运行 .\\target\\release\\evorule-ai-plugin.exe --config ai-plugin.json'
 	].join('\n');
 </script>
 

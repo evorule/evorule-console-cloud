@@ -280,9 +280,9 @@ export const messagesEn: Dict = {
   "llm.aiPlugin.step2.title": "Step 2/3: Create the credentials file",
   "llm.aiPlugin.step2.desc": "Copy the template to ai-plugin.json and fill in llm_api_key (this file contains credentials; watch file permissions and never commit it):",
   "llm.aiPlugin.step3.title": "Step 3/3: Start the plugin process and restart the server",
-  "llm.aiPlugin.step3.desc": "Build and start the plugin in plugins/ai-plugin (keep the process running), then restart evorule-server:",
+  "llm.aiPlugin.step3.desc": "Start the plugin process (keep it running; the distribution package ships the built exe, source users must run cargo build --release first), then restart evorule-server. On restart, start-evorule.bat auto-launches the plugin when ai-plugin.json is detected:",
   "llm.aiPlugin.lastError": "Last probe error: {error}",
-  "llm.aiPlugin.distNote": "ℹ️ The distribution installer does not yet bundle ai-plugin.exe (to be added in a separate packaging project); build it yourself for now.",
+  "llm.aiPlugin.distNote": "ℹ️ The distribution package bundles ai-plugin (plugins/ai-plugin/, disabled by default); source users must build it themselves (cargo build --release).",
   "llm.err.aiPluginHint": "ai-plugin is not enabled or its process is not running — see the \"Server-side AI activation status\" guide above.",
 
   // === AI draft dialog ===
