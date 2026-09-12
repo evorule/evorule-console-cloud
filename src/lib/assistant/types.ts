@@ -51,25 +51,39 @@ export interface LlmAssistant extends AssistantProvider {
 export type LlmChannel = 'browser' | 'server';
 
 /**
+ * LLM Key 本机保存形态（UV-178 批次B 凭据安全）:
+ *   - 'none':未保存 Key
+ *   - 'plain':明文存于 localStorage(旧版兼容形态/显式选择,不推荐)
+ *   - 'encrypted':经口令 AES-256-GCM 加密后存于 localStorage(keyEnc 块)
+ */
+export type LlmKeyStorage = 'none' | 'plain' | 'encrypted';
+
+/**
  * 云 LLM 配置(大众版)。
  *
  * 持久化在 localStorage(key: evorule-console-cloud:llm-config)。
  * enabled=false 时,大众版不注入 provider,行为与内核一致(LLM 按钮不渲染)。
  *
- * 安全约束:
- *   - apiKey 存在 localStorage(明文,大众版可接受;高级版用 Tauri 加密)
+ * 安全约束(UV-178 批次B):
+ *   - apiKey 仅运行时明文(内存);落盘形态由 keyStorage 决定:
+ *     加密(AES-GCM+PBKDF2 口令,见 config/key-crypto.ts)为缺省,
+ *     明文仅旧版配置兼容或用户显式选择
+ *   - locked=true 表示已加密存盘但本会话未解锁(运行时派生态,
+ *     持久化不写此字段;解锁经 llm-config 的 unlockLlmApiKey)
  *   - apiKey 不进日志/错误/URL(详见 cloud-llm-assistant.ts)
- *   - 设置面板提示"key 存于本地,不上传"
- *   - channel='server' 时 apiEndpoint/apiKey 不使用(凭据在 ai-plugin 配置文件),
- *     model 作为可选覆盖传给服务端点(空=用插件配置缺省模型)
+ *   - channel='server' 时 apiEndpoint/apiKey 不使用(凭据在 ai-plugin 侧,
+ *     推荐环境变量注入),model 作为可选覆盖传给服务端点(空=用插件缺省)
  */
 export interface CloudLlmConfig {
 	enabled: boolean;
 	channel: LlmChannel;
 	provider: string; // 'openai' | 'qwen' | 'ernie' | 'glm' | 'custom'
 	apiEndpoint: string; // 完整 URL,如 https://api.openai.com/v1/chat/completions
-	apiKey: string; // 明文(localStorage)
+	apiKey: string; // 运行时明文(内存);落盘形态由 keyStorage 决定
 	model: string; // 如 gpt-4o-mini / qwen-plus / ernie-4.0-turbo
+	keyStorage: LlmKeyStorage;
+	/** 已加密存盘但本会话未解锁(运行时态;持久化不写) */
+	locked: boolean;
 }
 
 /** 默认配置:LLM 关闭 + OpenAI 预设 + 浏览器通道(向后兼容:老配置无 channel 字段) */
@@ -79,5 +93,7 @@ export const DEFAULT_LLM_CONFIG: CloudLlmConfig = {
 	provider: 'openai',
 	apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 	apiKey: '',
-	model: 'gpt-4o-mini'
+	model: 'gpt-4o-mini',
+	keyStorage: 'none',
+	locked: false
 };

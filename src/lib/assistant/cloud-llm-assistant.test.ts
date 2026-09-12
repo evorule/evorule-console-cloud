@@ -83,7 +83,9 @@ const FULL_CONFIG: CloudLlmConfig = {
 	provider: 'openai',
 	apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 	apiKey: TEST_API_KEY,
-	model: 'gpt-4o-mini'
+	model: 'gpt-4o-mini',
+	keyStorage: 'plain',
+	locked: false
 };
 
 function makeAssistant(config: Partial<CloudLlmConfig> = {}): CloudLlmAssistant {
