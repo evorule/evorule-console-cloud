@@ -28,6 +28,7 @@
 	import {
 		llmConfig,
 		setLlmEnabled,
+		setLlmChannel,
 		updateLlmConfig,
 		resetLlmConfig,
 		saveLlmApiKeyPlain,
@@ -252,6 +253,23 @@
 		</label>
 		<small class="hint">{t('llm.disableHint')}</small>
 	</div>
+
+	<!-- UV-178 批次C:初始态激活入径(一行入口,一键进入 server 激活卡) -->
+	{#if !$llmConfig.enabled}
+		<div class="onboard-row">
+			<small class="hint">{t('llm.onboardHint')}</small>
+			<button
+				type="button"
+				class="onboard-btn"
+				onclick={() => {
+					setLlmEnabled(true);
+					setLlmChannel('server');
+				}}
+			>
+				{t('llm.onboardBtn')} →
+			</button>
+		</div>
+	{/if}
 
 	{#if $llmConfig.enabled}
 		<!-- 2. 执行通道(UV-172 P2:browser=现状;server=ai-plugin 托管执行) -->
@@ -620,6 +638,32 @@
 		color: var(--brand);
 		cursor: pointer;
 		text-decoration: underline;
+	}
+	/* UV-178 批次C:初始态激活入径(一行入口) */
+	.onboard-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-sm);
+		flex-wrap: wrap;
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: color-mix(in srgb, var(--brand) 8%, var(--bg-card));
+		border: 1px solid color-mix(in srgb, var(--brand) 40%, var(--border));
+		border-radius: var(--radius-md);
+	}
+	.onboard-row .hint {
+		flex: 1;
+		min-width: 200px;
+	}
+	.onboard-btn {
+		padding: var(--spacing-xs) var(--spacing-md);
+		border-radius: var(--radius-md);
+		font-size: var(--text-xs);
+		cursor: pointer;
+		background: var(--brand);
+		color: #fff;
+		border: 1px solid var(--brand);
+		white-space: nowrap;
 	}
 	.sec-pass-row {
 		display: flex;

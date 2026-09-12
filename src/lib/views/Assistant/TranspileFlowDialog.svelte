@@ -29,6 +29,7 @@
     type FlowDraftCheckContext,
   } from "$lib/kernel/views/FlowCanvas/flow-model";
   import type { FlowTranspileContext } from "$lib/kernel";
+  import { t } from "$lib/locale";
 
   let {
     context,
@@ -56,11 +57,11 @@
 
   async function handleGenerate() {
     if (!assistant) {
-      errorMsg = "LLM 未注入(扩展槽为空)";
+      errorMsg = t("flow.dlg.errNoAssistant");
       return;
     }
     if (!description.trim()) {
-      errorMsg = "请先输入自然语言描述";
+      errorMsg = t("flow.dlg.errEmpty");
       return;
     }
     isLoading = true;
@@ -70,7 +71,7 @@
       const result = await assistant.transpileFlow(description, context);
       draftJson = JSON.stringify(result, null, 2);
     } catch (e) {
-      errorMsg = (e as Error).message || "转译失败,请检查 LLM 配置";
+      errorMsg = (e as Error).message || t("flow.dlg.errFailed");
     } finally {
       isLoading = false;
     }
@@ -95,7 +96,7 @@
   onkeydown={(e) => e.key === "Enter" && onclose()}
   role="button"
   tabindex="0"
-  aria-label="点击空白处关闭对话框"
+  aria-label={t("flow.dlg.overlayAria")}
 >
   <div
     class="dialog"
@@ -107,17 +108,17 @@
     aria-labelledby="transpile-flow-title"
   >
     <header class="dialog-header">
-      <h2 id="transpile-flow-title">✨ AI 转译流程</h2>
-      <button class="close-btn" onclick={onclose} aria-label="关闭">×</button>
+      <h2 id="transpile-flow-title">{t("flow.dlg.aiTranspile")}</h2>
+      <button class="close-btn" onclick={onclose} aria-label={t("flow.dlg.close")}>×</button>
     </header>
 
     <main class="dialog-body">
       <section class="step">
-        <label for="transpile-flow-description">1. 用自然语言描述你要设计的流程:</label>
+        <label for="transpile-flow-description">{t("flow.dlg.step1")}</label>
         <textarea
           id="transpile-flow-description"
           bind:value={description}
-          placeholder="例如:员工提交报销申请,主管审批通过后财务打款,金额超 5000 需总监加签"
+          placeholder={t("flow.dlg.step1Placeholder")}
           rows="3"
           disabled={isLoading}
         ></textarea>
@@ -127,21 +128,21 @@
             onclick={() => void handleGenerate()}
             disabled={isLoading || !description.trim()}
           >
-            {isLoading ? "转译中…" : "生成流程草稿"}
+            {isLoading ? t("flow.dlg.generating") : t("flow.dlg.generate")}
           </button>
         </div>
       </section>
 
       {#if errorMsg}
         <div class="alert-error" role="alert">
-          <strong>出错了:</strong>
+          <strong>{t("flow.dlg.errTitle")}</strong>
           {errorMsg}
         </div>
       {/if}
 
       {#if draftJson}
         <section class="step">
-          <label for="transpile-flow-draft">2. flow JSON 草稿(可手动修改):</label>
+          <label for="transpile-flow-draft">{t("flow.dlg.step2")}</label>
           <textarea
             id="transpile-flow-draft"
             class="code"
@@ -153,36 +154,36 @@
 
           <!-- 展示层校验:纯提示不阻断(引擎编译校验兜底,R3) -->
           {#if !check.parseOk}
-            <div class="hint warn">⚠ 不是合法 JSON——填入画布前需修正(画布只接受 JSON 对象)</div>
+            <div class="hint warn">{t("flow.dlg.badJson")}</div>
           {:else if !check.shapeOk}
-            <div class="hint warn">⚠ 缺少 flow 资产骨架(flow_id/nodes/edges)——填入前请补齐</div>
+            <div class="hint warn">{t("flow.dlg.missingSkeleton")}</div>
           {:else if check.unknownNodeTypes.length > 0 || check.unknownFormRefs.length > 0}
             <div class="hint warn">
-              ⚠ 提示(可仍填入,人工修正):
+              {t("flow.dlg.warnPrefix")}
               {#if check.unknownNodeTypes.length > 0}
-                节点 {check.unknownNodeTypes.join("、")} 的 node_type 不在当前包资产白名单;
+                {t("flow.dlg.unknownNodeType", { nodes: check.unknownNodeTypes.join(", ") })}
               {/if}
               {#if check.unknownFormRefs.length > 0}
-                节点 {check.unknownFormRefs.join("、")} 的 form_ref 不在场景字段取值域
+                {t("flow.dlg.unknownFormRef", { nodes: check.unknownFormRefs.join(", ") })}
               {/if}
             </div>
           {:else}
-            <div class="hint">✓ JSON 合法 · node_type 在资产白名单内 · form_ref 在场景取值域内</div>
+            <div class="hint">{t("flow.dlg.allOk")}</div>
           {/if}
         </section>
       {/if}
     </main>
 
     <footer class="dialog-footer">
-      <span class="footer-hint">草稿仅填入画布,需你确认后编译(不落库)</span>
-      <button class="btn-secondary" onclick={onclose} disabled={isLoading}>放弃</button>
+      <span class="footer-hint">{t("flow.dlg.footerHint")}</span>
+      <button class="btn-secondary" onclick={onclose} disabled={isLoading}>{t("flow.dlg.discard")}</button>
       {#if draftJson}
         <button
           class="btn-primary"
           onclick={handleFill}
           disabled={isLoading || !check.parseOk || !check.shapeOk}
         >
-          填入画布
+          {t("flow.dlg.fill")}
         </button>
       {/if}
     </footer>
