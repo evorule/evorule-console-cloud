@@ -24,6 +24,7 @@ import { callChatApi, type ChatApiParams, LlmError } from './llm-fetch';
 import {
 	callChatApiAudited,
 	callChatApiServerChannel,
+	AuditedBridgeError,
 	type AuditPurpose
 } from './audited-llm';
 import {
@@ -89,8 +90,12 @@ export class CloudLlmAssistant implements LlmAssistant {
 		);
 	}
 
-	/** 测试连接(返回成功/失败 + 信息;不产生草案) */
-	async testConnection(): Promise<{ ok: boolean; message: string }> {
+	/** 测试连接(返回成功/失败 + 信息;不产生草案;serverUnreachable=UV-177 诊断位) */
+	async testConnection(): Promise<{
+		ok: boolean;
+		message: string;
+		serverUnreachable?: boolean;
+	}> {
 		if (!this.isConfigured()) {
 			const cfg = this.config;
 			return {
@@ -120,9 +125,14 @@ export class CloudLlmAssistant implements LlmAssistant {
 					message: `连接成功(server 通道经 ai-plugin,回复 ${reply.length} 字符)`
 				};
 			} catch (e) {
+				// UV-177:server_unreachable=审计桥连不上 server/插件(server 未起或
+				// ai-plugin 未启用/未达),UI 据此指向激活引导卡;其余错误如实透出
+				const serverUnreachable =
+					e instanceof AuditedBridgeError && e.kind === 'server_unreachable';
 				return {
 					ok: false,
-					message: `连接失败: ${(e as Error).message}`
+					message: `连接失败: ${(e as Error).message}`,
+					serverUnreachable
 				};
 			}
 		}

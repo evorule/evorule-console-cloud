@@ -34,17 +34,31 @@ import {
 // server 通道(UV-172 P2)用 hoisted mock 独立可断言(路由测试只验证
 // "走没走服务端点",协议细节由 audited-llm.test.ts 覆盖)。
 const serverChannelMock = vi.hoisted(() => vi.fn());
-vi.mock('./audited-llm', () => ({
-	callChatApiAudited: async (
-		params: Record<string, unknown> & { auditPurpose?: string }
-	): Promise<string> => {
-		const { callChatApi } = await import('./llm-fetch');
-		const { auditPurpose: _auditPurpose, ...rest } = params;
-		void _auditPurpose;
-		return callChatApi(rest as unknown as Parameters<typeof callChatApi>[0]);
-	},
-	callChatApiServerChannel: serverChannelMock
-}));
+vi.mock('./audited-llm', async () => {
+	// AuditedBridgeError 用本地同构类(mock 工厂不能回导被 mock 模块自身);
+	// kind 语义对齐 audited-llm.ts,instanceof 判定路径(UV-177)与真实一致
+	class AuditedBridgeError extends Error {
+		constructor(
+			public readonly kind: 'server_unreachable' | 'protocol' | 'engine',
+			message?: string
+		) {
+			super(message ?? kind);
+		}
+	}
+	const real = (await import('./llm-fetch')) as Record<string, unknown>;
+	return {
+		AuditedBridgeError,
+		callChatApiAudited: async (
+			params: Record<string, unknown> & { auditPurpose?: string }
+		): Promise<string> => {
+			const { callChatApi } = real as typeof import('./llm-fetch');
+			const { auditPurpose: _auditPurpose, ...rest } = params;
+			void _auditPurpose;
+			return callChatApi(rest as unknown as Parameters<typeof callChatApi>[0]);
+		},
+		callChatApiServerChannel: serverChannelMock
+	};
+});
 
 // ============ mock fetch ============
 
@@ -190,6 +204,36 @@ describe('执行通道路由(UV-172 P2)', () => {
 		const r = await a.testConnection();
 		expect(r.ok).toBe(false);
 		expect(r.message).toContain('502');
+		// 普通错误(如插件 502,链路已通)不算 server_unreachable
+		expect(r.serverUnreachable).toBeFalsy();
+	});
+
+	test('UV-177:kind=server_unreachable → 诊断位 serverUnreachable=true(指向激活卡)', async () => {
+		const { AuditedBridgeError } = await import('./audited-llm');
+		serverChannelMock.mockRejectedValueOnce(
+			new (AuditedBridgeError as new (
+				kind: 'server_unreachable' | 'protocol' | 'engine',
+				message?: string
+			) => Error)('server_unreachable', 'create_session 失败: Failed to fetch')
+		);
+		const a = makeAssistant({ channel: 'server' });
+		const r = await a.testConnection();
+		expect(r.ok).toBe(false);
+		expect(r.serverUnreachable).toBe(true);
+	});
+
+	test('UV-177:kind=protocol/engine → 诊断位不误报', async () => {
+		const { AuditedBridgeError } = await import('./audited-llm');
+		serverChannelMock.mockRejectedValueOnce(
+			new (AuditedBridgeError as new (
+				kind: 'server_unreachable' | 'protocol' | 'engine',
+				message?: string
+			) => Error)('protocol', '2xx 但无 reply 字段')
+		);
+		const a = makeAssistant({ channel: 'server' });
+		const r = await a.testConnection();
+		expect(r.ok).toBe(false);
+		expect(r.serverUnreachable).toBeFalsy();
 	});
 
 	test('channel=browser 行为不变(走审计桥,不经服务端点 mock)', async () => {
