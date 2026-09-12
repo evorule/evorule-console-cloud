@@ -466,6 +466,87 @@ describe('generateInput', () => {
 	});
 });
 
+// ============ transpileCommand(L2 P2 第 4 操作,07 立项 §2.2) ============
+
+describe('transpileCommand', () => {
+	const COMMAND_JSON = JSON.stringify({
+		type: 'set',
+		params: { attr: '__exec__.payload.amount', operation: 'set', value: 10000 }
+	});
+
+	test('返回命令指令 JSON 对象', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse(COMMAND_JSON));
+
+		const result = await a.transpileCommand('把报销金额设为 10000');
+		expect(result).toHaveProperty('type', 'set');
+		expect(result).toHaveProperty('params');
+	});
+
+	test('prompt 携带协议指令类型白名单(机器协议标识符原样引用,R5)', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse(COMMAND_JSON));
+
+		await a.transpileCommand('把报销金额设为 10000');
+
+		const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+		const body = JSON.parse(init.body as string) as {
+			messages: { content: string }[];
+		};
+		const prompt = body.messages.map((m) => m.content).join('\n');
+		for (const t of [
+			'increment',
+			'set',
+			'branch',
+			'push',
+			'sequence',
+			'conditional',
+			'while_loop',
+			'noop',
+			'call_external',
+			'call_service'
+		]) {
+			expect(prompt).toContain(t);
+		}
+		// 用户 NL 原文入 prompt
+		expect(prompt).toContain('把报销金额设为 10000');
+	});
+
+	test('markdown 包裹 仍能提取', async () => {
+		const a = makeAssistant();
+		const wrapped = '```json\n' + JSON.stringify({ type: 'noop', params: {} }) + '\n```';
+		mockFetch.mockResolvedValue(mockOkResponse(wrapped));
+
+		const result = await a.transpileCommand('什么都不做');
+		expect(result).toHaveProperty('type', 'noop');
+	});
+
+	test('JSON 解析失败 返回 _error 对象', async () => {
+		const a = makeAssistant();
+		mockFetch.mockResolvedValue(mockOkResponse('not json'));
+
+		const result = (await a.transpileCommand('描述')) as {
+			_error?: string;
+			_raw?: string;
+		};
+		expect(result._error).toContain('JSON 解析失败');
+		expect(result._raw).toBeDefined();
+	});
+
+	test('channel=server 走服务端点 且 purpose=transpile_command', async () => {
+		serverChannelMock.mockResolvedValueOnce(COMMAND_JSON);
+		const a = makeAssistant({ channel: 'server', apiKey: '', apiEndpoint: '' });
+
+		const result = await a.transpileCommand('把金额设为 10000');
+		expect(result).toHaveProperty('type', 'set');
+
+		expect(serverChannelMock).toHaveBeenCalledTimes(1);
+		const arg = serverChannelMock.mock.calls[0][0] as Record<string, unknown>;
+		expect(arg.auditPurpose).toBe('transpile_command');
+		expect(mockFetch).not.toHaveBeenCalled();
+	});
+});
+
 // ============ 错误场景(三方法统一) ============
 
 describe('错误场景', () => {
@@ -476,6 +557,7 @@ describe('错误场景', () => {
 		await expect(a.generateRuleDraft('描述')).rejects.toThrow(LlmNetworkError);
 		await expect(a.explainRule({})).rejects.toThrow(LlmNetworkError);
 		await expect(a.generateInput('描述')).rejects.toThrow(LlmNetworkError);
+		await expect(a.transpileCommand('描述')).rejects.toThrow(LlmNetworkError);
 	});
 
 	test('401 抛 LlmAuthError', async () => {
@@ -672,11 +754,12 @@ describe('配置防御性拷贝', () => {
 // ============ 接口完整性 ============
 
 describe('LlmAssistant 接口完整性', () => {
-	test('实现三方法 + isConfigured + testConnection', () => {
+	test('实现三方法 + transpileCommand + isConfigured + testConnection', () => {
 		const a = makeAssistant();
 		expect(typeof a.generateRuleDraft).toBe('function');
 		expect(typeof a.explainRule).toBe('function');
 		expect(typeof a.generateInput).toBe('function');
+		expect(typeof a.transpileCommand).toBe('function');
 		expect(typeof a.isConfigured).toBe('function');
 		expect(typeof a.testConnection).toBe('function');
 	});

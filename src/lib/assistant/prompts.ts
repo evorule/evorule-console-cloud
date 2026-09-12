@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — LLM 三用途 prompt 模板
+// evorule-console-cloud — LLM 用途 prompt 模板(规则草案/解释/测试输入/命令转译等)
 //
 // 设计原则:
-//   - 强约束 LLM 输出纯 JSON(规则草案 / 测试输入),便于机器解析
+//   - 强约束 LLM 输出纯 JSON(规则草案 / 测试输入 / 命令草稿),便于机器解析
 //   - 注入 evorule 规则格式说明(7 大门禁约束),让 LLM 知道边界
-//   - 三用途共享同一份"规则格式说明",减少 token 浪费
+//   - 规则类用途共享同一份"规则格式说明",减少 token 浪费
+//   - 机器协议标识符在 prompt 中原样引用不翻译(R5 i18n 红线)
 //   - 不暴露 apiKey/敏感信息到 prompt
 
 /**
@@ -185,4 +186,71 @@ ${description}
  */
 export function promptTestConnection(): string {
 	return `请回复"OK"(只输出这两个字符,不要其他内容)。`;
+}
+
+// ============================================================================
+// 用途5(L2 P2,07 立项 §2.2): NL → 命令(指令) JSON 草稿(执行台转译器)
+// ============================================================================
+
+/**
+ * 协议指令类型集合(07 立项 §2.2 钦定,机器协议标识符**原样引用不翻译**——R5)。
+ *
+ * 双用途单一事实源:
+ *   1. promptTranspileCommand 文本内插(告知 LLM 白名单)
+ *   2. 展示层草稿静态校验(dialog 提示笔误,不替代引擎 fail-fast)
+ */
+export const COMMAND_INSTRUCTION_TYPES: readonly string[] = [
+	'increment',
+	'set',
+	'branch',
+	'push',
+	'sequence',
+	'conditional',
+	'while_loop',
+	'noop',
+	'call_external',
+	'call_service'
+];
+
+/**
+ * 用途5: 自然语言 → 命令指令 JSON 草稿。
+ *
+ * 产物是单个指令对象 { type, params } 草稿——填入执行台 textarea,人确认
+ * 提交才走命令链;LLM 永远不直接提交命令。协议标识符原样引用(R5)。
+ */
+export function promptTranspileCommand(nl: string): string {
+	return `你是命令转译助手。请把以下自然语言描述转换为 evorule 命令指令 JSON 草稿。
+
+evorule 命令(instruction)是一个 JSON 对象:
+  { "type": "<指令类型>", "params": { ... } }
+
+指令类型(type)内置白名单(协议标识符,原样使用):
+${COMMAND_INSTRUCTION_TYPES.join(' / ')}
+
+常用类型的 params 形状:
+  - increment:    { "attr": "<状态路径>", "delta": <数值> }
+  - set:          { "attr": "<状态路径>", "operation": "set", "value": <字面量> }
+  - sequence:     { "instructions": [<指令对象数组>] }
+  - conditional:  { "domain": <域条件>, "then": [<指令数组>], "else": [<指令数组>] }
+  - while_loop:   { "condition": <域条件>, "body": [<指令数组>] }
+  - noop:         {}
+  - branch/push/call_external/call_service: 参数因用途而异,按用户描述填充
+    (call_service 常见形状: { "tool_name" 或 "service_name": "<名称>", "arguments": {...} })
+
+域条件(domain)形态: { "type": "eq"|"lt"|"exists"|"has_fields", "path": "<路径>", ... }
+路径规则: 业务数据在 __exec__.payload.<字段>;相对路径直接写(如 data.amount)。
+
+用户描述:
+"""
+${nl}
+"""
+
+要求:
+1. 输出严格的 JSON 对象(无注释、无 markdown 代码块包裹、无前后说明文字)
+2. type 只能取白名单中的协议标识符,原样拼写
+3. 数值用数字类型,字符串用双引号
+4. 如果描述不明确,按合理默认值填充,不要拒绝
+5. 只输出 JSON 本身,不要解释
+
+只输出 JSON:`;
 }
