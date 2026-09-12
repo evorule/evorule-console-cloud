@@ -11,10 +11,12 @@
     - 测试连接按钮(调用 testConnection 验证)
     - 保存配置(写 llmConfig store + 提示用户刷新页面以重注入)
 
-  apiKey 安全:
-    - localStorage 明文(大众版可接受,提示用户)
+  apiKey 安全(UV-178 批次B):
+    - 缺省:口令加密后落盘(AES-GCM+PBKDF2,config/key-crypto.ts);
+      本会话未解锁时显示解锁面板(locked)
+    - 明文保存为显式选择(旧配置自动兼容为 plain 形态,行为不变)
     - 不进日志/错误/URL(由 cloud-llm-assistant.ts 保证)
-    - 设置面板明示"key 存于本地,不上传到服务器"
+    - 设置面板明示"key/口令均不上传服务器"
 
   刷新提示:
     - 修改配置后,LLM provider 需要重新注入 Svelte context
@@ -27,8 +29,13 @@
 		llmConfig,
 		setLlmEnabled,
 		updateLlmConfig,
-		resetLlmConfig
+		resetLlmConfig,
+		saveLlmApiKeyPlain,
+		saveLlmApiKeyEncrypted,
+		unlockLlmApiKey,
+		PASSPHRASE_MIN_LEN
 	} from '$lib/config/llm-config';
+	import { hasWebCrypto } from '$lib/config/key-crypto';
 	import { LLM_PRESETS, findPreset, getPresetOptions } from '$lib/config/llm-presets';
 	import { CloudLlmAssistant } from '$lib/assistant/cloud-llm-assistant';
 	import AiPluginActivationCard from './AiPluginActivationCard.svelte';
@@ -42,6 +49,19 @@
 	);
 	let isSaving = $state(false);
 	let savedNotice = $state(false);
+
+	// === UV-178 批次B:凭据保存形态 + 解锁 ===
+	// 加密保存为缺省;plain 仅旧配置兼容或显式选择
+	let saveMode = $state<'encrypted' | 'plain'>(
+		$llmConfig.keyStorage === 'plain' ? 'plain' : 'encrypted'
+	);
+	let passphrase = $state('');
+	let passphraseConfirm = $state('');
+	let saveErr = $state('');
+	let unlockPass = $state('');
+	let unlockErr = $state('');
+	// 非安全上下文(http 局域网直连)无 WebCrypto → 隐藏加密选项
+	const cryptoOk = hasWebCrypto();
 
 	// 同步当前 store 中的 apiKey 到输入框(初始化)
 	$effect(() => {
@@ -126,9 +146,60 @@
 		}
 	}
 
-	function handleSave() {
-		// apiKey 已经在 onInput 时实时写入 store,这里只是触发 UI 反馈
-		// llmConfig 是响应式 store,持久化自动完成
+	async function handleUnlock() {
+		unlockErr = '';
+		const r = await unlockLlmApiKey(unlockPass);
+		if (r.ok) {
+			unlockPass = '';
+			// apiKeyInput 由 $effect 从 store 同步;解锁后建议刷新使 provider 注入生效
+			if (confirm(t('llm.confirmSave'))) {
+				location.reload();
+			}
+		} else {
+			unlockErr = r.error;
+		}
+	}
+
+	async function handleSave() {
+		saveErr = '';
+		if ($llmConfig.channel === 'browser') {
+			const key = apiKeyInput;
+			const keyNeedsPersist =
+				key !== $llmConfig.apiKey || $llmConfig.keyStorage !== 'encrypted' || $llmConfig.locked;
+			if (saveMode === 'encrypted') {
+				// Key 未变且已是加密态 → 无需重新加密(避免每次保存都输口令)
+				if (keyNeedsPersist) {
+					if (!cryptoOk) {
+						saveErr = 'no-crypto';
+						return;
+					}
+					if (!key.trim()) {
+						saveErr = 'key-empty';
+						return;
+					}
+					if (passphrase.trim().length < PASSPHRASE_MIN_LEN) {
+						saveErr = 'passphrase-short';
+						return;
+					}
+					if (passphrase !== passphraseConfirm) {
+						saveErr = 'passphrase-mismatch';
+						return;
+					}
+					isSaving = true;
+					const r = await saveLlmApiKeyEncrypted(key, passphrase);
+					isSaving = false;
+					if (!r.ok) {
+						saveErr = r.error;
+						return;
+					}
+					passphrase = '';
+					passphraseConfirm = '';
+				}
+			} else {
+				// 显式明文保存(空 Key 视为清除)
+				saveLlmApiKeyPlain(key);
+			}
+		}
 		isSaving = true;
 		savedNotice = true;
 		setTimeout(() => {
@@ -147,6 +218,12 @@
 		if (confirm(t('llm.confirmReset'))) {
 			resetLlmConfig();
 			apiKeyInput = '';
+			passphrase = '';
+			passphraseConfirm = '';
+			unlockPass = '';
+			saveErr = '';
+			unlockErr = '';
+			saveMode = 'encrypted';
 			testResult = null;
 		}
 	}
@@ -241,33 +318,101 @@
 			/>
 		</div>
 
-		<!-- 5. apiKey -->
-		<div class="form-row">
-			<label for="llm-apikey">{t('llm.apikeyLabel')}</label>
-			<div class="api-key-row">
-				<input
-					id="llm-apikey"
-					type={showApiKey ? 'text' : 'password'}
-					value={apiKeyInput}
-					oninput={handleApiKeyInput}
-					placeholder="sk-..."
-					autocomplete="off"
-					disabled={currentPreset?.needsAdapter}
-				/>
-				<button
-					type="button"
-					class="toggle-visibility"
-					onclick={() => (showApiKey = !showApiKey)}
-					tabindex="0"
-					aria-label={showApiKey ? t('llm.hideKey') : t('llm.showKey')}
-				>
-					{showApiKey ? '🙈' : '👁️'}
+		<!-- 5. apiKey(UV-178 批次B:locked=加密态未解锁 → 解锁面板;否则 Key 行 + 保存形态) -->
+		{#if $llmConfig.locked}
+			<div class="form-row unlock-box">
+				<label for="llm-unlock">{t('llm.sec.unlockTitle')}</label>
+				<div class="api-key-row">
+					<input
+						id="llm-unlock"
+						type="password"
+						bind:value={unlockPass}
+						placeholder={t('llm.sec.passphrasePlaceholder')}
+						autocomplete="off"
+						onkeydown={(e) => {
+							if (e.key === 'Enter') void handleUnlock();
+						}}
+					/>
+					<button type="button" class="toggle-visibility" onclick={() => void handleUnlock()}>
+						{t('llm.sec.unlockBtn')}
+					</button>
+				</div>
+				{#if unlockErr}
+					<small class="err">{t(`llm.sec.err.${unlockErr}`)}</small>
+				{/if}
+				<small class="hint">{t('llm.sec.unlockHint')}</small>
+				<button type="button" class="forgot-link" onclick={handleReset}>
+					{t('llm.sec.forgotBtn')}
 				</button>
 			</div>
-			<small class="hint">
-				{t('llm.keyHint')}
-			</small>
-		</div>
+		{:else}
+			<div class="form-row">
+				<label for="llm-apikey">{t('llm.apikeyLabel')}</label>
+				<div class="api-key-row">
+					<input
+						id="llm-apikey"
+						type={showApiKey ? 'text' : 'password'}
+						value={apiKeyInput}
+						oninput={handleApiKeyInput}
+						placeholder="sk-..."
+						autocomplete="off"
+						disabled={currentPreset?.needsAdapter}
+					/>
+					<button
+						type="button"
+						class="toggle-visibility"
+						onclick={() => (showApiKey = !showApiKey)}
+						tabindex="0"
+						aria-label={showApiKey ? t('llm.hideKey') : t('llm.showKey')}
+					>
+						{showApiKey ? '🙈' : '👁️'}
+					</button>
+				</div>
+				<!-- 保存形态(加密为缺省;明文仅显式选择) -->
+				<div class="sec-mode" role="radiogroup" aria-label={t('llm.sec.storageLabel')}>
+					<span class="sec-mode-label">{t('llm.sec.storageLabel')}</span>
+					<label class="radio-label">
+						<input type="radio" bind:group={saveMode} value="encrypted" disabled={!cryptoOk} />
+						{t('llm.sec.storageEncrypted')}
+					</label>
+					<label class="radio-label">
+						<input type="radio" bind:group={saveMode} value="plain" />
+						{t('llm.sec.storagePlain')}
+					</label>
+				</div>
+				{#if !cryptoOk}
+					<small class="hint">{t('llm.sec.noCrypto')}</small>
+				{/if}
+				{#if $llmConfig.keyStorage === 'plain'}
+					<small class="hint warn">{t('llm.sec.plainHint')}</small>
+				{/if}
+				{#if saveMode === 'encrypted'}
+					<div class="sec-pass-row">
+						<input
+							type="password"
+							bind:value={passphrase}
+							placeholder={t('llm.sec.passphraseLabel')}
+							autocomplete="new-password"
+							aria-label={t('llm.sec.passphraseLabel')}
+						/>
+						<input
+							type="password"
+							bind:value={passphraseConfirm}
+							placeholder={t('llm.sec.passphraseConfirm')}
+							autocomplete="new-password"
+							aria-label={t('llm.sec.passphraseConfirm')}
+						/>
+					</div>
+					<small class="hint">{t('llm.sec.passphraseNote')}</small>
+				{/if}
+				{#if saveErr}
+					<small class="err">{t(`llm.sec.err.${saveErr}`)}</small>
+				{/if}
+				<small class="hint">
+					{t('llm.keyHint')}
+				</small>
+			</div>
+		{/if}
 	{/if}
 
 		<!-- 6. model(两通道共用:server 通道为可选覆盖,留空用插件缺省) -->
@@ -428,6 +573,72 @@
 	.hint {
 		font-size: var(--text-xs);
 		color: var(--text-secondary);
+	}
+	.hint.warn {
+		color: var(--warning, #d97706);
+	}
+	.err {
+		font-size: var(--text-xs);
+		color: var(--danger);
+	}
+	/* UV-178 批次B:解锁面板 + 保存形态 */
+	.unlock-box {
+		padding: var(--spacing-sm);
+		background: var(--bg-hover);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+	}
+	.sec-mode {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		flex-wrap: wrap;
+	}
+	.sec-mode-label {
+		font-size: var(--text-xs);
+		color: var(--text-secondary);
+	}
+	.radio-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		font-size: var(--text-xs);
+		color: var(--text-primary);
+		cursor: pointer;
+	}
+	.radio-label input {
+		width: auto;
+		padding: 0;
+		margin: 0;
+	}
+	.forgot-link {
+		align-self: flex-start;
+		background: none;
+		border: none;
+		padding: 0;
+		font-size: var(--text-xs);
+		color: var(--brand);
+		cursor: pointer;
+		text-decoration: underline;
+	}
+	.sec-pass-row {
+		display: flex;
+		gap: var(--spacing-xs);
+		flex-wrap: wrap;
+	}
+	.sec-pass-row input {
+		flex: 1;
+		min-width: 140px;
+		padding: var(--spacing-sm) var(--spacing-md);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		font-size: var(--text-sm);
+		background: var(--bg-page);
+		box-sizing: border-box;
+	}
+	.sec-pass-row input:focus {
+		outline: none;
+		border-color: var(--brand);
 	}
 	.hint.muted {
 		color: var(--text-secondary);

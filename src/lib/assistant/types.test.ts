@@ -34,6 +34,21 @@ const mockLocalStorage = {
 
 vi.stubGlobal('localStorage', mockLocalStorage);
 
+// ============ mock sessionStorage(node 环境无;加密 Key 会话缓存用) ============
+const sessionStore = new Map<string, string>();
+vi.stubGlobal('sessionStorage', {
+	getItem: (key: string) => sessionStore.get(key) ?? null,
+	setItem: (key: string, value: string) => void sessionStore.set(key, String(value)),
+	removeItem: (key: string) => void sessionStore.delete(key),
+	clear: () => void sessionStore.clear()
+});
+
+// ============ WebCrypto 兜底(node <19 无全局 crypto) ============
+if (!globalThis.crypto?.subtle) {
+	const { webcrypto } = await import('node:crypto');
+	vi.stubGlobal('crypto', webcrypto);
+}
+
 // ============ types.ts: 默认配置 ============
 
 describe('DEFAULT_LLM_CONFIG', () => {
@@ -141,17 +156,36 @@ describe('llmConfig store', () => {
 		expect(cfg.model).toBe('qwen-plus');
 	});
 
-	test('localStorage 持久化(更新后写入)', async () => {
-		const { setLlmApiKey } = await import('../config/llm-config');
-		setLlmApiKey('sk-persist-test');
+	test('localStorage 持久化(明文形态:即改即存,旧版行为)', async () => {
+		const { saveLlmApiKeyPlain } = await import('../config/llm-config');
+		saveLlmApiKeyPlain('sk-persist-test');
 		const raw = mockLocalStorage.getItem('evorule-console-cloud:llm-config');
 		expect(raw).not.toBeNull();
-		const parsed = JSON.parse(raw!) as { apiKey: string };
+		const parsed = JSON.parse(raw!) as { apiKey: string; keyStorage: string };
 		expect(parsed.apiKey).toBe('sk-persist-test');
+		expect(parsed.keyStorage).toBe('plain');
 	});
 
-	test('localStorage 读取(重新加载 store)', async () => {
-		// 先写入一份配置
+	test('加密形态落盘不含明文 Key(keyEnc 块)', async () => {
+		const { saveLlmApiKeyEncrypted } = await import('../config/llm-config');
+		const r = await saveLlmApiKeyEncrypted('sk-enc-secret', 'passphrase-123');
+		expect(r.ok).toBe(true);
+		const raw = mockLocalStorage.getItem('evorule-console-cloud:llm-config')!;
+		const parsed = JSON.parse(raw) as {
+			apiKey?: string;
+			keyEnc?: { v: number; kdf: string; salt: string; iv: string; ct: string };
+			keyStorage: string;
+		};
+		expect(parsed.keyStorage).toBe('encrypted');
+		expect(parsed.apiKey).toBeUndefined(); // 明文字段绝不落盘
+		expect(parsed.keyEnc).toBeTruthy();
+		expect(parsed.keyEnc!.v).toBe(1);
+		expect(parsed.keyEnc!.kdf).toBe('pbkdf2-sha256');
+		expect(raw).not.toContain('sk-enc-secret');
+	});
+
+	test('localStorage 读取(重新加载 store;旧版明文配置自动识别为 plain)', async () => {
+		// 先写入一份旧版明文配置(无 keyStorage 字段)
 		mockLocalStorage.setItem(
 			'evorule-console-cloud:llm-config',
 			JSON.stringify({
@@ -171,6 +205,8 @@ describe('llmConfig store', () => {
 		expect(cfg.apiEndpoint).toContain('bigmodel');
 		expect(cfg.apiKey).toBe('sk-glm-xxx');
 		expect(cfg.model).toBe('glm-4-flash');
+		expect(cfg.keyStorage).toBe('plain');
+		expect(cfg.locked).toBe(false);
 	});
 
 	test('localStorage 损坏时返回默认配置', async () => {
@@ -192,7 +228,9 @@ describe('isLlmConfigured', () => {
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: 'sk-xxx',
-				model: 'gpt-4o-mini'
+				model: 'gpt-4o-mini',
+				keyStorage: 'plain',
+				locked: false
 			})
 		).toBe(false);
 	});
@@ -206,7 +244,9 @@ describe('isLlmConfigured', () => {
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: '',
-				model: 'gpt-4o-mini'
+				model: 'gpt-4o-mini',
+				keyStorage: 'plain',
+				locked: false
 			})
 		).toBe(false);
 	});
@@ -220,7 +260,9 @@ describe('isLlmConfigured', () => {
 				provider: 'openai',
 				apiEndpoint: '',
 				apiKey: 'sk-xxx',
-				model: 'gpt-4o-mini'
+				model: 'gpt-4o-mini',
+				keyStorage: 'plain',
+				locked: false
 			})
 		).toBe(false);
 	});
@@ -234,7 +276,9 @@ describe('isLlmConfigured', () => {
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: 'sk-xxx',
-				model: ''
+				model: '',
+				keyStorage: 'plain',
+				locked: false
 			})
 		).toBe(false);
 	});
@@ -248,7 +292,9 @@ describe('isLlmConfigured', () => {
 				provider: 'qwen',
 				apiEndpoint: 'https://dashscope.aliyuncs.com/v1/chat/completions',
 				apiKey: 'sk-qwen',
-				model: 'qwen-plus'
+				model: 'qwen-plus',
+				keyStorage: 'plain',
+				locked: false
 			})
 		).toBe(true);
 	});
@@ -262,8 +308,137 @@ describe('isLlmConfigured', () => {
 				provider: 'openai',
 				apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 				apiKey: '   ',
-				model: 'gpt-4o-mini'
+				model: 'gpt-4o-mini',
+				keyStorage: 'plain',
+				locked: false
 			})
 		).toBe(false);
 	});
 });
+
+// ============ 凭据加密生命周期(UV-178 批次B) ============
+
+describe('凭据加密生命周期', () => {
+	beforeEach(() => {
+		localStorageStore.clear();
+		sessionStore.clear();
+		vi.resetModules();
+	});
+
+	afterEach(() => {
+		localStorageStore.clear();
+		sessionStore.clear();
+	});
+
+	test('saveLlmApiKeyEncrypted 校验:key-empty / passphrase-short', async () => {
+		const mod = await import('../config/llm-config');
+		expect((await mod.saveLlmApiKeyEncrypted('', 'passphrase-123')).ok).toBe(false);
+		expect((await mod.saveLlmApiKeyEncrypted('sk-x', 'short')).ok).toBe(false);
+		expect((await mod.saveLlmApiKeyEncrypted('sk-x', '       ')).ok).toBe(false);
+	});
+
+	test('加密保存 → 重载进 locked 态 → 口令解锁恢复(错误口令被拒)', async () => {
+		// 1) 加密保存
+		const mod1 = await import('../config/llm-config');
+		updateForConfigure(mod1);
+		const r = await mod1.saveLlmApiKeyEncrypted('sk-lifecycle', 'passphrase-123');
+		expect(r.ok).toBe(true);
+		expect(get(mod1.llmConfig).keyStorage).toBe('encrypted');
+		expect(get(mod1.llmConfig).locked).toBe(false);
+
+		// 2) 模拟新会话重载(会话缓存已清)
+		sessionStore.clear();
+		vi.resetModules();
+		const mod2 = await import('../config/llm-config');
+		const locked = get(mod2.llmConfig);
+		expect(locked.locked).toBe(true);
+		expect(locked.apiKey).toBe('');
+		expect(mod2.isLlmConfigured(locked)).toBe(false); // 未解锁 = 未配置
+
+		// 3) 错误口令
+		const wrong = await mod2.unlockLlmApiKey('wrong-passphrase');
+		expect(wrong).toEqual({ ok: false, error: 'wrong-passphrase' });
+		expect(get(mod2.llmConfig).locked).toBe(true);
+
+		// 4) 正确口令 → 解锁 + 会话缓存刷新
+		const ok = await mod2.unlockLlmApiKey('passphrase-123');
+		expect(ok).toEqual({ ok: true });
+		const unlocked = get(mod2.llmConfig);
+		expect(unlocked.locked).toBe(false);
+		expect(unlocked.apiKey).toBe('sk-lifecycle');
+		expect(mod2.isLlmConfigured(unlocked)).toBe(true);
+		expect(sessionStore.has('evorule-console-cloud:llm-session-key')).toBe(true);
+
+		// 5) 同会话重载 → 会话缓存自动解锁(免重输口令)
+		vi.resetModules();
+		const mod3 = await import('../config/llm-config');
+		await new Promise((r2) => setTimeout(r2, 0)); // 自动解锁为 fire-and-forget
+		await new Promise((r2) => setTimeout(r2, 0));
+		const auto = get(mod3.llmConfig);
+		expect(auto.locked).toBe(false);
+		expect(auto.apiKey).toBe('sk-lifecycle');
+	});
+
+	test('lockLlmApiKey 立即锁定(加密块保留)', async () => {
+		const mod = await import('../config/llm-config');
+		updateForConfigure(mod);
+		expect((await mod.saveLlmApiKeyEncrypted('sk-lock', 'passphrase-123')).ok).toBe(true);
+		mod.lockLlmApiKey();
+		const cfg = get(mod.llmConfig);
+		expect(cfg.locked).toBe(true);
+		expect(cfg.apiKey).toBe('');
+		expect(cfg.keyStorage).toBe('encrypted');
+		// 加密块仍在(重载可再解锁)
+		const parsed = JSON.parse(
+			mockLocalStorage.getItem('evorule-console-cloud:llm-config')!
+		) as { keyEnc?: unknown };
+		expect(parsed.keyEnc).toBeTruthy();
+	});
+
+	test('clearLlmApiKey 连同加密块与会话缓存一并清除', async () => {
+		const mod = await import('../config/llm-config');
+		updateForConfigure(mod);
+		await mod.saveLlmApiKeyEncrypted('sk-clear', 'passphrase-123');
+		mod.clearLlmApiKey();
+		const cfg = get(mod.llmConfig);
+		expect(cfg.keyStorage).toBe('none');
+		expect(cfg.locked).toBe(false);
+		expect(sessionStore.has('evorule-console-cloud:llm-session-key')).toBe(false);
+		const parsed = JSON.parse(
+			mockLocalStorage.getItem('evorule-console-cloud:llm-config')!
+		) as { keyEnc?: unknown; apiKey?: string };
+		expect(parsed.keyEnc).toBeUndefined();
+		expect(parsed.apiKey).toBeUndefined();
+	});
+
+	test('损坏的 keyEnc 块按无 Key 处理(不静默造明文)', async () => {
+		mockLocalStorage.setItem(
+			'evorule-console-cloud:llm-config',
+			JSON.stringify({
+				enabled: true,
+				channel: 'browser',
+				apiEndpoint: 'https://x/v1/chat/completions',
+				model: 'm',
+				keyStorage: 'encrypted',
+				keyEnc: { v: 1, kdf: 'pbkdf2-sha256', salt: '' } // 缺 iv/ct
+			})
+		);
+		const mod = await import('../config/llm-config');
+		const cfg = get(mod.llmConfig);
+		expect(cfg.locked).toBe(false);
+		expect(cfg.apiKey).toBe('');
+		expect(cfg.keyStorage).toBe('none');
+	});
+});
+
+/** 配置 browser 通道基本项(enabled+endpoint+model),配合加密保存用例 */
+function updateForConfigure(mod: {
+	llmConfig: typeof import('../config/llm-config').llmConfig;
+	setLlmEnabled: (v: boolean) => void;
+	setLlmApiEndpoint: (v: string) => void;
+	setLlmModel: (v: string) => void;
+}): void {
+	mod.setLlmEnabled(true);
+	mod.setLlmApiEndpoint('https://api.example.com/v1/chat/completions');
+	mod.setLlmModel('m1');
+}

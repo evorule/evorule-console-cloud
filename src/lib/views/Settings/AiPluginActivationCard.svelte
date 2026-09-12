@@ -61,6 +61,15 @@
 	const MANIFEST_SNIPPET =
 		'"ai-plugin": { "enabled": true, "manifest": "plugins/ai-plugin/plugin.json" }';
 	const CFG_SNIPPET = 'cp plugins/ai-plugin/config.example.json plugins/ai-plugin/ai-plugin.json';
+	// UV-178 批次B:凭据环境变量注入(推荐,不落盘;文件 llm_api_key 为兼容形态)
+	const ENV_SNIPPET = [
+		'# Windows (PowerShell,当前会话)',
+		'$env:EVORULE_AI_PLUGIN_LLM_API_KEY="sk-..."',
+		'# Windows (持久化到用户环境,新终端生效)',
+		'setx EVORULE_AI_PLUGIN_LLM_API_KEY "sk-..."',
+		'# Linux / macOS',
+		'export EVORULE_AI_PLUGIN_LLM_API_KEY="sk-..."'
+	].join('\n');
 	const RUN_SNIPPET = [
 		'# 分发版(包内已内置 exe;在 evorule 所在目录执行)',
 		'cd plugins\\ai-plugin',
@@ -120,6 +129,10 @@
 			<div class="aa-step">
 				<p class="aa-step-title">{t('llm.aiPlugin.step2.title')}</p>
 				<p class="aa-desc">{t('llm.aiPlugin.step2.desc')}</p>
+				<pre class="aa-snippet"><code>{ENV_SNIPPET}</code></pre>
+				<button type="button" class="aa-copy" onclick={() => copy('env', ENV_SNIPPET)}>
+					{copiedKey === 'env' ? t('llm.aiPlugin.copied') : t('llm.aiPlugin.copyBtn')}
+				</button>
 				<pre class="aa-snippet"><code>{CFG_SNIPPET}</code></pre>
 				<button type="button" class="aa-copy" onclick={() => copy('cfg', CFG_SNIPPET)}>
 					{copiedKey === 'cfg' ? t('llm.aiPlugin.copied') : t('llm.aiPlugin.copyBtn')}

@@ -3,7 +3,8 @@
 // evorule-console-cloud — 治理服务连接配置 store(Phase 2 F1)
 //
 // 持久化:localStorage(key: evorule-console-cloud:governance-config)
-// 安全:密码随配置存 localStorage 明文(大众版可接受,与 llm-config 的 apiKey 同策略),
+// 安全:密码随配置存 localStorage 明文(大众版可接受;UV-178 批次B 后 llm-config
+//      的 apiKey 已升级为缺省加密存储,本处明文为已知遗留,待用户裁定是否跟进),
 //      不进日志/错误/URL;页面提示"密码存于本地,不上传"。令牌(access_token)
 //      不落 localStorage,仅存 GovernanceBackend 实例内存(见 governance-backend.ts)。
 //
