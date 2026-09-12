@@ -304,6 +304,13 @@ export function promptTranspileFlow(
 					.map((f) => `- ${f.scene_id} / ${f.field_id} → path: ${f.path}`)
 					.join('\n');
 
+	const ruleLines =
+		!ctx.existingRules || ctx.existingRules.length === 0
+			? ''
+			: `\n存量规则参考(执行域已生效规则的 id 与描述,仅供学习结构模式与路径约定;\nflow 草稿是独立资产,**不要**在草稿中引用这些规则 id):\n${ctx.existingRules
+					.map((r) => `- ${r.rule_id}${r.description ? `：${r.description}` : ''}`)
+					.join('\n')}\n`;
+
 	return `你是流程转译助手。请把以下自然语言描述转换为 evorule flow JSON 草稿。
 
 evorule flow 资产(契约 v1.1 §4.6)是一个 JSON 对象:
@@ -339,7 +346,7 @@ ${nodeLines}
 
 场景字段取值域(form_ref.field 只能取下列已注册 path 字段,R2):
 ${fieldLines}
-
+${ruleLines}
 硬约束(违反无法通过编译校验):
   1. 输出严格的 JSON 对象(无注释、无 markdown 包裹、无说明文字)
   2. node_type 只能取上方白名单;form_ref.field 只能取上方场景字段;
@@ -350,6 +357,10 @@ ${fieldLines}
   6. 数值参数用数字类型,字符串用双引号
   7. 描述不明确时按合理默认值填充,不要拒绝
 
+工具提示(可选能力,按需使用):若系统消息列出了可用的只读工具白名单,
+可先调用其中规则/资产/审计查询类工具了解存量规则模式与系统实态,再输出
+最终草稿;没有工具或认为不需要时,直接输出草稿即可,不要询问。
+
 用户描述:
 """
 ${naturalLanguage}
@@ -357,3 +368,23 @@ ${naturalLanguage}
 
 只输出 flow JSON:`;
 }
+
+/**
+ * 流程修订 prompt(多轮转译第 2+ 轮;UV-178 批次D)。
+ *
+ * 镜像自 evorule-console src/lib/assistant/prompts.ts 的 promptReviseFlow
+ * (console 为公开仓 SSOT;两仓无 import 通道,镜像复制是 kernel 区既定模式)。
+ * 变更须双仓同步。
+ */
+export function promptReviseFlow(
+	instruction: string,
+	ctx: FlowTranspileContext
+): string {
+	const base = promptTranspileFlow(instruction, ctx);
+	return `注意:这是对前述对话中流程草稿的**修订请求**(历史对话含上一版草稿)。
+请基于修订指令调整草稿,仍输出**完整修订后的 flow JSON**(不是差异、不是说明),
+并继续遵守下方全部格式说明与硬约束。
+
+${base}`;
+}
+

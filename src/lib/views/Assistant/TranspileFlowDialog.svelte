@@ -47,6 +47,9 @@
   let draftJson = $state("");
   let isLoading = $state(false);
   let errorMsg = $state<string | null>(null);
+  // 多轮修订(UV-178 批次D):每轮(用户原文, LLM 回复原文);纯文本对,
+  // 由实现方拼入对话消息。用户驱动的连续修订(每轮人点击),非 agent 编排。
+  let turns = $state<Array<{ user: string; reply: string }>>([]);
 
   // 展示层校验（随草稿编辑实时重算;纯派生,不改产物）
   const checkCtx = $derived.by((): FlowDraftCheckContext => ({
@@ -66,11 +69,28 @@
     }
     isLoading = true;
     errorMsg = null;
+    // 组装 history(首轮为 undefined):此前轮次原文入对话;**上一轮 assistant
+    // 内容取当前草稿态**(textarea 可被人工编辑,修订应基于可见草稿而非
+    // LLM 原始输出);构建须在 draftJson 清空前。
+    const history =
+      turns.length === 0
+        ? undefined
+        : turns.map((tr, i) => {
+            const prevDraft =
+              i === turns.length - 1 && draftJson.trim() ? draftJson : tr.reply;
+            return [
+              { role: "user" as const, content: tr.user },
+              { role: "assistant" as const, content: prevDraft },
+            ];
+          }).flat();
+    const prevDraftJson = draftJson;
     draftJson = "";
     try {
-      const result = await assistant.transpileFlow(description, context);
+      const result = await assistant.transpileFlow(description, context, history);
+      turns = [...turns, { user: description, reply: JSON.stringify(result) }];
       draftJson = JSON.stringify(result, null, 2);
     } catch (e) {
+      draftJson = prevDraftJson; // 失败保留上一轮草稿,修订链不中断
       errorMsg = (e as Error).message || t("flow.dlg.errFailed");
     } finally {
       isLoading = false;
@@ -114,11 +134,16 @@
 
     <main class="dialog-body">
       <section class="step">
-        <label for="transpile-flow-description">{t("flow.dlg.step1")}</label>
+        <label for="transpile-flow-description">
+          {turns.length > 0 ? t("flow.dlg.reviseLabel") : t("flow.dlg.step1")}
+          {#if turns.length > 0}
+            <span class="turn-badge">{t("flow.dlg.turnCount", { count: turns.length })}</span>
+          {/if}
+        </label>
         <textarea
           id="transpile-flow-description"
           bind:value={description}
-          placeholder={t("flow.dlg.step1Placeholder")}
+          placeholder={turns.length > 0 ? t("flow.dlg.revisePlaceholder") : t("flow.dlg.step1Placeholder")}
           rows="3"
           disabled={isLoading}
         ></textarea>
@@ -128,7 +153,11 @@
             onclick={() => void handleGenerate()}
             disabled={isLoading || !description.trim()}
           >
-            {isLoading ? t("flow.dlg.generating") : t("flow.dlg.generate")}
+            {isLoading
+              ? t("flow.dlg.generating")
+              : turns.length > 0
+                ? t("flow.dlg.revise")
+                : t("flow.dlg.generate")}
           </button>
         </div>
       </section>
@@ -262,6 +291,18 @@
   .step label {
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
+  }
+
+  /* 多轮修订轮次徽标(UV-178 批次D) */
+  .turn-badge {
+    margin-left: var(--spacing-sm);
+    padding: 0 var(--spacing-sm);
+    border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--border));
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--brand) 10%, var(--bg-card));
+    color: var(--brand);
+    font-size: var(--text-xs);
+    font-weight: var(--font-regular, 400);
   }
 
   textarea {
