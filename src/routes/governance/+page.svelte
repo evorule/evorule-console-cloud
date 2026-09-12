@@ -1686,6 +1686,13 @@
         资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。
         部署时须自行设置治理服务管理员凭据并定期换密(幂等引导仅首启生效)。
       </p>
+      <!-- UV-179 批次B:体验包默认凭据明示(仅空用户名时显示,防正式部署噪音;安全标注必带) -->
+      {#if !$governanceConfig.username}
+        <p class="hint demo-cred-note">
+          💡 本机体验包默认账号 <strong>admin</strong> / 密码 <strong>evorule-demo</strong>
+          ——仅限体验包,正式部署请务必更换。填入下方即可连接。
+        </p>
+      {/if}
       <label class="field">
         <span>服务地址</span>
         <input
@@ -2948,6 +2955,15 @@
     background: color-mix(in srgb, var(--brand) 5%, transparent);
     padding-top: var(--spacing-xs);
     padding-bottom: var(--spacing-xs);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  /* UV-179 批次B:体验包默认凭据提示(仅在用户名未填时出现) */
+  .demo-cred-note {
+    border-left: 3px solid var(--success, #16a34a);
+    padding-left: var(--spacing-sm);
+    padding-top: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+    background: color-mix(in srgb, var(--success, #16a34a) 6%, transparent);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
   .field {

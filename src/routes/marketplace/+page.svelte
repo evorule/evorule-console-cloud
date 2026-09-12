@@ -19,6 +19,10 @@
     <p class="mp-subtitle">
       内置 + 用户分享 + 官方规则集,一键导入到你的库
     </p>
+    <!-- UV-179 批次C:财务人员场景显性位(直达官方资产分区) -->
+    <a class="mp-scenario" href="/marketplace?view=official">
+      💰 财务 / 费用合规场景?点这里查看「官方资产」,选择场景包一键部署
+    </a>
   </header>
   <MarketplaceTab />
 </div>
@@ -41,5 +45,21 @@
     margin: 0;
     font-size: 13px;
     color: var(--text-secondary, #6b7280);
+  }
+  /* UV-179 批次C:财务场景显性位 */
+  .mp-scenario {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--brand, #2563eb);
+    text-decoration: none;
+    background: var(--bg-card, #0d1117);
+    border: 1px dashed var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: var(--r-sm, 6px);
+    padding: 8px 14px;
+  }
+  .mp-scenario:hover {
+    text-decoration: underline;
+    border-color: var(--brand, #2563eb);
   }
 </style>

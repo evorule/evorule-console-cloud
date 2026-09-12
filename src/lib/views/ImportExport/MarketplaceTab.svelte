@@ -41,6 +41,7 @@
   } from "$lib/stores/official-assets";
   import { governanceStore } from "$lib/governance/governance-store";
   import { get } from "svelte/store";
+  import { page } from "$app/stores";
 
   /** 分区视图:模板(既有) | 官方资产(治理中心公开+已上架数据集,47 号接线专项) */
   type MarketViewMode = "templates" | "official";
@@ -54,6 +55,15 @@
       });
     }
   }
+
+  // UV-179 批次C:URL query 预选分区(?view=official)——场景显性位/向导完成页直达官方资产。
+  // 仅 /marketplace 独立路由消费(?import-export 复用本组件不受 query 影响);响应式监听使同页导航也生效。
+  $effect(() => {
+    if ($page.url.pathname !== "/marketplace") return;
+    if ($page.url.searchParams.get("view") === "official" && viewMode !== "official") {
+      switchView("official");
+    }
+  });
 
   let showUploadDialog = $state(false);
   let showRulesetImporter = $state(false);
