@@ -30,6 +30,15 @@ export interface LlmAssistant extends AssistantProvider {
 
 	/** 测试连接(返回成功/失败 + 信息;不产生草案,不影响状态) */
 	testConnection(): Promise<{ ok: boolean; message: string }>;
+
+	/**
+	 * 第 4 操作(07 立项 §2.2 L2 P2):自然语言 → 命令(指令) JSON 草稿。
+	 *
+	 * 产物是**草稿**:填入执行台 textarea 由用户可见可改,人点击提交才走
+	 * 既有命令链;LLM 永远不直接提交命令。走既有双通道审计链
+	 * (purpose=transpile_command)。内核不感知本方法(大众版独有)。
+	 */
+	transpileCommand(nl: string): Promise<object>;
 }
 
 /**

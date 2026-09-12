@@ -36,7 +36,14 @@ import { buildMessages, callChatApi, type ChatApiParams } from './llm-fetch';
 export const SIDECAR_WAIT_TIMEOUT_MS = 90_000;
 
 /** 审计用途标签(随命令事实入审计链,供审计侧区分调用类别) */
-export type AuditPurpose = 'draft_rule' | 'explain_rule' | 'gen_tests' | 'chat' | 'help_qa';
+export type AuditPurpose =
+	| 'draft_rule'
+	| 'explain_rule'
+	| 'gen_tests'
+	| 'chat'
+	| 'help_qa'
+	// L2 P2(07 立项 §2.2):执行台 NL→命令转译器,第 4 操作
+	| 'transpile_command';
 
 /** 审计桥错误(kind 便于 UI/日志区分失败阶段) */
 export class AuditedBridgeError extends Error {

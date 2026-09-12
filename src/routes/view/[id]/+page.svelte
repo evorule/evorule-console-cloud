@@ -19,6 +19,8 @@
   import {
     activeAssistantDialog,
     openAssistantDialog,
+    pendingInstructionDraft,
+    clearPendingInstructionDraft,
   } from "$lib/stores/assistant-ui";
   import { toastInfo } from "$lib/stores/toast";
   // T2: rules 视图接入 BusinessRuleLibrary(包装内核 RuleLibraryView + 业务/开发者模式)
@@ -26,6 +28,8 @@
   import DraftRuleDialog from "$lib/views/Assistant/DraftRuleDialog.svelte";
   import ExplainRuleDialog from "$lib/views/Assistant/ExplainRuleDialog.svelte";
   import GenerateInputDialog from "$lib/views/Assistant/GenerateInputDialog.svelte";
+  // L2 P2:执行台 NL→命令转译器(第 4 操作 transpile_command)
+  import TranspileCommandDialog from "$lib/views/Assistant/TranspileCommandDialog.svelte";
   // T4: audit / timetravel 视图接入业务包装(P06)
   import BusinessAuditView from "$lib/views/Audit/BusinessAuditView.svelte";
   import BusinessTimeTravel from "$lib/views/TimeTravel/BusinessTimeTravel.svelte";
@@ -96,7 +100,12 @@
     onaiExplainRule={() => openAssistantDialog("explain")}
   />
 {:else if viewId === "execution"}
-  <ExecutionPadView onaiGenerateInput={() => openAssistantDialog("input")} />
+  <ExecutionPadView
+    onaiGenerateInput={() => openAssistantDialog("input")}
+    onaiTranspileCommand={() => openAssistantDialog("transpile")}
+    aiDraft={$pendingInstructionDraft}
+    onaiDraftConsumed={clearPendingInstructionDraft}
+  />
 {:else if viewId === "state"}
   <StateView />
 {:else if viewId === "audit"}
@@ -108,13 +117,15 @@
   <BusinessTimeTravel onRollbackRequest={handleRollbackRequest} />
 {/if}
 
-<!-- LLM 三 Dialog(条件渲染,只一个能开) -->
+<!-- LLM Dialog(条件渲染,只一个能开) -->
 {#if $activeAssistantDialog === "draft"}
   <DraftRuleDialog />
 {:else if $activeAssistantDialog === "explain"}
   <ExplainRuleDialog />
 {:else if $activeAssistantDialog === "input"}
   <GenerateInputDialog />
+{:else if $activeAssistantDialog === "transpile"}
+  <TranspileCommandDialog />
 {/if}
 
 <!-- T4: P07 通用导出对话框(由 BusinessAuditView 触发) -->

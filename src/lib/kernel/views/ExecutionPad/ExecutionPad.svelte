@@ -38,7 +38,20 @@
 
 	// LLM 扩展槽:大众版注入 assistant + callback 后,渲染 AI 生成输入按钮
 	// evorule-console 自身不注入(assistant 为 null),按钮不渲染
-	let { onaiGenerateInput }: { onaiGenerateInput?: () => void } = $props();
+	// L2 P2:aiDraft/onaiDraftConsumed 是转译草稿一次性信箱(内核只见
+	// string prop + callback,不感知大众版 store;草稿填入 textarea 后
+	// 仍需人点击提交——LLM 永远不直接提交命令)
+	let {
+		onaiGenerateInput,
+		onaiTranspileCommand,
+		aiDraft,
+		onaiDraftConsumed
+	}: {
+		onaiGenerateInput?: () => void;
+		onaiTranspileCommand?: () => void;
+		aiDraft?: string | null;
+		onaiDraftConsumed?: () => void;
+	} = $props();
 	const assistant = useAssistantOrNull();
 
 	const backend = useBackendOrNull();
@@ -114,6 +127,16 @@
 	$effect(() => {
 		if (backend) {
 			refreshSessions(backend);
+		}
+	});
+
+	// L2 P2:转译草稿信箱消费——草稿到达即填入编辑区(用户可见可改,
+	// 提交仍需人点击),消费后回调清空(页面侧重置信箱)
+	$effect(() => {
+		if (aiDraft) {
+			instructionText = aiDraft;
+			instructionError = null;
+			onaiDraftConsumed?.();
 		}
 	});
 
@@ -304,6 +327,15 @@
 										title="将选中的规则填入指令编辑区: {$selectedRule.name}"
 									>
 										应用规则: {$selectedRule.description || $selectedRule.name}
+									</button>
+								{/if}
+								{#if assistant && onaiTranspileCommand}
+									<button
+										class="btn-mini btn-ai"
+										onclick={() => onaiTranspileCommand?.()}
+										title="用自然语言描述命令,AI 转译为 JSON 草稿填入下方编辑区(需人工确认提交)"
+									>
+										✨ AI 转译命令
 									</button>
 								{/if}
 								{#if assistant && onaiGenerateInput}
