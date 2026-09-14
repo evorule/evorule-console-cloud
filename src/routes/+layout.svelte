@@ -234,12 +234,20 @@
   // 持有其引用(Cloud 专属读方法委托,带 Bearer token)。
   const initialNet = get(netConfig);
   // === backend 选择(73 文档 §4):?backend=wasm|http|mock,保留 ?mock=1 兼容 ===
+  // 构建期默认值:CI 通过 VITE_DEFAULT_BACKEND=wasm 让在线 demo(GitHub/Gitee Pages)
+  // 打开 URL 即进 WASM 模式,无需手动加 ?backend=wasm。本地 dev 不设该变量 → 回落 http。
+  // 仅 Vite 暴露的 VITE_ 前缀变量会进入客户端 bundle。
+  const BUILD_DEFAULT = (import.meta.env.VITE_DEFAULT_BACKEND as string | undefined) ?? "http";
+  const defaultBackendKind =
+    BUILD_DEFAULT === "wasm" || BUILD_DEFAULT === "http" || BUILD_DEFAULT === "mock"
+      ? BUILD_DEFAULT
+      : "http";
   const sp = browser
     ? new URLSearchParams(window.location.search)
     : new URLSearchParams();
   const backendKind = browser
-    ? (sp.get("backend") ?? (sp.get("mock") === "1" ? "mock" : "http"))
-    : "http";
+    ? (sp.get("backend") ?? (sp.get("mock") === "1" ? "mock" : defaultBackendKind))
+    : defaultBackendKind;
   const useWasm = backendKind === "wasm";
   const useMock = backendKind === "mock";
 
@@ -385,6 +393,17 @@
     // 初始化 i18n:读持久化语言,并同步 <html lang>(红线:语言为纯 UI 状态,不入会话事实)
     initI18n();
     document.documentElement.lang = $locale;
+
+    // === Service Worker 离线缓存(仅生产/在线 demo 注册,本地 dev 不注册) ===
+    // 作用域随 base:BASE_URL 已带子路径前缀(如 /evorule-console-cloud/),
+    // 注册 BASE_URL + 'service-worker.js' 后 scope 即为 BASE_URL。
+    // 开发模式(import.meta.env.DEV)跳过,避免缓存干扰热更新。
+    if (!import.meta.env.DEV && "serviceWorker" in navigator) {
+      const swUrl = `${import.meta.env.BASE_URL}service-worker.js`;
+      navigator.serviceWorker.register(swUrl).catch((e) => {
+        console.warn("[sw] 注册失败(不影响在线使用):", e);
+      });
+    }
 
     // 恢复三栏宽度(无持久化值则默认 20%/60%/20%)
     try {

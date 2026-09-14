@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 EvoRule Project
 #
-# P10 在线 demo 部署 — GitHub Pages + adapter-static + MockBackend(零网络依赖)
-# P10_TASKFLOW_DEMO_DESIGN.md §3.4 定义。
+# P10 在线 demo 部署 — GitHub Pages + adapter-static + 浏览器内 WASM 引擎(零网络依赖)
+# stage1-m4:在线 demo 默认 WasmBackend(打开 URL 即进 WASM 模式,无需 ?backend=wasm)。
 #
 # 触发:push 到 main 分支(src/ 或 package.json 变更时)
 # 产物:SvelteKit adapter-static build → GitHub Pages 公网可访问
-# URL:https://<owner>.github.io/evorule-console-cloud/
+# URL:https://evorule.github.io/evorule-console-cloud/
 #
-# demo 模式:未登录访客自动进入状态 A(DemoHome),4 个引导任务可用 MockBackend 体验
+# 默认 backend 经 VITE_DEFAULT_BACKEND=wasm 在构建期注入客户端 bundle;
+# 仍可用 ?backend=wasm|http|mock / ?mock=1 手动覆盖。
+# Service Worker(static/service-worker.js)在生产构建自动注册,支持离线打开。
 
 name: Deploy Demo to GitHub Pages
 
@@ -71,6 +73,22 @@ jobs:
         env:
           # adapter-static 预渲染:demo 模式不依赖后端,可全量预渲染
           GITHUB_PAGES: "true"
+          # 在线 demo 默认 WASM 模式(注入客户端 bundle,无需 ?backend=wasm)
+          VITE_DEFAULT_BACKEND: "wasm"
+
+      - name: SPA fallback (404.html)
+        # adapter-static 的 fallback 生成的是 index.html;GitHub Pages 用 404.html
+        # 兜底未匹配路径,复制一份使深链接(如 /evorule-console-cloud/rules)回到 SPA。
+        run: cp build/index.html build/404.html
+
+      - name: Verify demo artifacts
+        run: |
+          test -f build/index.html
+          test -f build/404.html
+          test -f build/service-worker.js
+          test -n "$(find build -name '*.wasm' | head -n 1)"
+          test -f build/rules/core_eval.json
+          echo "demo artifacts OK"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
