@@ -4,6 +4,9 @@
   P10 demo 模式引导任务卡片(4 个)。
   P10_TASKFLOW_DEMO_DESIGN.md §3.3 + §5.4 定义。
   职责:展示 4 个引导任务卡片,点击启动对应只读 TaskFlow。
+
+  stage1-m5:?backend=wasm 在线模式改渲染 WasmTour(7 步在线引导);
+            HTTP/mock(默认)模式仍渲染原 4 个 demo 任务,行为不变。
 -->
 
 <script lang="ts">
@@ -12,6 +15,11 @@
 	import { demoDatasetStore } from "$lib/stores/demo-dataset";
 	import { guidedTaskProgressStore, type GuidedTaskId } from "$lib/stores/guided-task-progress";
 	import { toastInfo } from "$lib/stores/toast";
+	import { isWasmBackendMode } from "$lib/config/backend-mode";
+	import WasmTour from "./WasmTour.svelte";
+
+	// WASM 在线模式 → 渲染 7 步引导;否则原 4 个 demo 任务(HTTP 默认不变)
+	const isWasm = isWasmBackendMode();
 
 	function handleStart(taskId: GuidedTaskId) {
 		const task = GUIDED_TASKS.find((t) => t.id === taskId);
@@ -33,37 +41,41 @@
 	);
 </script>
 
-<div class="guided-tasks">
-	<div class="gt-header">
-		<h3 class="gt-title">🎯 4 个引导任务(2-3 分钟体验完整链路)</h3>
-		{#if completedCount > 0}
-			<span class="gt-progress">已完成 {completedCount}/4</span>
-		{/if}
-	</div>
+{#if isWasm}
+	<WasmTour />
+{:else}
+	<div class="guided-tasks">
+		<div class="gt-header">
+			<h3 class="gt-title">🎯 4 个引导任务(2-3 分钟体验完整链路)</h3>
+			{#if completedCount > 0}
+				<span class="gt-progress">已完成 {completedCount}/4</span>
+			{/if}
+		</div>
 
-	<div class="gt-grid">
-		{#each GUIDED_TASKS as task (task.id)}
-			<button
-				class="gt-card"
-				class:completed={isCompleted(task.id)}
-				onclick={() => handleStart(task.id)}
-			>
-				<div class="gt-card-header">
-					<span class="gt-card-icon">{task.icon}</span>
-					<span class="gt-card-name">{task.name}</span>
-					{#if isCompleted(task.id)}
-						<span class="gt-done-badge">✓ 已完成</span>
-					{/if}
-				</div>
-				<div class="gt-card-pitch">{task.pitch}</div>
-				<div class="gt-card-meta">
-					<span class="gt-time">⏱ ~{task.estimatedMinutes} 分钟</span>
-					<span class="gt-dataset">📊 {$demoDatasetStore === "medical" ? "医疗场景" : "财务场景"}</span>
-				</div>
-			</button>
-		{/each}
+		<div class="gt-grid">
+			{#each GUIDED_TASKS as task (task.id)}
+				<button
+					class="gt-card"
+					class:completed={isCompleted(task.id)}
+					onclick={() => handleStart(task.id)}
+				>
+					<div class="gt-card-header">
+						<span class="gt-card-icon">{task.icon}</span>
+						<span class="gt-card-name">{task.name}</span>
+						{#if isCompleted(task.id)}
+							<span class="gt-done-badge">✓ 已完成</span>
+						{/if}
+					</div>
+					<div class="gt-card-pitch">{task.pitch}</div>
+					<div class="gt-card-meta">
+						<span class="gt-time">⏱ ~{task.estimatedMinutes} 分钟</span>
+						<span class="gt-dataset">📊 {$demoDatasetStore === "medical" ? "医疗场景" : "财务场景"}</span>
+					</div>
+				</button>
+			{/each}
+		</div>
 	</div>
-</div>
+{/if}
 
 <style>
 	.guided-tasks {
