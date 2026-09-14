@@ -9,6 +9,33 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-14
+
+**阶段 1：WASM 在线体验** — 真实 evorule 引擎编译为 WebAssembly，浏览器内零后端运行；打开在线链接即用，16 条业务规则全在线
+
+### 🆕 新增
+
+- **WASM 后端（WasmBackend）** — evorule 引擎以 `wasm-bindgen` 暴露 `EvoRuleEngine` API，浏览器中直接 `execute_transition`（纯同步，无 async 往返），零后端、零下载、零安装；首访后 Service Worker 缓存 App 外壳 + WASM 模块，离线可用
+- **16 条演示规则全部在线支持** — 财务 6（报销限额 / 分级审批 / 发票合规 / 拆单检测 / 预算占用 / 存储加密门禁）+ 医疗 6（抗菌药物分级 / 用药指征 / 过敏禁忌 / 越级使用补办 / 分诊阈值 / 病历读取 MFA）+ 等保 4（双因子认证 / 最小权限 / 安全审计覆盖 / 数据保密性），在浏览器内可执行、可验证
+- **7 步在线引导教学（WASM 模式）** — 交互式引导走通「加载规则 → 门禁阻断 → BLAKE3 审计链验证 → 时间旅行」全链路
+- **BLAKE3 审计链浏览器内验证** — append-only 哈希链在客户端校验，篡改即被发现；时间旅行回放与版本 diff 在线可用
+- **双平台部署** — GitHub Pages（主，GitHub Actions 自动部署 `main`）+ Gitee Pages（国内镜像，需手动选 `pages` 分支启用）；SPA fallback
+- **后端 feature flag** — URL 追加 `?backend=wasm|http|mock` 强制切换后端模式；在线构建默认 `wasm`，本地 `http` 模式与 `mock` 模式行为不变
+
+### 🔧 技术细节
+
+- `wasm-bindgen` 封装 `EvoRuleEngine`：纯同步 `execute_transition`，同入同出，审计哈希与本地 Rust 引擎一致
+- 审计链沿用 `@noble/hashes` 的 BLAKE3 实现，浏览器内完成 `verify` / 因果链 / `rewind` / `diff`
+- Service Worker 预缓存静态资源与 WASM 二进制，首访后断网可继续操作
+
+### ⚠️ 已知限制
+
+- `role13_demo` 的 `io_request` 场景不收敛（需本地体验包跑）
+- `getFacts` 返回空数组（在线演示会话内事实查询暂未接线）
+- 无持久化：刷新页面后会话重置
+- 无规则热重载、无 Bundle 管理（在线规则只读）
+- cloud 专属写操作（部署审批 / 回滚 / 插件审批）在线模式不可用
+
 ## [0.4.4] - 2026-09-10
 
 **消费者首次体验文案整改补全** — 建库试运行与 AI 草案校验的残缺展示收口

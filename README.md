@@ -9,7 +9,7 @@
 
 **evorule rule-engine console · the connected public edition** — a professional starting point for secondary developers (core engine + connectivity + cloud LLM + platform governance)
 
-[![version](https://img.shields.io/badge/version-0.4.4-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.5.0-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
 [![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
 
@@ -21,8 +21,38 @@
 
 <a id="english"></a>
 
+## ⚡ Try It Online — Zero Install, Zero Backend
+
+**[👉 Launch the WASM Online Demo →](https://evorule.github.io/evorule-console-cloud/)**
+
+No download, no install, no server — the evorule engine itself is compiled to **WebAssembly and runs inside your browser**. Open the URL and start in seconds; after the first visit the app is cached by a **Service Worker** and keeps working **offline**.
+
+- **GitHub Pages (primary):** https://evorule.github.io/evorule-console-cloud/
+- **Gitee Pages (China mirror):** https://evorule.gitee.io/evorule-console-cloud/ — enable Pages once manually (Source: `pages` branch)
+
+**What you get online:** the full evorule engine in-browser (pure-synchronous `execute_transition` + BLAKE3 hash chain verified client-side), all **16 business rules** live (finance 6 + medical 6 + MLPS 4), an interactive **7-step guided tour**, audit-chain verification, and time-travel replay — all with zero network dependency after first load.
+
+### Two ways to experience evorule
+
+| | **Online (WASM)** | **Local (Experience Pack / dev)** |
+| --- | --- | --- |
+| Engine | evorule compiled to WASM, runs in your browser | Real Rust `evorule-server` |
+| Setup | Open the URL — that's it | Download pack → double-click `start.bat` (or `npm run dev`) |
+| Business rules | 16 rules live (finance 6 + medical 6 + MLPS 4) | Same 16 rules, editable |
+| Guided walkthrough | 7-step interactive tour | 7-step tutorial (`QUICKSTART.md`) |
+| Audit chain | BLAKE3 hash-chain, verified in-browser | BLAKE3 hash-chain + WAL persistence |
+| Offline use | ✅ Service Worker cache (after first visit) | ✅ Fully offline |
+| Rule hot-reload | ❌ rules are read-only in-browser | ✅ edit JSON + `/api/rules/reload` |
+| Bundle management | ❌ not available online | ✅ import / activate bundles |
+| Persistence | ❌ session resets on refresh | ✅ WAL persistence |
+
+> Just want a quick feel? Stay online. Want to edit rules, hot-reload, manage Bundles, or keep state across refreshes? Grab the **[local experience pack](https://gitee.com/evorule/evorule-experience-pack)**. Append `?backend=wasm|http|mock` to the URL to force a backend mode (the online build defaults to `wasm`).
+
+---
+
 ## Quick Start for New Users
 
+- **[⚡ Online WASM demo (no install)](https://evorule.github.io/evorule-console-cloud/)** — open the URL, walk the 7-step tour, verify the BLAKE3 chain in-browser
 - **[5-Minute Quick Start (Developer Path)](./docs/tutorial/01-quickstart.md)** — clone the repo + dev environment, go from 0 to your first running rule
 - **[❓ In-browser Help Page](http://127.0.0.1:5174/help)** — the "❓ Help" button at the bottom of the sidebar after the service starts
 - **[One-Click Start/Stop Guide](./README-STARTUP.md)** — both desktop double-click and command-line methods
@@ -49,7 +79,7 @@
 | [evorule](https://gitee.com/evorule/evorule) | Core engine (TCB / Reactor / Governance, on crates.io) |
 | [evorule-server](https://gitee.com/evorule/evorule-server) | HTTP server (auth / audit / plugins / template marketplace) |
 | **This repo** | The single user entry point (browser console, professional starting point for secondary developers) |
-| [Online demo](https://evorule.github.io/evorule-console-cloud/) | No registration needed — medical + finance scenarios, in-browser MockBackend with zero network dependency |
+| [Online WASM demo](https://evorule.github.io/evorule-console-cloud/) | No registration, no backend — the real evorule engine compiled to WASM runs in-browser; 16 business rules + 7-step tour, Service Worker offline cache |
 
 ### 4 Guided Tasks (experience the full chain in 2–3 minutes)
 
@@ -78,6 +108,8 @@ Each rule ships with two sets of contrast inputs and field-by-field expected out
 - **Governance Center**: connects directly to the evorule-rule asset library (:18081), entry 5-state lifecycle (Draft→Candidate→Active→Published→Rejected) + version chain + online knowledge-entry editing
 - **Template marketplace**: template upload / online edit / download
 - **Collaborative approval workflow**: three-tier permissions (admin/lead/auditor), rule publishing requires approval
+- **WASM in-browser engine (v0.5.0)**: `WasmBackend` runs the real evorule engine as WebAssembly — pure-synchronous `execute_transition`, zero backend, all 16 demo rules live; feature flag `?backend=wasm|http|mock`
+- **Offline-capable demo**: Service Worker caches the app shell + WASM module; first visit once, then use offline; GitHub + Gitee dual Pages deployment
 
 ---
 
@@ -96,6 +128,14 @@ This repo and the kernel repo each have independent semver. The kernel is inline
 ---
 
 ## Version Capability Boundaries
+
+### v0.5.0 released (2026-09-14)
+
+- **WASM in-browser engine**: `WasmBackend` runs the real evorule engine as WebAssembly — open the online URL and the rule engine executes entirely in your browser, zero backend / zero download / zero install; pure-synchronous `execute_transition` + BLAKE3 audit chain verified client-side
+- **16 business rules live online**: finance 6 + medical 6 + MLPS 4 all executable in-browser; interactive 7-step guided tour
+- **Offline demo + dual Pages**: Service Worker caches app shell + WASM module (offline after first visit); GitHub Pages + Gitee Pages (China mirror) deployment; SPA fallback
+- **Backend feature flag**: `?backend=wasm|http|mock` to force a mode (online build defaults to `wasm`)
+- Full details in [CHANGELOG](CHANGELOG.md)
 
 ### v0.4.2 released (2026-09-10)
 
@@ -166,17 +206,22 @@ npm run dev    # developer mode: http://localhost:5174 (for daily use prefer the
 
 > The rule-library view needs no backend and can be tried offline; the executor/state/audit/time-travel views need evorule-server running on `localhost:18080` (online mode can be configured for a remote address).
 
-## GitHub Pages Online Demo Deployment
+## Online Demo Deployment (WASM)
 
-`.github/workflows/deploy-demo.yml` automatically builds and deploys to GitHub Pages on every `push` to the `main` branch.
+`.github/workflows/deploy-demo.yml` automatically builds and deploys to GitHub Pages on every `push` to the `main` branch. The Gitee mirror deploys to **Gitee Pages** (国内镜像).
 
-**First-time enable steps**:
+**First-time enable steps (GitHub):**
 1. Go to the GitHub repo → **Settings** → **Pages**
 2. Set **Source** to **GitHub Actions** (not "Deploy from a branch")
 3. Push a commit to `main` (or manually trigger `workflow_dispatch`) to trigger the first build
 4. Once deployed, the URL looks like `https://<owner>.github.io/evorule-console-cloud/`
 
-**Features**: adapter-static full pre-render + MockBackend, zero network dependency in-browser, experience the 4 guided tasks (medical / finance demo datasets).
+**First-time enable steps (Gitee, manual):**
+1. Go to the Gitee repo → **服务** → **Gitee Pages**
+2. Deploy from the **`pages`** branch
+3. After each push, manually re-deploy in the Gitee Pages console
+
+**Features**: adapter-static full pre-render + **WasmBackend** (real evorule engine as WebAssembly), zero network dependency after first load, Service Worker offline cache, all 16 business rules live + 7-step guided tour. The online build defaults to `?backend=wasm`; append `?backend=http|mock` to switch modes.
 
 ---
 
@@ -366,7 +411,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 
 **evorule 规则引擎面板 · 联网大众版** — 二次开发者专业起点（内核 + 联网 + 云 LLM + 平台治理）
 
-[![version](https://img.shields.io/badge/version-0.4.4-blue)](./CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.5.0-blue)](./CHANGELOG.md)
 [![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-success)](./LICENSE)
 [![kernel](https://img.shields.io/badge/kernel-inlined%20from%20evorule--console%20v0.2.0-blueviolet)](https://gitee.com/evorule/evorule-console)
 
@@ -387,8 +432,38 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 
 ---
 
+## ⚡ 在线体验 — 零安装、零后端
+
+**[👉 打开 WASM 在线 Demo →](https://evorule.github.io/evorule-console-cloud/)**
+
+无需下载、无需安装、无需起服务——evorule 引擎本身被编译成 **WebAssembly，直接在你的浏览器里运行**。打开链接几秒即用；首次访问后 App 被 **Service Worker 缓存**，之后可**离线使用**。
+
+- **GitHub Pages（主）**：https://evorule.github.io/evorule-console-cloud/
+- **Gitee Pages（国内镜像）**：https://evorule.gitee.io/evorule-console-cloud/ —— 需手动启用一次 Pages（Source 选 `pages` 分支）
+
+**在线能体验到什么**：浏览器内跑真实 evorule 引擎（纯同步 `execute_transition` + 客户端验证 BLAKE3 哈希链），**16 条业务规则**全部在线（财务 6 + 医疗 6 + 等保 4），交互式 **7 步引导教学**，审计链验证与时间旅行回放——首访之后零网络依赖。
+
+### 两种体验方式
+
+| | **在线（WASM）** | **本地（体验包 / 开发）** |
+| --- | --- | --- |
+| 引擎 | evorule 编译为 WASM，在浏览器内运行 | 真实 Rust `evorule-server` |
+| 启动 | 打开链接即可 | 下载体验包 → 双击 `start.bat`（或 `npm run dev`） |
+| 业务规则 | 16 条在线可跑（财务 6 + 医疗 6 + 等保 4） | 同样 16 条，可编辑 |
+| 引导教学 | 7 步交互式引导 | 7 步教程（`QUICKSTART.md`） |
+| 审计链 | BLAKE3 哈希链，浏览器内验证 | BLAKE3 哈希链 + WAL 持久化 |
+| 离线使用 | ✅ Service Worker 缓存（首访后） | ✅ 完全离线 |
+| 规则热重载 | ❌ 在线规则只读 | ✅ 改 JSON + `/api/rules/reload` |
+| Bundle 管理 | ❌ 在线不可用 | ✅ 导入 / 激活 bundle |
+| 持久化 | ❌ 刷新后会话重置 | ✅ WAL 持久化 |
+
+> 只是想快速感受？留在在线版即可。想编辑规则、热重载、管理 Bundle 或跨刷新保留状态？请下载 **[本地体验包](https://gitee.com/evorule/evorule-experience-pack)**。在 URL 后追加 `?backend=wasm|http|mock` 可强制切换后端模式（在线构建默认 `wasm`）。
+
+---
+
 ## 🚀 新用户从这里开始
 
+- **[⚡ 在线 WASM Demo（免安装）](https://evorule.github.io/evorule-console-cloud/)** — 打开链接，走完 7 步引导，在浏览器里验证 BLAKE3 审计链
 - **[5 分钟上手（开发者路径）](./docs/tutorial/01-quickstart.md)** — 克隆仓 + dev 环境，从 0 到跑通第一条规则
 - **[❓ 浏览器内帮助页](http://127.0.0.1:5174/help)** — 启服务后侧栏底部"❓ 帮助"按钮
 - **[一键启停指南](./README-STARTUP.md)** — 桌面双击 / 命令行两种方式
@@ -415,7 +490,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 | [evorule](https://gitee.com/evorule/evorule) | 核心引擎（TCB / 反应器 / 治理，crates.io） |
 | [evorule-server](https://gitee.com/evorule/evorule-server) | HTTP 服务端（认证 / 审计 / 插件 / 模板市场） |
 | **本仓** | 唯一用户入口（浏览器面板，二次开发者专业起点） |
-| [在线 demo](https://evorule.github.io/evorule-console-cloud/) | 无需注册，医疗 + 财务两套场景，浏览器内 MockBackend 零网络依赖 |
+| [在线 WASM Demo](https://evorule.github.io/evorule-console-cloud/) | 无需注册、无需后端——真实 evorule 引擎编译为 WASM 在浏览器内运行；16 条业务规则 + 7 步引导，Service Worker 离线缓存 |
 
 ### 4 个引导任务（2-3 分钟体验完整链路）
 
@@ -444,6 +519,8 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 - **治理中心**：直连 evorule-rule 资产库（:18081），条目 5 态生命周期（Draft→Candidate→Active→Published→Rejected）+ 版本链 + 知识条目在线编辑
 - **模板市场**：模板上传 / 在线编辑 / 下载
 - **协作审批工作流**：三级权限（admin/lead/auditor），规则发布需审批
+- **WASM 浏览器内引擎（v0.5.0）**：`WasmBackend` 把真实 evorule 引擎编译为 WebAssembly 运行——打开在线链接即在浏览器内执行规则，零后端 / 零下载 / 零安装；纯同步 `execute_transition` + BLAKE3 审计链客户端验证；feature flag `?backend=wasm|http|mock`
+- **离线可用 Demo**：Service Worker 缓存 App 外壳 + WASM 模块（首访后可离线）；GitHub Pages + Gitee Pages（国内镜像）双平台部署
 
 ---
 
@@ -462,6 +539,14 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 ---
 
 ## 版本能力边界
+
+### v0.5.0 已发版（2026-09-14）
+
+- **WASM 浏览器内引擎**：`WasmBackend` 把真实 evorule 引擎编译为 WebAssembly——打开在线链接即纯浏览器内执行规则，零后端 / 零下载 / 零安装；纯同步 `execute_transition` + BLAKE3 审计链客户端验证
+- **16 条业务规则全在线**：财务 6 + 医疗 6 + 等保 4 全部可在浏览器内执行；交互式 7 步引导教学
+- **离线 Demo + 双 Pages**：Service Worker 缓存 App 外壳 + WASM 模块（首访后可离线）；GitHub Pages + Gitee Pages（国内镜像）部署；SPA fallback
+- **后端 feature flag**：`?backend=wasm|http|mock` 强制切换模式（在线构建默认 `wasm`）
+- 完整明细见 [CHANGELOG](CHANGELOG.md)
 
 ### v0.4.1 已发版（2026-09-06）
 
@@ -526,17 +611,22 @@ npm run dev    # 开发者模式：http://localhost:5174（日常体验请用一
 
 > 规则库视图不需要后端，可离线试用；执行台/状态/审计/时间旅行需要 evorule-server 跑在 `localhost:18080`（联网模式可配远程）。
 
-## GitHub Pages 在线 demo 部署
+## 在线 Demo 部署（WASM）
 
-`.github/workflows/deploy-demo.yml` 在 `push` 到 `main` 分支时自动构建并部署到 GitHub Pages。
+`.github/workflows/deploy-demo.yml` 在 `push` 到 `main` 分支时自动构建并部署到 GitHub Pages；Gitee 镜像同步部署到 **Gitee Pages**（国内镜像）。
 
-**首次启用步骤**：
+**首次启用步骤（GitHub）**：
 1. 进入 GitHub 仓 → **Settings** → **Pages**
-2. **Source** 选择 **GitHub Actions**（不是 “Deploy from a branch”）
+2. **Source** 选择 **GitHub Actions**（不是 "Deploy from a branch"）
 3. 推一次 commit 到 main（或手动触发 workflow_dispatch）触发首次构建
 4. 部署完成后，URL 形如 `https://<owner>.github.io/evorule-console-cloud/`
 
-**特性**：adapter-static 全量预渲染 + MockBackend，浏览器内零网络依赖即可体验 4 个引导任务（医疗/财务两套 demo 数据集）。
+**首次启用步骤（Gitee，手动）**：
+1. 进入 Gitee 仓 → **服务** → **Gitee Pages**
+2. 部署分支选 **`pages`**
+3. 每次推送后在 Gitee Pages 控制台手动重新部署
+
+**特性**：adapter-static 全量预渲染 + **WasmBackend**（真实 evorule 引擎编译为 WebAssembly），首访后零网络依赖，Service Worker 离线缓存，16 条业务规则在线 + 7 步引导教学。在线构建默认 `?backend=wasm`；追加 `?backend=http|mock` 可切换模式。
 
 ---
 
