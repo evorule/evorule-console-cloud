@@ -234,7 +234,7 @@
   // 持有其引用(Cloud 专属读方法委托,带 Bearer token)。
   const initialNet = get(netConfig);
   // === backend 选择(73 文档 §4):?backend=wasm|http|mock,保留 ?mock=1 兼容 ===
-  // 构建期默认值:CI 通过 VITE_DEFAULT_BACKEND=wasm 让在线 demo(GitHub/Gitee Pages)
+  // 构建期默认值:CI 通过 VITE_DEFAULT_BACKEND=wasm 让在线 demo(GitHub Pages;Gitee Pages 已停服,2026-09-15 流水线删除)
   // 打开 URL 即进 WASM 模式,无需手动加 ?backend=wasm。本地 dev 不设该变量 → 回落 http。
   // 仅 Vite 暴露的 VITE_ 前缀变量会进入客户端 bundle。
   const BUILD_DEFAULT = (import.meta.env.VITE_DEFAULT_BACKEND as string | undefined) ?? "http";
