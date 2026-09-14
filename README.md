@@ -28,7 +28,6 @@
 No download, no install, no server — the evorule engine itself is compiled to **WebAssembly and runs inside your browser**. Open the URL and start in seconds; after the first visit the app is cached by a **Service Worker** and keeps working **offline**.
 
 - **GitHub Pages (primary):** https://evorule.github.io/evorule-console-cloud/
-- **Gitee Pages (China mirror):** https://evorule.gitee.io/evorule-console-cloud/ — enable Pages once manually (Source: `pages` branch)
 
 **What you get online:** the full evorule engine in-browser (pure-synchronous `execute_transition` + BLAKE3 hash chain verified client-side), all **16 business rules** live (finance 6 + medical 6 + MLPS 4), an interactive **7-step guided tour**, audit-chain verification, and time-travel replay — all with zero network dependency after first load.
 
@@ -133,7 +132,7 @@ This repo and the kernel repo each have independent semver. The kernel is inline
 
 - **WASM in-browser engine**: `WasmBackend` runs the real evorule engine as WebAssembly — open the online URL and the rule engine executes entirely in your browser, zero backend / zero download / zero install; pure-synchronous `execute_transition` + BLAKE3 audit chain verified client-side
 - **16 business rules live online**: finance 6 + medical 6 + MLPS 4 all executable in-browser; interactive 7-step guided tour
-- **Offline demo + dual Pages**: Service Worker caches app shell + WASM module (offline after first visit); GitHub Pages + Gitee Pages (China mirror) deployment; SPA fallback
+- **Offline demo + dual Pages**: Service Worker caches app shell + WASM module (offline after first visit); GitHub Pages + Gitee Pages (China mirror; platform discontinued 2026-09-15) deployment; SPA fallback
 - **Backend feature flag**: `?backend=wasm|http|mock` to force a mode (online build defaults to `wasm`)
 - Full details in [CHANGELOG](CHANGELOG.md)
 
@@ -208,18 +207,13 @@ npm run dev    # developer mode: http://localhost:5174 (for daily use prefer the
 
 ## Online Demo Deployment (WASM)
 
-`.github/workflows/deploy-demo.yml` automatically builds and deploys to GitHub Pages on every `push` to the `main` branch. The Gitee mirror deploys to **Gitee Pages** (国内镜像).
+`.github/workflows/deploy-demo.yml` automatically builds and deploys to GitHub Pages on every `push` to the `main` branch.
 
 **First-time enable steps (GitHub):**
 1. Go to the GitHub repo → **Settings** → **Pages**
 2. Set **Source** to **GitHub Actions** (not "Deploy from a branch")
 3. Push a commit to `main` (or manually trigger `workflow_dispatch`) to trigger the first build
 4. Once deployed, the URL looks like `https://<owner>.github.io/evorule-console-cloud/`
-
-**First-time enable steps (Gitee, manual):**
-1. Go to the Gitee repo → **服务** → **Gitee Pages**
-2. Deploy from the **`pages`** branch
-3. After each push, manually re-deploy in the Gitee Pages console
 
 **Features**: adapter-static full pre-render + **WasmBackend** (real evorule engine as WebAssembly), zero network dependency after first load, Service Worker offline cache, all 16 business rules live + 7-step guided tour. The online build defaults to `?backend=wasm`; append `?backend=http|mock` to switch modes.
 
@@ -439,7 +433,6 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 无需下载、无需安装、无需起服务——evorule 引擎本身被编译成 **WebAssembly，直接在你的浏览器里运行**。打开链接几秒即用；首次访问后 App 被 **Service Worker 缓存**，之后可**离线使用**。
 
 - **GitHub Pages（主）**：https://evorule.github.io/evorule-console-cloud/
-- **Gitee Pages（国内镜像）**：https://evorule.gitee.io/evorule-console-cloud/ —— 需手动启用一次 Pages（Source 选 `pages` 分支）
 
 **在线能体验到什么**：浏览器内跑真实 evorule 引擎（纯同步 `execute_transition` + 客户端验证 BLAKE3 哈希链），**16 条业务规则**全部在线（财务 6 + 医疗 6 + 等保 4），交互式 **7 步引导教学**，审计链验证与时间旅行回放——首访之后零网络依赖。
 
@@ -520,7 +513,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 - **模板市场**：模板上传 / 在线编辑 / 下载
 - **协作审批工作流**：三级权限（admin/lead/auditor），规则发布需审批
 - **WASM 浏览器内引擎（v0.5.0）**：`WasmBackend` 把真实 evorule 引擎编译为 WebAssembly 运行——打开在线链接即在浏览器内执行规则，零后端 / 零下载 / 零安装；纯同步 `execute_transition` + BLAKE3 审计链客户端验证；feature flag `?backend=wasm|http|mock`
-- **离线可用 Demo**：Service Worker 缓存 App 外壳 + WASM 模块（首访后可离线）；GitHub Pages + Gitee Pages（国内镜像）双平台部署
+- **离线可用 Demo**：Service Worker 缓存 App 外壳 + WASM 模块（首访后可离线）；GitHub Pages + Gitee Pages（国内镜像，该平台 2026-09-15 停服下线）双平台部署
 
 ---
 
@@ -544,7 +537,7 @@ evorule-console-cloud 是 **evorule 全生态的唯一项目方入口**：浏览
 
 - **WASM 浏览器内引擎**：`WasmBackend` 把真实 evorule 引擎编译为 WebAssembly——打开在线链接即纯浏览器内执行规则，零后端 / 零下载 / 零安装；纯同步 `execute_transition` + BLAKE3 审计链客户端验证
 - **16 条业务规则全在线**：财务 6 + 医疗 6 + 等保 4 全部可在浏览器内执行；交互式 7 步引导教学
-- **离线 Demo + 双 Pages**：Service Worker 缓存 App 外壳 + WASM 模块（首访后可离线）；GitHub Pages + Gitee Pages（国内镜像）部署；SPA fallback
+- **离线 Demo + 双 Pages**：Service Worker 缓存 App 外壳 + WASM 模块（首访后可离线）；GitHub Pages + Gitee Pages（国内镜像，该平台 2026-09-15 停服下线）部署；SPA fallback
 - **后端 feature flag**：`?backend=wasm|http|mock` 强制切换模式（在线构建默认 `wasm`）
 - 完整明细见 [CHANGELOG](CHANGELOG.md)
 
@@ -613,18 +606,13 @@ npm run dev    # 开发者模式：http://localhost:5174（日常体验请用一
 
 ## 在线 Demo 部署（WASM）
 
-`.github/workflows/deploy-demo.yml` 在 `push` 到 `main` 分支时自动构建并部署到 GitHub Pages；Gitee 镜像同步部署到 **Gitee Pages**（国内镜像）。
+`.github/workflows/deploy-demo.yml` 在 `push` 到 `main` 分支时自动构建并部署到 GitHub Pages。
 
 **首次启用步骤（GitHub）**：
 1. 进入 GitHub 仓 → **Settings** → **Pages**
 2. **Source** 选择 **GitHub Actions**（不是 "Deploy from a branch"）
 3. 推一次 commit 到 main（或手动触发 workflow_dispatch）触发首次构建
 4. 部署完成后，URL 形如 `https://<owner>.github.io/evorule-console-cloud/`
-
-**首次启用步骤（Gitee，手动）**：
-1. 进入 Gitee 仓 → **服务** → **Gitee Pages**
-2. 部署分支选 **`pages`**
-3. 每次推送后在 Gitee Pages 控制台手动重新部署
 
 **特性**：adapter-static 全量预渲染 + **WasmBackend**（真实 evorule 引擎编译为 WebAssembly），首访后零网络依赖，Service Worker 离线缓存，16 条业务规则在线 + 7 步引导教学。在线构建默认 `?backend=wasm`；追加 `?backend=http|mock` 可切换模式。
 
