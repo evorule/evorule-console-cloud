@@ -27,7 +27,7 @@
     refreshRules,
     currentWorkspace,
   } from "$lib/kernel";
-  import type { ViewId } from "$lib/kernel";
+  import type { ViewId, ExecutionBackend } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { CloudWorkspaceBackend, setActiveWorkspaceBackend } from "$lib/backend/cloud-workspace-backend";
   import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
@@ -233,40 +233,89 @@
   // 旁路 store 收敛(2026-08-28):先构造 workspace backend,execution backend
   // 持有其引用(Cloud 专属读方法委托,带 Bearer token)。
   const initialNet = get(netConfig);
-  const useMock =
-    browser && new URLSearchParams(window.location.search).get("mock") === "1";
+  // === backend 选择(73 文档 §4):?backend=wasm|http|mock,保留 ?mock=1 兼容 ===
+  const sp = browser
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
+  const backendKind = browser
+    ? (sp.get("backend") ?? (sp.get("mock") === "1" ? "mock" : "http"))
+    : "http";
+  const useWasm = backendKind === "wasm";
+  const useMock = backendKind === "mock";
 
   let cloudWorkspaceBackend: CloudWorkspaceBackend | null = null;
-  const workspaceImpl = useMock
-    ? new MockWorkspaceBackend()
-    : new CloudWorkspaceBackend({
-        mode: initialNet.mode,
-        remoteBaseUrl: initialNet.remoteBaseUrl,
-        localBaseUrl: DEFAULT_LOCAL_BASE_URL,
-        authToken: initialNet.authToken,
-      });
-  if (!useMock) cloudWorkspaceBackend = workspaceImpl as CloudWorkspaceBackend;
-  const workspaceBackend = provideWorkspaceBackend(workspaceImpl);
-  // 同步登记模块级单例(store 层非组件调用点用,见 cloud-workspace-backend.ts)
-  setActiveWorkspaceBackend(workspaceImpl);
-
-  // === 注入 backend(CloudHttpBackend 双模式 + ?mock=1 零依赖模式) ===
-  let cloudBackend: CloudHttpBackend | null = null;
-  const backendImpl = useMock
-    ? new MockBackend()
-    : new CloudHttpBackend(
-        {
+  const workspaceImpl =
+    useMock || useWasm
+      ? new MockWorkspaceBackend()
+      : new CloudWorkspaceBackend({
           mode: initialNet.mode,
           remoteBaseUrl: initialNet.remoteBaseUrl,
           localBaseUrl: DEFAULT_LOCAL_BASE_URL,
           authToken: initialNet.authToken,
-        },
-        workspaceImpl,
-      );
-  if (!useMock) cloudBackend = backendImpl as CloudHttpBackend;
-  if (useMock) setDemoDataset("agent");
+        });
+  if (!useMock && !useWasm) cloudWorkspaceBackend = workspaceImpl as CloudWorkspaceBackend;
+  const workspaceBackend = provideWorkspaceBackend(workspaceImpl);
+  // 同步登记模块级单例(store 层非组件调用点用,见 cloud-workspace-backend.ts)
+  setActiveWorkspaceBackend(workspaceImpl);
 
-  const backend = provideBackend(backendImpl);
+  // === 注入 backend(CloudHttpBackend 双模式 + ?mock=1 零依赖 + ?backend=wasm 本地引擎) ===
+  let cloudBackend: CloudHttpBackend | null = null;
+  // WASM 异步就绪门控:children 在引擎就绪前不渲染(见主内容区 {#if wasmReady})
+  let wasmReady = $state(!useWasm);
+  let wasmFailed = $state(false);
+  let connected = $state<boolean | null>(null);
+
+  let backend: ExecutionBackend;
+  if (useMock) {
+    backend = new MockBackend();
+    setDemoDataset("agent");
+  } else if (useWasm) {
+    // setContext 必须在同步初始化阶段调用 → 用 Proxy 占位,异步 init 完成后注入委托。
+    // 方法在 children 渲染(wasmReady=true)前不会被调用,委托此时已就位。
+    const deferred: { _delegate: ExecutionBackend | null } = { _delegate: null };
+    backend = new Proxy(
+      {},
+      {
+        get(_t, prop) {
+          const d = deferred._delegate;
+          if (d === null || d === undefined) {
+            if (prop === "baseUrl") return "wasm://local";
+            return () => Promise.reject(new Error("WASM 引擎尚未就绪"));
+          }
+          const v = (d as unknown as Record<string | symbol, unknown>)[prop];
+          return typeof v === "function" ? (v as (...a: unknown[]) => unknown).bind(d) : v;
+        },
+      },
+    ) as ExecutionBackend;
+    if (browser) {
+      (async () => {
+        try {
+          const { WasmBackend } = await import("$lib/backend/wasm-backend");
+          deferred._delegate = await WasmBackend.create({ mode: "demo" });
+          wasmReady = true;
+          connected = true;
+        } catch (e) {
+          console.error("[wasm] 引擎初始化失败:", e);
+          wasmFailed = true;
+          wasmReady = true;
+        }
+      })();
+    }
+  } else {
+    const impl = new CloudHttpBackend(
+      {
+        mode: initialNet.mode,
+        remoteBaseUrl: initialNet.remoteBaseUrl,
+        localBaseUrl: DEFAULT_LOCAL_BASE_URL,
+        authToken: initialNet.authToken,
+      },
+      workspaceImpl,
+    );
+    cloudBackend = impl;
+    backend = impl;
+  }
+
+  provideBackend(backend);
 
   $effect(() => {
     if (!cloudBackend) return;
@@ -319,8 +368,7 @@
   // 配好后按钮渲染需刷新一次,由设置面板保存后的刷新提示兜底。
   provideAssistant(isLlmConfigured(get(llmConfig)) ? new CloudLlmAssistant() : null);
 
-  // === 连接状态 ===
-  let connected = $state<boolean | null>(null);
+  // === 连接状态(connected 已在上方 WASM 门控区声明) ===
   // ④:健康检查延迟定时器 + 中止器(onMount 发起,pagehide/卸载清理)
   let healthTimer: number | undefined;
   let healthAbort: AbortController | undefined;
@@ -370,6 +418,8 @@
     // 且 pagehide 先于文档销毁执行,稳赢强制中止。
     window.addEventListener("pagehide", abortHealthOnHide);
     healthTimer = window.setTimeout(() => {
+      // WASM 模式本地无网络探测:连接态由引擎初始化完成时设置
+      if (useWasm) return;
       healthAbort = new AbortController();
       backend
         .health(healthAbort.signal)
@@ -501,15 +551,21 @@
 
     <div
       class="conn-status"
-      class:offline={connected === false}
-      class:checking={connected === null}
+      class:offline={!useWasm && connected === false}
+      class:checking={!useWasm && connected === null}
       data-tour="connection"
-      title={connected === false
-        ? "evorule-server 未响应(检查地址或启动服务器)"
-        : "evorule-server 连接状态"}
+      title={useWasm
+        ? "规则在浏览器本地 WASM 引擎中执行(无网络依赖)"
+        : connected === false
+          ? "evorule-server 未响应(检查地址或启动服务器)"
+          : "evorule-server 连接状态"}
     >
       <span class="dot"></span>
-      {connected === null ? "检测中" : connected ? "已连接" : "未连接"}
+      {#if useWasm}
+        {wasmFailed ? "WASM 加载失败" : wasmReady ? "本地运行 (WASM)" : "加载引擎中…"}
+      {:else}
+        {connected === null ? "检测中" : connected ? "已连接" : "未连接"}
+      {/if}
     </div>
 
     <div class="header-actions">
@@ -697,6 +753,8 @@
     <main class="content">
       {#if showSettings}
         <Settings onclose={closeSettings} initialTab={settingsInitialTab} />
+      {:else if !wasmReady}
+        <div class="wasm-loading">正在加载 WASM 规则引擎…</div>
       {:else}
         {@render children()}
       {/if}
@@ -817,6 +875,16 @@
   .conn-status.checking {
     background: var(--warning-bg);
     color: var(--warning);
+  }
+
+  /* WASM 引擎加载中(本地运行模式) */
+  .wasm-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: var(--fs-sm);
   }
 
   /* 右栏 LLM 未配置时的折叠窄条(PR5) */
