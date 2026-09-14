@@ -27,6 +27,7 @@
 - `wasm-bindgen` 封装 `EvoRuleEngine`：纯同步 `execute_transition`，同入同出，审计哈希与本地 Rust 引擎一致
 - 审计链沿用 `@noble/hashes` 的 BLAKE3 实现，浏览器内完成 `verify` / 因果链 / `rewind` / `diff`
 - Service Worker 预缓存静态资源与 WASM 二进制，首访后断网可继续操作
+- 内核产物对齐 evorule v0.6.0 基线重建（69 号清理后 TCB 元指令白名单 5 种，`collect`/`merge` 退役路径不再编入，.wasm 297KB → 287KB）；确定性套件 184/184 复跑通过（BLAKE3 链逐字节一致），WasmBackend 12/12 通过
 
 ### ⚠️ 已知限制
 
