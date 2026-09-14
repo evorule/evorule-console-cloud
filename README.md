@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 
-![EvoRule Console Cloud — the single user entry point of the EvoRule ecosystem](assets/evorule-console-cloud-banner.svg)
+![EvoRule Console Cloud — the single project owner entry point of the EvoRule ecosystem](assets/evorule-console-cloud-banner.svg)
 
 <div align="center">
 
@@ -50,7 +50,7 @@ No download, no install, no server — the evorule engine itself is compiled to 
 
 ---
 
-## Quick Start for New Users
+## Quick Start for New Project Owners
 
 - **[⚡ Online WASM demo (no install)](https://evorule.github.io/evorule-console-cloud/)** — open the URL, walk the 7-step tour, verify the BLAKE3 chain in-browser
 - **[5-Minute Quick Start (Developer Path)](./docs/tutorial/01-quickstart.md)** — clone the repo + dev environment, go from 0 to your first running rule
@@ -78,7 +78,7 @@ No download, no install, no server — the evorule engine itself is compiled to 
 | --- | --- |
 | [evorule](https://gitee.com/evorule/evorule) | Core engine (TCB / Reactor / Governance, on crates.io) |
 | [evorule-server](https://gitee.com/evorule/evorule-server) | HTTP server (auth / audit / plugins / template marketplace) |
-| **This repo** | The single user entry point (browser console, professional starting point for secondary developers) |
+| **This repo** | The single project owner entry point (browser console, professional starting point for secondary developers) |
 | [Online WASM demo](https://evorule.github.io/evorule-console-cloud/) | No registration, no backend — the real evorule engine compiled to WASM runs in-browser; 16 business rules + 7-step tour, Service Worker offline cache |
 
 ### 4 Guided Tasks (experience the full chain in 2–3 minutes)
@@ -115,7 +115,7 @@ Each rule ships with two sets of contrast inputs and field-by-field expected out
 
 ## Positioning
 
-evorule-console-cloud is the **single user entry point of the entire evorule ecosystem**: every browser-user operation on evorule — rule library, execution, audit, replay, approval — converges in this console. At the same time it is also a professional starting-point tool for **secondary developers**: developers build their own products on top of this repo (different products, same starting point).
+evorule-console-cloud is the **single project owner entry point of the entire evorule ecosystem**: every project owner operation on evorule from the browser — rule library, execution, audit, replay, approval — converges in this console. At the same time it is also a professional starting-point tool for **secondary developers**: developers build their own products on top of this repo (different products, same starting point).
 
 | Layer | Repo | Positioning | LLM | Network | Kernel relation |
 | --- | --- | --- | --- | --- | --- |
@@ -139,20 +139,20 @@ This repo and the kernel repo each have independent semver. The kernel is inline
 
 ### v0.4.2 released (2026-09-10)
 
-- **First-user experience fixes**: user-friendly rule-validation messages; plain-language onboarding/wizard/workbench wording; "local draft vs published" semantics clarified; rule-library developer-mode JSON editor; executor default command business-ized; JSON-tree expand/collapse hint; audit/export empty-state guidance; governance password placeholder and five-state lifecycle completion; `--insecure-serve` in start-all.ps1
+- **First-use project owner experience fixes**: user-friendly rule-validation messages; plain-language onboarding/wizard/workbench wording; "local draft vs published" semantics clarified; rule-library developer-mode JSON editor; executor default command business-ized; JSON-tree expand/collapse hint; audit/export empty-state guidance; governance password placeholder and five-state lifecycle completion; `--insecure-serve` in start-all.ps1
 - **App credential & quota management**: platform `/apps` entry for issuing/listing/revoking app API keys, per-app rate-limit and daily quota with usage column
 - **Plugin approval workbench**: centralized plugin runtime health (online/offline badges) + grouped pending config-approval proposals, approval enforced server-side
 
 ### v0.4.1 released (2026-09-06)
 
-- **Unauthenticated-access redirect fix**: when accessing marketplace / runtime / workspace / export / import-export / view pages without logging in, users are now uniformly redirected to the login page (previously silently bounced to the home page, easily mistaken for "page broken"); page reachability after login is unchanged
+- **Unauthenticated-access redirect fix**: when accessing marketplace / runtime / workspace / export / import-export / view pages without logging in, project owners are now uniformly redirected to the login page (previously silently bounced to the home page, easily mistaken for "page broken"); page reachability after login is unchanged
 
 ### v0.4.0 released (2026-09-06)
 
 - **Test workbench**: rule dry-run + structured deployment-evidence stream (verify rule behavior before deployment)
 - **Knowledge data plane**: `/knowledge` route + governance-center online knowledge-entry editing (Draft edit/delete + new version chain)
 - **Permission management UI**: permission-entry lifecycle + judgment test bench
-- **Template marketplace server wiring**: user templates use the server as single source of truth + template online-edit UI
+- **Template marketplace server wiring**: project owner templates use the server as single source of truth + template online-edit UI
 - **PDF server-side render wiring**: Bearer-auth passthrough + explicit on-screen degradation reason
 - **15 governance/execution API wirings**: audit import / session derivation / reap / payload injection / shared facts, executor stop / interrupt, rule pre-check, sandbox report, deployment provenance, execution-domain rules, queue detail, session list, member add/remove, service list, etc.
 - **Platform-user integration**: platform users connected to workspace members (idempotent auto-join + explicit 403 retry)
@@ -160,7 +160,7 @@ This repo and the kernel repo each have independent semver. The kernel is inline
 - **Regulation-anchor edit channel**: in-product fix path for publishing-gate issues
 - **Category-label management**: drawer-style management + Escape keyboard close channel
 - **Scenario example rules v2**: business-instruction paradigm + in-repo rules pre-seeded (4 rules, 9 cases, all passing)
-- **Rule-edit form deepening** + validator aligned to authoritative schema; journey usability cleanup + new-user experience fixes
+- **Rule-edit form deepening** + validator aligned to authoritative schema; journey usability cleanup + new project owner experience fixes
 - Full details in [CHANGELOG](CHANGELOG.md)
 
 ### v0.2.0 released (2026-09-02)
@@ -425,10 +425,10 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 - **联网**：可连接远程 evorule-server（非仅本地 loopback）
 - **平台治理**：登录 / 用户 / 角色 / 权限矩阵 / 发布审批，对接 evorule-server 统一认证与 evorule-rule 资产库
 - **云 LLM 辅助**：OpenAI 兼容协议，9 家厂商预设（智谱/通义/DeepSeek/MiniMax/Kimi/OpenAI/Ollama/ERNIE/自定义），辅助生成规则草案/解释规则/生成测试输入
-- **用户审核确认**：LLM 只生成草案，最终规则是用户审核的 JSON，不破坏 evorule「确定性执行」基调
+- **项目方审核确认**：LLM 只生成草案，最终规则是项目方审核的 JSON，不破坏 evorule「确定性执行」基调
 - **本地 LLM（L2）**：规划中，付费扩展
 
-> **LLM 是辅助层，不参与确定性执行** — 执行链路完全不经过 LLM，规则即数据，用户审核才生效。
+> **LLM 是辅助层，不参与确定性执行** — 执行链路完全不经过 LLM，规则即数据，项目方审核才生效。
 
 ---
 
@@ -461,7 +461,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 
 ---
 
-## 🚀 新用户从这里开始
+## 🚀 新项目方从这里开始
 
 - **[⚡ 在线 WASM Demo（免安装）](https://evorule.github.io/evorule-console-cloud/)** — 打开链接，走完 7 步引导，在浏览器里验证 BLAKE3 审计链
 - **[5 分钟上手（开发者路径）](./docs/tutorial/01-quickstart.md)** — 克隆仓 + dev 环境，从 0 到跑通第一条规则
@@ -489,7 +489,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 | --- | --- |
 | [evorule](https://gitee.com/evorule/evorule) | 核心引擎（TCB / 反应器 / 治理，crates.io） |
 | [evorule-server](https://gitee.com/evorule/evorule-server) | HTTP 服务端（认证 / 审计 / 插件 / 模板市场） |
-| **本仓** | 唯一用户入口（浏览器面板，二次开发者专业起点） |
+| **本仓** | 唯一项目方入口（浏览器面板，二次开发者专业起点） |
 | [在线 WASM Demo](https://evorule.github.io/evorule-console-cloud/) | 无需注册、无需后端——真实 evorule 引擎编译为 WASM 在浏览器内运行；16 条业务规则 + 7 步引导，Service Worker 离线缓存 |
 
 ### 4 个引导任务（2-3 分钟体验完整链路）
@@ -526,7 +526,7 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 
 ## 定位
 
-evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器用户对 evorule 的一切操作——规则库、执行、审计、回放、审批——都收敛于此面板。同时它也是面向**二次开发者**的专业起点工具：开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
+evorule-console-cloud 是 **evorule 全生态的唯一项目方入口**：浏览器端项目方对 evorule 的一切操作——规则库、执行、审计、回放、审批——都收敛于此面板。同时它也是面向**二次开发者**的专业起点工具：开发者基于本仓构建自己的产品（功能各不相同，但起点一致）。
 
 | 层级 | 仓 | 定位 | LLM | 网络 | 内核关系 |
 | --- | --- | --- | --- | --- | --- |
@@ -557,7 +557,7 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 - **测试工作台**：规则试运行 + 结构化部署证据流（部署前验证规则行为）
 - **知识数据面**：`/knowledge` 路由 + 治理中心知识条目在线编辑（Draft 编辑/删除 + 新版本链）
 - **权限管理 UI**：权限条目生命周期 + 判定测试台
-- **模板市场 server 接线**：user 模板以 server 为唯一真相源 + 模板在线编辑 UI
+- **模板市场 server 接线**：项目方模板以 server 为唯一真相源 + 模板在线编辑 UI
 - **PDF 服务端渲染接线**：Bearer 认证透传 + 降级原因显式上屏
 - **15 项治理/执行 API 接线**：审计导入/会话派生/回收/payload 注入/共享事实、执行台停止/中断、规则预检、沙盒报告、部署溯源、执行域规则、队列详情、会话清单、成员增删、服务清单等
 - **平台用户打通**：平台用户与 workspace 成员连接（幂等自动加入 + 403 显式加入重试）
@@ -565,7 +565,7 @@ evorule-console-cloud 是 **evorule 全生态的唯一用户入口**：浏览器
 - **法规锚编辑通道**：发布闸门问题的产品内修复路径
 - **分类标签管理**：抽屉式管理 + Escape 键盘关闭通道
 - **场景示例规则 v2**：业务指令范式 + 仓内 rules 预置（4 规则 9 用例实测全过）
-- **规则编辑表单深化** + 校验器对齐权威 schema；旅程可用性整治 + 新用户体验修复
+- **规则编辑表单深化** + 校验器对齐权威 schema；旅程可用性整治 + 新项目方体验修复
 - 完整明细见 [CHANGELOG](CHANGELOG.md)
 
 ### v0.2.0 已发版（2026-09-02）

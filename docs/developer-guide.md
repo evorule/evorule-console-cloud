@@ -5,7 +5,7 @@
 
 > **读者**：要参与本仓开发的新人（人或 LLM 协作者）。
 > **范围**：架构、启动、一次完整产品流程、核心概念、代码地图、坑表。
-> **不属于这里**：终端用户上手看 [tutorial/](./tutorial/)；启停细节看仓库根 [README-STARTUP.md](../../README-STARTUP.md)。
+> **不属于这里**：项目方上手看 [tutorial/](./tutorial/)；启停细节看仓库根 [README-STARTUP.md](../../README-STARTUP.md)。
 
 ---
 
@@ -118,9 +118,9 @@ npm run clean
 
 | 层 | 是什么 | 载体 |
 |---|---|---|
-| 系统规则 | 系统自身运行规则，非用户资产 | TCB 宪法 + server 桥接规则集 |
-| 用户规则 | 用户资产，达成业务目的 | 治理库数据集 → bundle → rules/ 目录 |
-| 用户数据 | 业务指令与结论，只产生于会话 | params（输入）→ payload.data（结论）→ WAL（留痕） |
+| 系统规则 | 系统自身运行规则，非项目方资产 | TCB 宪法 + server 桥接规则集 |
+| 项目方规则 | 项目方资产，达成业务目的 | 治理库数据集 → bundle → rules/ 目录 |
+| 项目方数据 | 业务指令与结论，只产生于会话 | params（输入）→ payload.data（结论）→ WAL（留痕） |
 
 ---
 
@@ -212,7 +212,7 @@ bundle 导入后只对**新会话**生效；老会话不回放新规则。验证
 | 文档 | 受众 |
 |---|---|
 | 本文档 | 开发者（架构/流程/坑） |
-| [tutorial/](./tutorial/) + [scenarios/](./scenarios/) | 终端用户上手 |
+| [tutorial/](./tutorial/) + [scenarios/](./scenarios/) | 项目方上手 |
 | [README-STARTUP.md](../../README-STARTUP.md) | 启停/看门狗/日志细节 |
 | [adr/](./adr/) | 架构决策记录 |
 | [explanation/](./explanation/) | 概念与原理（规划中） |

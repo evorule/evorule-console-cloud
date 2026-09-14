@@ -75,13 +75,13 @@ evorule-console-cloud 是联网大众版（SvelteKit + 联网 + 云 LLM），其
 | **云 LLM apiKey** | apiKey 泄露（localStorage 明文）| localStorage 存储（大众版可接受）；**不进 URL / 不进日志 / 不进 error.message**；密码框默认隐藏（眼睛图标切换显示）；UI 提示“key 存于本地，不上传” |
 | **LLM 调用跨域** | 浏览器 fetch 厂商 API 触发 CORS | 厂商 API 侧配置 CORS 允许大众版 origin；大众版无服务端，不引入 CORS 风险 |
 | **evorule-server 跨域** | 联网模式调远程 server 触发 CORS | evorule-server 启动时配置 `--allowed-origins`；本地开发用 `localhost` 对齐 vite 默认（避免 localhost ↔ 127.0.0.1 误判）|
-| 用户规则 JSON 输入 / 编辑 | XSS（规则内容含 `<script>` 注入到 DOM）| Svelte 默认文本转义；**禁用 `{@html}`** 渲染规则内容；内核 `L_console` 预校验（G1-G7）拦截非法结构 |
-| LLM 生成的规则草案 | LLM 输出含恶意 JSON / 注入 | 草案必须经内核 `RuleValidator` 校验（confidence 0.7/0.3/0 分级）+ **用户审核确认**才生效；不自动执行 |
+| 项目方规则 JSON 输入 / 编辑 | XSS（规则内容含 `<script>` 注入到 DOM）| Svelte 默认文本转义；**禁用 `{@html}`** 渲染规则内容；内核 `L_console` 预校验（G1-G7）拦截非法结构 |
+| LLM 生成的规则草案 | LLM 输出含恶意 JSON / 注入 | 草案必须经内核 `RuleValidator` 校验（confidence 0.7/0.3/0 分级）+ **项目方审核确认**才生效；不自动执行 |
 | 视图/联网模式/LLM 配置 localStorage 持久化 | 跨测试 / 跨会话状态串扰 | 每次使用前 `localStorage.clear()`；不持久化除配置外的敏感数据 |
 | npm 供应链 | 依赖被投毒 | `package-lock.json` 锁定；`npm audit` 定期检查；CI 校验签名 |
 
 > **关键安全属性**：
-> 1. **LLM 不参与确定性执行** — 执行链路完全不经过 LLM，规则即数据，用户审核才生效。LLM 调用失败降级为“用户手动编辑 JSON”，不阻塞规则引擎工作。
+> 1. **LLM 不参与确定性执行** — 执行链路完全不经过 LLM，规则即数据，项目方审核才生效。LLM 调用失败降级为“项目方手动编辑 JSON”，不阻塞规则引擎工作。
 > 2. **审计链 TCB 纯净** — blake3 哈希计算与验证在 evorule 核心（tier1）完成，前端 AuditView 仅做展示。大众版不修改内核，通过扩展槽注入，不引入新的可信计算边界。
 > 3. **apiKey 三不原则** — 不进 URL / 不进日志 / 不进 error.message（由 `llm-fetch.ts` 保证，单测覆盖断言）。
 

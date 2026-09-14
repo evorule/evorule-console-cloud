@@ -3,7 +3,7 @@
 
 # tutorial/ — 教学文档
 
-> **面向第一次接触 evorule-console-cloud 的用户**，手把手带你跑通。
+> **面向第一次接触 evorule-console-cloud 的项目方**，手把手带你跑通。
 
 一条学习路径：
 
