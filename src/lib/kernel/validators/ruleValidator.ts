@@ -22,8 +22,8 @@
  * 检查项:
  *   G0: transform 结构存在({transform:[...]} / 顶层数组 / 单条对象,对齐 server 归一化;空数组非法,TCB 非空约束)
  *   G1: JSON 格式合法性
- *   G2: 元指令类型(6 种)+ params 完备性(set: attr/operation/value; branch: domain/on_true;
- *       io_request: io_type; collect: from/each; merge: messages/next_instruction + tool_result[s]; push: instructions)
+ *   G2: 元指令类型(公开白名单 4 种 = dispatch − enforce)+ params 完备性(set: attr/operation/value; branch: domain/on_true;
+ *       io_request: io_type; push: instructions)
  *   G3: io_request 双路径模式(裸 io_request → warning;建议包在 exists(__io_results__…) 分支内,参考 core_eval 桥接剧本)
  *   G4: 域类型合法性(7 种)+ 每域必填字段 + inner 嵌套(出现 domain/domains 键即 error,P0-03)
  *   G5: path 语法(正则对齐 _shared $defs/path)+ 单数 __io_result__ 拒绝 + path_or_literal(__ 前缀字符串必须合法路径)
@@ -98,8 +98,9 @@ export interface ValidationResult {
   warnings: ValidationWarning[];
 }
 
-// 6 元指令(权威源 evorule-tcb/src/executor.rs dispatch;_shared L166)
-const VALID_META_INSTRUCTIONS = ['set', 'push', 'branch', 'io_request', 'collect', 'merge'];
+// 公开白名单 4 元指令(权威源 evorule-tcb/src/executor.rs dispatch;_shared L166)
+// collect/merge 已退役(69 号清理 2026-09-14);enforce 仅 tier=meta 文件,业务文件由 server 装载门禁拒载(UV-147)
+const VALID_META_INSTRUCTIONS = ['set', 'push', 'branch', 'io_request'];
 // 7 基础域类型(权威源 evorule-tcb/src/domain.rs;_shared L30,派生域不在枚举内)
 const VALID_DOMAIN_TYPES = ['eq', 'lt', 'exists', 'instruction', 'all', 'not', 'has_fields'];
 // set 元指令 operation 枚举(_shared L181)
@@ -370,63 +371,6 @@ export class RuleValidator {
             message:
               'io_request 未包裹在 exists(__exec__.payload.__io_results__.<io_type>) 双路径分支内——建议双路径模式:已有结果走读取分支,无结果才发起请求(参考 core_eval 桥接剧本,避免重复发起)',
             path
-          });
-        }
-        break;
-      }
-      case 'collect': {
-        // collect: from(path)/each(指令模板)必填(_shared L242-258)
-        if (!isValidPath(params.from)) {
-          errors.push({
-            gate: 'G5',
-            message: `collect.from 必须是合法路径(当前: ${String(params.from)})`,
-            path: `${path}.params.from`
-          });
-        }
-        if (!params.each || typeof params.each !== 'object') {
-          errors.push({
-            gate: 'G2',
-            message: 'collect.each 必填(指令模板对象,支持 {{placeholder}} 插值)',
-            path: `${path}.params.each`
-          });
-        }
-        break;
-      }
-      case 'merge': {
-        // merge: messages(path)/next_instruction 必填 + tool_result/tool_results 二选一(_shared L259-280)
-        if (!isValidPath(params.messages)) {
-          errors.push({
-            gate: 'G5',
-            message: `merge.messages 必须是合法路径(当前: ${String(params.messages)})`,
-            path: `${path}.params.messages`
-          });
-        }
-        const hasToolResult = isValidPath(params.tool_result);
-        const hasToolResults = isValidPath(params.tool_results);
-        if (!('tool_result' in params) && !('tool_results' in params)) {
-          errors.push({
-            gate: 'G2',
-            message: 'merge 必须提供 tool_result 或 tool_results 之一(引擎两者皆无报 MissingField)',
-            path: `${path}.params`
-          });
-        } else if ('tool_result' in params && !hasToolResult) {
-          errors.push({
-            gate: 'G5',
-            message: `merge.tool_result 必须是合法路径(当前: ${String(params.tool_result)})`,
-            path: `${path}.params.tool_result`
-          });
-        } else if ('tool_results' in params && !hasToolResults) {
-          errors.push({
-            gate: 'G5',
-            message: `merge.tool_results 必须是合法路径(当前: ${String(params.tool_results)})`,
-            path: `${path}.params.tool_results`
-          });
-        }
-        if (!params.next_instruction || typeof params.next_instruction !== 'object') {
-          errors.push({
-            gate: 'G2',
-            message: 'merge.next_instruction 必填(下一条指令模板,支持 {{messages}}/{{tools}} 插值)',
-            path: `${path}.params.next_instruction`
           });
         }
         break;

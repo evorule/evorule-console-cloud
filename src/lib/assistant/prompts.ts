@@ -19,14 +19,15 @@ import type { FlowTranspileContext } from '$lib/kernel';
  *
  * 对齐源(/ W2.5,2026-09-04 重写):evorule-server
  * core/rule_schema/schemas/_shared/v1.0.json(固化版,$defs SSOT)——
- * 6 元指令 params 形状、7 域类型、inner 嵌套、复数 __io_results__.<io_type>。
+ * 公开白名单 4 元指令 params 形状、7 域类型、inner 嵌套、复数 __io_results__.<io_type>。
+ * (collect/merge 已退役 69 号清理 2026-09-14;enforce 仅 tier=meta,业务文件不出现)
  */
 export const EVORULE_RULE_SPEC = `evorule 规则格式(JSON):
 
 顶层结构: { "transform": [规则1, 规则2, ..., 兜底规则] }
 
 每条规则是一个对象,字段:
-  - type: 元指令,取值 "set" | "push" | "branch" | "io_request" | "collect" | "merge"
+  - type: 元指令,取值 "set" | "push" | "branch" | "io_request"
   - params: 参数对象,因 type 而异
 
 各 type 的 params:
@@ -37,8 +38,6 @@ export const EVORULE_RULE_SPEC = `evorule 规则格式(JSON):
   - branch: { domain: <域>, on_true: [子规则数组], on_false: [子规则数组] }
   - io_request: { io_type: "<IO 类型>", ...其他参数 }
             (如 "call_external";I/O 结果按 io_type 隔离写入 __exec__.payload.__io_results__.<io_type>)
-  - collect: { from: "<源数组路径>", each: <指令模板> }
-  - merge:  { messages: "<消息历史路径>", tool_result 或 tool_results: "<工具结果路径>", next_instruction: <指令模板> }
 
 域(domain)形态: { type: ..., ... } 对象,或 "__ 路径引用" 字符串(动态域)
   - eq:       { type: "eq", path: "<路径>", value: <值> }
@@ -56,8 +55,8 @@ export const EVORULE_RULE_SPEC = `evorule 规则格式(JSON):
 
 硬约束(违反将无法通过校验):
   G1: 必须是合法 JSON
-  G2: type 必须是 6 种元指令之一;params 必填字段齐全
-      (set: attr/operation/value;branch: domain/on_true;io_request: io_type;collect: from/each;merge: messages/next_instruction+tool_result[s];push: instructions)
+  G2: type 必须是 4 种元指令之一(set/push/branch/io_request);params 必填字段齐全
+      (set: attr/operation/value;branch: domain/on_true;io_request: io_type;push: instructions)
   G3: 建议 io_request 包在 exists(__exec__.payload.__io_results__.<io_type>) 双路径分支内
       (已有结果走读取分支,无结果才发起请求)
   G4: domain.type 必须是 7 种之一;域嵌套一律用 inner(禁止 domains/domain 字段)
