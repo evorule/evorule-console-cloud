@@ -140,7 +140,7 @@ describe('W2.2 summarizeTransformSteps — 摘要预览', () => {
     expect(s![1].text).toContain('兜底规则');
   });
 
-  test('6 元指令摘要全覆盖', () => {
+  test('4 元指令摘要全覆盖(collect/merge 已退役 69 号 → 未知指令)', () => {
     const s = summarizeTransformSteps(
       JSON.stringify({
         transform: [
@@ -148,7 +148,6 @@ describe('W2.2 summarizeTransformSteps — 摘要预览', () => {
           { type: 'push', params: { instructions: [{ type: 'demo' }] } },
           { type: 'io_request', params: { io_type: 'call_external' } },
           { type: 'collect', params: { from: 'data.items', each: { type: 'set', params: {} } } },
-          { type: 'merge', params: { messages: 'data.msgs', tool_result: 'data.tr', next_instruction: {} } },
           {
             type: 'branch',
             params: {
@@ -164,9 +163,8 @@ describe('W2.2 summarizeTransformSteps — 摘要预览', () => {
     expect(s![0].text).toBe('set data.a set 1');
     expect(s![1].text).toBe('push 1 条指令');
     expect(s![2].text).toBe('io_request(call_external)');
-    expect(s![3].text).toBe('collect data.items 每项执行模板');
-    expect(s![4].text).toBe('merge 消息源=data.msgs');
-    expect(s![5].text).toContain('branch[not[eq data.x=1]]');
+    expect(s![3].text).toContain('collect(未知指令)');
+    expect(s![4].text).toContain('branch[not[eq data.x=1]]');
   });
 
   test('7 域类型摘要(has_fields/all 嵌套)', () => {

@@ -111,11 +111,8 @@ function summarizeStep(step: unknown): string {
       return `push ${Array.isArray(p.instructions) ? p.instructions.length : '?'} 条指令`;
     case 'io_request':
       return `io_request(${String(p.io_type ?? '?')})`;
-    case 'collect':
-      return `collect ${String(p.from)} 每项执行模板`;
-    case 'merge':
-      return `merge 消息源=${String(p.messages)}`;
     default:
+      // collect/merge 已退役(69 号清理)——历史残留步骤按未知指令显示
       return `${String(o.type)}(未知指令)`;
   }
 }

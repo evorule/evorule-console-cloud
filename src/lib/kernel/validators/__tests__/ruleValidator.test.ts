@@ -82,18 +82,18 @@ describe('G2 元指令与 params 完备性', () => {
     expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('on_true'))).toBe(true);
   });
 
-  test('collect 缺 each → G2', () => {
-    const r = v('{"transform":[{"type":"collect","params":{"from":"data.items"}}]}');
+  test('collect 已退役(69 号)→ G2 无效元指令类型', () => {
+    const r = v('{"transform":[{"type":"collect","params":{"from":"data.items","each":{"type":"noop"}}}]}');
     expect(r.valid).toBe(false);
-    expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('each'))).toBe(true);
+    expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('collect'))).toBe(true);
   });
 
-  test('merge 缺 tool_result/tool_results → G2', () => {
+  test('merge 已退役(69 号)→ G2 无效元指令类型', () => {
     const r = v(
-      '{"transform":[{"type":"merge","params":{"messages":"data.ms","next_instruction":{"type":"noop"}}}]}'
+      '{"transform":[{"type":"merge","params":{"messages":"data.ms","tool_result":"data.tr","next_instruction":{"type":"noop"}}}]}'
     );
     expect(r.valid).toBe(false);
-    expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('tool_result'))).toBe(true);
+    expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('merge'))).toBe(true);
   });
 
   test('push.instructions 为 __ 路径引用 → 合法', () => {
