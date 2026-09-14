@@ -35,15 +35,15 @@ export const GUIDED_TASKS: GuidedTask[] = [
 		flowId: "add_rule",
 		presetContext: {
 			medical: {
-				ruleId: "R-DEMO-001",
-				businessObject: { type: "patient", id: "P-1283" },
+				ruleId: "medical.antibiotic.tier_gate",
+				businessObject: { type: "prescription", id: "RX-001" },
 			},
 			finance: {
-				ruleId: "R-DEMO-F-001",
-				businessObject: { type: "invoice", id: "INV-2024-0183" },
+				ruleId: "finance.expense.limit",
+				businessObject: { type: "expense", id: "EXP-001" },
 			},
 		},
-		pitch: "给医院加一条「65 岁以上发烧必须先 CT」规则",
+		pitch: "给财务加一条「差旅报销限额从3000提到5000」规则",
 		icon: "➕",
 	},
 	{
@@ -53,17 +53,17 @@ export const GUIDED_TASKS: GuidedTask[] = [
 		flowId: "query_issue",
 		presetContext: {
 			medical: {
-				eventId: "E-DEMO-042",
-				businessObject: { type: "patient", id: "P-1283" },
-				auditRange: { from: 100, to: 150 },
+				eventId: "E-MED-001",
+				businessObject: { type: "patient", id: "P-001" },
+				auditRange: { from: 1, to: 50 },
 			},
 			finance: {
-				eventId: "E-DEMO-F-042",
-				businessObject: { type: "invoice", id: "INV-2024-0183" },
-				auditRange: { from: 80, to: 120 },
+				eventId: "E-FIN-001",
+				businessObject: { type: "expense", id: "EXP-003" },
+				auditRange: { from: 1, to: 50 },
 			},
 		},
-		pitch: "定位病人 P-1283 为何触发异常告警",
+		pitch: "追踪报销单 EXP-003 为何触发超额阻断告警",
 		icon: "🔍",
 	},
 	{
@@ -73,23 +73,23 @@ export const GUIDED_TASKS: GuidedTask[] = [
 		flowId: "edit_rule",
 		presetContext: {
 			medical: {
-				ruleId: "R-DEMO-001",
+				ruleId: "medical.triage.threshold",
 				extra: {
 					editField: "temperature_threshold",
-					oldValue: 38,
-					newValue: 37.5,
+					oldValue: 38.5,
+					newValue: 38.0,
 				},
 			},
 			finance: {
-				ruleId: "R-DEMO-F-001",
+				ruleId: "finance.expense.limit",
 				extra: {
-					editField: "reimbursement_limit",
-					oldValue: 5000,
-					newValue: 6000,
+					editField: "travel_limit",
+					oldValue: 3000,
+					newValue: 5000,
 				},
 			},
 		},
-		pitch: "把发烧阈值从 38°C 改为 37.5°C",
+		pitch: "把差旅报销限额从 3000 元改为 5000 元，看版本差异",
 		icon: "✏️",
 	},
 	{
@@ -99,20 +99,20 @@ export const GUIDED_TASKS: GuidedTask[] = [
 		flowId: "compliance_gate",
 		presetContext: {
 			medical: {
-				ruleId: "djbh.identity.mfa_required",
+				ruleId: "medical.djbh.mfa",
 				extra: {
 					toolCall: {
-						name: "transfer_money",
-						category: "finance",
-						amount: 50000,
+						name: "read_medical_record",
+						category: "medical",
+						patient_id: "P-001",
 					},
 					userAuth: { factors: ["password"], count: 1 },
 					expectBlocked: true,
-					clause: "8.1.4.1.d",
+					clause: "GB/T 22239-2019 §8.1.4.1.d",
 				},
 			},
 			finance: {
-				ruleId: "djbh.confidentiality.storage_encryption",
+				ruleId: "finance.djbh.storage_encryption",
 				extra: {
 					toolCall: {
 						name: "db_write",
@@ -120,11 +120,11 @@ export const GUIDED_TASKS: GuidedTask[] = [
 					},
 					encryption: "none",
 					expectBlocked: true,
-					clause: "8.1.4.7.b",
+					clause: "GB/T 22239-2019 §8.1.4.8.b",
 				},
 			},
 		},
-		pitch: "AI Agent 调用转账工具但未双因子认证 → 看门禁如何阻断 + BLAKE3 留痕",
+		pitch: "读取病历未双因子认证 → 看等保门禁如何阻断 + BLAKE3 留痕",
 		icon: "🛡️",
 	},
 ];
