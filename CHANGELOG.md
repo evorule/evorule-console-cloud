@@ -489,7 +489,7 @@ npm run check && npm run test:unit && npm run test && npm run build
 # 4. CHANGELOG 标记 v0.1.0 发版日期
 
 # 5. 切换 package.json 依赖为 git URL
-#    "@evorule/console": "git+https://gitee.com/evo-rule-lab/evorule-console.git#v0.1.1"
+#    "@evorule/console": "git+https://gitee.com/evorule/evorule-console.git#v0.1.1"
 
 # 6. 提交 + tag + push(由项目方决定时机)
 git add -A
