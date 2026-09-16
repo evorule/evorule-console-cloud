@@ -7,6 +7,10 @@
 
 # EvoRule Console Cloud
 
+> **仓库角色**：本仓库是 **GitHub 镜像**。权威源（primary repo）在 **Gitee**：[https://gitee.com/evorule/evorule-console-cloud](https://gitee.com/evorule/evorule-console-cloud)。
+> Issue / PR 请提交到 Gitee，GitHub 侧仅供镜像与推广展示。
+
+
 **evorule rule-engine console · the connected public edition** — a professional starting point for secondary developers (core engine + connectivity + cloud LLM + platform governance)
 
 [![version](https://img.shields.io/badge/version-0.5.0-blue)](./CHANGELOG.md)
