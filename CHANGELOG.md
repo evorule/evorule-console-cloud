@@ -43,7 +43,7 @@
 
 ## [0.4.4] - 2026-09-10
 
-**消费者首次体验文案整改补全** — 建库试运行与 AI 草案校验的残缺展示收口
+**消费者首次体验文案补全** — 建库试运行与 AI 草案校验的残缺展示收口
 
 ### 🐛 修复
 
@@ -61,11 +61,11 @@
 
 ### 🐛 修复
 
-- **模板 schema 合法化** — 助手反馈修复:模板 schema 校验通过、空白库余额提示、路由重定向更准确
+- **模板 schema 合法化** — 模板 schema 校验通过、空白库余额提示、路由重定向更准确
 
 ## [0.4.2] - 2026-09-10
 
-**首次项目方体验反馈修复 + 平台管理能力** — 应用凭据/配额管理、插件审批工作台，以及首次体验反馈集中的文案通俗化与引导优化
+**首次体验问题修复 + 平台管理能力** — 应用凭据/配额管理、插件审批工作台，以及文案通俗化与引导优化
 
 ### 🆕 新增
 
@@ -75,7 +75,7 @@
 - **服务目录插件来源展示** — 系统状态面板的服务目录支持外部插件包来源条目:来源标签区分原生/插件/注册三类,插件服务显示归属插件,敏感服务保持醒目提示
 - **服务参数契约透传展示** — 服务目录条目新增参数契约字段展示(契约由服务提供方声明,经 server 对账端点透传)
 
-### 🐛 修复（首次项目方体验反馈集中整治）
+### 🐛 修复
 
 - **校验提示通俗化** — 规则校验错误新增通俗化翻译层(ruleValidator.friendlyRuleError):业务表单/建库向导不再展示 "exists.path 必填" 等技术术语,改用人话提示并保留未命中消息原样透出
 - **试运行版本号显示** — 建库向导试运行结果不再显示 "version=?" ,提交后从 reactor 版本取实际版本号
@@ -136,7 +136,7 @@
 ### 🔄 变更
 
 - **规则编辑表单深化** — 编辑体验收尾 + 校验器对齐权威 schema + 前端规则知识漂移修复
-- **旅程可用性整治** — 6 项止血修复 + 13 路由 page-smoke 骨架 + 资产清理(activity-log/comments 链、孤儿视图退役)
+- **旅程可用性修复** — 6 项修复 + 13 路由 page-smoke 骨架 + 资产清理(activity-log/comments 链、孤儿视图退役)
 - **新项目方体验修复** — 单页视图守卫竞态 + 版本动态化 + 示例按钮/LLM 预览/零停机语义/登录引导
 
 ### 🐛 修复
@@ -213,9 +213,8 @@
 
 ### 变更
 
-#### 内核身份注入（ActorIdentity，D2 闭合）
+#### 内核身份注入（ActorIdentity）
 
-清偿上游债务登记：内核 `HttpWorkspaceBackend` 硬编码 `submitted_by/reviewed_by/operated_by = "console"` 及发布角色，server 发布链路与沙盒编排的审计归属失真。上游 evorule-console v0.3.0（`274b1e3`）新增构造级 `actor` 参数后，本仓同步快照并接入登录身份。
 
 - 内核快照同步（`workspace-types.ts` / `http-workspace-backend.ts`，`git diff --no-index` 零漂移复核）：`ActorIdentity`（`{ name, role? }`）+ 构造第三参；`actor` 已配置但缺 `role` 时发布侧方法如实抛错（fail-fast），未配置时回落 `"console"` 并 warn 一次
 - `CloudWorkspaceBackend`：配置新增 `actor`，构造/`reconfigure` 透传内核
@@ -225,7 +224,7 @@
 
 #### 旁路 store 收敛（凭据闭环 + 审批单通道化）
 
-清偿规则写入链路适配专项登记的债务：三条旁路 store（publish-queue-api / production-state / production-audit）直连 server 端点、不带凭据、与 WorkspaceBackend 职责重叠，且发布审批存在"server 通道 + localStorage 本地状态机"双通道并存（规划文档：`planning/脱离console.txt` §2.3）。
+三条旁路 store（publish-queue-api / production-state / production-audit）直连 server 端点、不带凭据、与 WorkspaceBackend 职责重叠，发布审批存在"server 通道 + localStorage 本地状态机"双通道并存（规划文档：`planning/脱离console.txt` §2.3）。
 
 **凭据通道闭环**
 
@@ -250,12 +249,9 @@
 - 新增 `production-views.test.ts`（8 用例：角色映射/队列项映射/审计事件过滤）与 `cloud-http-backend.test.ts`（10 用例：读委托/未注入如实抛错/写方法请求体与 Bearer 头断言）
 - 移除引用已删模块的 2 个旧测试文件（`publish-queue-api.test.ts` / `production-audit-api.test.ts`），有效用例已迁移
 
-**登记上游债务**
+- 内核 `HttpBackend`（执行侧会话 API）增可选 authToken：上游 evorule-console `0073a0c` 支持（对齐 `HttpWorkspaceBackend` 既有模式），本仓随 `0073a0c` 同步内核快照并接线（`CloudHttpBackend` 构造/reconfigure 传入 authToken），执行侧 15 方法请求统一携带 Bearer 头
 
-- 内核 `HttpBackend`（执行侧会话 API）无 token 概念，会话/审计/时间旅行端点不校验凭据（A3）：**已于同日闭合**——上游 evorule-console `0073a0c` 增可选 authToken（对齐 `HttpWorkspaceBackend` 既有模式），本仓随 `0073a0c` 同步内核快照并接线（`CloudHttpBackend` 构造/reconfigure 传入 authToken），执行侧 15 方法请求统一携带 Bearer 头
-- 内核 `WorkspaceBackend.reviewPublish` / `emergencyRollback` 硬编码操作者身份，会丢失 UI 传入的审批者与角色：cloud 暂以自建 fetch（带凭据）承接，待内核开放身份参数后收敛（**维持挂账**，登记于 `planning/上游债务登记.md` D2）
-
-#### 一键启动脚本：清偿"已知限制"（README-STARTUP.md）
+#### 一键启动脚本（README-STARTUP.md）
 
 - `start-all.ps1`：新增 `-Quiet` / `-NoBrowser` 参数（无人值守，不卡 `Read-Host`）；启动失败/端口超时自动回滚本次拉起的进程树（`taskkill /T` 连子进程，只动本次启动的，不碰既有实例）；三服务 stdout/stderr 统一重定向到 `logs\`（不再落根目录）
 - `start-all.ps1`：修复 evorule-server 裸起无法监听既定端口的既有缺陷——默认按兄弟目录推导 `--rules-dir`/`--core-eval`/`--service-registry`/`--allowed-origins` 参数组，支持 `EVORULE_SERVER_ARGS` / `EVORULE_RULE_ARGS` 环境变量整体覆盖（公开仓不硬编码管理员凭据，evorule-rule 首次引导走环境变量追加）
@@ -272,7 +268,7 @@
 
 #### 规则写入链路适配（WorkspaceBackend 落地）
 
-内核依赖内联后遗留的 v0.1.1 API 调用债务全部清偿，规则写入链路对齐内核 v0.2.0 workspace 化架构（规划文档：`docs/planning/2026-08-27-workspace-write-chain.md`）。
+规则写入链路对齐内核 v0.2.0 workspace 化架构（规划文档：`docs/planning/2026-08-27-workspace-write-chain.md`）。
 
 **基础设施**
 
@@ -297,12 +293,6 @@
 - 修复 `ruleset-import.test.ts`（15 测试）：await 语义 + skip/rename 策略按 name 匹配重新断言
 - 修复 `impact-preview.test.ts` / `assemble-ruleset.test.ts`：Rule 构造对齐 v0.2.0 形状
 - 回归基线：svelte-check 0 errors、vitest 904/904 全绿、`npm run build` 通过
-
-**登记债务（后续专项）**
-
-- `BusinessRuleLibrary` 开发者模式 JSON 直接编辑待补（内核视图弃用后暂以占位提示）
-- `updateRule` 的 description 更新通道缺失（内核 `updateRuleContent` API 不支持，UI 已明示）
-- publish-queue-api / production-state / production-audit 三个 store 直连 server 端点，与 WorkspaceBackend 职责重叠，待收敛（**已于 2026-08-28「旁路 store 收敛」专项闭合，见上**）
 
 #### 内核依赖内联（解除 npm 依赖）
 
