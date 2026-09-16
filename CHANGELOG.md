@@ -31,7 +31,7 @@
 - `wasm-bindgen` 封装 `EvoRuleEngine`：纯同步 `execute_transition`，同入同出，审计哈希与本地 Rust 引擎一致
 - 审计链沿用 `@noble/hashes` 的 BLAKE3 实现，浏览器内完成 `verify` / 因果链 / `rewind` / `diff`
 - Service Worker 预缓存静态资源与 WASM 二进制，首访后断网可继续操作
-- 内核产物对齐 evorule v0.6.0 基线重建（69 号清理后 TCB 元指令白名单 5 种，`collect`/`merge` 退役路径不再编入，.wasm 297KB → 287KB）；确定性套件 184/184 复跑通过（BLAKE3 链逐字节一致），WasmBackend 12/12 通过
+- 内核产物对齐 evorule v0.6.0 基线重建（TCB 元指令白名单收窄为 5 种，`collect`/`merge` 退役路径不再编入，.wasm 297KB → 287KB）；确定性套件 184/184 复跑通过（BLAKE3 链逐字节一致），WasmBackend 12/12 通过
 
 ### ⚠️ 已知限制
 
@@ -215,7 +215,7 @@
 
 #### 内核身份注入（ActorIdentity，D2 闭合）
 
-清偿上游债务登记 D2：内核 `HttpWorkspaceBackend` 硬编码 `submitted_by/reviewed_by/operated_by = "console"` 及发布角色，server 发布链路与沙盒编排的审计归属失真。上游 evorule-console v0.3.0（`274b1e3`）新增构造级 `actor` 参数后，本仓同步快照并接入登录身份。
+清偿上游债务登记：内核 `HttpWorkspaceBackend` 硬编码 `submitted_by/reviewed_by/operated_by = "console"` 及发布角色，server 发布链路与沙盒编排的审计归属失真。上游 evorule-console v0.3.0（`274b1e3`）新增构造级 `actor` 参数后，本仓同步快照并接入登录身份。
 
 - 内核快照同步（`workspace-types.ts` / `http-workspace-backend.ts`，`git diff --no-index` 零漂移复核）：`ActorIdentity`（`{ name, role? }`）+ 构造第三参；`actor` 已配置但缺 `role` 时发布侧方法如实抛错（fail-fast），未配置时回落 `"console"` 并 warn 一次
 - `CloudWorkspaceBackend`：配置新增 `actor`，构造/`reconfigure` 透传内核
@@ -225,7 +225,7 @@
 
 #### 旁路 store 收敛（凭据闭环 + 审批单通道化）
 
-清偿规则写入链路适配专项登记的第三项债务：三条旁路 store（publish-queue-api / production-state / production-audit）直连 server 端点、不带凭据、与 WorkspaceBackend 职责重叠，且发布审批存在"server 通道 + localStorage 本地状态机"双通道并存（规划文档：`planning/脱离console.txt` §2.3）。
+清偿规则写入链路适配专项登记的债务：三条旁路 store（publish-queue-api / production-state / production-audit）直连 server 端点、不带凭据、与 WorkspaceBackend 职责重叠，且发布审批存在"server 通道 + localStorage 本地状态机"双通道并存（规划文档：`planning/脱离console.txt` §2.3）。
 
 **凭据通道闭环**
 
