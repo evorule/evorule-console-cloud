@@ -23,7 +23,7 @@
 **版本**：0.1.0
 **最后更新**：2026-08-03
 
-> evorule-console-cloud 是 [evorule-console](https://gitee.com/evo-rule-lab/evorule-console) 内核的衍生产品，定位为**二次开发者专业起点**（联网 + 云 LLM）。本文档仅约束本仓；EvoRule 项目级原则见各仓自身的贡献指南。
+> evorule-console-cloud 是 [evorule-console](https://gitee.com/evorule/evorule-console) 内核的衍生产品，定位为**二次开发者专业起点**（联网 + 云 LLM）。本文档仅约束本仓；EvoRule 项目级原则见各仓自身的贡献指南。
 
 ---
 
@@ -287,7 +287,7 @@ test(e2e): add apiKey security verification case
 
 - **Gitee Issues**：<https://gitee.com/evorule/evorule-console-cloud/issues>
 - **邮箱**：<evorulelab@gmail.com>
-- **组织**：[EvoRule Lab](https://gitee.com/evo-rule-lab)
+- **组织**：[EvoRule](https://gitee.com/evorule)
 
 ---
 
