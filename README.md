@@ -396,8 +396,6 @@ Commercial license inquiries: evorulelab@gmail.com
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-> This ecosystem uses **Gitee as the primary repo** and GitHub as a sync mirror — please submit Issues and PRs to [Gitee](https://gitee.com/evorule/evorule-console-cloud/issues).
-
 ---
 
 Copyright (C) 2026 EvoRule Project. All rights reserved.
