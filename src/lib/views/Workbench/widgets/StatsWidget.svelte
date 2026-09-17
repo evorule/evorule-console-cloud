@@ -8,6 +8,7 @@
 <script lang="ts">
   import WorkbenchStats from "../WorkbenchStats.svelte";
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
   import { rules, sessions, publishQueue, auditData } from "$lib/kernel";
   import { deriveStats, type AuditEntrySnapshot, type RuleSnapshot } from "../workbench-data";
 
@@ -25,7 +26,7 @@
   );
 
   function nav(path: string): void {
-    void goto(path);
+    void goto(`${base}${path}`);
   }
 </script>
 

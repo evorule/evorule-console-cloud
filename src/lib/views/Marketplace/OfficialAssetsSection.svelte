@@ -11,6 +11,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
   import {
     officialAssets,
     officialAssetsUi,
@@ -102,7 +103,7 @@
         </button>
         <p class="oa-empty-hint">已存凭据:{$governanceConfig.username}@{$governanceConfig.baseUrl}</p>
       {/if}
-      <button class="oa-btn" onclick={() => goto("/governance")}>
+      <button class="oa-btn" onclick={() => goto(`${base}/governance`)}>
         前往治理中心连接
       </button>
     </div>

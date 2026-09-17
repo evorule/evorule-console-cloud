@@ -7,9 +7,10 @@
 
 <script lang="ts">
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
 
   function jumpTo(path: string) {
-    void goto(path);
+    void goto(`${base}${path}`);
   }
 </script>
 

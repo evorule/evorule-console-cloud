@@ -8,6 +8,7 @@
 <script lang="ts">
   import WorkbenchActivity from "../WorkbenchActivity.svelte";
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
   import { auditData } from "$lib/kernel";
   import { deriveActivity, type AuditEntrySnapshot } from "../workbench-data";
 
@@ -17,7 +18,7 @@
   );
 
   function openFull(): void {
-    void goto("/view/audit");
+    void goto(`${base}/view/audit`);
   }
 </script>
 

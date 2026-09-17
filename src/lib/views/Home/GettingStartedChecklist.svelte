@@ -10,6 +10,7 @@
 
 <script lang="ts">
 	import { goto } from "$app/navigation";
+import { base } from "$app/paths";
 	import {
 		onboardingStore,
 		toggleChecklistItem,
@@ -25,7 +26,7 @@
 	const pct = $derived(progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0);
 
 	function go(item: ChecklistItem) {
-		goto(item.route);
+		goto(`${base}${item.route}`);
 	}
 </script>
 

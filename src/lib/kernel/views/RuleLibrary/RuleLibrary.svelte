@@ -13,10 +13,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
 
   // 直接跳转到新路由 — 即使被手动访问也走 /workspace
   onMount(() => {
-    goto("/workspace", { replaceState: true });
+    goto(`${base}/workspace`, { replaceState: true });
   });
 </script>
 

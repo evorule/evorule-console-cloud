@@ -10,6 +10,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import {
     BUILTIN_USERS,
@@ -64,7 +65,7 @@
     if (result.success) {
       toastSuccess(`已登录为 ${username.trim()}`, '登录成功');
       autoMode();
-      goto('/');
+      goto(`${base}/`);
     } else {
       toastError(result.error ?? '登录失败', '登录失败');
     }
@@ -100,7 +101,7 @@
       const user = BUILTIN_USERS.find((u) => u.username === name);
       toastSuccess(`已登录为 ${user?.displayName ?? name}`, '演示模式登录');
       autoMode();
-      goto('/');
+      goto(`${base}/`);
     } else {
       toastError(result.error ?? '登录失败', '登录失败');
     }

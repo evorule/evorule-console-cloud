@@ -17,6 +17,7 @@
 
 import { derived, get, writable } from 'svelte/store';
 import { goto } from '$app/navigation';
+import { base } from '$app/paths';
 import {
 	connect,
 	governanceStore,
@@ -135,7 +136,7 @@ export function deployOfficialAsset(d: GovernanceDataset): void {
 		throw new Error(message);
 	}
 	selectDataset(d.dataset_id);
-	void goto(`/governance?deploy=${encodeURIComponent(d.dataset_id)}`);
+	void goto(`${base}/governance?deploy=${encodeURIComponent(d.dataset_id)}`);
 }
 
 /** 重置 UI 态(测试用;不动治理会话) */

@@ -9,6 +9,7 @@
 
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import {
     currentUser,
     logout,
@@ -41,20 +42,20 @@
     logout();
     open = false;
     toastSuccess('已登出', '再见');
-    goto('/');
+    goto(`${base}/`);
   }
 
   function handleForceDemo(): void {
     open = false;
     forceDemo();
     toastSuccess('已切换到 demo 模式', '查看演示');
-    goto('/');
+    goto(`${base}/`);
   }
 
   function handleBackToWorkbench(): void {
     open = false;
     autoMode();
-    goto('/');
+    goto(`${base}/`);
   }
 
   async function handleChangePw(e: SubmitEvent): Promise<void> {
@@ -165,7 +166,7 @@
     {/if}
   </div>
 {:else}
-  <button class="login-btn" onclick={() => goto('/login')}>
+  <button class="login-btn" onclick={() => goto(`${base}/login`)}>
     🔐 登录
   </button>
 {/if}

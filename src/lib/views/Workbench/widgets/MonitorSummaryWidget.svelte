@@ -12,6 +12,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
   import { useBackend } from "$lib/kernel";
   import type { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { DEFAULT_PRODUCTION_STATE, type ProductionState } from "$lib/backend/production-views";
@@ -96,7 +97,7 @@
         <span class="metric-label">生产 Session</span>
         <span class="metric-value">{prod.currentSessionId ?? "—"}</span>
       </div>
-      <button class="enter-btn" onclick={() => goto("/monitor")}>进入大屏 →</button>
+      <button class="enter-btn" onclick={() => goto(`${base}/monitor`)}>进入大屏 →</button>
     </div>
   {/if}
 </div>

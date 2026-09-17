@@ -20,6 +20,7 @@
   import { netConfig } from "$lib/config/net-config";
   import { workbenchStatus, workbenchRefreshNow } from "$lib/stores/workbench-status";
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
   import {
     CloudHttpBackend,
     type BoundServiceInfo,
@@ -30,7 +31,7 @@
   const st = $derived($workbenchStatus);
 
   function showOnboarding(): void {
-    void goto("/?task=open");
+    void goto(`${base}/?task=open`);
   }
 
   // === 服务清单(⑨,GET /api/services) ===

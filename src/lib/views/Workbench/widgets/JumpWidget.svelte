@@ -9,6 +9,7 @@
 <script lang="ts">
   import WorkbenchJump from "../WorkbenchJump.svelte";
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
   import { sessionStore } from "$lib/stores/session";
   import { currentUser, hasPermission } from "$lib/stores/auth";
   import { toastInfo } from "$lib/stores/toast";
@@ -19,10 +20,10 @@
   function onNav(path: string, loginRequired: boolean): void {
     if (loginRequired && !loggedIn) {
       toastInfo("请先登录");
-      void goto("/login");
+      void goto(`${base}/login`);
       return;
     }
-    void goto(path);
+    void goto(`${base}${path}`);
   }
 </script>
 

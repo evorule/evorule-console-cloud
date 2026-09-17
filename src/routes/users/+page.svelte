@@ -11,6 +11,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+import { base } from '$app/paths';
   import UsersView from '$lib/views/Admin/UsersView.svelte';
   import { can, isLoggedIn, getCurrentUser } from '$lib/stores/auth';
   import { toastInfo } from '$lib/stores/toast';
@@ -19,7 +20,7 @@
 
   onMount(() => {
     if (!$isLoggedIn) {
-      goto('/login');
+      goto(`${base}/login`);
       return;
     }
     if (!allowed) {
@@ -30,7 +31,7 @@
           : '当前账号无 view_users / manage_users 权限,请联系管理员。',
         '权限不足'
       );
-      goto('/');
+      goto(`${base}/`);
     }
   });
 </script>

@@ -13,6 +13,7 @@
 <script lang="ts">
 	import { get } from "svelte/store";
 	import { goto } from "$app/navigation";
+	import { base } from "$app/paths";
 	import {
 		WASM_TOUR_STEPS,
 		type WasmTourStep,
@@ -125,7 +126,7 @@
 			text: "已完成浏览——现在去规则库看看。",
 			ok: true,
 		};
-		void goto("/view/rules");
+		void goto(`${base}/view/rules`);
 	}
 
 	// === 第 3/4/5 步:跑指令 ===
@@ -337,8 +338,8 @@
 			<h4>🎉 7 步全部完成!</h4>
 			<p>你已经在浏览器里跑通了 EvoRule 的完整链路:放行/阻断决策、医疗用药门禁、BLAKE3 审计链验证、时间旅行回放。</p>
 			<div class="wt-complete-actions">
-				<button class="wt-btn" onclick={() => void goto("/view/rules")}>继续浏览规则 →</button>
-				<button class="wt-btn ghost" onclick={() => void goto("/audit")}>打开审计视图 →</button>
+				<button class="wt-btn" onclick={() => void goto(`${base}/view/rules`)}>继续浏览规则 →</button>
+				<button class="wt-btn ghost" onclick={() => void goto(`${base}/audit`)}>打开审计视图 →</button>
 				<button
 					class="wt-btn ghost"
 					onclick={() =>
