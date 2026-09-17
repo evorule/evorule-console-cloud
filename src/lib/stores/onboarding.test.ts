@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// onboarding store 单测 — UV-179 批次A:Tour 扩步(治理连接/AI 助手)+ 清单扩条 + 旧数据兼容
+// onboarding store 单测 — Tour 扩步(治理连接/AI 助手)+ 清单扩条 + 旧数据兼容
 //
 // 运行: npx vitest run src/lib/stores/onboarding.test.ts
 
@@ -33,7 +33,7 @@ beforeEach(() => {
 	resetAllOnboarding();
 });
 
-describe('TOUR_STEPS(UV-179 扩步)', () => {
+describe('TOUR_STEPS(向导扩步)', () => {
 	test('含治理连接步:route 指向 /governance 且明示体验包默认凭据+安全标注', () => {
 		const gov = TOUR_STEPS.find((s) => s.id === 'governance');
 		expect(gov).toBeDefined();
@@ -58,7 +58,7 @@ describe('TOUR_STEPS(UV-179 扩步)', () => {
 	});
 });
 
-describe('上手清单(UV-179 扩条)', () => {
+describe('上手清单(扩条)', () => {
 	test('默认清单含「连接治理服务」与「配置 AI 助手(可选)」条目且未完成', () => {
 		const items = get(onboardingStore).checklist;
 		const gov = items.find((i) => i.id === 'governance');
@@ -70,7 +70,7 @@ describe('上手清单(UV-179 扩条)', () => {
 	});
 });
 
-describe('首跑向导状态机(UV-179 批次A /welcome)', () => {
+describe('首跑向导状态机(/welcome)', () => {
 	test('默认未完成未关闭:提示条应显示', () => {
 		expect(get(onboardingStore).welcome).toEqual({ completed: false, dismissed: false });
 		expect(shouldShowWelcomeNotice()).toBe(true);
@@ -124,10 +124,10 @@ describe('首跑向导状态机(UV-179 批次A /welcome)', () => {
 	});
 });
 
-describe('旧数据兼容(mergeState,UV-179 扩条不丢老用户标记)', () => {
+describe('旧数据兼容(mergeState,扩条不丢老用户标记)', () => {
 	test('旧存量(无 governance/ai-llm 条目)合并后:新条目天然补全未完成,存量 done 按 id 恢复', () => {
 		const base = { ...get(onboardingStore), checklist: defaultChecklist() };
-		// 模拟 UV-179 之前的老用户存量:仅 3 条、connect 已完成、横幅已关
+		// 模拟扩条之前的老用户存量:仅 3 条、connect 已完成、横幅已关
 		// (Partial<OnboardingState> 断言:加 welcome 字段后结构性重叠不再充分,经 unknown 中转)
 		const legacy = {
 			tour: { active: false, step: 0, completed: true, skipped: false },

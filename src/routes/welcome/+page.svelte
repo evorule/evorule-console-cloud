@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  /welcome 首跑向导(UV-179 批次A)— 非技术用户四步引导:
+  /welcome 首跑向导 — 非技术用户四步引导:
     步1 欢迎 → 步2 治理连接 → 步3 LLM 增强(可选) → 步4 完成
   设计约束:
     - 确定性兜底为必选路径:LLM 步可跳过,无 Key 全程可用
-    - 凭据只落本机:密码/Key 经 key-crypto 加密保存(复用 UV-178 批次B/G 链路),
+    - 凭据只落本机:密码/Key 经 key-crypto 加密保存(复用凭据加密链路),
       不进 prompt/日志/URL;本页纯引导,无任何凭据外发路径
     - 非阻塞:任何一步都可「跳过向导」;完成态落 onboarding store
   复用:governance-store.connect / governance-config / llm-config(零新机制)
@@ -67,7 +67,7 @@
 	// 连接成功后的「记住密码」子状态
 	// 注意:连接成功与否直接看 govConnected(store 在登录+me 成功后立即置位,早于
 	// connect() 整体 resolve——refreshDatasets 可能较慢),不依赖 handleConnect 回写,
-	// 否则记住区会在数据集拉取期间不显示(UV-179 批次F 实测发现的时序缺陷)。
+	// 否则记住区会在数据集拉取期间不显示(实测发现的时序缺陷)。
 	// rememberDismissed 仅表示用户已处置过本次提醒(记住/暂不)。
 	let rememberDismissed = $state(false);
 	let rememberPassphrase = $state('');

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — governance-config 治理凭据加密存储 单测(UV-178 批次E+)
+// evorule-console-cloud — governance-config 治理凭据加密存储 单测
 //
 // 运行: npx vitest run src/lib/config/governance-config.test.ts
 // 说明: store 是模块单例(loadConfig 在 import 期执行),每个用例经

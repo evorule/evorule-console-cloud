@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — ai-plugin 激活状态检测(UV-177)
+// evorule-console-cloud — ai-plugin 激活状态检测
 //
 // 职责:
 //   - 消费既有 GET /api/health 的 plugins 节(server.rs:启动期挂载事实 enabled

@@ -139,7 +139,7 @@ function mountSidecarMocks(opts: {
 
 // ============ happy path ============
 
-// ============ server 执行通道(UV-172 P2) ============
+// ============ server 执行通道 ============
 
 describe('server 执行通道 callChatApiServerChannel', () => {
 	const INVOKE_URL = `${SERVER_BASE}/api/services/ai_plugin_chat/invoke`;

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  WelcomeNotice(UV-179 批次A)— 首跑向导非阻塞提示条。
+  WelcomeNotice — 首跑向导非阻塞提示条。
   登录后、向导未完成且未被显式关闭时显示;点击进 /welcome;
   「不再提示」只关提示条(可在帮助页重跑向导)。不劫持任何操作。
   依赖:src/lib/stores/onboarding.ts + session store

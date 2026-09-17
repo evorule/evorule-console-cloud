@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- evorule-console-cloud — ai-plugin 激活状态卡(UV-177) -->
+<!-- evorule-console-cloud — ai-plugin 激活状态卡 -->
 <!--
   职责:
     - 消费 GET /api/health plugins 节,三态呈现 server 通道 AI 激活状态
       (未启用→三步引导含可复制片段 / 已启用未达→拉起进程指引 / 就绪)
     - 仅在 LlmSettings 选中「服务端执行」通道时渲染(父级控制)
     - 明示"插件清单为启动期读盘注册,改后需重启 server"(不承诺热切换)
-    - 分发版已内置 ai-plugin 分发件(UV-178 批次A):片段区分分发版/源码版两形态
+    - 分发版已内置 ai-plugin 分发件:片段区分分发版/源码版两形态
 
   边界:
     - 纯展示层:只读 /api/health,不提供任何写配置/收凭据表单
@@ -61,7 +61,7 @@
 	const MANIFEST_SNIPPET =
 		'"ai-plugin": { "enabled": true, "manifest": "plugins/ai-plugin/plugin.json" }';
 	const CFG_SNIPPET = 'cp plugins/ai-plugin/config.example.json plugins/ai-plugin/ai-plugin.json';
-	// UV-178 批次B:凭据环境变量注入(推荐,不落盘;文件 llm_api_key 为兼容形态)
+	// 凭据环境变量注入(推荐,不落盘;文件 llm_api_key 为兼容形态)
 	const ENV_SNIPPET = [
 		'# Windows (PowerShell,当前会话)',
 		'$env:EVORULE_AI_PLUGIN_LLM_API_KEY="sk-..."',

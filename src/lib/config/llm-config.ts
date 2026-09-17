@@ -5,7 +5,7 @@
 // 持久化:localStorage(key: evorule-console-cloud:llm-config)
 // 默认:enabled=false(与内核 evorule-console 一致,LLM 按钮不渲染)
 //
-// 凭据安全(UV-178 批次B):
+// 凭据安全:
 //   - 运行时 apiKey 一律内存明文(消费方语义不变)
 //   - 落盘形态由 keyStorage 决定:
 //       encrypted(缺省推荐):keyEnc 加密块(AES-256-GCM+PBKDF2 口令,

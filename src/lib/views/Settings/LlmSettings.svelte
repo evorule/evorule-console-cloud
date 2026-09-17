@@ -11,7 +11,7 @@
     - 测试连接按钮(调用 testConnection 验证)
     - 保存配置(写 llmConfig store + 提示用户刷新页面以重注入)
 
-  apiKey 安全(UV-178 批次B):
+  apiKey 安全:
     - 缺省:口令加密后落盘(AES-GCM+PBKDF2,config/key-crypto.ts);
       本会话未解锁时显示解锁面板(locked)
     - 明文保存为显式选择(旧配置自动兼容为 plain 形态,行为不变)
@@ -51,7 +51,7 @@
 	let isSaving = $state(false);
 	let savedNotice = $state(false);
 
-	// === UV-178 批次B:凭据保存形态 + 解锁 ===
+	// === 凭据保存形态 + 解锁 ===
 	// 加密保存为缺省;plain 仅旧配置兼容或显式选择
 	let saveMode = $state<'encrypted' | 'plain'>(
 		$llmConfig.keyStorage === 'plain' ? 'plain' : 'encrypted'
@@ -254,7 +254,7 @@
 		<small class="hint">{t('llm.disableHint')}</small>
 	</div>
 
-	<!-- UV-178 批次C:初始态激活入径(一行入口,一键进入 server 激活卡) -->
+	<!-- 初始态激活入径(一行入口,一键进入 server 激活卡) -->
 	{#if !$llmConfig.enabled}
 		<div class="onboard-row">
 			<small class="hint">{t('llm.onboardHint')}</small>
@@ -272,7 +272,7 @@
 	{/if}
 
 	{#if $llmConfig.enabled}
-		<!-- 2. 执行通道(UV-172 P2:browser=现状;server=ai-plugin 托管执行) -->
+		<!-- 2. 执行通道(browser=现状;server=ai-plugin 托管执行) -->
 	<div class="form-row">
 		<label for="llm-channel">{t('llm.channelLabel')}</label>
 		<select
@@ -290,7 +290,7 @@
 	</div>
 
 		{#if $llmConfig.channel === 'server'}
-			<!-- UV-177:激活状态卡(三态检测+分步引导;逻辑在 assistant/ai-plugin-status.ts) -->
+			<!-- 激活状态卡(三态检测+分步引导;逻辑在 assistant/ai-plugin-status.ts) -->
 			<AiPluginActivationCard />
 		{/if}
 
@@ -336,7 +336,7 @@
 			/>
 		</div>
 
-		<!-- 5. apiKey(UV-178 批次B:locked=加密态未解锁 → 解锁面板;否则 Key 行 + 保存形态) -->
+		<!-- 5. apiKey(locked=加密态未解锁 → 解锁面板;否则 Key 行 + 保存形态) -->
 		{#if $llmConfig.locked}
 			<div class="form-row unlock-box">
 				<label for="llm-unlock">{t('llm.sec.unlockTitle')}</label>
@@ -477,7 +477,7 @@
 			</div>
 		{/if}
 
-		<!-- 7b. server 通道不可达诊断(UV-177):指向激活引导卡,不遮蔽原始错误 -->
+		<!-- 7b. server 通道不可达诊断:指向激活引导卡,不遮蔽原始错误 -->
 		{#if testResult && !testResult.ok && testResult.serverUnreachable}
 			<div class="alert alert-info">{t('llm.err.aiPluginHint')}</div>
 		{/if}
@@ -599,7 +599,7 @@
 		font-size: var(--text-xs);
 		color: var(--danger);
 	}
-	/* UV-178 批次B:解锁面板 + 保存形态 */
+	/* 解锁面板 + 保存形态 */
 	.unlock-box {
 		padding: var(--spacing-sm);
 		background: var(--bg-hover);
@@ -639,7 +639,7 @@
 		cursor: pointer;
 		text-decoration: underline;
 	}
-	/* UV-178 批次C:初始态激活入径(一行入口) */
+	/* 初始态激活入径(一行入口) */
 	.onboard-row {
 		display: flex;
 		align-items: center;

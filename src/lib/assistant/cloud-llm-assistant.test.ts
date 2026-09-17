@@ -31,12 +31,12 @@ import {
 // 审计桥 mock:委托真实 callChatApi(走全局 fetch mock)。
 // 协议回路本身由 audited-llm.test.ts 单测覆盖;本文件聚焦三方法的
 // prompt 组装/JSON 提取/校验/错误映射,不重复 mock 侧车协议。
-// server 通道(UV-172 P2)用 hoisted mock 独立可断言(路由测试只验证
+// server 通道用 hoisted mock 独立可断言(路由测试只验证
 // "走没走服务端点",协议细节由 audited-llm.test.ts 覆盖)。
 const serverChannelMock = vi.hoisted(() => vi.fn());
 vi.mock('./audited-llm', async () => {
 	// AuditedBridgeError 用本地同构类(mock 工厂不能回导被 mock 模块自身);
-	// kind 语义对齐 audited-llm.ts,instanceof 判定路径(UV-177)与真实一致
+	// kind 语义对齐 audited-llm.ts,instanceof 判定路径与真实一致
 	class AuditedBridgeError extends Error {
 		constructor(
 			public readonly kind: 'server_unreachable' | 'protocol' | 'engine',
@@ -148,7 +148,7 @@ describe('isConfigured', () => {
 	});
 });
 
-// ============ 执行通道路由(UV-172 P2)+ UV-118 注入时效 ============
+// ============ 执行通道路由 + 注入时效 ============
 
 const VALID_RULE_JSON = JSON.stringify({
 	transform: [
@@ -165,7 +165,7 @@ const VALID_RULE_JSON = JSON.stringify({
 	]
 });
 
-describe('执行通道路由(UV-172 P2)', () => {
+describe('执行通道路由', () => {
 	test('channel=server 三方法走 callChatApiServerChannel(不经浏览器直连)', async () => {
 		serverChannelMock.mockResolvedValueOnce(VALID_RULE_JSON);
 		const a = makeAssistant({ channel: 'server', apiKey: '', apiEndpoint: '' });
@@ -210,7 +210,7 @@ describe('执行通道路由(UV-172 P2)', () => {
 		expect(r.serverUnreachable).toBeFalsy();
 	});
 
-	test('UV-177:kind=server_unreachable → 诊断位 serverUnreachable=true(指向激活卡)', async () => {
+	test('kind=server_unreachable → 诊断位 serverUnreachable=true(指向激活卡)', async () => {
 		const { AuditedBridgeError } = await import('./audited-llm');
 		serverChannelMock.mockRejectedValueOnce(
 			new (AuditedBridgeError as new (
@@ -224,7 +224,7 @@ describe('执行通道路由(UV-172 P2)', () => {
 		expect(r.serverUnreachable).toBe(true);
 	});
 
-	test('UV-177:kind=protocol/engine → 诊断位不误报', async () => {
+	test('kind=protocol/engine → 诊断位不误报', async () => {
 		const { AuditedBridgeError } = await import('./audited-llm');
 		serverChannelMock.mockRejectedValueOnce(
 			new (AuditedBridgeError as new (
@@ -247,7 +247,7 @@ describe('执行通道路由(UV-172 P2)', () => {
 	});
 });
 
-describe('UV-118 注入时效(现取语义)', () => {
+describe('注入时效(现取语义)', () => {
 	test('store 配置变更后无需新实例/刷新即生效', async () => {
 		// 无参构造 = store 现取(注入场景)
 		const a = new CloudLlmAssistant();
@@ -256,7 +256,7 @@ describe('UV-118 注入时效(现取语义)', () => {
 		await a.generateRuleDraft('第一次调用');
 		expect(mockFetch.mock.calls[0][0]).toBe(FULL_CONFIG.apiEndpoint);
 
-		// 改端点+key:同一实例,下一次调用立即用新值(UV-118 缺陷已修)
+		// 改端点+key:同一实例,下一次调用立即用新值(缺陷已修)
 		llmConfig.set({
 			...FULL_CONFIG,
 			apiEndpoint: 'https://api.changed.example/v1/chat/completions',
@@ -594,7 +594,7 @@ describe('transpileCommand', () => {
 	});
 });
 
-// ============ transpileFlow(UV-176,P3 激活,内核第 4 方法) ============
+// ============ transpileFlow(内核第 4 方法) ============
 
 describe('transpileFlow', () => {
 	const FLOW_CTX: FlowTranspileContext = {
@@ -707,7 +707,7 @@ describe('transpileFlow', () => {
 		expect(mockFetch).not.toHaveBeenCalled();
 	});
 
-	// ---- UV-178 批次D:多轮修订(history 纯文本对) ----
+	// ---- 多轮修订(history 纯文本对) ----
 
 	test('history 非空 → 修订 prompt(history 纯文本对拼入对话,入链可审计)', async () => {
 		const a = makeAssistant();

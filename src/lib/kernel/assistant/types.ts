@@ -69,7 +69,7 @@ export interface FlowTranspileContext {
   /** 场景已注册 path 的字段取值域(R2:form_ref.field 只能取这里) */
   sceneFields: Array<{ scene_id: string; field_id: string; path: string }>;
   /**
-   * 存量规则投影(可选;UV-178 批次D)。页面从执行域规则集预取(id+描述),
+   * 存量规则投影(可选)。页面从执行域规则集预取(id+描述),
    * 供 LLM 参考既有规则的结构模式与路径约定;仅注入不引用——flow 草稿
    * 是独立资产,不引用规则 id。缺省/为空 = 无此视野(旧实现兼容)。
    */
@@ -95,7 +95,7 @@ export interface AssistantProvider {
    * (draft-only,R3)——LLM 永不直接 compile/publish。实现方经
    * promptTranspileFlow 组装 prompt;本镜像只定义不实现(扩展槽)。
    *
-   * history(UV-178 批次D,可选):此前轮次的纯文本对,按时间顺序——
+   * history(可选):此前轮次的纯文本对,按时间顺序——
    * 修订轮实现方据此拼接对话上下文并改用修订 prompt;缺省=单轮(既有
    * 调用方零破坏)。
    */

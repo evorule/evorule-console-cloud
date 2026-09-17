@@ -20,7 +20,7 @@
 
   let activeTab = $state<"quickstart" | "workbench" | "start" | "faq">("quickstart");
 
-  /** 重新运行首跑向导(UV-179 批次A:帮助页常驻重跑入口) */
+  /** 重新运行首跑向导(帮助页常驻重跑入口) */
   function rerunWelcome() {
     resetWelcome();
     goto("/welcome");
@@ -48,7 +48,7 @@
   <h1 class="help-title">❓ 帮助</h1>
   <p class="help-subtitle">5 分钟上手 + 详细使用指南 · 新用户从 quickstart 开始</p>
 
-  <!-- UV-179 批次A:首跑向导重跑入口(常驻) -->
+  <!-- 首跑向导重跑入口(常驻) -->
   <div class="welcome-rerun">
     <span>🧭 想重新走一遍初始设置向导(连接治理服务 / AI 助手)?</span>
     <button class="link-btn" onclick={rerunWelcome}>重新运行首跑向导</button>
@@ -188,7 +188,7 @@
     font-size: 13px;
     margin: 0 0 20px;
   }
-  /* UV-179 批次A:首跑向导重跑入口 */
+  /* 首跑向导重跑入口 */
   .welcome-rerun {
     display: flex;
     align-items: center;

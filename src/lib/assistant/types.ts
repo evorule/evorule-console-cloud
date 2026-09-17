@@ -43,7 +43,7 @@ export interface LlmAssistant extends AssistantProvider {
 }
 
 /**
- * LLM 执行通道(UV-172 P2,2026-09-12 裁定双通道并存):
+ * LLM 执行通道(2026-09-12 裁定双通道并存):
  *   - 'browser':浏览器直连 LLM API(用户自有 key,经审计桥侧车协议入链)——现状默认
  *   - 'server':服务端执行者(ai-plugin 托管凭据,自编排审计回路;服务端点
  *     /api/services/ai_plugin_chat/invoke 返回 reply+session_id)——凭据不落浏览器
@@ -51,7 +51,7 @@ export interface LlmAssistant extends AssistantProvider {
 export type LlmChannel = 'browser' | 'server';
 
 /**
- * LLM Key 本机保存形态（UV-178 批次B 凭据安全）:
+ * LLM Key 本机保存形态（凭据安全）:
  *   - 'none':未保存 Key
  *   - 'plain':明文存于 localStorage(旧版兼容形态/显式选择,不推荐)
  *   - 'encrypted':经口令 AES-256-GCM 加密后存于 localStorage(keyEnc 块)
@@ -64,7 +64,7 @@ export type LlmKeyStorage = 'none' | 'plain' | 'encrypted';
  * 持久化在 localStorage(key: evorule-console-cloud:llm-config)。
  * enabled=false 时,大众版不注入 provider,行为与内核一致(LLM 按钮不渲染)。
  *
- * 安全约束(UV-178 批次B):
+ * 安全约束:
  *   - apiKey 仅运行时明文(内存);落盘形态由 keyStorage 决定:
  *     加密(AES-GCM+PBKDF2 口令,见 config/key-crypto.ts)为缺省,
  *     明文仅旧版配置兼容或用户显式选择

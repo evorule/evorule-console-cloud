@@ -56,7 +56,7 @@
     }
   }
 
-  // UV-179 批次C:URL query 预选分区(?view=official)——场景显性位/向导完成页直达官方资产。
+  // URL query 预选分区(?view=official)——场景显性位/向导完成页直达官方资产。
   // 仅 /marketplace 独立路由消费(?import-export 复用本组件不受 query 影响);响应式监听使同页导航也生效。
   $effect(() => {
     if ($page.url.pathname !== "/marketplace") return;

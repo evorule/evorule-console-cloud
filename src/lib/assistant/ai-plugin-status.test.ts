@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — ai-plugin 状态解析单测(UV-177)
+// evorule-console-cloud — ai-plugin 状态解析单测
 // 锁定 parseAiPluginStatus 三态判定 + fetchAiPluginStatus 失败兜底
 
 import { describe, test, expect, vi, afterEach } from 'vitest';
