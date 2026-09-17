@@ -203,7 +203,8 @@ describe('deployOfficialAsset — 部署导航(接既有证据门禁面板)', ()
 		const listVersions = vi.fn().mockResolvedValue({ current: 'V3', chain: ['V3'] });
 		connectFakeBackend({ listEntries, listVersions, listKnowledgeEntries: vi.fn() });
 		deployOfficialAsset(makeDataset());
-		expect(goto).toHaveBeenCalledWith('/governance?deploy=ds-finance');
+		// 路径与部署 base 解耦：无论根路径还是子路径(base 前缀)部署，业务路由都是 /governance?deploy=ds-finance
+	expect(goto).toHaveBeenCalledWith(expect.stringMatching(/\/governance\?deploy=ds-finance$/));
 		// selectDataset 触发条目/版本加载(异步落地后选中态成立)
 		await vi.waitFor(() => {
 			expect(get(governanceStore).selectedId).toBe('ds-finance');
