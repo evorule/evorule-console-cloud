@@ -221,10 +221,15 @@ describe('加密保存 / 解锁 / 锁定 / 清除 回环', () => {
 		const kc = await import('./key-crypto');
 		await kc.cacheSessionKey(blob, PASS, 'governance');
 		const m = await loadModule();
-		// auto-unlock 是 fire-and-forget,等微任务排空
-		await new Promise((r) => setTimeout(r, 0));
+		// auto-unlock 是 fire-and-forget,且内含 PBKDF2 口令派生(耗时随负载浮动):
+		// 单次宏任务等待在高负载下偶发不足 → 轮询等待解锁完成(带超时上限,真回归仍响亮失败)
 		const { get } = await import('svelte/store');
-		expect(get(m.governanceConfig).locked).toBe(false);
+		await vi.waitFor(
+			() => {
+				expect(get(m.governanceConfig).locked).toBe(false);
+			},
+			{ timeout: 10_000, interval: 20 }
+		);
 		expect(get(m.governanceConfig).password).toBe(PW);
 	});
 
