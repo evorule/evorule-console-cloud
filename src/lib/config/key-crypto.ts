@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — LLM API Key 本机加密存储（UV-178 批次B）
+// evorule-console-cloud — LLM API Key 本机加密存储
 //
 // 方案（按威胁模型选型，立项文档 11 §6.2 B1/B2）:
 //   - AES-256-GCM 加密 + PBKDF2-SHA256(600k 次) 从用户口令派生密钥
@@ -34,7 +34,7 @@ export interface EncryptedKeyBlob {
 export const PBKDF2_ITERATIONS = 600_000;
 
 /**
- * 会话密钥缓存作用域(UV-178 批次E+ 治理凭据升级):
+ * 会话密钥缓存作用域(治理凭据升级):
  * 每个凭据面的加密块盐不同,派生密钥互不通用,缓存必须按面隔离——
  * 跨面复用缓存键解密必然失败(认证不匹配),且会互相顶掉对方的免重输。
  */

@@ -349,7 +349,7 @@ export const messagesEn: Dict = {
   "llm.confirmSave": "Configuration saved and applied immediately.\n\nException: if the LLM was not enabled when this page loaded, refresh to render the AI buttons. Refresh now?",
   "llm.confirmReset": "Reset LLM config? The apiKey will be cleared.",
 
-  // === ai-plugin activation card (UV-177; server channel) ===
+  // === ai-plugin activation card (server channel) ===
   "llm.aiPlugin.title": "🧩 Server-side AI (ai-plugin) activation status",
   "llm.aiPlugin.checking": "⏳ Checking ai-plugin status...",
   "llm.aiPlugin.refresh": "Re-check",

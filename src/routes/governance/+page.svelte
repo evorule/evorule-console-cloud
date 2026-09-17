@@ -80,7 +80,7 @@
   let connecting = $state(false);
   let connError = $state<string | null>(null);
 
-  // ===== 治理密码加密保存(UV-178 批次E+;对齐 LlmSettings 批次B 范式) =====
+  // ===== 治理密码加密保存(对齐 LlmSettings 凭据加密范式) =====
   // locked 态:密码输入框被解锁面板取代(与 LLM Key 同构——加密态明文输入口无意义)
   let govUnlockPass = $state('');
   let govUnlockErr = $state<string | null>(null);
@@ -1686,7 +1686,7 @@
         资产与执行解耦,凭据也相互独立 —— 这是设计而非故障。
         部署时须自行设置治理服务管理员凭据并定期换密(幂等引导仅首启生效)。
       </p>
-      <!-- UV-179 批次B:体验包默认凭据明示(仅空用户名时显示,防正式部署噪音;安全标注必带) -->
+      <!-- 体验包默认凭据明示(仅空用户名时显示,防正式部署噪音;安全标注必带) -->
       {#if !$governanceConfig.username}
         <p class="hint demo-cred-note">
           💡 本机体验包默认账号 <strong>admin</strong> / 密码 <strong>evorule-demo</strong>
@@ -2957,7 +2957,7 @@
     padding-bottom: var(--spacing-xs);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
-  /* UV-179 批次B:体验包默认凭据提示(仅在用户名未填时出现) */
+  /* 体验包默认凭据提示(仅在用户名未填时出现) */
   .demo-cred-note {
     border-left: 3px solid var(--success, #16a34a);
     padding-left: var(--spacing-sm);
@@ -3013,7 +3013,7 @@
     margin-bottom: var(--spacing-md);
     white-space: pre-wrap;
   }
-  /* 治理密码加密保存(UV-178 批次E+;解锁面板+保存形态行) */
+  /* 治理密码加密保存(解锁面板+保存形态行) */
   .gov-unlock {
     display: flex;
     flex-direction: column;

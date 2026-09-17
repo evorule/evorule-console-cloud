@@ -91,7 +91,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 		);
 	}
 
-	/** 测试连接(返回成功/失败 + 信息;不产生草案;serverUnreachable=UV-177 诊断位) */
+	/** 测试连接(返回成功/失败 + 信息;不产生草案;serverUnreachable=诊断位) */
 	async testConnection(): Promise<{
 		ok: boolean;
 		message: string;
@@ -126,7 +126,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 					message: `连接成功(server 通道经 ai-plugin,回复 ${reply.length} 字符)`
 				};
 			} catch (e) {
-				// UV-177:server_unreachable=审计桥连不上 server/插件(server 未起或
+				// server_unreachable=审计桥连不上 server/插件(server 未起或
 				// ai-plugin 未启用/未达),UI 据此指向激活引导卡;其余错误如实透出
 				const serverUnreachable =
 					e instanceof AuditedBridgeError && e.kind === 'server_unreachable';
@@ -174,7 +174,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 	 * —— browser 通道它是配置连通性探针,可在 server 未启动时独立验证 LLM
 	 * 端点;server 通道探针即真实执行路径。
 	 *
-	 * 通道(UV-172 P2 双通道并存):
+	 * 通道(双通道并存):
 	 *   - browser:审计桥侧车协议,浏览器本地执行 LLM(用户自有 key)——现状
 	 *   - server:ai-plugin 服务端点,服务端托管凭据自编排审计回路
 	 *
@@ -335,7 +335,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 	}
 
 	/**
-	 * 用途6(UV-176,P3 激活;UV-178 批次D 多轮扩展): 自然语言 → flow JSON
+	 * 用途6(多轮扩展): 自然语言 → flow JSON
 	 * 草稿(流程画布转译器,支持用户驱动的对话式修订)。
 	 *
 	 * 产物是**草稿**:调用方(TranspileFlowDialog)展示并经 loadFlowAsset 投影
@@ -345,7 +345,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 	 * promptReviseFlow(修订轮,few-shot 调优版,console 公开仓 SSOT 镜像)组装;
 	 * 走 auditedChat 双通道入审计链(purpose=transpile_flow)。
 	 *
-	 * 多轮语义(UV-178 批次D):每轮由用户点击触发(非 agent 自主编排,红线不破)。
+	 * 多轮语义:每轮由用户点击触发(非 agent 自主编排,红线不破)。
 	 * history 非空时判定为修订轮——当前消息用修订框定 prompt,history 以纯文本对
 	 * 拼入对话(前轮草稿供参照),输出仍为完整修订后的 flow JSON。
 	 */

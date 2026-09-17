@@ -349,7 +349,7 @@ export const messagesZh: Dict = {
   "llm.confirmSave": "配置已保存并即时生效。\n\n例外:若本页加载时 LLM 尚未启用,需刷新页面以渲染 AI 按钮。\n\n是否立即刷新页面?",
   "llm.confirmReset": "确定要重置 LLM 配置吗?apiKey 会被清空。",
 
-  // === ai-plugin 激活状态卡(UV-177;server 通道) ===
+  // === ai-plugin 激活状态卡(server 通道) ===
   "llm.aiPlugin.title": "🧩 服务端 AI（ai-plugin）激活状态",
   "llm.aiPlugin.checking": "⏳ 正在检测 ai-plugin 状态...",
   "llm.aiPlugin.refresh": "重新检测",

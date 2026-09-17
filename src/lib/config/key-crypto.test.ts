@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — key-crypto 加密存储 单测(UV-178 批次B)
+// evorule-console-cloud — key-crypto 加密存储 单测
 //
 // 运行: npx vitest run src/lib/config/key-crypto.test.ts
 // node 环境:无 WebCrypto 时以 node:crypto.webcrypto 兜底(vitest 进程内)
@@ -136,7 +136,7 @@ describe('会话密钥缓存(sessionStorage)', () => {
 	});
 });
 
-describe('会话密钥缓存作用域(UV-178 批次E+ 治理凭据升级)', () => {
+describe('会话密钥缓存作用域(治理凭据升级)', () => {
 	test('llm 缺省作用域沿用既有键名(批次B 已解锁会话不失效)', async () => {
 		const blob = await encryptApiKey(KEY, PASS);
 		await cacheSessionKey(blob, PASS);

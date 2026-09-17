@@ -5,7 +5,7 @@
 -->
 <!--
   吸收自 evorule-console src/lib/views/Assistant/TranspileFlowDialog.svelte
-  (UV-176 P3 激活);import 路径适配 cloud 布局(kernel 镜像区),其余原样。
+  (已激活);import 路径适配 cloud 布局(kernel 镜像区),其余原样。
 
   职责:自然语言 → flow JSON 草稿 → 填入画布。
   流程:
@@ -47,7 +47,7 @@
   let draftJson = $state("");
   let isLoading = $state(false);
   let errorMsg = $state<string | null>(null);
-  // 多轮修订(UV-178 批次D):每轮(用户原文, LLM 回复原文);纯文本对,
+  // 多轮修订:每轮(用户原文, LLM 回复原文);纯文本对,
   // 由实现方拼入对话消息。用户驱动的连续修订(每轮人点击),非 agent 编排。
   let turns = $state<Array<{ user: string; reply: string }>>([]);
 
@@ -303,7 +303,7 @@
     font-weight: var(--font-medium);
   }
 
-  /* 多轮修订轮次徽标(UV-178 批次D) */
+  /* 多轮修订轮次徽标 */
   .turn-badge {
     margin-left: var(--spacing-sm);
     padding: 0 var(--spacing-sm);

@@ -1,11 +1,11 @@
 <!--
   SPDX-License-Identifier: AGPL-3.0-or-later
   Copyright (C) 2026 EvoRule Project
-  evorule-console-cloud 流程设计页 /flow（UV-176 P3 激活）
+  evorule-console-cloud 流程设计页 /flow
 -->
 <!--
-  吸收自 evorule-console src/routes/workspace/flow/+page.svelte(UV-175 交付),
-  适配 cloud 布局(UV-176):
+  吸收自 evorule-console src/routes/workspace/flow/+page.svelte,
+  适配 cloud 布局:
     - 去独立 topbar(cloud 三栏布局自带导航;换页头标题+提示)
     - PluginPacksClient 按 netConfig 构造(offline → DEFAULT_LOCAL_BASE_URL,
       online → remoteBaseUrl;authToken 经 store,Bearer 由客户端自带)
@@ -68,7 +68,7 @@
   let scenes = $state<SceneAssetRaw[]>([]);
   let flows = $state<FlowAssetRaw[]>([]);
 
-  // 存量规则投影(UV-178 批次D):执行域生效规则预取,注入转译上下文供 LLM
+  // 存量规则投影:执行域生效规则预取,注入转译上下文供 LLM
   // 参考既有结构模式与路径约定;预取失败降级为空(转译仍可用,不阻断画布),
   // 零领域硬编码——条目字段投影是通用读取,R4 不受影响
   let existingRules = $state<Array<{ rule_id: string; description?: string }>>([]);
@@ -307,7 +307,7 @@
         })),
       )
       .filter((f) => f.path.length > 0),
-    existingRules, // UV-178 批次D:存量规则面注入(prompt 侧仅供学习不引用)
+    existingRules, // 存量规则面注入(prompt 侧仅供学习不引用)
   }));
 
   // ---- 属性面板（params_form → 节点位映射,flow 协议知识） ----

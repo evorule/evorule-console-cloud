@@ -3,7 +3,7 @@
 // evorule-console-cloud — 治理服务连接配置 store(Phase 2 F1)
 //
 // 持久化:localStorage(key: evorule-console-cloud:governance-config)
-// 安全(UV-178 批次E+ 治理凭据升级,对齐 llm-config 批次B 同款方案):
+// 安全(治理凭据升级,对齐 llm-config 同款方案):
 //   - 运行时 password 一律内存明文(消费方 connect() 语义不变)
 //   - 落盘形态由 passwordStorage 决定:
 //       encrypted(缺省推荐):passwordEnc 加密块(AES-256-GCM+PBKDF2 口令,

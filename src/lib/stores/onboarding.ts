@@ -90,7 +90,7 @@ export interface OnboardingState {
 	bannerDismissed: boolean;
 	/** 各视图首访提示记忆:viewKey -> 已看过的 ISO 时间 */
 	hints: Record<string, string>;
-	/** 首跑向导 /welcome(UV-179 批次A):完成态 + 提示条关闭态 */
+	/** 首跑向导 /welcome:完成态 + 提示条关闭态 */
 	welcome: {
 		/** 四步向导已走完(走完不再显示提示条) */
 		completed: boolean;
@@ -168,7 +168,7 @@ export const TOUR_STEPS: TourStep[] = [
 	},
 ];
 
-/** 默认上手清单(导出供测试锁定 UV-179 扩条) */
+/** 默认上手清单(导出供测试锁定扩条) */
 export function defaultChecklist(): ChecklistItem[] {
 	return [
 		{
@@ -393,7 +393,7 @@ export function resetTour(): void {
 }
 
 // ============================================================
-// 首跑向导 /welcome(UV-179 批次A)
+// 首跑向导 /welcome
 // ============================================================
 
 /** 标记首跑向导已完成(走完四步或显式跳过均视为完成) */
