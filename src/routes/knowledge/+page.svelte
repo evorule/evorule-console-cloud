@@ -11,6 +11,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+import { base } from '$app/paths';
   import KnowledgeView from '$lib/views/Knowledge/KnowledgeView.svelte';
   import { isLoggedIn } from '$lib/stores/auth';
 
@@ -18,7 +19,7 @@
 
   onMount(() => {
     if (!$isLoggedIn) {
-      goto('/login');
+      goto(`${base}/login`);
     }
   });
 </script>

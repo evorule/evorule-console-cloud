@@ -7,15 +7,16 @@
   import { can } from '$lib/stores/auth';
   import { isLoggedIn } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
+import { base } from '$app/paths';
   import { onMount } from 'svelte';
 
   onMount(() => {
     if (!$isLoggedIn) {
-      goto('/login');
+      goto(`${base}/login`);
       return;
     }
     if (!can('view_publish_queue')) {
-      goto('/');
+      goto(`${base}/`);
     }
   });
 </script>

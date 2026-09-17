@@ -13,6 +13,7 @@
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
   import { page } from "$app/stores";
   import { browser } from "$app/environment";
   import {
@@ -173,16 +174,16 @@
     showSettings = false;
     const loggedIn = get(sessionStore).loggedIn;
     if (loggedIn && !get(isEmptyDb)) {
-      goto(`/view/${viewId}`);
+      goto(`${base}/view/${viewId}`);
       return;
     }
     if (!loggedIn) {
       toastInfo('请先登录，以访问工作台');
-      goto('/login');
+      goto(`${base}/login`);
       return;
     }
     toastInfo('请先完成规则库创建向导，再进入工作台');
-    goto('/');
+    goto(`${base}/`);
   }
 
   // /export 也受守卫约束(需 已登录 && 库非空)→ requiresDb 语义的注册表项走此分流
@@ -190,28 +191,28 @@
     closeDrawers();
     showSettings = false;
     if (!item.requiresDb) {
-      goto(item.path);
+      goto(`${base}${item.path}`);
       return;
     }
     const loggedIn = get(sessionStore).loggedIn;
     if (loggedIn && !get(isEmptyDb)) {
-      goto(item.path);
+      goto(`${base}${item.path}`);
       return;
     }
     if (!loggedIn) {
       toastInfo('请先登录，以访问导出中心');
-      goto('/login');
+      goto(`${base}/login`);
       return;
     }
     toastInfo('请先完成规则库创建向导，再导出');
-    goto('/');
+    goto(`${base}/`);
   }
 
   // 其余导航(治理/发布队列/版本历史/审计)直接跳转,由各自 +page 自守卫
   function go(path: string) {
     closeDrawers();
     showSettings = false;
-    goto(path);
+    goto(`${base}${path}`);
   }
 
   // === 导航注册表(首项):侧栏/跳单卡/命令面板消费同一清单 ===

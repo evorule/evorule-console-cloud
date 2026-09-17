@@ -5,6 +5,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+import { base } from '$app/paths';
   import { isLoggedIn, can } from '$lib/stores/auth';
   import BusinessAuditView from '$lib/views/Audit/BusinessAuditView.svelte';
   import ArchiveSessionsPanel from '$lib/views/Audit/ArchiveSessionsPanel.svelte';
@@ -16,11 +17,11 @@
   // 登录墙前置说明在 +layout.ts 守卫(toast + redirect);此处 onMount 仅作双保险跳转
   onMount(() => {
     if (!$isLoggedIn) {
-      goto('/login');
+      goto(`${base}/login`);
       return;
     }
     if (!can('view_audit_chain')) {
-      goto('/');
+      goto(`${base}/`);
     }
   });
 </script>

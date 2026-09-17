@@ -10,6 +10,7 @@
 
 <script lang="ts">
 	import { goto } from "$app/navigation";
+import { base } from "$app/paths";
 	import { taskFlowsDef } from "$lib/data/task-flows";
 	import { startTaskFlow } from "$lib/stores/task-flow";
 	import { sessionStore } from "$lib/stores/session";
@@ -30,12 +31,12 @@
 	}
 
 	function handleViewRules() {
-		goto("/view/rules");
+		goto(`${base}/view/rules`);
 		handleDismiss();
 	}
 
 	function handleGovernance() {
-		goto("/governance");
+		goto(`${base}/governance`);
 	}
 
 	const username = $derived($sessionStore.username ?? "用户");

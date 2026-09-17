@@ -12,6 +12,7 @@
 
 import { writable, get } from "svelte/store";
 import { browser } from "$app/environment";
+import { base } from "$app/paths";
 import { taskFlowsDef, findTaskFlow } from "$lib/data/task-flows";
 import {
 	taskHistoryStore,
@@ -192,7 +193,7 @@ export function cancelTaskFlow(navigate = true): void {
 	setTimeout(() => taskFlowStore.set(null), 100);
 
 	if (navigate && browser) {
-		import("$app/navigation").then(({ goto }) => goto("/"));
+		import("$app/navigation").then(({ goto }) => goto(`${base}/`));
 	}
 }
 
@@ -236,7 +237,7 @@ function navigateToStep(instance: TaskFlowInstance, step: number): void {
 	}
 
 	const url = `${stepDef.targetRoute}?${params.toString()}`;
-	import("$app/navigation").then(({ goto }) => goto(url));
+	import("$app/navigation").then(({ goto }) => goto(`${base}${url}`));
 }
 
 /**

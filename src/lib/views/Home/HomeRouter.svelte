@@ -18,6 +18,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
   import { sessionStore } from "$lib/stores/session";
   import { isEmptyDb } from "$lib/stores/db";
   import { homeModeStore, wizardInProgress } from "$lib/stores/home-mode";
@@ -49,7 +50,7 @@
   // 状态 C → 总览着陆:/workbench 是唯一首页
   $effect(() => {
     if (mode === "C") {
-      void goto("/workbench");
+      void goto(`${base}/workbench`);
     }
   });
 

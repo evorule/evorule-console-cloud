@@ -12,6 +12,7 @@
 
 <script lang="ts">
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
   import HelpQuickstart from "$lib/views/Help/HelpQuickstart.svelte";
   import HelpWorkbench from "$lib/views/Help/HelpWorkbench.svelte";
   import HelpStart from "$lib/views/Help/HelpStart.svelte";
@@ -23,7 +24,7 @@
   /** 重新运行首跑向导(帮助页常驻重跑入口) */
   function rerunWelcome() {
     resetWelcome();
-    goto("/welcome");
+    goto(`${base}/welcome`);
   }
 
   function jumpDocs(path: string) {

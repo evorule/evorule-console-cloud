@@ -13,6 +13,7 @@
 
 <script lang="ts">
 	import { goto } from '$app/navigation';
+import { base } from '$app/paths';
 	import { get } from 'svelte/store';
 	import {
 		governanceStore,
@@ -50,11 +51,11 @@
 	/** 显式跳过向导 = 视为完成(不再提示;帮助页可重跑) */
 	function skipWizard() {
 		completeWelcome();
-		goto('/');
+		goto(`${base}/`);
 	}
 	function finish() {
 		completeWelcome();
-		goto('/');
+		goto(`${base}/`);
 	}
 
 	// ===== 步2:治理连接 =====

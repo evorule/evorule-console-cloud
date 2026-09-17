@@ -10,6 +10,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { onboardingStore, dismissWelcomeNotice } from '$lib/stores/onboarding';
 	import { sessionStore } from '$lib/stores/session';
 
@@ -17,7 +18,7 @@
 		!$onboardingStore.welcome.completed &&
 			!$onboardingStore.welcome.dismissed &&
 			$sessionStore.loggedIn &&
-			$page.url.pathname !== '/welcome'
+			$page.url.pathname !== `${base}/welcome`
 	);
 </script>
 
@@ -27,7 +28,7 @@
 			👋 首次使用?<strong>花 3 分钟完成初始设置</strong>(连接治理服务,可选 AI 助手)
 		</span>
 		<div class="wn-actions">
-			<button class="wn-btn primary" onclick={() => goto('/welcome')}>打开向导</button>
+			<button class="wn-btn primary" onclick={() => goto(`${base}/welcome`)}>打开向导</button>
 			<button class="wn-btn ghost" onclick={dismissWelcomeNotice} aria-label="不再提示">
 				不再提示
 			</button>

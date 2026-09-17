@@ -8,6 +8,7 @@
 
 <script lang="ts">
 	import { goto } from "$app/navigation";
+import { base } from "$app/paths";
 	import { isLoggedIn, can } from "$lib/stores/auth";
 	import { isEmptyDb } from "$lib/stores/db";
 	import { rules } from "$lib/kernel";
@@ -34,7 +35,7 @@
 	const views = Object.keys(VIEW_LABELS) as RecommendedView[];
 
 	function go() {
-		if (rec) goto(rec.route);
+		if (rec) goto(`${base}${rec.route}`);
 	}
 	function changeTo(e: Event) {
 		const v = (e.currentTarget as HTMLSelectElement).value as RecommendedView;

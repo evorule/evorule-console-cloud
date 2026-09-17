@@ -9,9 +9,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
+import { base } from "$app/paths";
 
   onMount(() => {
-    goto("/view/execution", { replaceState: true });
+    goto(`${base}/view/execution`, { replaceState: true });
   });
 </script>
 

@@ -12,6 +12,7 @@
 
 <script lang="ts">
 	import { goto } from "$app/navigation";
+	import { base } from "$app/paths";
 	import { get } from "svelte/store";
 	import { taskFlowsDef } from "$lib/data/task-flows";
 	import { startTaskFlow } from "$lib/stores/task-flow";
@@ -53,9 +54,9 @@
 				group: "导航",
 				hint: d.title,
 				keywords: `${d.id} ${d.label}`,
-				run: () => goto(d.path),
+				run: () => goto(`${base}${d.path}`),
 			})),
-			{ id: "nav-login", title: "登录 / 账号", group: "导航", hint: "登录以解锁授权能力", keywords: "login 登录 账号", run: () => goto("/login") },
+			{ id: "nav-login", title: "登录 / 账号", group: "导航", hint: "登录以解锁授权能力", keywords: "login 登录 账号", run: () => goto(`${base}/login`) },
 		];
 
 		const guide: Command[] = [

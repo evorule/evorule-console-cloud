@@ -12,6 +12,7 @@
 <script lang="ts">
 	import { browser } from "$app/environment";
 	import { goto } from "$app/navigation";
+	import { base } from "$app/paths";
 	import {
 		onboardingStore,
 		TOUR_STEPS,
@@ -29,7 +30,7 @@
 	// 步骤声明了 route 时提供「前往」:保留引导态,spotlight 跟随路由落地后重定位
 	function handleGoto(): void {
 		if (!step?.route) return;
-		goto(step.route);
+		goto(`${base}${step.route}`);
 	}
 
 	// 目标元素包围盒(用于聚光灯 + 卡片定位)
