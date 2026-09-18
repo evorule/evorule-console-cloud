@@ -3,7 +3,7 @@
 
 # 如何使用工作台(/workbench)
 
-> 极简首页 — Dashboard 风格,5 个 region 一屏看清一切。详细设计见 [workbench.md](../workbench.md)。
+> 极简首页 — Dashboard 风格,5 个 region 一屏看清一切。本页即工作台使用说明。
 
 ## 5 个 Region 速查
 
