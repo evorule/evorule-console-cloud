@@ -1,8 +1,11 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # =============================================================================
 # check_doc_safety.py — EvoRule 文档安全与引用完整性检查器
 #
+# [同步戳记] 母本＝evorule 主仓 scripts/check_doc_safety.py，各公开仓副本以字节级一致为对齐标准；
+# [同步戳记] 漂移检测与分发：scripts/sync-doc-safety.ps1（-Check 只报告 / -Sync 复制并逐文件校验）；
+#            母本变更后必须 -Sync 分发并逐仓提交推送双远端。
 # 覆盖规则（治理方案 048 v1.0 §阶段 3.1 + AGENTS.md 内部约定 + CHANGELOG-GOVERNANCE-20260916.md）：
 #   R-门控1 : git staged 文件不得包含「文档/」路径（禁止仓内共享/私有文档 commit）
 #   R3-引用合规零容忍：L1 公开文档禁止出现私有集合路径/文件名字面量
