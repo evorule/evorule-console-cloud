@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// 官方资产 store — marketplace「官方资产」分区的数据与动作层(47 号接线专项)。
+// 官方资产 store — marketplace「官方资产」分区的数据与动作层(历史批次接线专项)。
 //
 // 数据源:治理服务(evorule-rule :18081)经 governanceStore 单例会话,零新端点:
 //   - 发现 = GET /v1/datasets(governanceStore.refreshDatasets 既有实现)

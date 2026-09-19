@@ -73,7 +73,7 @@
 
   // WorkspaceBackend 必须在组件初始化期从 context 取出并缓存——
   // getContext/hasContext 只能在组件初始化期间调用,异步回调(部署/预检/刷新)中调用
-  // 会抛 Svelte lifecycle_outside_component 错误(32 号 UI 实测发现)。
+  // 会抛 Svelte lifecycle_outside_component 错误(历史批次 UI 实测发现)。
   const workspaceBackend = useWorkspaceBackendOrNull();
 
   // ===== 连接面板 =====
@@ -170,7 +170,7 @@
   });
   let entryError = $state<string | null>(null);
 
-  // ===== W2.2 即时校验 + 摘要预览(debounce 300ms,43 号方案) =====
+  // ===== W2.2 即时校验 + 摘要预览(debounce 300ms,设计方案) =====
   /** null = 未校验(空输入/表单未展开),不显示面板 */
   let liveValidation = $state<ValidationResult | null>(null);
   /** 合法 JSON 后的 transform 步骤只读摘要;null = 不显示 */
@@ -333,7 +333,7 @@
   ]
 }`;
 
-  // ===== 市场官方资产部署落地(47 号接线专项) =====
+  // ===== 市场官方资产部署落地(历史批次接线专项) =====
   // marketplace「部署到执行域」经 /governance?deploy=<dataset_id> 跳入:
   // 连接态下立即选中并打开既有证据门禁部署面板;未连接时挂起,连接成功后补执行。
   let pendingDeployId: string | null = null;
@@ -513,7 +513,7 @@
     }
   }
 
-  // ===== 部署到执行域(32 号 UI 接线:治理 Published → 导出 bundle → 执行域导入激活) =====
+  // ===== 部署到执行域(历史批次 UI 接线:治理 Published → 导出 bundle → 执行域导入激活) =====
   let showDeploy = $state(false);
   let deployConfirmed = $state(false);
   let deploying = $state(false);
@@ -593,7 +593,7 @@
   }
 
   /**
-   * 导出带结构化证据的 bundle(W1.3:ExportEvidence 三形态,取代 32 号单一人工背书)。
+   * 导出带结构化证据的 bundle(W1.3:ExportEvidence 三形态,取代历史批次单一人工背书)。
    * 仅在 deployConfirmed 勾选后可调用 — 证据声明先于一切部署动作;
    * 证据形态由 evidenceSource 决定(机器背书默认/人工降级显式)。
    */
@@ -1431,7 +1431,7 @@
   // ===== 元规则晋升提名(console 入口接线) =====
   // 提交 POST /api/publish/queue,kind=meta_promotion,meta_rule_content=用户转写的
   // L2 元规则 JSON(须含 metadata.tier="meta"+title+transform)。零报警证据/Admin
-  // 审批/内容深校验/原子落盘由 server 侧把关(63 号方案 §W1),前端只做轻量预校验。
+  // 审批/内容深校验/原子落盘由 server 侧把关(设计方案 §W1),前端只做轻量预校验。
   let nominateTargetId = $state<string | null>(null);
   let metaRuleContent = $state('');
   let nominating = $state(false);
@@ -1985,7 +1985,7 @@
           {/if}
         </div>
 
-        <!-- 部署到执行域(32 号 UI 接线:Published 数据集 → 导出 bundle → 执行域导入激活) -->
+        <!-- 部署到执行域(历史批次 UI 接线:Published 数据集 → 导出 bundle → 执行域导入激活) -->
         {#if selectedStatus === 'Published' && showDeploy}
           <div class="deploy-box">
             <div class="deploy-head">
@@ -2822,7 +2822,7 @@
                             · 报告哈希 <span class="chip" title={rep.report_hash}>{rep.report_hash.slice(0, 14)}…</span>
                             · 生成于 {fmtTime(rep.generated_at)}
                           </p>
-                          <!-- A: 合成 IO 背书边界标注(40 号 §3.3.3/裁定项 4)——
+                          <!-- A: 合成 IO 背书边界标注(设计文档 §3.3.3/裁定项 4)——
                                如实告知该 PASS 的 io_request 应答来自 MockIoResponder 全合成应答,
                                对依赖外部 LLM/服务的规则不等价于生产行为 -->
                           <p class="ws-item-sub evidence-note">

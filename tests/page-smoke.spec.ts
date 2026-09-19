@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud e2e — W1-E1 page-smoke 骨架(13 路由零功能覆盖补口)
 //
-// 目的(45 号方案 §E 组):每条路由 goto + 核心元素可见 + 零 console error,一次覆盖
+// 目的(设计方案 §E 组):每条路由 goto + 核心元素可见 + 零 console error,一次覆盖
 // 13 条无 e2e 功能覆盖的路由;此后每个修复项 DoD 强制含 e2e 锚定。
 //
 // 路由清单与断言锚点(选择器用稳定 class;标题元素无 class 的用标签+可见性,

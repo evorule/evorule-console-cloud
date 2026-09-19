@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- /apps 路由 — 平台应用凭据管理(58 号专项 W3) -->
+<!-- /apps 路由 — 平台应用凭据管理(专项 W3) -->
 <!--
   守卫(双层,+layout.ts 为第一层):
     - 未登录 → /login

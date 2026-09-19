@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — 治理页规则模板脚手架（/W2.4）
 //
-// 职责(43 号方案):
+// 职责(设计方案):
 //   - W2.3 模板下拉资产:空白骨架 + 4 场景(静态内嵌副本)
 //   - W2.3 覆盖确认判定:已手改 rule_body 后再选模板 → 显式确认,不静默清空
 //   - W2.4 编辑新版本预填:条目 → 表单初值(entry_id 原值 / version+1 / rule_body pretty-print)

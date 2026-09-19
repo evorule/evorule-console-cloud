@@ -47,7 +47,7 @@ export interface GovernanceConnectionConfig {
 }
 
 /**
- * 导出证据三形态（W1.3/W1.4，42 号方案 §1.3）。
+ * 导出证据三形态（W1.3/W1.4，设计方案 §1.3）。
  *
  * - sandbox-report：机器背书（首选路径）——verdict 从沙盒报告派生
  *   （调用方以 reportVerdict() 从报告 summary 派生，不手填不伪造），
@@ -294,7 +294,7 @@ export class GovernanceBackend {
 	}
 
 	/**
-	 * 条目版本链（44 号 §5 C1；GET /v1/entries/{id}/versions）
+	 * 条目版本链（设计文档 §5 C1；GET /v1/entries/{id}/versions）
 	 *
 	 * 规则与 knowledge 条目后端同构分流（Q12 R4），摘要均为 version/status/content_hash。
 	 */
@@ -306,7 +306,7 @@ export class GovernanceBackend {
 	}
 
 	/**
-	 * 条目内容级 diff（44 号 §9 C2；GET /v1/entries/{id}/diff?from=&to=）
+	 * 条目内容级 diff（设计文档 §9 C2；GET /v1/entries/{id}/diff?from=&to=）
 	 *
 	 * 键级归因（keys added/removed/changed）+ content_hash 口径；
 	 * 双版本完整载荷经 entryVersionPayload(entryId, version) 回查。from 须小于 to 且版本存在。
@@ -322,7 +322,7 @@ export class GovernanceBackend {
 	 * 条目指定版本完整载荷（条目 diff 工具 D-B③；GET /v1/entries/{id}/versions/{version}）
 	 *
 	 * 版本链端点仅给摘要（version/status/content_hash）；本端点回查逐版本载荷
-	 * （entries/knowledge_entries 全版本留痕，33 号 §6），规则条目含 rule_body，数据条目含 payload。
+	 * （entries/knowledge_entries 全版本留痕，设计文档 §6），规则条目含 rule_body，数据条目含 payload。
 	 */
 	async entryVersionPayload(entryId: string, version: number): Promise<EntryVersionPayloadResponse> {
 		return this.request<EntryVersionPayloadResponse>({
@@ -344,7 +344,7 @@ export class GovernanceBackend {
 	}
 
 	// ====================================================================
-	// 快照包导出（治理→执行域部署通道；36 号集成契约）
+	// 快照包导出（治理→执行域部署通道；跨仓集成契约）
 	// ====================================================================
 
 	/**
@@ -377,7 +377,7 @@ export class GovernanceBackend {
 	 * 部署到执行域必须走本端点（带证据）：GET 导出固定 unverified()
 	 * （verdict=fail），执行侧闸门一会拒绝导入（T0 决策：未验证不得默认 Pass）。
 	 *
-	 * 证据语义（W1.3 升级，取代 32 号方案 B 的单一人工背书）：
+	 * 证据语义（W1.3 升级，取代 设计方案 B 的单一人工背书）：
 	 * evidence 为结构化三形态（ExportEvidence）——sandbox-report 机器背书为
 	 * 默认路径，human-confirmed 为显式降级路径，none 导出不可导入的预览包。
 	 * 本客户端如实按 evidence 构造 tests 段（buildTestsForEvidence），

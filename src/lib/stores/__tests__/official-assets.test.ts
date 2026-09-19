@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// 官方资产 store 单测(47 号接线专项)— 准入判定 / 发现刷新 / 预览包导出 / 部署导航
+// 官方资产 store 单测(历史批次接线专项)— 准入判定 / 发现刷新 / 预览包导出 / 部署导航
 //
 // 覆盖:
 //   - isOfficialAsset 准入谓词:public+Published 通过;private/未审批形态拒绝

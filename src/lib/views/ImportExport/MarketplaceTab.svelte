@@ -43,7 +43,7 @@
   import { get } from "svelte/store";
   import { page } from "$app/stores";
 
-  /** 分区视图:模板(既有) | 官方资产(治理中心公开+已上架数据集,47 号接线专项) */
+  /** 分区视图:模板(既有) | 官方资产(治理中心公开+已上架数据集,历史批次接线专项) */
   type MarketViewMode = "templates" | "official";
   let viewMode = $state<MarketViewMode>("templates");
 
@@ -200,7 +200,7 @@
 </script>
 
 <div class="mt-tab">
-  <!-- 分区切换:模板 | 官方资产(47 号接线专项) -->
+  <!-- 分区切换:模板 | 官方资产(历史批次接线专项) -->
   <div class="mt-viewswitch" role="tablist" aria-label="市场分区">
     <button
       role="tab"

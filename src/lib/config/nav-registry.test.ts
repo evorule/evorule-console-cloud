@@ -31,7 +31,7 @@ describe('visibleNavItems', () => {
 		expect(ids).not.toContain('publish-queue');
 		expect(ids).not.toContain('plugin-approvals');
 		expect(ids).not.toContain('roles');
-		// 应用管理:manage_apps 单点门控(58 号专项)
+		// 应用管理:manage_apps 单点门控(专项)
 		expect(ids).not.toContain('apps');
 		// 用户管理:view_users 命中(ANY 语义)
 		expect(ids).toContain('users');

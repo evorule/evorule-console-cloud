@@ -7,7 +7,7 @@
 // （lifecycle.status 为 PascalCase；visibility 为 snake_case；分页封装 {items, next_cursor}）。
 // 若 evorule-rule 改契约，此处与后端会漂移 —— 该文件是契约锚点（SSOT），需同步。
 
-/** 生命周期 5 态（决策点④）：Draft → Candidate → Active → Published → Rejected */
+/** 生命周期 5 态（既定设计决策）：Draft → Candidate → Active → Published → Rejected */
 export type LifecycleStatus = 'Draft' | 'Candidate' | 'Active' | 'Published' | 'Rejected';
 
 /**
@@ -60,12 +60,12 @@ export interface GovernanceDataset {
 	tags: string[];
 	tenant_id: string;
 	visibility: 'private' | 'public';
-	/** 生命周期（决策点④） */
+	/** 生命周期（既定设计决策） */
 	lifecycle: {
 		status: LifecycleStatus;
 		state_history: LifecycleStateChange[];
 	};
-	/** 版本链（决策点③） */
+	/** 版本链（既定设计决策） */
 	versioning: {
 		current: string;
 		chain: string[];
@@ -216,14 +216,14 @@ export interface VersioningInfo {
 	chain: string[];
 }
 
-/** 通用分页封装（44 号 §3.3） */
+/** 通用分页封装（设计文档 §3.3） */
 export interface Page<T> {
 	items: T[];
 	next_cursor?: string | null;
 }
 
 // ====================================================================
-// 条目版本链与内容级 diff（44 号 §5/§9；规则与 knowledge 条目后端同构分流）
+// 条目版本链与内容级 diff（设计文档 §5/§9；规则与 knowledge 条目后端同构分流）
 // ====================================================================
 
 /** 条目版本摘要（GET /v1/entries/{id}/versions 的 versions[] 元素） */
@@ -268,6 +268,6 @@ export interface EntryVersionPayloadResponse {
 	dataset_id: string;
 	entry_id: string;
 	version: number;
-	/** 规则条目含 rule_body，数据条目含 payload（全版本留痕，33 号 §6） */
+	/** 规则条目含 rule_body，数据条目含 payload（全版本留痕，设计文档 §6） */
 	entry: Record<string, unknown>;
 }

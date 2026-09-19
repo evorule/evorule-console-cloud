@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — 治理页规则表单辅助(纯函数,W2.2)
 //
-// 职责(43 号方案 W2.2):
+// 职责(设计方案 W2.2):
 //   - localSaveGate:保存分层第 1 层(本地 error 阻断,不发起网络请求)
 //   - formatIssues:校验面板/entryError 的 error/warning 明细格式化
 //   - summarizeTransformSteps:transform 步骤只读摘要预览(合法 JSON 后,
@@ -43,7 +43,7 @@ export function formatIssues(issues: ValidationIssue[]): string {
 }
 
 /**
- * 保存分层第 1 层(43 号方案 W2.2):本地 error 阻断。
+ * 保存分层第 1 层(设计方案 W2.2):本地 error 阻断。
  * 空 rule_body 由调用方先行必填校验;G1(JSON 非法)与所有 error 均阻断。
  * warning 不阻断(G3 双路径/G6 兜底为建议级,面板黄字提示)。
  */
@@ -112,13 +112,13 @@ function summarizeStep(step: unknown): string {
     case 'io_request':
       return `io_request(${String(p.io_type ?? '?')})`;
     default:
-      // collect/merge 已退役(69 号清理)——历史残留步骤按未知指令显示
+      // collect/merge 已退役(规则清理)——历史残留步骤按未知指令显示
       return `${String(o.type)}(未知指令)`;
   }
 }
 
 /**
- * transform 步骤只读摘要预览(43 号方案 W2.2 可选增强,用户已批"做")。
+ * transform 步骤只读摘要预览(设计方案 W2.2 可选增强,用户已批"做")。
  * 输入为 rule_body 原文;JSON 非法或提取不到 transform → null(不显示预览)。
  * 仅作可读性辅助:预览与校验相互独立,合法但无 transform 结构的对象同样返回 null。
  */
