@@ -130,6 +130,8 @@ export class MockBackend implements ExecutionBackend {
 			value: "demo-user",
 			source_session_id: 1,
 			version: 3,
+			// N6/R10:会话侧源头 fact_id(跨链溯源演示形态)
+			origin_fact_id: 501,
 		},
 		{
 			fact_id: 9102,
@@ -137,6 +139,7 @@ export class MockBackend implements ExecutionBackend {
 			value: 1759971200000,
 			source_session_id: 1,
 			version: 3,
+			// 无源头链(直接广播):origin_fact_id 缺省 undefined
 		},
 		{
 			fact_id: 9103,

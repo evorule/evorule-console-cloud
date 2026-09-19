@@ -104,7 +104,7 @@ export class WasmBackend implements ExecutionBackend {
 
 	// === 内存种子(权限/知识/共享事实;逐行搬 MockBackend,73 文档 §2.2) ===
 	private static readonly SHARED_FACTS_DEMO: readonly SharedFactEntry[] = [
-		{ fact_id: 9101, path: "shared.platform.last_login.username", value: "demo-user", source_session_id: 1, version: 3 },
+		{ fact_id: 9101, path: "shared.platform.last_login.username", value: "demo-user", source_session_id: 1, version: 3, origin_fact_id: 501 },
 		{ fact_id: 9102, path: "shared.platform.last_login.ts_ms", value: 1759971200000, source_session_id: 1, version: 3 },
 		{ fact_id: 9103, path: "shared.tenant.quota.remaining", value: 42, source_session_id: 2, version: 6 },
 	];
