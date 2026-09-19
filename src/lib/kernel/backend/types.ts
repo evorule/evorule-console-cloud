@@ -276,6 +276,8 @@ export interface SharedFactEntry {
   value: unknown;
   source_session_id: number;
   version: number;
+  /** 会话侧源头 fact_id(N6 链路统一,R10);旧 server/历史条目缺省 undefined */
+  origin_fact_id?: number;
 }
 
 /** 共享事实日志版本(GET /api/shared/facts/version,对齐 server SharedFactsVersionResponse) */
