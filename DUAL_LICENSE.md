@@ -21,7 +21,7 @@
 
 **版本**: 2.0
 **生效日期**: 2026-09-08
-**适用范围**: EvoRule 生态全集 —— `evorule`、`evorule-server`（自托管）、`evorule-rule`、`evorule-system-rules`、`evo-agent`、`evorule-console-cloud` 的 console 查看器部分等 **A 类开源仓**。闭源运营层（cloud / server 托管变体）属 B 类，另行商用协议。
+**适用范围**: EvoRule 生态全集 —— 主仓及全部关联开源仓库（**A 类开源仓**；关联仓库清单以项目公开文档为准）。闭源运营层（cloud / server 托管变体）属 B 类，另行商用协议。
 
 ---
 
@@ -135,7 +135,7 @@ EvoRule 以 **AGPL-3.0-or-later** 为基础许可证，并为需要闭源使用�
 
 - **商业许可咨询**: <evorulelab@gmail.com>
 - **组织**: [EvoRule](https://gitee.com/evorule)
-- **Gitee**: <https://gitee.com/evorule/evorule-console-cloud>
+- **Gitee**: <https://gitee.com/evorule/evorule>
 
 ---
 
