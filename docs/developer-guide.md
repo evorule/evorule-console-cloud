@@ -36,7 +36,7 @@ evorule-console-cloud 是 evorule 生态的**大众版前端 + 联调编排层**
 | evorule-rule-serve | 18081 | **治理域**：规则数据集、条目、版本、生命周期、快照导出 | evorule-rule 仓 |
 | evorule-server | 18080 | **执行域**：会话执行引擎、bundle 导入、事实链/审计 | evorule-server 仓 |
 
-**铁律**：上层应用（含本前端）禁止直连 evorule 核心仓（D:\evorule 的 crate），一切调用必须过 server 层或 rule-serve 的 HTTP 门禁。
+**铁律**：上层应用（含本前端）禁止直连 evorule 核心仓（主仓 crate），一切调用必须过 server 层或 rule-serve 的 HTTP 门禁。
 
 **三个仓的目录约定**（start-all.ps1 按兄弟目录推导 binary 路径）：
 

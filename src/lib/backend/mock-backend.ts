@@ -14,7 +14,7 @@
 // 数据切换:根据 demoDatasetStore(medical/finance/agent)返回对应数据集。
 // session 管理:固定 4 个基础 session(1-4)+ agent 杀手场景 session(5)。
 //
-// P2-mock(2026-08-25):新增 agent 数据集(零依赖杀手演示,对应 evorule-agent-demo)。
+// P2-mock(2026-08-25):新增 agent 数据集(零依赖杀手演示)。
 
 import type {
 	ExecutionBackend,

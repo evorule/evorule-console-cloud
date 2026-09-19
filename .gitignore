@@ -24,7 +24,6 @@ vite.config.ts.timestamp-*
 !.env.example
 
 # --- 内部运行时中间产物 ---
-.workbuddy/
 /data/
 .trae/
 
