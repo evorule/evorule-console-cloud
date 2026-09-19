@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 //
 // P2-mock 零依赖演示场景 — 杀手 agent 故事线。
-// 对应 evorule-agent-demo 的 killer_demo.py 叙事(确定性回放 + 可控自进化)。
+// 对应杀手演示的 killer_demo.py 叙事(确定性回放 + 可控自进化)。
 //
 // 场景:代码审查 agent 自动放行了高危命令 `rm -rf /tmp/build`
 //   → 确定性审计链逐 bit 记录(可篡改检测)

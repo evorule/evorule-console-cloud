@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console 插件契约 v1 资产面客户端 — 声明式 pack 只读 + 草稿生成/编译
 //
-// 依据: Plugin Contract v1.1 §5/§6（D:\knowledge\2-Projects\evorule-plugin\02-Plugin-Contract-v1.md）
+// 依据: Plugin Contract v1.1 §5/§6
 // 端点对齐 evorule-server api/plugin_packs.rs:
 //   - GET  /api/plugins                                          → pack 清单
 //   - GET  /api/plugins/{pack_id}/assets/{kind}                  → 资产只读面（kind ∈ scenes|templates|flows|node_types）
