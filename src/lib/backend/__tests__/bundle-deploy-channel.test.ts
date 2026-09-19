@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// 部署通道单测 — 治理 Published → 执行域导入激活(32 号 UI 接线)
+// 部署通道单测 — 治理 Published → 执行域导入激活(历史批次 UI 接线)
 //
 // 运行: npx vitest run src/lib/backend/__tests__/bundle-deploy-channel.test.ts
 //

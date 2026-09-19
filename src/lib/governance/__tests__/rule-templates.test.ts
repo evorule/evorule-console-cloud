@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — W2.3/W2.4 治理页模板脚手架 + 编辑入口单测
 //
-// 覆盖(43 号方案 W2.3+W2.4 验收):
+// 覆盖(设计方案 W2.3+W2.4 验收):
 //   - 模板清单:空白骨架 + 4 场景(共 5 项),rule_body 均为合法 JSON 且通过本地校验
 //   - 空白骨架含最佳实践引导(instruction 谓词 + 双分支 set + 末条 all(inner:[]) 兜底)
 //   - 场景模板预填 entry_id/domain;空白骨架不预填

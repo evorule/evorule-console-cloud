@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:marketplace「官方资产」分区(47 号接线专项)
+  职责:marketplace「官方资产」分区(历史批次接线专项)
     - 从治理服务(evorule-rule :18081)发现官方数据集(公开 + 已上架)
     - 四态:未连接引导 / 加载中 / 空态(准入口径说明) / 资产卡片网格
     - 下载预览包(evidence=none,执行域必拒导入,语义如实标注)

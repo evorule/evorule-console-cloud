@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:平台应用凭据管理页(58 号专项 W3;59 号专项 W2 补配额管理)
+  职责:平台应用凭据管理页(专项 W3;专项 W2 补配额管理)
     - 应用列表(server GET /api/platform/apps,manage_apps 可读)
     - 签发应用凭据 / 吊销 / 配额调整(manage_apps;server 端二次校验)
     - 配额列(限速/今日用量):server 下发 null=不限;用量达日配额标红

@@ -20,7 +20,7 @@ import type { FlowTranspileContext } from '$lib/kernel';
  * 对齐源(/ W2.5,2026-09-04 重写):evorule-server
  * core/rule_schema/schemas/_shared/v1.0.json(固化版,$defs SSOT)——
  * 公开白名单 4 元指令 params 形状、7 域类型、inner 嵌套、复数 __io_results__.<io_type>。
- * (collect/merge 已退役 69 号清理 2026-09-14;enforce 仅 tier=meta,业务文件不出现)
+ * (collect/merge 已退役规则清理 2026-09-14;enforce 仅 tier=meta,业务文件不出现)
  */
 export const EVORULE_RULE_SPEC = `evorule 规则格式(JSON):
 

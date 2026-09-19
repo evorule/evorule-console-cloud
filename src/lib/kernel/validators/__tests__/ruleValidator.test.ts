@@ -82,13 +82,13 @@ describe('G2 元指令与 params 完备性', () => {
     expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('on_true'))).toBe(true);
   });
 
-  test('collect 已退役(69 号)→ G2 无效元指令类型', () => {
+  test('collect 已退役(历史批次)→ G2 无效元指令类型', () => {
     const r = v('{"transform":[{"type":"collect","params":{"from":"data.items","each":{"type":"noop"}}}]}');
     expect(r.valid).toBe(false);
     expect(r.errors.some((e) => e.gate === 'G2' && e.message.includes('collect'))).toBe(true);
   });
 
-  test('merge 已退役(69 号)→ G2 无效元指令类型', () => {
+  test('merge 已退役(历史批次)→ G2 无效元指令类型', () => {
     const r = v(
       '{"transform":[{"type":"merge","params":{"messages":"data.ms","tool_result":"data.tr","next_instruction":{"type":"noop"}}}]}'
     );

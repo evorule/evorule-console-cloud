@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — W2.2 治理页规则表单辅助单测
 //
-// 覆盖(43 号方案 W2.2 验收):
+// 覆盖(设计方案 W2.2 验收):
 //   - 保存分层第 1 层三态:本地 error 阻断 / warning-only 放行 / 全绿放行
 //   - formatIssues 面板明细格式(gate + path + message)
 //   - summarizeTransformSteps 摘要预览:非法 JSON→null、合法规则步骤文本、兜底规则显式标注
@@ -140,7 +140,7 @@ describe('W2.2 summarizeTransformSteps — 摘要预览', () => {
     expect(s![1].text).toContain('兜底规则');
   });
 
-  test('4 元指令摘要全覆盖(collect/merge 已退役 69 号 → 未知指令)', () => {
+  test('4 元指令摘要全覆盖(collect/merge 已退役 → 未知指令)', () => {
     const s = summarizeTransformSteps(
       JSON.stringify({
         transform: [
