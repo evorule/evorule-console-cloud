@@ -594,6 +594,7 @@ ${causalChain.nodes
                   <th>路径</th>
                   <th>值</th>
                   <th>来源会话</th>
+                  <th title="会话侧源头 fact_id（N6 跨链溯源）；「—」表示直接广播或旧 server 未携带该字段">溯源</th>
                   <th>版本</th>
                 </tr>
               </thead>
@@ -606,6 +607,12 @@ ${causalChain.nodes
                       >{JSON.stringify(f.value).slice(0, 80)}</td
                     >
                     <td class="mono">#{f.source_session_id}</td>
+                    <td class="mono origin-cell"
+                      >{#if f.origin_fact_id != null
+                        }<span title="会话侧源头 fact_id: #{f.origin_fact_id}"
+                          >←#{f.origin_fact_id}</span
+                        >{:else}—{/if}</td
+                    >
                     <td class="mono">{f.version}</td>
                   </tr>
                 {/each}
@@ -964,6 +971,14 @@ ${causalChain.nodes
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .shared-facts-table .origin-cell {
+    color: var(--text-dim, #9ca3af);
+    white-space: nowrap;
+  }
+  .shared-facts-table .origin-cell span {
+    color: var(--accent, #2563eb);
+    cursor: default;
   }
 
   .av-switch {

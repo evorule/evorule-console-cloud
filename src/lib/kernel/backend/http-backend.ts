@@ -679,7 +679,8 @@ export class HttpBackend implements ExecutionBackend {
   /**
    * GET /api/shared/facts?prefix= — 共享事实查询(W1,跨会话广播
    * 事实,前缀过滤,缺省全部)。server 返回裸数组 [{ fact_id, path, value,
-   * source_session_id, version }]。
+   * source_session_id, version, origin_fact_id? }](origin_fact_id 为
+   * N6/R10 跨链溯源字段,旧 server 缺省不带,JSON 直通不改动)。
    */
   async getSharedFacts(prefix?: string): Promise<SharedFactEntry[]> {
     const q = prefix ? `?prefix=${encodeURIComponent(prefix)}` : '';

@@ -319,6 +319,8 @@ describe("W1 HttpBackend - 共享事实", () => {
 				value: "demo-user",
 				source_session_id: 1,
 				version: 3,
+				// N6/R10:origin_fact_id JSON 直通,不改动
+				origin_fact_id: 501,
 			},
 		]);
 		const backend = new HttpBackend(BASE, "tok-1");
@@ -327,6 +329,8 @@ describe("W1 HttpBackend - 共享事实", () => {
 
 		expect(facts).toHaveLength(1);
 		expect(facts[0].fact_id).toBe(9101);
+		// 跨链溯源字段直通断言
+		expect(facts[0].origin_fact_id).toBe(501);
 		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
 		expect(url).toBe(
 			`${BASE}/api/shared/facts?prefix=${encodeURIComponent("shared.platform.")}`,

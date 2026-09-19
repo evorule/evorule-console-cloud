@@ -436,6 +436,14 @@ describe("W1 MockBackend - A 组 5 项", () => {
                 expect(facts[0].path).toContain("shared.");
         });
 
+        test("getSharedFacts() 演示数据含 origin_fact_id 跨链溯源形态(9101 有源头链,9102 直接广播缺省)", async () => {
+                const facts = await backend.getSharedFacts();
+                const withOrigin = facts.find((f) => f.fact_id === 9101);
+                const withoutOrigin = facts.find((f) => f.fact_id === 9102);
+                expect(withOrigin?.origin_fact_id).toBe(501);
+                expect(withoutOrigin?.origin_fact_id).toBeUndefined();
+        });
+
         test("getSharedFacts(prefix) 前缀过滤", async () => {
                 const facts = await backend.getSharedFacts("shared.platform.");
                 expect(facts).toHaveLength(2);
