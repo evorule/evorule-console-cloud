@@ -25,7 +25,9 @@ ADR（Architecture Decision Record）是一种轻量级文档，记录：
 
 ## 目录
 
-（暂无，等第一个 ADR 落地后补）
+- [ADR-0002：规则生成入口职责边界与工作流分层定位](./0002-rule-authoring-entry-and-workflow-layering.md)（Accepted，2026-09-19）
+
+> 基调：轻量单页（Nygard 经典式），真实分叉才落 ADR，不预设系列。
 
 ## 何时写 ADR
 
