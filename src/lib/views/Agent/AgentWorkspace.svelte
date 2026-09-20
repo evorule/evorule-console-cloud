@@ -37,8 +37,13 @@
   const FIXED_ROLES = ["researcher", "rule-copilot", "general"] as const;
   type Role = (typeof FIXED_ROLES)[number];
 
+  /** 审批倒计时窗(evo-agent serve 60s 超时自动拒绝,UI 同步呈现;协议既定) */
+  const APPROVAL_TIMEOUT_SEC = 60;
+  /** 倒计时环形 SVG 周长(r=12) */
+  const APPROVAL_RING_C = 2 * Math.PI * 12;
+
   /** 测试注入缝:缺省真实客户端,组件测试注入桩(连接层行为在客户端单测覆盖) */
-  type ClientLike = Pick<AgentClient, "connect" | "send" | "close">;
+  type ClientLike = Pick<AgentClient, "connect" | "send" | "approve" | "close">;
   interface Props {
     createClient?: (options: AgentClientOptions) => ClientLike;
   }
@@ -51,11 +56,42 @@
     | { kind: "user"; text: string }
     | { kind: "agent"; text: string; streaming: boolean }
     | { kind: "chips"; chips: { name: string; state: "run" | "done" }[] }
+    | {
+        kind: "approval";
+        tool: string;
+        command: string;
+        risk: string;
+        alternative: string;
+        /** 倒计时截止(Unix 秒);服务端 60s 超时自动拒绝,UI 显式倒计时 */
+        deadline: number;
+        state: "pending" | "approved" | "rejected" | "timeout";
+      }
     | { kind: "error"; text: string };
+
+  /** 时间线条目(中栏;状态语义对齐设计规格:运行中/待审批/成功/已拒绝·超时跳过) */
+  type TlState = "run" | "wait" | "ok" | "skip";
+  type TlItem = {
+    id: number;
+    name: string;
+    args: unknown;
+    state: TlState;
+    /** skip 态细分:rejected=已拒绝 / timeout=超时跳过 */
+    skipReason: "rejected" | "timeout" | "";
+    /** 审批请求附带的命令与风险(ApprovalRequired) */
+    command: string;
+    risk: string;
+    alternative: string;
+    result: unknown;
+  };
 
   // $state 深响应式对象树:数组 push 与元素属性变化(text/streaming/chip state)均自动触发更新
   // key 为 localId(crypto uuid,无注入面);不用 Map——其值内层 mutation 不经 Map 通道通知
   const transcripts = $state<Record<string, ChatItem[]>>({});
+  /** 中栏执行时间线(按会话留存;与右栏对话流并行推进) */
+  const timelines = $state<Record<string, TlItem[]>>({});
+  /** 每轮完成汇总(中栏汇总条;新一轮发送时清空) */
+  const turnSummaries = $state<Record<string, { steps: number; sec: number } | null>>({});
+  let tlSeq = 0;
 
   let selectedRole: Role = $state("general");
   let selectedLocalId = $state<string | null>(null);
@@ -76,6 +112,32 @@
     const tr = transcripts[selected.localId];
     // 浅拷贝保证数组身份变化,each 块据此增删条目;元素属性变化由细粒度依赖直达 DOM
     return tr ? [...tr] : [];
+  });
+
+  /** 中栏时间线条目(浅拷贝同 transcripts 派生纪律) */
+  const tlItems = $derived.by<TlItem[]>(() => {
+    if (!selected) return [];
+    const tl = timelines[selected.localId];
+    return tl ? [...tl] : [];
+  });
+  /** 中栏本轮汇总条 */
+  const turnSummary = $derived.by<{ steps: number; sec: number } | null>(() => {
+    if (!selected) return null;
+    return turnSummaries[selected.localId] ?? null;
+  });
+  /** 时间线手风琴:单条展开(点按切换) */
+  let openTlId = $state<number | null>(null);
+  /** 审批送达防抖(点击后到 REST 返回前禁用双按钮) */
+  let deciding = $state(false);
+  /** 倒计时基准(Unix 秒;每秒推进驱动审批卡环形倒计时) */
+  let nowSec = $state(Math.floor(Date.now() / 1000));
+
+  $effect(() => {
+    const timer = setInterval(() => {
+      nowSec = Math.floor(Date.now() / 1000);
+      resolveApprovalTimeouts();
+    }, 1000);
+    return () => clearInterval(timer);
   });
 
   /** 连接徽标:文本与色调(断线显式非静默) */
@@ -147,6 +209,95 @@
     return sessions.find((s) => s.localId === localId)?.sessionId ?? "";
   }
 
+  // ---- 中栏时间线辅助(先判空赋值再 push,同 transcripts proxy 纪律) ----
+  function pushTl(localId: string, item: Omit<TlItem, "id">): TlItem {
+    if (!timelines[localId]) timelines[localId] = [];
+    const full: TlItem = { ...item, id: ++tlSeq };
+    timelines[localId].push(full);
+    return full;
+  }
+
+  /** 从尾向头找最近的同名时间线条目(可选状态过滤) */
+  function findTl(localId: string, name: string, states?: TlState[]): TlItem | null {
+    const tl = timelines[localId];
+    if (!tl) return null;
+    for (let i = tl.length - 1; i >= 0; i--) {
+      const it = tl[i];
+      if (it.name === name && (!states || states.includes(it.state))) return it;
+    }
+    return null;
+  }
+
+  /** 审批卡条目定位:同工具 pending 卡优先,退而取任意 pending 卡(单卡场景兜底) */
+  function findPendingApproval(localId: string, tool: string): ChatItem | null {
+    const tr = transcripts[localId];
+    if (!tr) return null;
+    let any: ChatItem | null = null;
+    for (let i = tr.length - 1; i >= 0; i--) {
+      const it = tr[i];
+      if (it.kind === "approval" && it.state === "pending") {
+        if (it.tool === tool) return it;
+        any = it;
+      }
+    }
+    return any;
+  }
+
+  /** 工具参数摘要(中栏 .ta 单行;对象展开 key=value,标量直接序列化) */
+  function summarizeArgs(args: unknown): string {
+    if (args === null || args === undefined) return "";
+    if (typeof args === "object" && !Array.isArray(args)) {
+      const entries = Object.entries(args as Record<string, unknown>);
+      if (entries.length === 0) return "";
+      return entries
+        .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
+        .join(" ");
+    }
+    return JSON.stringify(args);
+  }
+
+  /** 详情行用紧凑 JSON(文本插值自动转义,无注入面) */
+  function jsonCompact(v: unknown): string {
+    try {
+      return JSON.stringify(v) ?? "";
+    } catch {
+      return String(v);
+    }
+  }
+
+  // ---- 审批链路 ----
+  /** 批准/拒绝:REST 送达;结果以服务端 ApprovalResult 回推为准(协议保证),失败保持 pending 继续倒计时 */
+  async function decideApproval(item: Extract<ChatItem, { kind: "approval" }>, approved: boolean): Promise<void> {
+    const lid = activeLocalId;
+    if (!client || !lid || deciding || item.state !== "pending") return;
+    deciding = true;
+    try {
+      await client.approve(approved);
+    } catch (e) {
+      pushItem(lid, {
+        kind: "error",
+        text: t("agent.err.approveFailed", { reason: (e as Error).message })
+      });
+    } finally {
+      deciding = false;
+    }
+  }
+
+  /** 60s 倒计时归零:超时自动拒绝(服务端同步兜底;ApprovalResult 迟到时因非 pending 被忽略,不重复) */
+  function resolveApprovalTimeouts(): void {
+    for (const lid of Object.keys(transcripts)) {
+      const tr = transcripts[lid];
+      for (let i = tr.length - 1; i >= 0; i--) {
+        const it = tr[i];
+        if (it.kind === "approval" && it.state === "pending" && it.deadline <= nowSec) {
+          tr[i] = { ...it, state: "timeout" };
+          const tl = findTl(lid, it.tool, ["wait"]);
+          if (tl) tl.state = "skip", tl.skipReason = "timeout";
+        }
+      }
+    }
+  }
+
   // ---- 服务端事件 → 对话流 ----
   function handleEvent(e: AgentServerEvent): void {
     const lid = activeLocalId;
@@ -166,6 +317,16 @@
       }
       case "ToolCall":
         tr.push({ kind: "chips", chips: [{ name: e.name, state: "run" }] });
+        pushTl(lid, {
+          name: e.name,
+          args: e.args,
+          state: "run",
+          skipReason: "",
+          command: "",
+          risk: "",
+          alternative: "",
+          result: null
+        });
         break;
       case "ToolResult": {
         for (let i = tr.length - 1; i >= 0; i--) {
@@ -178,12 +339,30 @@
             }
           }
         }
+        // 中栏:同名运行中/待审批条目收敛为成功;防御性兜底——无匹配条目时补一条(协议应成对)
+        const tlItem = findTl(lid, e.name, ["run", "wait"]);
+        if (tlItem) {
+          tlItem.state = "ok";
+          tlItem.result = e.result;
+        } else {
+          pushTl(lid, {
+            name: e.name,
+            args: null,
+            state: "ok",
+            skipReason: "",
+            command: "",
+            risk: "",
+            alternative: "",
+            result: e.result
+          });
+        }
         break;
       }
       case "Done": {
         closeStreamingItem(tr);
         const sec = Math.max(1, Math.round(e.duration_ms / 1000));
         tr.push({ kind: "summary", text: t("agent.sys.turnDone", { steps: e.steps, sec }) });
+        turnSummaries[lid] = { steps: e.steps, sec };
         turnRunning = false;
         touchSession(lid);
         break;
@@ -197,17 +376,57 @@
       case "Info":
         tr.push({ kind: "sys", text: e.message });
         break;
-      case "ApprovalRequired":
-        tr.push({ kind: "sys", text: t("agent.sys.waitApproval", { tool: e.tool_name }) });
-        break;
-      case "ApprovalResult":
+      case "ApprovalRequired": {
+        // 中栏:运行中条目转待审批(candidate 工具先 ToolCall 后 ApprovalRequired);无前置条目则补一条
+        const tlItem = findTl(lid, e.tool_name, ["run"]);
+        if (tlItem) {
+          tlItem.state = "wait";
+          tlItem.command = e.command ?? "";
+          tlItem.risk = e.risk ?? "";
+          tlItem.alternative = e.alternative ?? "";
+        } else {
+          pushTl(lid, {
+            name: e.tool_name,
+            args: null,
+            state: "wait",
+            skipReason: "",
+            command: e.command ?? "",
+            risk: e.risk ?? "",
+            alternative: e.alternative ?? "",
+            result: null
+          });
+        }
+        // 右栏:审批卡(替代 T4 的 sys 占位行;60s 显式倒计时)
         tr.push({
-          kind: "sys",
-          text: t("agent.sys.approvalResult", {
-            result: e.approved ? t("agent.sys.approved") : t("agent.sys.rejected")
-          })
+          kind: "approval",
+          tool: e.tool_name,
+          command: e.command ?? "",
+          risk: e.risk ?? "",
+          alternative: e.alternative ?? "",
+          deadline: Math.floor(Date.now() / 1000) + APPROVAL_TIMEOUT_SEC,
+          state: "pending"
         });
         break;
+      }
+      case "ApprovalResult": {
+        // 卡片收敛:pending → approved/rejected(超时已收敛为 timeout 的卡不再改写,忽略迟到回执)
+        const card = findPendingApproval(lid, e.tool_name);
+        if (card && card.kind === "approval") {
+          const idx = tr.indexOf(card);
+          if (idx >= 0) tr[idx] = { ...card, state: e.approved ? "approved" : "rejected" };
+        }
+        // 中栏:待审批条目 → 运行中(批准继续执行)/ 已拒绝·跳过
+        const tlItem = findTl(lid, e.tool_name, ["wait"]);
+        if (tlItem) {
+          if (e.approved) {
+            tlItem.state = "run";
+          } else {
+            tlItem.state = "skip";
+            tlItem.skipReason = "rejected";
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -281,6 +500,7 @@
     pushItem(s.localId, { kind: "user", text });
     input = "";
     turnRunning = true;
+    turnSummaries[s.localId] = null;
     const ok = await ensureConnected(s);
     if (!ok) {
       turnRunning = false;
@@ -311,6 +531,7 @@
     turnRunning = false;
     link = "idle";
     linkError = null;
+    openTlId = null;
     selectedLocalId = s.localId;
   }
 
@@ -325,6 +546,7 @@
     turnRunning = false;
     link = "idle";
     linkError = null;
+    openTlId = null;
     selectedLocalId = s.localId;
     if ((FIXED_ROLES as readonly string[]).includes(s.role)) selectedRole = s.role as Role;
   }
@@ -411,10 +633,62 @@
         <span class="chp mono">{selected ? selected.role : selectedRole}</span>
         <a class="mh-link" href={`${base}/audit`}>{t("agent.auditLink")}</a>
       </header>
-      <div class="ph">
-        <p class="ph-title">{t("agent.timelineEmpty")}</p>
-        <p class="ph-hint">{t("agent.timelineHint")}</p>
-      </div>
+      {#if turnSummary}
+        <div class="donebar">{t("agent.sys.turnDone", { steps: turnSummary.steps, sec: turnSummary.sec })}</div>
+      {/if}
+      {#if tlItems.length === 0}
+        <div class="ph">
+          <p class="ph-title">{t("agent.timelineEmpty")}</p>
+          <p class="ph-hint">{t("agent.timelineHint")}</p>
+        </div>
+      {:else}
+        <div class="tl">
+          {#each tlItems as item (item.id)}
+            <div class="te" class:open={openTlId === item.id}>
+              <button
+                class="teh"
+                type="button"
+                onclick={() => (openTlId = openTlId === item.id ? null : item.id)}
+              >
+                <span class="tico">{item.name.slice(0, 1).toUpperCase()}</span>
+                <span class="tn">{item.name}</span>
+                <span class="ta">{summarizeArgs(item.args) || item.command}</span>
+                <span
+                  class="bd"
+                  class:run={item.state === "run"}
+                  class:wait={item.state === "wait"}
+                  class:ok={item.state === "ok"}
+                  class:skip={item.state === "skip"}
+                >
+                  {#if item.state === "run"}<span class="sp"></span>{t("agent.tl.run")}
+                  {:else if item.state === "wait"}{t("agent.tl.wait")}
+                  {:else if item.state === "ok"}{t("agent.tl.ok")}
+                  {:else if item.skipReason === "timeout"}{t("agent.tl.timeout")}
+                  {:else}{t("agent.tl.rejected")}{/if}
+                </span>
+              </button>
+              {#if openTlId === item.id}
+                <div class="ted">
+                  {#if item.command}
+                    <div class="r"><i>{t("agent.tl.command")}</i> {item.command}</div>
+                  {:else if item.args !== null && item.args !== undefined}
+                    <div class="r"><i>{t("agent.tl.args")}</i> {jsonCompact(item.args)}</div>
+                  {/if}
+                  {#if item.state === "ok" && item.result !== null && item.result !== undefined}
+                    <div class="r"><i>{t("agent.tl.result")}</i> {jsonCompact(item.result)}</div>
+                  {/if}
+                  {#if item.risk}
+                    <div class="r"><i>{t("agent.tl.risk")}</i> {t("agent.tl.riskLine", { risk: item.risk })}</div>
+                  {/if}
+                  {#if item.alternative}
+                    <div class="r"><i>{t("agent.tl.alternative")}</i> {item.alternative}</div>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
     </section>
 
     <!-- ===== 右栏:Agent 会话流 ===== -->
@@ -475,6 +749,62 @@
                   </span>
                 {/each}
               </div>
+            {:else if item.kind === "approval"}
+              {@const remaining = Math.max(0, item.deadline - nowSec)}
+              {#if item.state === "pending"}
+                <div class="apv">
+                  <div class="apv-h">⚠ {t("agent.card.pendingTitle", { tool: item.tool })}</div>
+                  {#if item.command}
+                    <div class="apv-cmd">{item.command}</div>
+                  {/if}
+                  {#if item.risk}
+                    <div class="apv-mt">{t("agent.tl.riskLine", { risk: item.risk })}</div>
+                  {/if}
+                  {#if item.alternative}
+                    <div class="apv-mt">{t("agent.card.alternative", { alternative: item.alternative })}</div>
+                  {/if}
+                  <div class="apv-cd">
+                    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                      <circle cx="15" cy="15" r="12" fill="none" stroke="var(--border)" stroke-width="3" />
+                      <circle
+                        cx="15"
+                        cy="15"
+                        r="12"
+                        fill="none"
+                        stroke={remaining <= 10 ? "var(--danger)" : "var(--warning)"}
+                        stroke-width="3"
+                        stroke-linecap="round"
+                        stroke-dasharray={APPROVAL_RING_C}
+                        stroke-dashoffset={APPROVAL_RING_C * (1 - remaining / APPROVAL_TIMEOUT_SEC)}
+                        transform="rotate(-90 15 15)"
+                      />
+                    </svg>
+                    <span class="apv-num" class:low={remaining <= 10}>{remaining}s</span>
+                    <button
+                      class="apv-btn pri"
+                      type="button"
+                      disabled={deciding}
+                      onclick={() => void decideApproval(item, true)}
+                    >
+                      {t("agent.card.approve")}
+                    </button>
+                    <button
+                      class="apv-btn dg"
+                      type="button"
+                      disabled={deciding}
+                      onclick={() => void decideApproval(item, false)}
+                    >
+                      {t("agent.card.reject")}
+                    </button>
+                  </div>
+                </div>
+              {:else if item.state === "approved"}
+                <div class="apv-state ok">✔ {t("agent.card.approved", { cmd: item.command || item.tool })}</div>
+              {:else if item.state === "rejected"}
+                <div class="apv-state no">✕ {t("agent.card.rejected")}</div>
+              {:else}
+                <div class="apv-state to">⏱ {t("agent.card.timeout")}</div>
+              {/if}
             {:else}
               <div class="errc"><b>✕</b> {item.text}</div>
             {/if}
@@ -739,6 +1069,233 @@
   }
   .mh-link:hover {
     text-decoration: underline;
+  }
+
+  /* --- 中栏汇总条(本轮完成) --- */
+  .donebar {
+    margin: 10px 14px 0;
+    padding: 8px 12px;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-med);
+    line-height: 18px;
+    color: var(--success);
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    border-radius: var(--r-md);
+  }
+
+  /* --- 中栏时间线(状态语义:run 蓝 / wait 黄 / ok 绿 / skip 灰) --- */
+  .tl {
+    flex: 1;
+    min-height: 0;
+    padding: 10px 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .te {
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--bg-card);
+  }
+  .teh {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-sans);
+  }
+  .teh:hover {
+    background: var(--bg-hover);
+    border-radius: var(--r-md);
+  }
+  .tico {
+    width: 18px;
+    height: 18px;
+    border-radius: var(--r-sm);
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: var(--fw-med);
+    line-height: 18px;
+    text-align: center;
+    flex: 0 0 18px;
+  }
+  .tn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: var(--fw-med);
+    line-height: 16px;
+    color: var(--text-primary);
+    flex: 0 0 auto;
+  }
+  .ta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .bd {
+    margin-left: auto;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: var(--fw-med);
+    line-height: 1;
+    padding: 3px 8px;
+    border-radius: var(--r-full);
+  }
+  .bd.run {
+    color: var(--brand-ocean);
+    background: var(--brand-bg);
+  }
+  .bd.wait {
+    color: var(--warning);
+    background: var(--warning-bg);
+  }
+  .bd.ok {
+    color: var(--success);
+    background: var(--success-bg);
+  }
+  .bd.skip {
+    color: var(--text-muted);
+    background: var(--bg-hover);
+  }
+  .sp {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+  }
+  .ted {
+    padding: 2px 10px 10px 36px;
+  }
+  .ted .r {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 18px;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+  }
+  .ted .r i {
+    font-style: normal;
+    color: var(--text-muted);
+  }
+
+  /* --- 审批卡(等待黄/已批准绿/已拒绝红/超时灰) --- */
+  .apv {
+    border-radius: var(--r-lg);
+    padding: 10px;
+    border: 1px solid var(--warning);
+    background: var(--warning-bg);
+  }
+  .apv-h {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-sb);
+    line-height: 18px;
+    color: var(--warning);
+  }
+  .apv-cmd {
+    margin: 6px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--text-primary);
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 6px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .apv-mt {
+    font-size: 10px;
+    line-height: 15px;
+    color: var(--text-secondary);
+  }
+  .apv-cd {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .apv-num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: var(--fw-sb);
+    color: var(--warning);
+    width: 30px;
+  }
+  .apv-num.low {
+    color: var(--danger);
+  }
+  .apv-btn {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-sb);
+    border-radius: var(--r-md);
+    padding: 7px 14px;
+    border: none;
+    cursor: pointer;
+  }
+  .apv-btn.pri {
+    background: var(--brand);
+    color: #ffffff;
+  }
+  .apv-btn.pri:hover:not(:disabled) {
+    background: var(--brand-hover);
+  }
+  .apv-btn.dg {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  .apv-btn.dg:hover:not(:disabled) {
+    background: var(--danger-bg);
+  }
+  .apv-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .apv-state {
+    border-radius: var(--r-lg);
+    padding: 10px;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-med);
+    line-height: 18px;
+  }
+  .apv-state.ok {
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+  .apv-state.no {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+  }
+  .apv-state.to {
+    background: var(--bg-hover);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
   }
 
   /* --- 空态占位(中/右共用) --- */
@@ -1026,6 +1583,9 @@
     .crt {
       animation: agent-blink 1s steps(2) infinite;
     }
+    .sp {
+      animation: agent-spin 0.8s linear infinite;
+    }
   }
   @keyframes agent-pulse {
     50% {
@@ -1035,6 +1595,11 @@
   @keyframes agent-blink {
     50% {
       opacity: 0;
+    }
+  }
+  @keyframes agent-spin {
+    to {
+      transform: rotate(360deg);
     }
   }
 </style>

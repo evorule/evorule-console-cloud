@@ -337,7 +337,8 @@ describe('凭据加密生命周期', () => {
 		expect((await mod.saveLlmApiKeyEncrypted('sk-x', '       ')).ok).toBe(false);
 	});
 
-	test('加密保存 → 重载进 locked 态 → 口令解锁恢复(错误口令被拒)', async () => {
+	// 71 文件全量并行时 PBKDF2 派生在负载下可超默认 5s(单跑绿);放宽用例级超时
+	test('加密保存 → 重载进 locked 态 → 口令解锁恢复(错误口令被拒)', { timeout: 20_000 }, async () => {
 		// 1) 加密保存
 		const mod1 = await import('../config/llm-config');
 		updateForConfigure(mod1);
