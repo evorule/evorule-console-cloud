@@ -35,6 +35,7 @@ interface StubClient {
 	options: AgentClientOptions;
 	connect: ReturnType<typeof vi.fn>;
 	send: ReturnType<typeof vi.fn>;
+	approve: ReturnType<typeof vi.fn>;
 	close: ReturnType<typeof vi.fn>;
 }
 
@@ -52,6 +53,7 @@ function makeStubFactory(opts?: { connectReject?: Error }) {
 				options.onStatus('connected', { sessionId: options.sessionId });
 			}),
 			send: vi.fn(),
+			approve: vi.fn(async () => {}),
 			close: vi.fn()
 		};
 		stubs.push(stub);
@@ -69,6 +71,7 @@ async function typeAndSend(container: HTMLElement, text: string): Promise<void> 
 }
 
 afterEach(() => {
+	vi.useRealTimers();
 	cleanup();
 	setCfg({});
 	resetAgentSessions();
@@ -253,7 +256,9 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 		ev({ type: 'Done', success: true, content: '', steps: 3, duration_ms: 4200 });
 		await tick();
 		expect(container.querySelector('.msg.a .crt')).toBeNull(); // 光标收起
-		expect(screen.getByText('✔ 本轮完成 · 3 步 · 耗时 4s')).toBeTruthy();
+		// 汇总双呈现:右栏汇总行 + 中栏汇总条(同一文案)
+		expect(screen.getAllByText('✔ 本轮完成 · 3 步 · 耗时 4s').length).toBe(2);
+		expect(container.querySelector('.mcol .donebar')).toBeTruthy();
 		// 会话徽标回填 + 条目 meta 更新
 		expect(sit.querySelector('.m')?.textContent).toBe('general · v1');
 		const midChips = container.querySelectorAll('.mh .chp.mono');
@@ -279,27 +284,170 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 });
 
 describe('AgentWorkspace — 刷新恢复(续接)', () => {
-	it('历史会话点击选中,发送时按会话 ID 续接并呈现续接提示行', async () => {
+		it('历史会话点击选中,发送时按会话 ID 续接并呈现续接提示行', async () => {
+			setCfg({ enabled: true });
+			const s = createSession('rule-copilot', '检索 ADR 案例');
+			attachSessionId(s.localId, 'session_9f3a2c');
+			const { factory, stubs } = makeStubFactory();
+			const { container } = render(AgentWorkspace, { props: { createClient: factory } });
+			// 列表恢复:条目 meta 显示角色与版本
+			const sit = container.querySelector('.sit') as HTMLElement;
+			expect(sit.querySelector('.n')?.textContent).toBe('检索 ADR 案例');
+			expect(sit.querySelector('.m')?.textContent).toBe('rule-copilot · v1');
+			// 点击选中(刷新后未选中:输入行禁用)
+			expect((container.querySelector('.rinput textarea') as HTMLTextAreaElement).disabled).toBe(true);
+			fireEvent.click(sit);
+			await tick();
+			expect((container.querySelector('.rinput textarea') as HTMLTextAreaElement).disabled).toBe(false);
+			await typeAndSend(container, '继续上轮');
+			await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalledWith('继续上轮'));
+			// 续接参数:按既有会话 ID 建连
+			expect(stubs[0].options.sessionId).toBe('session_9f3a2c');
+			expect(stubs[0].options.agentType).toBe('rule-copilot');
+			await tick();
+			expect(screen.getByText('已续接会话 session_9f3a2c,上下文保留')).toBeTruthy();
+		});
+	});
+
+	/** 时间线/审批卡用例的公共链路:建会话 → 发送 → 已连接(可直接回放事件) */
+	async function setupConnected(text = '任务'): Promise<{
+		container: HTMLElement;
+		stubs: StubClient[];
+		ev: StubClient['options']['onEvent'];
+	}> {
 		setCfg({ enabled: true });
-		const s = createSession('rule-copilot', '检索 ADR 案例');
-		attachSessionId(s.localId, 'session_9f3a2c');
 		const { factory, stubs } = makeStubFactory();
 		const { container } = render(AgentWorkspace, { props: { createClient: factory } });
-		// 列表恢复:条目 meta 显示角色与版本
-		const sit = container.querySelector('.sit') as HTMLElement;
-		expect(sit.querySelector('.n')?.textContent).toBe('检索 ADR 案例');
-		expect(sit.querySelector('.m')?.textContent).toBe('rule-copilot · v1');
-		// 点击选中(刷新后未选中:输入行禁用)
-		expect((container.querySelector('.rinput textarea') as HTMLTextAreaElement).disabled).toBe(true);
-		fireEvent.click(sit);
+		fireEvent.click(screen.getByText('新建会话'));
 		await tick();
-		expect((container.querySelector('.rinput textarea') as HTMLTextAreaElement).disabled).toBe(false);
-		await typeAndSend(container, '继续上轮');
-		await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalledWith('继续上轮'));
-		// 续接参数:按既有会话 ID 建连
-		expect(stubs[0].options.sessionId).toBe('session_9f3a2c');
-		expect(stubs[0].options.agentType).toBe('rule-copilot');
-		await tick();
-		expect(screen.getByText('已续接会话 session_9f3a2c,上下文保留')).toBeTruthy();
+		await typeAndSend(container, text);
+		await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalled());
+		return { container, stubs, ev: stubs[0].options.onEvent };
+	}
+
+	describe('AgentWorkspace — 执行时间线(中栏)', () => {
+		it('ToolCall → 运行中条目;ToolResult → 成功;点击条目展开参数/结果详情', async () => {
+			const { container, ev } = await setupConnected();
+			ev({ type: 'ToolCall', name: 'file_read', args: { path: 'src/a.rs' } });
+			await tick();
+			const te = container.querySelector('.mcol .te') as HTMLElement;
+			expect(te).toBeTruthy();
+			expect(te.querySelector('.tn')?.textContent).toBe('file_read');
+			expect(te.querySelector('.ta')?.textContent).toBe('path=src/a.rs');
+			const bd = te.querySelector('.bd') as HTMLElement;
+			expect(bd.classList.contains('run')).toBe(true);
+			expect(bd.textContent).toContain('运行中');
+
+			ev({ type: 'ToolResult', name: 'file_read', result: { lines: 216 } });
+			await tick();
+			expect((te.querySelector('.bd') as HTMLElement).classList.contains('ok')).toBe(true);
+
+			// 手风琴:点击头部展开详情,再点收起
+			expect(container.querySelector('.mcol .ted')).toBeNull();
+			fireEvent.click(te.querySelector('.teh') as HTMLElement);
+			await tick();
+			const ted = container.querySelector('.mcol .ted') as HTMLElement;
+			expect(ted.textContent).toContain('参数');
+			expect(ted.textContent).toContain('{"path":"src/a.rs"}');
+			expect(ted.textContent).toContain('结果');
+			expect(ted.textContent).toContain('{"lines":216}');
+			fireEvent.click(te.querySelector('.teh') as HTMLElement);
+			await tick();
+			expect(container.querySelector('.mcol .ted')).toBeNull();
+		});
 	});
-});
+
+	describe('AgentWorkspace — 审批卡', () => {
+		const shellArgs = {
+			type: 'ApprovalRequired' as const,
+			tool_name: 'shell_exec',
+			command: 'cargo test -p evo-agent --lib',
+			risk: 'medium',
+			alternative: ''
+		};
+
+		it('ApprovalRequired:右栏倒计时卡(待审批+命令+批准/拒绝),中栏条目转待审批', async () => {
+			const { container, ev } = await setupConnected();
+			ev({ type: 'ToolCall', name: 'shell_exec', args: { command: shellArgs.command } });
+			ev(shellArgs);
+			await tick();
+			// 右栏卡片
+			const card = container.querySelector('.rcol .apv') as HTMLElement;
+			expect(card).toBeTruthy();
+			expect(card.querySelector('.apv-h')?.textContent).toContain('待审批 · shell_exec');
+			expect(card.querySelector('.apv-cmd')?.textContent).toBe('cargo test -p evo-agent --lib');
+			expect(card.querySelector('.apv-mt')?.textContent).toContain('medium · 超时 60s 自动拒绝');
+			expect(screen.getByText('批准')).toBeTruthy();
+			expect(screen.getByText('拒绝')).toBeTruthy();
+			// 中栏条目 run → wait
+			const bd = container.querySelector('.mcol .te .bd') as HTMLElement;
+			expect(bd.classList.contains('wait')).toBe(true);
+			expect(bd.textContent).toContain('待审批');
+		});
+
+		it('批准链路:点批准 → REST approve(true) → ApprovalResult 回推收敛(卡片绿态+中栏续跑)', async () => {
+			const { container, stubs, ev } = await setupConnected();
+			ev(shellArgs);
+			await tick();
+			fireEvent.click(screen.getByText('批准'));
+			await tick();
+			expect(stubs[0].approve).toHaveBeenCalledWith(true);
+			// 服务端回执前卡片保持等待(以服务端回推为准)
+			expect((container.querySelector('.rcol .apv') as HTMLElement).classList.contains('apv')).toBe(true);
+			ev({ type: 'ApprovalResult', tool_name: 'shell_exec', approved: true });
+			await tick();
+			expect(screen.getByText('✔ 已批准 · 正在执行 cargo test -p evo-agent --lib…')).toBeTruthy();
+			const bd = container.querySelector('.mcol .te .bd') as HTMLElement;
+			expect(bd.classList.contains('run')).toBe(true);
+			// 续跑完成:ToolResult → 成功
+			ev({ type: 'ToolResult', name: 'shell_exec', result: '5 passed' });
+			await tick();
+			expect((container.querySelector('.mcol .te .bd') as HTMLElement).classList.contains('ok')).toBe(true);
+		});
+
+		it('拒绝链路:点拒绝 → approve(false) → 回执后卡片红态+中栏「已拒绝·跳过」', async () => {
+			const { container, stubs, ev } = await setupConnected();
+			ev(shellArgs);
+			await tick();
+			fireEvent.click(screen.getByText('拒绝'));
+			await tick();
+			expect(stubs[0].approve).toHaveBeenCalledWith(false);
+			ev({ type: 'ApprovalResult', tool_name: 'shell_exec', approved: false });
+			await tick();
+			expect(screen.getByText('✕ 已拒绝 · agent 已收到拒绝信号')).toBeTruthy();
+			const bd = container.querySelector('.mcol .te .bd') as HTMLElement;
+			expect(bd.classList.contains('skip')).toBe(true);
+			expect(bd.textContent).toContain('已拒绝·跳过');
+		});
+
+		it('60s 超时:倒计时归零卡片转灰态超时,中栏「已超时·跳过」;迟到回执不再改写', async () => {
+			vi.useFakeTimers();
+			const { container, ev } = await setupConnected();
+			ev(shellArgs);
+			await tick();
+			vi.advanceTimersByTime(61_000);
+			await tick();
+			expect(screen.getByText('⏱ 已超时自动拒绝 · 续接会话可重试')).toBeTruthy();
+			const bd = container.querySelector('.mcol .te .bd') as HTMLElement;
+			expect(bd.classList.contains('skip')).toBe(true);
+			expect(bd.textContent).toContain('已超时·跳过');
+			// 迟到的拒绝回执:卡片保持超时态,不产生重复收敛
+			ev({ type: 'ApprovalResult', tool_name: 'shell_exec', approved: false });
+			await tick();
+			expect(screen.getByText('⏱ 已超时自动拒绝 · 续接会话可重试')).toBeTruthy();
+			expect(container.querySelectorAll('.mcol .te').length).toBe(1);
+		});
+
+		it('审批送达失败:呈现错误卡,卡片保持等待继续倒计时', async () => {
+			const { container, stubs, ev } = await setupConnected();
+			stubs[0].approve.mockRejectedValueOnce(new Error('approve-http-503'));
+			ev(shellArgs);
+			await tick();
+			fireEvent.click(screen.getByText('批准'));
+			await tick();
+			const errc = container.querySelector('.rcol .errc') as HTMLElement;
+			expect(errc.textContent).toContain('审批送达失败:approve-http-503');
+			// 卡片未收敛,等待服务端回执/超时兜底
+			expect(container.querySelector('.rcol .apv')).toBeTruthy();
+		});
+	});
