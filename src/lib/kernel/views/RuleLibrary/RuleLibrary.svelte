@@ -1,4 +1,4 @@
-﻿<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!-- evorule-console 规则库视图 (阶段 C.2.3 起为弃用态) -->
 <!--
@@ -26,7 +26,7 @@
     <h1>规则库已迁移</h1>
     <p>本视图已升级为独立工作空间路由。</p>
     <p class="hint">正在跳转到 <code>/workspace</code>…</p>
-    <a href="/workspace" class="goto-link">手动进入工作空间 →</a>
+    <a href="{base}/workspace" class="goto-link">手动进入工作空间 →</a>
   </div>
 </div>
 
