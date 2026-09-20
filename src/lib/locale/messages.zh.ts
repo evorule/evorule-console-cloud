@@ -205,7 +205,7 @@ export const messagesZh: Dict = {
   "settings.network.testFail": "连接失败({url}) — 检查 evorule-server 是否启动",
   "settings.network.testError": "连接失败: {message}",
 
-  // === Agent 会话台连接(91 号 M1) ===
+  // === Agent 会话台连接 ===
   "settings.agent.title": "🤝 Agent 会话台连接",
   "settings.agent.desc": "连接本机或远程 evo-agent serve,在「Agent 会话台」以三栏工作区与 agent 共事(流式对话/执行时间线/审批卡点)。模型与工具白名单在 evo-agent 侧配置,此处仅管理连接与凭据。",
   "settings.agent.enableLabel": "启用 Agent 会话台",

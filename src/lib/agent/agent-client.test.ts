@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — AgentClient(91 号 M2)单测
+// evorule-console-cloud — AgentClient(WS 双向为主 + REST 兜底)单测
 //
-// 覆盖 91 号 A8 单测面:事件解析全表 / 帧收发 / 建连超时 / 首连失败 /
+// 覆盖面:事件解析全表 / 帧收发 / 建连超时 / 首连失败 /
 // 指数退避重连与会话续接 / 重连耗尽 / 用户关闭 / REST 兜底(listAgents/approve/cancel)。
 // WS 以最小桩注入(与浏览器 WebSocket 同构的同步回调),fetch 以 vi.fn() 注入。
 
