@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — evo-agent 连接配置 store(91 号 M1)
+// evorule-console-cloud — evo-agent 连接配置 store(设置页 Agent 会话台)
 //
 // 持久化:localStorage(key: evorule-console-cloud:agent-config)
 // 默认:enabled=false、baseUrl=http://127.0.0.1:8081(evo-agent serve 缺省端口)
@@ -15,10 +15,10 @@
 //   - 解锁成功后缓存会话密钥进 sessionStorage(scope='agent',
 //     与 LLM/治理面缓存隔离;同标签页刷新免重输,关标签即失效)
 //   - 不进日志/错误;WS 侧 token 走 URL query 是 evo-agent 协议既定形态
-//     (91 号 R1 已登记遗留项),本 store 不做额外持久化规避
+//     (该形态的遗留升级项已另行登记),本 store 不做额外持久化规避
 //
-// 边界:LLM 模型配置在 evo-agent 侧(config.toml/.env),面板只配连接与凭据
-//      (91 号 E4);agent 工具白名单也由 evo-agent agents/*.json 决定。
+// 边界:LLM 模型配置在 evo-agent 侧(config.toml/.env)
+//      面板只配连接与凭据;agent 工具白名单也由 evo-agent agents/*.json 决定。
 
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
@@ -52,7 +52,7 @@ export interface AgentConfig {
 
 const STORAGE_KEY = 'evorule-console-cloud:agent-config';
 
-/** evo-agent serve 缺省端口(91 号 M1) */
+/** evo-agent serve 缺省端口 */
 export const AGENT_DEFAULT_BASE_URL = 'http://127.0.0.1:8081';
 
 /** 口令最短长度(与 llm/governance 同规,防一字节口令形式化) */
@@ -282,7 +282,7 @@ export type TestAgentConnectionResult =
 	| { ok: false; message: string };
 
 /**
- * 连接测试:GET /agents(91 号 A1 数据源同一端点,顺带验证鉴权)。
+ * 连接测试:GET /agents(与 agent 角色清单同一端点,顺带验证鉴权)。
  * serve 开启鉴权时带 Bearer 头;本函数不打印 Token,错误消息不携带凭据。
  */
 export async function testAgentConnection(

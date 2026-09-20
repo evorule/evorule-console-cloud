@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — evo-agent 会话协议类型(91 号 M2)
+// evorule-console-cloud — evo-agent 会话协议类型(对齐 evo-agent API.md §6 全表)
 //
 // 帧格式对齐 evo-agent API.md §6 全表:
 //   - Server → Client 事件:type 为 PascalCase

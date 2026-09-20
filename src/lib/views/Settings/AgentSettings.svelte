@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
-<!-- evorule-console-cloud — 设置面板 Agent 会话台连接 tab(91 号 M1) -->
+<!-- evorule-console-cloud — 设置面板 Agent 会话台连接 tab -->
 <!--
   职责:
     - 启用开关 + evo-agent serve 地址 + 鉴权 Token 管理(加密/明文/清除/解锁/锁定)
     - 测试连接(GET /agents,验证可达性与凭据,展示角色清单)
-  边界:LLM 模型配置在 evo-agent 侧,此处仅连接与凭据(91 号 E4)
+  边界:LLM 模型配置在 evo-agent 侧,此处仅连接与凭据
 -->
 
 <script lang="ts">

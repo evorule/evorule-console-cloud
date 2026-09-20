@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-console-cloud — evo-agent AgentClient(91 号 M2)
+// evorule-console-cloud — evo-agent AgentClient(WS 双向为主 + REST 兜底)
 //
 // WS 双向为主(/api/sessions/{id}/ws?agent_type=&token=),REST 兜底
 // (listAgents / approve / cancel)。
@@ -13,7 +13,7 @@
 //   首次连接失败/超时 → disconnected(不自动重连,UI 呈现不可达空态,场景④)
 //   close() → disconnected(用户主动;会话保留在服务端,可再 connect 续接)
 //
-// 纪律:token 仅进 WS URL query(evo-agent 协议既定,91 号 R1)与 REST Bearer 头;
+// 纪律:token 仅进 WS URL query(evo-agent 协议既定)与 REST Bearer 头;
 //      不进日志/错误消息。发送帧前置条件 = WS 已 open,否则抛 not-connected。
 
 import { parseAgentEvent } from './types';
@@ -222,7 +222,7 @@ export class AgentClient {
 	}
 
 	private buildUrl(): string {
-		// http(s) → ws(s);token 走 URL query 为 evo-agent 协议既定形态(91 号 R1)
+		// http(s) → ws(s);token 走 URL query 为 evo-agent 协议既定形态
 		const wsBase = this.restBase().replace(/^http/i, 'ws');
 		const params = new URLSearchParams({ agent_type: this.agentType });
 		if (this.authToken) params.set('token', this.authToken);
