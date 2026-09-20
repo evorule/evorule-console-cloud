@@ -4,7 +4,7 @@
 # evorule-console-cloud 开发者指南
 
 > **读者**：要参与本仓开发的新人（人或 LLM 协作者）。
-> **范围**：架构、启动、一次完整产品流程、核心概念、代码地图、坑表。
+> **范围**：架构、启动、一次完整产品流程、核心概念、代码地图、Agent 会话台、坑表。
 > **不属于这里**：项目方上手看 [tutorial/](./tutorial/)；启停细节看仓库根 [README-STARTUP.md](../../README-STARTUP.md)。
 
 ---
@@ -148,6 +148,8 @@ src/
 │   ├── kernel/        # 执行内核前端侧：backend 抽象、会话、指令提交
 │   │   └── backend/   #   ExecutionBackend 接口 + Http/Mock 实现（context 注入）
 │   ├── governance/    # 治理域客户端：backend/store/types（数据集、生命周期、bundle 导出）
+│   ├── agent/         # evo-agent 接入：WS 客户端（agent-client）、协议事件类型（types）、
+│   │                  #   会话元数据持久化（agent-sessions）——详见 §九
 │   ├── backend/       # 工作台后端通道：cloud/mock 双实现、平台认证
 │   ├── views/         # 视图组件
 │   └── components/    # 通用组件
@@ -216,3 +218,29 @@ bundle 导入后只对**新会话**生效；老会话不回放新规则。验证
 | [README-STARTUP.md](../../README-STARTUP.md) | 启停/看门狗/日志细节 |
 | [adr/](./adr/) | 架构决策记录 |
 | [explanation/](./explanation/) | 概念与原理（规划中） |
+
+---
+
+## 九、Agent 会话台（evo-agent 接入）
+
+「Agent 会话台」（侧栏 → Agent）把 evo-agent（[gitee.com/evorule/evo-agent](https://gitee.com/evorule/evo-agent)）的 ReAct 执行流接进控制台：三栏布局（会话列表 ｜ 执行时间线 ｜ 对话流），支持流式对话、工具调用时间线、高危操作审批（60s 倒计时）、轮次中断与版本回滚，并提供到审计页的会话深链。协议细节以 evo-agent 仓 `API.md` §6 为准。
+
+### 启用与连接
+
+- 默认关闭。设置页「Agent」标签页开启，填写 evo-agent 地址（默认 `http://127.0.0.1:8081`）与 Token；「测试连接」走 `GET /agents` 验证可达性。
+- Token 加密落盘（localStorage，与 LLM 凭据同一套密钥缓存机制）；Token 仅用于 WS query 参数与 REST Bearer 头，不进日志与错误上报。
+- LLM 的模型与密钥在 evo-agent 侧配置（`.env` / `config.toml`），控制台不代配。
+
+### 代码结构
+
+- `src/lib/agent/types.ts` — 与 evo-agent 事件协议对齐的九类服务端事件 + 三类客户端帧；`parseAgentEvent` 对坏帧返回 null（静默丢弃）。
+- `src/lib/agent/agent-client.ts` — 连接状态机（connecting/connected/reconnecting/disconnected）。WS 双向为主，REST 兜底（agent 列表/审批/取消）；断线指数退避重连，会话按 ID 续接；首连失败不自动重试（呈现显式「不可达」空态）。
+- `src/lib/agent/agent-sessions.ts` — 会话元数据 localStorage 持久化（标题/角色/会话 ID/版本指针/「已回滚」角标）。消息内容不落盘——刷新后以续接提示行重新开始，上下文由 evo-agent 按会话 ID 保留。
+- `src/lib/views/Agent/AgentWorkspace.svelte` — 三栏工作区本体。组件接受可选 `createClient` 工厂 prop（组件测试注入桩用，缺省为真实客户端）。
+
+### 交互语义速查
+
+- **审批**：高危工具触发 `ApprovalRequired` → 60s 倒计时卡；批准/拒绝经 REST 送达，以服务端 `ApprovalResult` 回推收敛（回执前保持等待，不乐观置态）；超时自动拒绝。无任何自动审批路径。
+- **中断**：活跃轮次可停止。UI 以 `Done(cancelled=true)` 为权威收敛帧——中断卡 + 时间线条目转「已停止」+ 待审批卡失效；中断过程中的提示帧静默处理。
+- **回滚**：每轮完成版本指针 +1（轮次近似口径，精确 fact 级回放归引擎侧后续能力）。回滚条选择目标版本，以服务端回执为准呈现「已回滚」并重建时间线；活跃轮次须先停止。
+- **审计深链**：会话建立后，时间线头部「在审计页查看」携带 `?session=` 参数跳转审计页——evo-agent 会话 ID 即 evorule 运行时会话 ID，审计页据此定位同链事实记录。
