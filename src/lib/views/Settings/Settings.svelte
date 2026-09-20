@@ -14,6 +14,7 @@
 	import { netConfig, setNetMode, setRemoteBaseUrl, setAuthToken } from '$lib/config/net-config';
 	import { DEFAULT_LOCAL_BASE_URL } from '$lib/backend/types';
 	import LlmSettings from './LlmSettings.svelte';
+	import AgentSettings from './AgentSettings.svelte';
 	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
 	import { toastInfo } from '$lib/stores/toast';
 	import {
@@ -31,9 +32,9 @@
 	let {
 		onclose,
 		initialTab = 'network'
-	}: { onclose?: () => void; initialTab?: 'network' | 'llm' | 'onboarding' } = $props();
+	}: { onclose?: () => void; initialTab?: 'network' | 'llm' | 'agent' | 'onboarding' } = $props();
 
-	type Tab = 'network' | 'llm' | 'onboarding';
+	type Tab = 'network' | 'llm' | 'agent' | 'onboarding';
 	let activeTab = $state<Tab>('network');
 	// initialTab 由外部(命令面板 / 右栏折叠条)在面板打开时指定默认 tab;
 	// 放在 effect 闭包里同步,避免在 $state 初始化器里直接引用 prop 的告警,
@@ -196,6 +197,15 @@
 			</button>
 			<button
 				class="settings-tab"
+				class:active={activeTab === 'agent'}
+				onclick={() => (activeTab = 'agent')}
+				role="tab"
+				aria-selected={activeTab === 'agent'}
+			>
+				{t('settings.tab.agent')}
+			</button>
+			<button
+				class="settings-tab"
 				class:active={activeTab === 'onboarding'}
 				onclick={() => (activeTab = 'onboarding')}
 				role="tab"
@@ -296,6 +306,8 @@
 				</section>
 		{:else if activeTab === 'llm'}
 			<LlmSettings />
+		{:else if activeTab === 'agent'}
+			<AgentSettings />
 		{:else if activeTab === 'onboarding'}
 				<section class="onboarding-settings">
 					<header class="section-header">

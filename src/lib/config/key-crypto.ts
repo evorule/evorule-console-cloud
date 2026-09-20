@@ -38,12 +38,13 @@ export const PBKDF2_ITERATIONS = 600_000;
  * 每个凭据面的加密块盐不同,派生密钥互不通用,缓存必须按面隔离——
  * 跨面复用缓存键解密必然失败(认证不匹配),且会互相顶掉对方的免重输。
  */
-export type SessionKeyScope = 'llm' | 'governance';
+export type SessionKeyScope = 'llm' | 'governance' | 'agent';
 
 /** 会话密钥缓存键(sessionStorage;llm 沿用批次B 既有键名,已解锁会话不失效) */
 const SESSION_KEY_NAMES: Record<SessionKeyScope, string> = {
 	llm: 'evorule-console-cloud:llm-session-key',
-	governance: 'evorule-console-cloud:governance-session-key'
+	governance: 'evorule-console-cloud:governance-session-key',
+	agent: 'evorule-console-cloud:agent-session-key'
 };
 
 /** 解密失败（口令错误或数据损坏）。不携带任何内部细节。 */

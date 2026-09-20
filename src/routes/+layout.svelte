@@ -154,9 +154,9 @@
 
   // === 设置入口(大众版独立管理,不修改内核 VIEW_LIST) ===
   let showSettings = $state(false);
-  let settingsInitialTab = $state<"network" | "llm" | "onboarding">("network");
+  let settingsInitialTab = $state<"network" | "llm" | "agent" | "onboarding">("network");
 
-  function openSettings(tab: "network" | "llm" | "onboarding" = "network") {
+  function openSettings(tab: "network" | "llm" | "agent" | "onboarding" = "network") {
     closeDrawers();
     settingsInitialTab = tab;
     showSettings = true;
