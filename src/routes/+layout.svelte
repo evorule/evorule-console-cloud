@@ -463,7 +463,7 @@
     if (browser) {
       const sp = new URLSearchParams(window.location.search);
       const tab = sp.get("openSettings");
-      if (tab === "llm" || tab === "onboarding" || tab === "network") {
+      if (tab === "llm" || tab === "onboarding" || tab === "network" || tab === "agent") {
         openSettings(tab);
         const clean = window.location.pathname + window.location.hash;
         window.history.replaceState({}, "", clean);
