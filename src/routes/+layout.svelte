@@ -38,6 +38,7 @@
   import { MockBackend } from "$lib/backend/mock-backend";
   import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
   import { netConfig, toggleNetMode } from "$lib/config/net-config";
+  import { agentConfig } from "$lib/config/agent-config";
   import { setDemoDataset } from "$lib/stores/demo-dataset";
   import { llmConfig, isLlmConfigured } from "$lib/config/llm-config";
   import { CloudLlmAssistant } from "$lib/assistant/cloud-llm-assistant";
@@ -216,7 +217,8 @@
   }
 
   // === 导航注册表(首项):侧栏/跳单卡/命令面板消费同一清单 ===
-  // 可见项纯函数过滤(登录态 + 权限 ANY 语义);门控与跳单卡一致(闭合 )
+  // 可见项纯函数过滤(登录态 + 权限 ANY 语义 + 功能开关);门控与跳单卡一致(闭合 )
+  // 功能开关:agent ← agentConfig.enabled(设置页 Agent 连接,禁用时入口不渲染)
   const navVisible = $derived.by(() => {
     const loggedIn = $sessionStore.loggedIn;
     const user = $currentUser;
@@ -224,6 +226,7 @@
       visibleNavItems(NAV_REGISTRY, {
         loggedIn,
         hasPermission: (a) => hasPermission(user, a),
+        featureEnabled: (flag) => (flag === "agent" ? $agentConfig.enabled : false),
       }),
     );
   });
@@ -484,6 +487,7 @@
     "/workbench": "nav.overview",
     "/monitor": "nav.monitor",
     "/marketplace": "nav.marketplace",
+    "/agent": "nav.agent",
     "/knowledge": "nav.knowledge",
     "/help": "nav.help",
     "/export": "nav.export",

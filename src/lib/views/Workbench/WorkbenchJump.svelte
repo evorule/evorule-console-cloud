@@ -15,6 +15,8 @@
   import type { User } from "$lib/stores/auth";
   import type { PermissionAction } from "$lib/stores/permission-matrix";
   import { NAV_REGISTRY, visibleNavItems } from "$lib/config/nav-registry";
+  import { get } from "svelte/store";
+  import { agentConfig } from "$lib/config/agent-config";
 
   /** /view/* 分析视图快捷入口(kernel view 域,不进 NAV_REGISTRY) */
   interface ViewJumpTarget {
@@ -53,11 +55,12 @@
 
   let { loggedIn, user, hasPermission, onNav }: Props = $props();
 
-  /** 页面类可见项:复用导航注册表同一过滤纯函数(门控与侧栏一致) */
+  /** 页面类可见项:复用导航注册表同一过滤纯函数(门控与侧栏一致,含功能开关) */
   const visiblePageTargets = $derived(
     visibleNavItems(NAV_REGISTRY, {
       loggedIn,
       hasPermission: (a) => hasPermission(user, a),
+      featureEnabled: (flag) => (flag === "agent" ? get(agentConfig).enabled : false),
     }).filter((d) => d.jump),
   );
 

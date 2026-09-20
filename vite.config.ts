@@ -1,8 +1,40 @@
+import { fileURLToPath } from 'node:url';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	// === 组件测试基建(仅测试进程生效) ===
+	// Svelte 5 mount 仅在 browser 构建可用(server 构建报 lifecycle_function_unavailable),
+	// 故 vitest 下注入 browser condition;副作用是 $app/* 的 browser 构建会在无 window 的
+	// node 单测里崩(kit client 运行时 import 期即触碰 window)。
+	// 修复:enforce:'pre' 插件把 $app/* 指到测试替身(src/lib/testing/app-*.ts)——
+	//   - environment:按真实环境(有无 window)判定 browser(node=false/jsdom=true);
+	//   - navigation/paths/stores:node/jsdom 皆安全的 no-op/同形最小组件。
+	// (不能用 config resolve.alias:kit 的 transform 会先把 $app/* 重写为其运行时
+	//  路径再解析,alias 抢不到;resolveId 拦截裸 id 与运行时路径两形。)
+	// 组件测试文件约定命名 *.svelte.test.ts(环境用文件头 @vitest-environment jsdom 声明)。
+	plugins: [
+		...(process.env.VITEST
+			? [
+					{
+						name: 'vitest-app-modules-double',
+						enforce: 'pre' as const,
+						resolveId(id: string) {
+							for (const mod of ['environment', 'navigation', 'paths', 'stores']) {
+								if (id === `$app/${mod}` || id.includes(`@sveltejs/kit/src/runtime/app/${mod}`)) {
+									return fileURLToPath(
+										new URL(`./src/lib/testing/app-${mod}.ts`, import.meta.url)
+									);
+								}
+							}
+							return null;
+						}
+					}
+				]
+			: []),
+		sveltekit()
+	],
+	resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	},
