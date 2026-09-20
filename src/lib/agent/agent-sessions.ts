@@ -24,8 +24,10 @@ export interface AgentSession {
 	title: string;
 	role: string;
 	status: AgentSessionStatus;
-	/** 工作区版本指针(初始 1;回滚后随会话更新) */
+	/** 工作区版本指针(初始 1;每完成一轮 +1,回滚后指向目标版本——轮次近似口径) */
 	version: number;
+	/** 会话是否执行过回滚(左栏「已回滚」角标;回滚成功后置位,持久留存) */
+	rolledBack: boolean;
 	createdAt: number;
 	updatedAt: number;
 }
@@ -61,6 +63,11 @@ function isSession(v: unknown): v is AgentSession {
 	);
 }
 
+/** 旧版落盘数据无 rolledBack 字段,装载时归一化为 false */
+function normalize(s: AgentSession): AgentSession {
+	return { ...s, rolledBack: s.rolledBack === true };
+}
+
 function loadSessions(): AgentSession[] {
 	if (!browser) return [];
 	try {
@@ -69,7 +76,7 @@ function loadSessions(): AgentSession[] {
 		const parsed = JSON.parse(raw) as unknown;
 		if (!Array.isArray(parsed)) return [];
 		// 最新在前(创建时 unshift;损坏条目过滤,不静默造数据)
-		return parsed.filter(isSession).slice(0, MAX_SESSIONS);
+		return parsed.filter(isSession).map(normalize).slice(0, MAX_SESSIONS);
 	} catch {
 		return [];
 	}
@@ -96,6 +103,7 @@ export function createSession(role: string, title: string): AgentSession {
 		role,
 		status: 'draft',
 		version: 1,
+		rolledBack: false,
 		createdAt: now,
 		updatedAt: now
 	};
@@ -127,6 +135,26 @@ export function setSessionStatus(localId: string, status: AgentSessionStatus): v
 export function touchSession(localId: string): void {
 	agentSessions.update((list) =>
 		list.map((s) => (s.localId === localId ? { ...s, updatedAt: Date.now() } : s))
+	);
+}
+
+/** 版本指针 +1(每完成一轮 Done 调用;轮次近似口径,回滚前后一致递推) */
+export function advanceSessionVersion(localId: string): void {
+	agentSessions.update((list) =>
+		list.map((s) =>
+			s.localId === localId ? { ...s, version: s.version + 1, updatedAt: Date.now() } : s
+		)
+	);
+}
+
+/** 回滚收敛:版本指针置为目标版本并置「已回滚」角标(服务端 Info 回执确认后调用) */
+export function setSessionRewound(localId: string, version: number): void {
+	agentSessions.update((list) =>
+		list.map((s) =>
+			s.localId === localId
+				? { ...s, version, rolledBack: true, updatedAt: Date.now() }
+				: s
+		)
 	);
 }
 

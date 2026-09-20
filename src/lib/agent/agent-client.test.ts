@@ -158,6 +158,21 @@ describe('parseAgentEvent 事件解析(API.md §6 全表)', () => {
 			tool_name: 'file_write'
 		});
 	});
+
+	test('Done.cancelled:中断收敛帧(cancelled=true;旧载荷缺省视为 false)', () => {
+		expect(
+			parseAgentEvent(
+				'{"type":"Done","success":false,"content":"","steps":4,"duration_ms":4000,"cancelled":true}'
+			)
+		).toEqual({
+			type: 'Done',
+			success: false,
+			content: '',
+			steps: 4,
+			duration_ms: 4000,
+			cancelled: true
+		});
+	});
 });
 
 describe('建连与 URL', () => {

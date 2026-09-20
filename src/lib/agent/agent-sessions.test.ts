@@ -65,6 +65,36 @@ describe('agent-sessions — 会话生命周期', () => {
 		expect(persisted[0].title).toBe('serve 白名单排查');
 		expect(persisted[0].status).toBe('disconnected');
 	});
+
+	it('advanceSessionVersion:每轮 Done 版本指针 +1 并落盘', async () => {
+		const { createSession, advanceSessionVersion, agentSessions } = await fresh();
+		const s = createSession('general', '推进');
+		advanceSessionVersion(s.localId);
+		advanceSessionVersion(s.localId);
+		const [item] = get(agentSessions);
+		expect(item.version).toBe(3);
+		const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as Array<{
+			version: number;
+		}>;
+		expect(persisted[0].version).toBe(3);
+	});
+
+	it('setSessionRewound:版本指针回置目标版本 + rolledBack 角标置位并持久化', async () => {
+		const { createSession, advanceSessionVersion, setSessionRewound, agentSessions } =
+			await fresh();
+		const s = createSession('general', '回滚');
+		advanceSessionVersion(s.localId);
+		advanceSessionVersion(s.localId);
+		setSessionRewound(s.localId, 2);
+		const [item] = get(agentSessions);
+		expect(item.version).toBe(2);
+		expect(item.rolledBack).toBe(true);
+		const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as Array<{
+			version: number;
+			rolledBack: boolean;
+		}>;
+		expect(persisted[0]).toMatchObject({ version: 2, rolledBack: true });
+	});
 });
 
 describe('agent-sessions — 持久化回读与防御', () => {
@@ -100,6 +130,27 @@ describe('agent-sessions — 持久化回读与防御', () => {
 		localStorage.setItem(STORAGE_KEY, '42');
 		const mod = await fresh();
 		expect(get(mod.agentSessions)).toEqual([]);
+	});
+
+	it('回读:旧数据缺 rolledBack 字段归一化为 false', async () => {
+		localStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify([
+				{
+					localId: 's-old',
+					sessionId: 'session_old',
+					title: '旧版会话',
+					role: 'general',
+					status: 'idle',
+					version: 5,
+					createdAt: 1,
+					updatedAt: 2
+				}
+			])
+		);
+		const { agentSessions } = await fresh();
+		const [item] = get(agentSessions);
+		expect(item.rolledBack).toBe(false);
 	});
 
 	it('resetAgentSessions:内存与 localStorage 双清', async () => {

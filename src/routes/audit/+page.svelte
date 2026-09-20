@@ -4,9 +4,12 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
 import { base } from '$app/paths';
+  import { page } from '$app/stores';
   import { isLoggedIn, can } from '$lib/stores/auth';
+  import { currentSessionId } from '$lib/kernel/stores/session';
   import BusinessAuditView from '$lib/views/Audit/BusinessAuditView.svelte';
   import ArchiveSessionsPanel from '$lib/views/Audit/ArchiveSessionsPanel.svelte';
   import PlatformEventsPanel from '$lib/views/Audit/PlatformEventsPanel.svelte';
@@ -22,6 +25,13 @@ import { base } from '$app/paths';
     }
     if (!can('view_audit_chain')) {
       goto(`${base}/`);
+      return;
+    }
+    // 深链(Agent 会话台「在审计页查看」):?session=<id> 定位同链会话 Fact;
+    // 非法/缺省参数忽略,维持审计页既有选择
+    const sid = Number(get(page).url.searchParams.get('session'));
+    if (Number.isInteger(sid) && sid > 0) {
+      currentSessionId.set(sid);
     }
   });
 </script>
