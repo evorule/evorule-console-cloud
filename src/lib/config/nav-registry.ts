@@ -39,6 +39,13 @@ export interface NavDef {
    * 由宿主 +layout 的 navTo 实现分流(导出中心语义)。
    */
   requiresDb?: boolean;
+  /**
+   * 功能开关门控(可选):声明后仅在宿主注入的 featureEnabled 判定为 true 时可见。
+   * 典型:'agent' ← agentConfig.enabled(禁用时导航不渲染该入口,agent-config 语义)。
+   * 纯函数纪律:本模块不读 store,判定由宿主注入;宿主未注入 featureEnabled 时
+   * 声明了开关的项一律隐藏(fail-closed,防宿主遗漏造成越权入口)。
+   */
+  featureFlag?: string;
   /** 出现在总览跳单卡(WorkbenchJump 消费) */
   jump?: boolean;
   /** 未登录锁定原因说明(跳单卡锁定态提示) */
@@ -71,6 +78,16 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     title: "流程设计 — 声明式流程画布,AI 转译/画布编辑 flow 草稿编译为规则草稿(不落库)",
     // 与页面守卫(routes/+layout.ts /flow)同口径:需登录
     loginRequired: true,
+  },
+  {
+    id: "agent",
+    label: "Agent 会话",
+    icon: "🤖",
+    path: "/agent",
+    group: "home",
+    title: "Agent 会话台 — 连接 evo-agent 的 IDE 式三栏会话工作区(设置中启用后可见)",
+    // 功能开关门控:agentConfig.enabled(设置页 Agent 连接,禁用时入口不渲染)
+    featureFlag: "agent",
   },
   {
     id: "marketplace",
@@ -213,11 +230,17 @@ export interface NavVisibilityContext {
   loggedIn: boolean;
   /** 用户是否持有该权限点(平台=服务端下发,demo=本地矩阵;null=未登录一律 false) */
   hasPermission: (action: PermissionAction) => boolean;
+  /**
+   * 功能开关判定(宿主注入,如 'agent' → agentConfig.enabled)。
+   * 未注入时声明 featureFlag 的项一律隐藏(fail-closed)。
+   */
+  featureEnabled?: (flag: string) => boolean;
 }
 
 /**
  * 过滤出当前上下文可见的导航项(纯函数,保序)。
- * 规则:loginRequired 未登录隐藏;permissions 任一未命中隐藏;其余恒可见。
+ * 规则:loginRequired 未登录隐藏;permissions 任一未命中隐藏;
+ *      featureEnabled 未注入或判定 false 时 featureFlag 项隐藏;其余恒可见。
  */
 export function visibleNavItems(
   registry: readonly NavDef[],
@@ -226,6 +249,7 @@ export function visibleNavItems(
   return registry.filter((item) => {
     if (item.loginRequired && !ctx.loggedIn) return false;
     if (item.permissions && !item.permissions.some((p) => ctx.hasPermission(p))) return false;
+    if (item.featureFlag && !(ctx.featureEnabled?.(item.featureFlag) ?? false)) return false;
     return true;
   });
 }

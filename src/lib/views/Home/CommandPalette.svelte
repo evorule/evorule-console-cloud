@@ -18,6 +18,7 @@
 	import { startTaskFlow } from "$lib/stores/task-flow";
 	import { toggleNetMode } from "$lib/config/net-config";
 	import { NAV_REGISTRY, visibleNavItems } from "$lib/config/nav-registry";
+	import { agentConfig } from "$lib/config/agent-config";
 	import { currentUser, hasPermission } from "$lib/stores/auth";
 	import { sessionStore } from "$lib/stores/session";
 	import { resetBanner, resetTour, startTour } from "$lib/stores/onboarding";
@@ -43,11 +44,12 @@
 
 	function buildCommands(): Command[] {
 		// 导航组():从 NAV_REGISTRY 派生,与侧栏/跳单卡同清单同门控。
-		// 面板每次打开重建命令列表,登录态/权限快照即时生效。
+		// 面板每次打开重建命令列表,登录态/权限/功能开关快照即时生效。
 		const nav: Command[] = [
 			...visibleNavItems(NAV_REGISTRY, {
 				loggedIn: get(sessionStore).loggedIn,
 				hasPermission: (a) => hasPermission(get(currentUser), a),
+				featureEnabled: (flag) => (flag === "agent" ? get(agentConfig).enabled : false),
 			}).map((d) => ({
 				id: `nav-${d.id}`,
 				title: d.label,
