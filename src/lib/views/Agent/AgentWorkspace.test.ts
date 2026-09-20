@@ -35,6 +35,8 @@ interface StubClient {
 	options: AgentClientOptions;
 	connect: ReturnType<typeof vi.fn>;
 	send: ReturnType<typeof vi.fn>;
+	interrupt: ReturnType<typeof vi.fn>;
+	rewind: ReturnType<typeof vi.fn>;
 	approve: ReturnType<typeof vi.fn>;
 	close: ReturnType<typeof vi.fn>;
 }
@@ -53,6 +55,8 @@ function makeStubFactory(opts?: { connectReject?: Error }) {
 				options.onStatus('connected', { sessionId: options.sessionId });
 			}),
 			send: vi.fn(),
+			interrupt: vi.fn(),
+			rewind: vi.fn(),
 			approve: vi.fn(async () => {}),
 			close: vi.fn()
 		};
@@ -259,8 +263,8 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 		// 汇总双呈现:右栏汇总行 + 中栏汇总条(同一文案)
 		expect(screen.getAllByText('✔ 本轮完成 · 3 步 · 耗时 4s').length).toBe(2);
 		expect(container.querySelector('.mcol .donebar')).toBeTruthy();
-		// 会话徽标回填 + 条目 meta 更新
-		expect(sit.querySelector('.m')?.textContent).toBe('general · v1');
+		// 会话徽标回填 + 条目 meta 更新(Done 完成即推进版本指针:1 → 2)
+		expect(sit.querySelector('.m')?.textContent).toBe('general · v2');
 		const midChips = container.querySelectorAll('.mh .chp.mono');
 		expect(midChips[0].textContent).toBe('session_9f3a2c');
 	});
@@ -449,5 +453,121 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			expect(errc.textContent).toContain('审批送达失败:approve-http-503');
 			// 卡片未收敛,等待服务端回执/超时兜底
 			expect(container.querySelector('.rcol .apv')).toBeTruthy();
+		});
+	});
+
+	describe('AgentWorkspace — 执行控制(停止/回滚)与审计深链', () => {
+		it('停止全链:interrupt 帧送达;Info/Error 收敛帧静默;Done(cancelled) 中断卡+时间线已停止+回滚条', async () => {
+			const { container, stubs, ev } = await setupConnected();
+			ev({ type: 'ToolCall', name: 'file_read', args: { path: 'src/a.rs' } });
+			await tick();
+			const stop = screen.getByText('停止') as HTMLButtonElement;
+			expect(stop.disabled).toBe(false);
+			fireEvent.click(stop);
+			await tick();
+			expect(stubs[0].interrupt).toHaveBeenCalled();
+			// 收敛序列静默帧:Info "interrupt sent" 不渲染对话流
+			ev({ type: 'Info', message: 'interrupt sent' });
+			await tick();
+			expect(container.textContent).not.toContain('interrupt sent');
+			// Error "cancelled by user" 不渲染错误卡,但轮次已解锁(turnRunning=false)
+			ev({ type: 'Error', error: 'Internal error: cancelled by user' });
+			await tick();
+			expect(container.querySelector('.errc')).toBeNull();
+			// Done(cancelled) 权威收敛:中断卡 + 时间线已停止 + 版本照常 +1 → 回滚条出现
+			ev({ type: 'SessionCreated', session_id: 'session_stop' });
+			ev({ type: 'Done', success: false, content: '', steps: 2, duration_ms: 2000, cancelled: true });
+			await tick();
+			const intc = container.querySelector('.intc') as HTMLElement;
+			expect(intc.textContent).toContain('已中断');
+			expect(intc.textContent).toContain('已完成 2 步保留');
+			const bd = container.querySelector('.mcol .te .bd') as HTMLElement;
+			expect(bd.classList.contains('skip')).toBe(true);
+			expect(bd.textContent).toContain('已停止');
+			expect(container.querySelector('.rbar')).toBeTruthy();
+			expect((screen.getByText('停止') as HTMLButtonElement).disabled).toBe(true);
+			const sit = container.querySelector('.sit') as HTMLElement;
+			expect(sit.querySelector('.m')?.textContent).toBe('general · v2');
+		});
+
+		it('回滚全链:回滚键 → rewind(目标版);Info 回执 → 绿条+时间线清空+版本回置+已回滚角标', async () => {
+			const { container, stubs, ev } = await setupConnected();
+			ev({ type: 'ToolCall', name: 'file_read', args: { path: 'src/a.rs' } });
+			ev({ type: 'SessionCreated', session_id: 'session_rw' });
+			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000 });
+			await tick();
+			expect(container.querySelector('.mcol .te')).toBeTruthy(); // 待回滚时间线
+			fireEvent.click(container.querySelector('.btn-rw') as HTMLElement);
+			await tick();
+			expect(stubs[0].rewind).toHaveBeenCalledWith(1);
+			// 送达防抖:服务端回执前回滚键禁用
+			expect((container.querySelector('.btn-rw') as HTMLButtonElement).disabled).toBe(true);
+			ev({ type: 'Info', message: 'rewound to version 1' });
+			await tick();
+			expect(screen.getByText('✔ 已回滚到 v1 · 时间线已重建,后续对话基于 v1 继续')).toBeTruthy();
+			expect(container.querySelector('.mcol .te')).toBeNull(); // 时间线重建
+			const sit = container.querySelector('.sit') as HTMLElement;
+			expect(sit.querySelector('.m')?.textContent).toBe('general · v1');
+			expect(sit.querySelector('.rb')?.textContent).toBe('已回滚');
+		});
+
+		it('活跃轮次:回滚键禁用并提示先停止;chips 为当前版之前降序', async () => {
+			const { container, stubs, ev } = await setupConnected();
+			ev({ type: 'SessionCreated', session_id: 'session_x' });
+			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000 });
+			await tick();
+			expect(
+				Array.from(container.querySelectorAll('.vch')).map((c) => c.textContent?.trim())
+			).toEqual(['v1']);
+			await typeAndSend(container, '第二轮');
+			await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalledWith('第二轮'));
+			const rw = container.querySelector('.btn-rw') as HTMLButtonElement;
+			expect(rw.disabled).toBe(true);
+			expect(rw.getAttribute('title')).toContain('活跃轮次中不可回滚');
+		});
+
+		it('回滚错误转译:cannot rewind → 先停止提示;no session → 无可回滚目标;其余透传', async () => {
+			const { container, ev } = await setupConnected();
+			ev({
+				type: 'Error',
+				error: 'rewind failed: cannot rewind during active turn; send interrupt first'
+			});
+			await tick();
+			const errs = () => container.querySelectorAll('.errc');
+			expect(errs()[0].textContent).toContain('活跃轮次中不可回滚,请先停止');
+			ev({ type: 'Error', error: 'rewind failed: no session to rewind' });
+			await tick();
+			expect(errs()[1].textContent).toContain('会话尚未建立,无可回滚目标');
+			ev({ type: 'Error', error: 'rewind failed: io exploded' });
+			await tick();
+			expect(errs()[2].textContent).toContain('rewind failed: io exploded');
+		});
+
+		it('pending 审批卡随中断失效:停止后卡片转停止态(显式非静默)', async () => {
+			const { container, ev } = await setupConnected();
+			ev({
+				type: 'ApprovalRequired',
+				tool_name: 'shell_exec',
+				command: 'cargo test',
+				risk: 'medium',
+				alternative: ''
+			});
+			await tick();
+			fireEvent.click(screen.getByText('停止'));
+			await tick();
+			ev({ type: 'Done', success: false, content: '', steps: 0, duration_ms: 0, cancelled: true });
+			await tick();
+			const st = container.querySelector('.rcol .apv-state.st') as HTMLElement;
+			expect(st.textContent).toContain('已随中断失效 · 轮次已停止');
+		});
+
+		it('审计深链:会话建立后「在审计页查看」带 ?session= 参数;草稿期不带', async () => {
+			const { container, ev } = await setupConnected();
+			const auditLink = container.querySelector('.mh-link') as HTMLAnchorElement;
+			expect(auditLink.textContent).toContain('在审计页查看');
+			expect(auditLink.getAttribute('href')).not.toContain('?session=');
+			ev({ type: 'SessionCreated', session_id: 'session_9f3a2c' });
+			await tick();
+			expect(auditLink.getAttribute('href')).toContain('/audit?session=session_9f3a2c');
 		});
 	});

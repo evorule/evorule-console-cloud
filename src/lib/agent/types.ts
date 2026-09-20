@@ -57,13 +57,15 @@ export interface ApprovalResultEvent {
 	approved: boolean;
 }
 
-/** 一轮完成(汇总:最终内容 + 步数 + 耗时) */
+/** 一轮完成(汇总:最终内容 + 步数 + 耗时;cancelled=true = 用户中断收敛,interrupt 后必达) */
 export interface DoneEvent {
 	type: 'Done';
 	success: boolean;
 	content: string;
 	steps: number;
 	duration_ms: number;
+	/** 用户中断标记(evo-agent AgentResult.cancelled;旧载荷缺省视为 false) */
+	cancelled?: boolean;
 }
 
 /** 错误(含服务端语义报错,如「a turn is already active」→ UI 层转译提示) */
@@ -163,7 +165,8 @@ export function parseAgentEvent(raw: string): AgentServerEvent | null {
 						success: f.success,
 						content: f.content,
 						steps: f.steps,
-						duration_ms: f.duration_ms
+						duration_ms: f.duration_ms,
+						cancelled: f.cancelled === true ? true : undefined
 					}
 				: null;
 		case 'Error':

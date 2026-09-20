@@ -20,9 +20,11 @@
   import { base } from "$app/paths";
   import { agentConfig, isAgentConfigured } from "$lib/config/agent-config";
   import {
+    advanceSessionVersion,
     agentSessions,
     attachSessionId,
     createSession,
+    setSessionRewound,
     setSessionStatus,
     setSessionTitle,
     touchSession,
@@ -43,7 +45,7 @@
   const APPROVAL_RING_C = 2 * Math.PI * 12;
 
   /** 测试注入缝:缺省真实客户端,组件测试注入桩(连接层行为在客户端单测覆盖) */
-  type ClientLike = Pick<AgentClient, "connect" | "send" | "approve" | "close">;
+  type ClientLike = Pick<AgentClient, "connect" | "send" | "interrupt" | "rewind" | "approve" | "close">;
   interface Props {
     createClient?: (options: AgentClientOptions) => ClientLike;
   }
@@ -64,19 +66,21 @@
         alternative: string;
         /** 倒计时截止(Unix 秒);服务端 60s 超时自动拒绝,UI 显式倒计时 */
         deadline: number;
-        state: "pending" | "approved" | "rejected" | "timeout";
+        state: "pending" | "approved" | "rejected" | "stopped" | "timeout";
       }
+    /** 中断卡:用户停止当前轮次(Done.cancelled 收敛;原型 .intc 灰卡) */
+    | { kind: "interrupt"; steps: number }
     | { kind: "error"; text: string };
 
-  /** 时间线条目(中栏;状态语义对齐设计规格:运行中/待审批/成功/已拒绝·超时跳过) */
+  /** 时间线条目(中栏;状态语义对齐设计规格:运行中/待审批/成功/已拒绝·超时·停止跳过) */
   type TlState = "run" | "wait" | "ok" | "skip";
   type TlItem = {
     id: number;
     name: string;
     args: unknown;
     state: TlState;
-    /** skip 态细分:rejected=已拒绝 / timeout=超时跳过 */
-    skipReason: "rejected" | "timeout" | "";
+    /** skip 态细分:rejected=已拒绝 / timeout=超时跳过 / stopped=已停止(中断) */
+    skipReason: "rejected" | "timeout" | "stopped" | "";
     /** 审批请求附带的命令与风险(ApprovalRequired) */
     command: string;
     risk: string;
@@ -125,10 +129,33 @@
     if (!selected) return null;
     return turnSummaries[selected.localId] ?? null;
   });
+  /**
+   * 可回滚版本 chips(降序 v(current-1)…v1;当前版本自身回滚为无操作不列入)。
+   * 版本指针为轮次近似口径:服务端按消息持久化粒度递增,精确 fact 级回放归 P3。
+   */
+  const pastVersions = $derived.by<number[]>(() => {
+    const v = selected?.version ?? 1;
+    const arr: number[] = [];
+    for (let x = v - 1; x >= 1; x--) arr.push(x);
+    return arr;
+  });
+  /** 回滚条选中的目标版本(null = 缺省选最新可回滚版本) */
+  let rewindSel = $state<number | null>(null);
+  /** 回滚条实际生效的选择(null 时代取最新可回滚版本) */
+  const rewindTarget = $derived(rewindSel ?? pastVersions[0] ?? null);
+  /** 审计页深链:会话建立后携带 evorule 会话 ID,审计页据此定位同链 Fact */
+  const auditHref = $derived.by(() => {
+    const sid = selected?.sessionId;
+    return sid ? `${base}/audit?session=${encodeURIComponent(sid)}` : `${base}/audit`;
+  });
   /** 时间线手风琴:单条展开(点按切换) */
   let openTlId = $state<number | null>(null);
   /** 审批送达防抖(点击后到 REST 返回前禁用双按钮) */
   let deciding = $state(false);
+  /** 停止指令防抖(点击后到 Done(cancelled) 收敛前禁用停止键) */
+  let stopping = $state(false);
+  /** 回滚送达防抖(点击后到服务端 Info 回执前禁用回滚键) */
+  let rewinding = $state(false);
   /** 倒计时基准(Unix 秒;每秒推进驱动审批卡环形倒计时) */
   let nowSec = $state(Math.floor(Date.now() / 1000));
 
@@ -298,6 +325,74 @@
     }
   }
 
+  // ---- 执行控制(M6) ----
+  /**
+   * 停止当前轮次:interrupt 帧送达后,收敛以服务端序列为准——
+   * Info("interrupt sent")(静默)→ Error("…cancelled by user")(静默)→
+   * Done(cancelled=true)(权威收敛:中断卡+时间线已停止+审批卡失效)。
+   */
+  function stopTurn(): void {
+    const lid = activeLocalId;
+    if (!client || !lid || !turnRunning || stopping) return;
+    stopping = true;
+    try {
+      client.interrupt();
+    } catch (e) {
+      pushItem(lid, {
+        kind: "error",
+        text: t("agent.err.stopFailed", { reason: (e as Error).message })
+      });
+      stopping = false;
+    }
+  }
+
+  /** 中断收敛:时间线运行/待审批条目转已停止;pending 审批卡转失效态(显式非静默) */
+  function collapseInterrupted(lid: string): void {
+    const tl = timelines[lid];
+    if (tl) {
+      for (let i = 0; i < tl.length; i++) {
+        const it = tl[i];
+        if (it.state === "run" || it.state === "wait") {
+          tl[i] = { ...it, state: "skip", skipReason: "stopped" };
+        }
+      }
+    }
+    const tr = transcripts[lid];
+    if (tr) {
+      for (let i = 0; i < tr.length; i++) {
+        const it = tr[i];
+        if (it.kind === "approval" && it.state === "pending") {
+          tr[i] = { ...it, state: "stopped" };
+        }
+      }
+    }
+  }
+
+  /** 回滚到所选版本:rewind 帧;收敛以服务端 Info("rewound to version N") 回执为准 */
+  function doRewind(): void {
+    const lid = activeLocalId;
+    if (!client || !lid || turnRunning || rewinding) return;
+    const target = rewindTarget;
+    if (target === null) return;
+    rewinding = true;
+    try {
+      client.rewind(target);
+    } catch (e) {
+      pushItem(lid, {
+        kind: "error",
+        text: t("agent.err.sendFailed", { reason: (e as Error).message })
+      });
+      rewinding = false;
+    }
+  }
+
+  /** 服务端语义报错转译(协议既定文案 → 界面语言;未命中原样透传) */
+  function translateServerError(msg: string): string {
+    if (msg.includes("cannot rewind during active turn")) return t("agent.err.rewindBusy");
+    if (msg.includes("no session to rewind")) return t("agent.err.rewindNoSession");
+    return msg;
+  }
+
   // ---- 服务端事件 → 对话流 ----
   function handleEvent(e: AgentServerEvent): void {
     const lid = activeLocalId;
@@ -360,22 +455,57 @@
       }
       case "Done": {
         closeStreamingItem(tr);
-        const sec = Math.max(1, Math.round(e.duration_ms / 1000));
-        tr.push({ kind: "summary", text: t("agent.sys.turnDone", { steps: e.steps, sec }) });
-        turnSummaries[lid] = { steps: e.steps, sec };
+        stopping = false;
+        if (e.cancelled) {
+          // 用户中断收敛(权威帧):中断卡 + 时间线/审批卡失效;已执行步数服务端已落链,版本照常递进
+          tr.push({ kind: "interrupt", steps: e.steps });
+          collapseInterrupted(lid);
+        } else {
+          const sec = Math.max(1, Math.round(e.duration_ms / 1000));
+          tr.push({ kind: "summary", text: t("agent.sys.turnDone", { steps: e.steps, sec }) });
+          turnSummaries[lid] = { steps: e.steps, sec };
+        }
+        advanceSessionVersion(lid);
         turnRunning = false;
         touchSession(lid);
         break;
       }
       case "Error": {
         closeStreamingItem(tr);
-        tr.push({ kind: "error", text: t("agent.err.turn", { message: e.error }) });
+        // 中断序列的 Error("…cancelled by user") 先于 Done(cancelled) 达:静默让位给中断卡;
+        // 但仍解锁轮次态,防 Done 缺失时 UI 卡死
+        if (e.error.includes("cancelled by user")) {
+          stopping = false;
+          turnRunning = false;
+          break;
+        }
+        tr.push({
+          kind: "error",
+          text: t("agent.err.turn", { message: translateServerError(e.error) })
+        });
+        rewinding = false;
         turnRunning = false;
         break;
       }
-      case "Info":
+      case "Info": {
+        // 中断回执/无轮次竞态:中断卡由 Done(cancelled) 呈现,此处不重复推行
+        if (e.message === "interrupt sent" || e.message.includes("no active turn")) break;
+        // 回滚回执:绿条 + 时间线重建 + 版本指针/角标更新(以服务端确认为准)
+        const m = /^rewound to version (\d+)$/.exec(e.message);
+        if (m) {
+          const ver = Number(m[1]);
+          tr.push({ kind: "summary", text: t("agent.sys.rewound", { ver }) });
+          timelines[lid] = [];
+          openTlId = null;
+          turnSummaries[lid] = null;
+          rewinding = false;
+          setSessionRewound(lid, ver);
+          touchSession(lid);
+          break;
+        }
         tr.push({ kind: "sys", text: e.message });
         break;
+      }
       case "ApprovalRequired": {
         // 中栏:运行中条目转待审批(candidate 工具先 ToolCall 后 ApprovalRequired);无前置条目则补一条
         const tlItem = findTl(lid, e.tool_name, ["run"]);
@@ -529,6 +659,9 @@
     activeLocalId = null;
     resumePending = false;
     turnRunning = false;
+    stopping = false;
+    rewinding = false;
+    rewindSel = null;
     link = "idle";
     linkError = null;
     openTlId = null;
@@ -544,6 +677,9 @@
     activeLocalId = null;
     resumePending = false;
     turnRunning = false;
+    stopping = false;
+    rewinding = false;
+    rewindSel = null;
     link = "idle";
     linkError = null;
     openTlId = null;
@@ -598,6 +734,7 @@
             <span class="d"></span>
             <span class="tt">
               <span class="n">{s.title}</span>
+              {#if s.rolledBack}<span class="rb">{t("agent.ses.rolledBack")}</span>{/if}
               <span class="m">{s.sessionId ? `${s.role} · v${s.version}` : s.role}</span>
             </span>
           </button>
@@ -631,10 +768,17 @@
         <b>{t("agent.execution")}</b>
         <span class="chp mono">{selected?.sessionId || t("agent.noSessionChip")}</span>
         <span class="chp mono">{selected ? selected.role : selectedRole}</span>
-        <a class="mh-link" href={`${base}/audit`}>{t("agent.auditLink")}</a>
+        <a class="mh-link" href={auditHref}>{t("agent.auditLink")}</a>
       </header>
       {#if turnSummary}
-        <div class="donebar">{t("agent.sys.turnDone", { steps: turnSummary.steps, sec: turnSummary.sec })}</div>
+        <div class="donebar">
+          <span>{t("agent.sys.turnDone", { steps: turnSummary.steps, sec: turnSummary.sec })}</span>
+          {#if pastVersions.length > 0}
+            <button class="lk" type="button" onclick={() => (rewindSel = pastVersions[0])}>
+              {t("agent.sys.rollbackTurn")}
+            </button>
+          {/if}
+        </div>
       {/if}
       {#if tlItems.length === 0}
         <div class="ph">
@@ -664,6 +808,7 @@
                   {:else if item.state === "wait"}{t("agent.tl.wait")}
                   {:else if item.state === "ok"}{t("agent.tl.ok")}
                   {:else if item.skipReason === "timeout"}{t("agent.tl.timeout")}
+                  {:else if item.skipReason === "stopped"}{t("agent.tl.stopped")}
                   {:else}{t("agent.tl.rejected")}{/if}
                 </span>
               </button>
@@ -737,6 +882,8 @@
               <p class="sys">{item.text}</p>
             {:else if item.kind === "summary"}
               <p class="rsum">{item.text}</p>
+            {:else if item.kind === "interrupt"}
+              <div class="intc"><b>⏸ {t("agent.interrupt.title")}</b> · {t("agent.interrupt.body", { steps: item.steps })}</div>
             {:else if item.kind === "user"}
               <div class="msg u">{item.text}</div>
             {:else if item.kind === "agent"}
@@ -802,6 +949,8 @@
                 <div class="apv-state ok">✔ {t("agent.card.approved", { cmd: item.command || item.tool })}</div>
               {:else if item.state === "rejected"}
                 <div class="apv-state no">✕ {t("agent.card.rejected")}</div>
+              {:else if item.state === "stopped"}
+                <div class="apv-state st">⏹ {t("agent.card.stopped")}</div>
               {:else}
                 <div class="apv-state to">⏱ {t("agent.card.timeout")}</div>
               {/if}
@@ -809,6 +958,34 @@
               <div class="errc"><b>✕</b> {item.text}</div>
             {/if}
           {/each}
+        </div>
+      {/if}
+
+      {#if pastVersions.length > 0}
+        <!-- 回滚条:活跃轮次禁用(先停止);收敛以服务端回执为准 -->
+        <div class="rbar">
+          <span class="lb">↺ {t("agent.rewind.label")}</span>
+          {#each pastVersions as v (v)}
+            <button
+              class="vch"
+              class:sel={rewindTarget === v}
+              type="button"
+              onclick={() => (rewindSel = v)}
+            >
+              v{v}
+            </button>
+          {/each}
+          <span class="rw">
+            <button
+              class="btn-rw"
+              type="button"
+              disabled={turnRunning || rewinding}
+              title={turnRunning ? t("agent.rewind.busyHint") : ""}
+              onclick={doRewind}
+            >
+              {t("agent.rewind.apply")}
+            </button>
+          </span>
         </div>
       {/if}
 
@@ -824,7 +1001,12 @@
           <button class="btn-send" type="button" disabled={!canSend} onclick={() => void send()}>
             {t("agent.send")}
           </button>
-          <button class="btn-stop" type="button" disabled title={t("agent.stop")}>
+          <button
+            class="btn-stop"
+            type="button"
+            disabled={!turnRunning || stopping}
+            onclick={stopTurn}
+          >
             {t("agent.stop")}
           </button>
         </div>
@@ -996,6 +1178,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* 「已回滚」角标:会话发生过 rewind 后持久留存 */
+  .sit .rb {
+    display: inline-block;
+    padding: 0 4px;
+    border-radius: var(--r-sm);
+    background: var(--bg-hover);
+    font-size: 9px;
+    line-height: 14px;
+    color: var(--text-muted);
+    vertical-align: top;
+  }
 
   .role-item {
     display: flex;
@@ -1071,7 +1264,7 @@
     text-decoration: underline;
   }
 
-  /* --- 中栏汇总条(本轮完成) --- */
+  /* --- 中栏汇总条(本轮完成 + 回滚入口) --- */
   .donebar {
     margin: 10px 14px 0;
     padding: 8px 12px;
@@ -1082,6 +1275,23 @@
     background: var(--success-bg);
     border: 1px solid var(--success);
     border-radius: var(--r-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-sm);
+  }
+  .donebar .lk {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-med);
+    color: var(--success);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .donebar .lk:hover {
+    text-decoration: underline;
   }
 
   /* --- 中栏时间线(状态语义:run 蓝 / wait 黄 / ok 绿 / skip 灰) --- */
@@ -1296,6 +1506,26 @@
     background: var(--bg-hover);
     border: 1px solid var(--border-strong);
     color: var(--text-muted);
+  }
+  .apv-state.st {
+    background: var(--bg-hover);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+  }
+
+  /* --- 右栏中断卡(用户停止轮次) --- */
+  .intc {
+    max-width: 88%;
+    padding: 8px 12px;
+    font-size: var(--fs-xs);
+    line-height: 18px;
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-lg);
+  }
+  .intc b {
+    color: var(--warning);
   }
 
   /* --- 空态占位(中/右共用) --- */
@@ -1514,6 +1744,64 @@
   }
   .conn.bad .dot {
     background: var(--danger);
+  }
+
+  /* --- 回滚条(版本 chips + 回滚按钮;活跃轮次禁用) --- */
+  .rbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .rbar .lb {
+    font-size: 11px;
+    font-weight: var(--fw-med);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .vch {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: var(--fw-med);
+    line-height: 1;
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    padding: 4px 7px;
+    cursor: pointer;
+  }
+  .vch:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+  .vch.sel {
+    color: #ffffff;
+    background: var(--brand);
+    border-color: var(--brand);
+  }
+  .rbar .rw {
+    margin-left: auto;
+  }
+  .btn-rw {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-md);
+    padding: var(--sp-xs) 14px;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-med);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-rw:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+  .btn-rw:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .rinput {
