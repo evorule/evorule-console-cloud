@@ -430,7 +430,7 @@ export interface KnowledgeEntryFilter {
 }
 
 // ============================================================================
-// 2. ExecutionBackend 抽象接口(SPEC §1.2,35 方法)
+// 2. ExecutionBackend 抽象接口(SPEC §1.2,47 方法)
 // ============================================================================
 
 /**
@@ -440,7 +440,7 @@ export interface KnowledgeEntryFilter {
  * - 大众版: HttpBackend (调 evorule-server HTTP)
  * - 高级版: EmbeddedBackend (Tauri + Rust 直接 link evorule crate,不联网)
  *
- * 35 方法分组:
+ * 47 方法分组:
  *   - 会话管理(5):health / createSession / listSessions / closeSession / getSessionState
  *   - 命令执行(1):submitCommand
  *   - 历史 / 回放(3):getHistory / getReplay / getFacts

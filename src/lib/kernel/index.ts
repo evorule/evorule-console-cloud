@@ -7,8 +7,9 @@
 //     复制而来的**快照**，仅包含本仓实际使用的依赖闭包。
 //   - 快照后本仓不再依赖 @evorule/console npm 包，独立演进。
 //     内核仓后续修复不会自动同步到本目录；反向亦然。
-//   - 导出面对齐内核 src/lib/index.ts，仅省略未纳入快照的模块
-//     （RuleLibraryView、HttpWorkspaceBackend、verdict store 等）。
+//   - 导出面基于内核 src/lib/index.ts，并随本仓需要扩充
+//     （RuleLibraryView、HttpWorkspaceBackend、verdict store 等均已纳入导出）；
+//     以本文件实际导出为准。
 
 // ============================================================================
 // 1. 执行后端抽象
