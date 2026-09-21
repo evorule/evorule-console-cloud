@@ -31,7 +31,7 @@ import { base } from "$app/paths";
   const st = $derived($workbenchStatus);
 
   function showOnboarding(): void {
-    void goto(`${base}/?task=open`);
+    void goto(`${base}/`);
   }
 
   // === 服务清单(⑨,GET /api/services) ===
