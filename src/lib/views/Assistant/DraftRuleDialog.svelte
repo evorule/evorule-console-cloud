@@ -26,7 +26,7 @@
 	} from '$lib/kernel';
 	import { RuleValidator, friendlyRuleError, type ValidationResult } from '$lib/kernel';
 	import { get } from 'svelte/store';
-	import { closeAssistantDialog } from '$lib/stores/assistant-ui';
+	import { closeAssistantDialog, pendingExternalDraft, clearPendingExternalDraft } from '$lib/stores/assistant-ui';
 	import { LlmError } from '$lib/assistant/llm-fetch';
 	import { t } from '$lib/locale';
 
@@ -41,6 +41,17 @@
 	let isLoading = $state(false);
 	let errorMsg = $state<string | null>(null);
 	let adopted = $state(false);
+
+	// 外部预填草稿(Agent 会话台「转规则草稿」一次性投递):跳过生成环节,
+	// 直接进入既有校验+人审采用链;信箱即取即清,不留状态
+	const externalDraft = get(pendingExternalDraft);
+	const isExternal = externalDraft !== null;
+	if (externalDraft) {
+		description = externalDraft.description;
+		draftJson = externalDraft.draft;
+		validation = RuleValidator.validate(externalDraft.draft);
+		clearPendingExternalDraft();
+	}
 
 	async function handleGenerate() {
 		if (!assistant) {
@@ -185,13 +196,15 @@
 						disabled={isLoading || adopted}
 					></textarea>
 
-					<!-- 置信度 -->
-					<div class="confidence">
-						<span class="label">{t('draft.confidenceLabel')}</span>
-						<span class="value" class:high={confidence >= 0.7} class:low={confidence < 0.4}>
-							{(confidence * 100).toFixed(0)}%
-						</span>
-					</div>
+					<!-- 置信度(外部预填草稿无生成置信度,不呈现) -->
+					{#if !isExternal}
+						<div class="confidence">
+							<span class="label">{t('draft.confidenceLabel')}</span>
+							<span class="value" class:high={confidence >= 0.7} class:low={confidence < 0.4}>
+								{(confidence * 100).toFixed(0)}%
+							</span>
+						</div>
+					{/if}
 
 					<!-- 校验结果 -->
 					{#if validation}

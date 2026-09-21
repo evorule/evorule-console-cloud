@@ -35,6 +35,10 @@
   import { AgentClient, type AgentClientOptions, type ApproveOptions } from "$lib/agent/agent-client";
   import type { AgentLinkStatus, AgentStatusDetail } from "$lib/agent/agent-client";
   import type { AgentServerEvent } from "$lib/agent/types";
+  import { extractRuleDraftJson, messageDraftSummary } from "$lib/agent/rule-draft-extract";
+  import { pendingExternalDraft, openAssistantDialog } from "$lib/stores/assistant-ui";
+  import ChatBubble from "$lib/components/chat/ChatBubble.svelte";
+  import TypewriterText from "$lib/components/chat/TypewriterText.svelte";
   import { netConfig } from "$lib/config/net-config";
   import { can, currentUser } from "$lib/stores/auth";
   import { t } from "$lib/locale";
@@ -757,6 +761,19 @@
       void send();
     }
   }
+
+  // ---- 转规则草稿(批3):agent 消息含规则草案 JSON 时提供入口 ----
+  // 提取成功才显示按钮(提取失败不给入口,不猜);写入信箱后打开 DraftRuleDialog,
+  // 走既有 RuleValidator 校验 + 人审核采用链(agent 不直接入库)
+  function openDraftFromMessage(text: string): void {
+    const draft = extractRuleDraftJson(text);
+    if (draft === null) return;
+    pendingExternalDraft.set({
+      draft,
+      description: messageDraftSummary(text) || t("agent.msg.toDraftSource")
+    });
+    openAssistantDialog("draft");
+  }
 </script>
 
 {#if !enabled}
@@ -945,9 +962,18 @@
             {:else if item.kind === "interrupt"}
               <div class="intc"><b>⏸ {t("agent.interrupt.title")}</b> · {t("agent.interrupt.body", { steps: item.steps })}</div>
             {:else if item.kind === "user"}
-              <div class="msg u">{item.text}</div>
+              <ChatBubble side="user"><TypewriterText text={item.text} /></ChatBubble>
             {:else if item.kind === "agent"}
-              <div class="msg a">{item.text}{#if item.streaming}<span class="crt"></span>{/if}</div>
+              <ChatBubble side="assistant" streaming={item.streaming}><TypewriterText text={item.text} /></ChatBubble>
+              {#if !item.streaming && extractRuleDraftJson(item.text) !== null}
+                <button
+                  class="to-draft"
+                  type="button"
+                  onclick={() => openDraftFromMessage(item.text)}
+                >
+                  {t("agent.msg.toDraft")}
+                </button>
+              {/if}
             {:else if item.kind === "chips"}
               <div class="chips">
                 {#each item.chips as c (c.name)}
@@ -1675,6 +1701,17 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    /* 共享气泡视觉注入(ChatBubble/TypewriterText) */
+    --bubble-max-width: 88%;
+    --bubble-pad: 8px 10px;
+    --bubble-radius: var(--r-lg);
+    --bubble-fs: var(--fs-xs);
+    --bubble-lh: 18px;
+    --bubble-bg-user: var(--brand-bg);
+    --bubble-fg-user: var(--text-primary);
+    --bubble-bg-assistant: var(--bg-hover);
+    --bubble-fg-assistant: var(--text-primary);
+    --bubble-cursor: var(--brand-ocean);
   }
   .sys {
     font-family: var(--font-mono);
@@ -1695,30 +1732,21 @@
     padding: var(--sp-xs) 10px;
     margin: 0;
   }
-  .msg {
-    border-radius: var(--r-lg);
-    padding: 8px 10px;
-    font-size: var(--fs-xs);
-    line-height: 18px;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
+  /* 「转规则草稿」入口(批3):agent 消息含可提取草案 JSON 时呈现 */
+  .to-draft {
+    align-self: flex-start;
+    font-size: 10px;
+    font-weight: var(--fw-med);
+    color: var(--brand-ocean);
+    background: none;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    padding: 2px 8px;
+    cursor: pointer;
+    margin-top: -2px;
   }
-  .msg.u {
-    background: var(--brand-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--brand-bg);
-    align-self: flex-end;
-  }
-  .msg.a {
+  .to-draft:hover {
     background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-  .crt {
-    display: inline-block;
-    width: 7px;
-    height: 13px;
-    background: var(--brand-ocean);
-    vertical-align: -2px;
   }
   .chips {
     display: flex;
@@ -1935,9 +1963,6 @@
     .sit.live .d {
       animation: agent-pulse 1.2s ease infinite;
     }
-    .crt {
-      animation: agent-blink 1s steps(2) infinite;
-    }
     .sp {
       animation: agent-spin 0.8s linear infinite;
     }
@@ -1945,11 +1970,6 @@
   @keyframes agent-pulse {
     50% {
       opacity: 0.35;
-    }
-  }
-  @keyframes agent-blink {
-    50% {
-      opacity: 0;
     }
   }
   @keyframes agent-spin {

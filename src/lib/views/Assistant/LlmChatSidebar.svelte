@@ -18,6 +18,8 @@
 	import { llmConfig, isLlmConfigured } from '$lib/config/llm-config';
 	import { callChatApiAudited } from '$lib/assistant/audited-llm';
 	import { EVORULE_RULE_SPEC } from '$lib/assistant/prompts';
+	import ChatBubble from '$lib/components/chat/ChatBubble.svelte';
+	import TypewriterText from '$lib/components/chat/TypewriterText.svelte';
 
 	interface ChatMessage {
 		role: 'user' | 'assistant';
@@ -143,14 +145,12 @@ ${EVORULE_RULE_SPEC}
 			</div>
 		{:else}
 			{#each messages as m, i (i)}
-				<div class="msg" class:user={m.role === 'user'} class:assistant={m.role === 'assistant'}>
-					<div class="bubble">{m.content}</div>
-				</div>
+				<!-- 非流式传输:最新一条 assistant 回复到达后渐进呈现(视觉打字机),历史消息直接全文;
+				     单行结构:pre-wrap 气泡内不容模板空白文本节点 -->
+				<ChatBubble side={m.role === 'user' ? 'user' : 'assistant'}><TypewriterText text={m.content} animate={m.role === 'assistant' && !loading && i === messages.length - 1} /></ChatBubble>
 			{/each}
 			{#if loading}
-				<div class="msg assistant">
-					<div class="bubble typing">思考中…</div>
-				</div>
+				<ChatBubble side="assistant"><span class="chat-typing-hint">思考中…</span></ChatBubble>
 			{/if}
 		{/if}
 
@@ -263,35 +263,20 @@ ${EVORULE_RULE_SPEC}
 		line-height: 1.5;
 	}
 
-	.msg {
-		display: flex;
+	/* 共享气泡视觉注入(ChatBubble/TypewriterText):沿用侧栏暗色配色 */
+	.llm-messages {
+		--bubble-max-width: 85%;
+		--bubble-pad: var(--sp-sm) var(--sp-md);
+		--bubble-radius: var(--r-md);
+		--bubble-fs: var(--fs-sm);
+		--bubble-lh: 1.5;
+		--bubble-bg-user: var(--brand);
+		--bubble-fg-user: #fff;
+		--bubble-bg-assistant: rgba(255, 255, 255, 0.08);
+		--bubble-fg-assistant: rgba(255, 255, 255, 0.9);
+		--bubble-tail: var(--r-sm);
 	}
-	.msg.user {
-		justify-content: flex-end;
-	}
-	.msg.assistant {
-		justify-content: flex-start;
-	}
-	.bubble {
-		max-width: 85%;
-		padding: var(--sp-sm) var(--sp-md);
-		border-radius: var(--r-md);
-		font-size: var(--fs-sm);
-		line-height: 1.5;
-		white-space: pre-wrap;
-		word-break: break-word;
-	}
-	.msg.user .bubble {
-		background: var(--brand);
-		color: #fff;
-		border-bottom-right-radius: var(--r-sm);
-	}
-	.msg.assistant .bubble {
-		background: rgba(255, 255, 255, 0.08);
-		color: rgba(255, 255, 255, 0.9);
-		border-bottom-left-radius: var(--r-sm);
-	}
-	.bubble.typing {
+	.chat-typing-hint {
 		opacity: 0.6;
 		font-style: italic;
 	}

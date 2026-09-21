@@ -308,3 +308,74 @@ export async function testAgentConnection(
 		return { ok: false, message: (e as Error).message || 'network-error' };
 	}
 }
+
+// === LLM 配置状态(脱敏只读;O-029 收口) ===
+
+export interface AgentLlmKeyStatus {
+	/** evo-agent 侧是否已配置 key(仅存在性,永不含 key 值) */
+	present: boolean;
+	/** 末 4 位提示(服务端脱敏生成;不足 4 位时缺省) */
+	hint: string | null;
+	/** key 来源(环境变量名或 "config") */
+	source: string | null;
+}
+
+export interface AgentLlmStatus {
+	/** = api_key 存在(能否思考的唯一硬事实) */
+	configured: boolean;
+	provider: string;
+	model: string;
+	/** 不含 query/fragment 的 API 地址 */
+	api_base: string;
+	api_key: AgentLlmKeyStatus;
+}
+
+export type AgentLlmStatusResult =
+	| { ok: true; status: AgentLlmStatus }
+	| { ok: false; message: string };
+
+/**
+ * 查询 evo-agent 侧 LLM 配置状态:GET /admin/llm-status(走既有鉴权中间件)。
+ * 响应本身脱敏(全值 key 永不出网);本函数不打印 Token,错误消息不携带凭据。
+ */
+export async function fetchAgentLlmStatus(cfg: AgentConfig): Promise<AgentLlmStatusResult> {
+	const base = cfg.baseUrl.trim().replace(/\/+$/, '');
+	try {
+		const headers: Record<string, string> = { Accept: 'application/json' };
+		if (cfg.authToken) headers.Authorization = `Bearer ${cfg.authToken}`;
+		const res = await fetch(`${base}/admin/llm-status`, { headers });
+		if (res.status === 401) {
+			return { ok: false, message: 'unauthorized' };
+		}
+		if (!res.ok) {
+			return { ok: false, message: `http-${res.status}` };
+		}
+		const data = (await res.json()) as Record<string, unknown> | null;
+		if (
+			!data ||
+			typeof data !== 'object' ||
+			!data.api_key ||
+			typeof data.api_key !== 'object' ||
+			typeof (data.api_key as Record<string, unknown>).present !== 'boolean'
+		) {
+			return { ok: false, message: 'bad-payload' };
+		}
+		const key = data.api_key as Record<string, unknown>;
+		return {
+			ok: true,
+			status: {
+				configured: data.configured === true,
+				provider: typeof data.provider === 'string' ? data.provider : '',
+				model: typeof data.model === 'string' ? data.model : '',
+				api_base: typeof data.api_base === 'string' ? data.api_base : '',
+				api_key: {
+					present: key.present === true,
+					hint: typeof key.hint === 'string' ? key.hint : null,
+					source: typeof key.source === 'string' ? key.source : null
+				}
+			}
+		};
+	} catch (e) {
+		return { ok: false, message: (e as Error).message || 'network-error' };
+	}
+}
