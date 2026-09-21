@@ -173,6 +173,41 @@ describe('parseAgentEvent 事件解析(API.md §6 全表)', () => {
 			cancelled: true
 		});
 	});
+
+	test('批 2 新增字段:memory_enabled/proposal_id/approver/auto_rejected/actual_version', () => {
+		expect(parseAgentEvent('{"type":"SessionCreated","session_id":"42","memory_enabled":true}')).toEqual(
+			{
+				type: 'SessionCreated',
+				session_id: '42',
+				memory_enabled: true
+			}
+		);
+		expect(
+			parseAgentEvent('{"type":"ApprovalRequired","tool_name":"shell_exec","proposal_id":"prop_9"}')
+		).toEqual({
+			type: 'ApprovalRequired',
+			tool_name: 'shell_exec',
+			proposal_id: 'prop_9'
+		});
+		expect(
+			parseAgentEvent(
+				'{"type":"ApprovalResult","tool_name":"shell_exec","approved":false,"approver":"u-lead","auto_rejected":true}'
+			)
+		).toEqual({
+			type: 'ApprovalResult',
+			tool_name: 'shell_exec',
+			approved: false,
+			approver: 'u-lead',
+			auto_rejected: true
+		});
+		expect(
+			parseAgentEvent('{"type":"Info","message":"rewound to version 1","actual_version":3}')
+		).toEqual({
+			type: 'Info',
+			message: 'rewound to version 1',
+			actual_version: 3
+		});
+	});
 });
 
 describe('建连与 URL', () => {
@@ -403,6 +438,28 @@ describe('REST 兜底', () => {
 			fetchImpl: vi.fn().mockResolvedValue({ ok: true }) as unknown as typeof fetch
 		});
 		await expect(client.approve(true)).rejects.toThrow('no-session');
+	});
+
+	test('approve:可选字段仅在有值时并入请求体(proposal_id/approver_token/reason)', async () => {
+		const f = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+		const { client } = makeClient({ sessionId: '77', fetchImpl: f as unknown as typeof fetch });
+		await client.approve(true, {
+			proposal_id: 'prop_1',
+			approver_token: 'tok-abc',
+			reason: '紧急修复'
+		});
+		const [, init] = f.mock.calls[0] as [string, RequestInit];
+		expect(JSON.parse(init.body as string)).toEqual({
+			session_id: '77',
+			approved: true,
+			proposal_id: 'prop_1',
+			approver_token: 'tok-abc',
+			reason: '紧急修复'
+		});
+		// 缺省可选字段:请求体不带空键(approver_token 红线:不透传不落痕)
+		await client.approve(false);
+		const [, init2] = f.mock.calls[1] as [string, RequestInit];
+		expect(JSON.parse(init2.body as string)).toEqual({ session_id: '77', approved: false });
 	});
 
 	test('cancel:URL query session_id;404 抛错', async () => {

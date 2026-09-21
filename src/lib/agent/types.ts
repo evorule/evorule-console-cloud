@@ -19,6 +19,8 @@ export type { AgentSummary } from '../config/agent-config';
 export interface SessionCreatedEvent {
 	type: 'SessionCreated';
 	session_id: string;
+	/** 多轮记忆开关(evo-agent 会话级;旧载荷缺省视为 false) */
+	memory_enabled?: boolean;
 }
 
 /** LLM 增量输出(流式对话渲染源) */
@@ -48,6 +50,8 @@ export interface ApprovalRequiredEvent {
 	command?: string;
 	risk?: string;
 	alternative?: string;
+	/** 审批提案 ID(贯穿 REST /approve 请求体的 proposal_id;旧载荷缺省 undefined) */
+	proposal_id?: string;
 }
 
 /** 审批结果回执(REST /approve 送达后服务端回推) */
@@ -55,6 +59,10 @@ export interface ApprovalResultEvent {
 	type: 'ApprovalResult';
 	tool_name: string;
 	approved: boolean;
+	/** 审批人(evo-agent 平台身份验证通过后的主体;unverified 时不带) */
+	approver?: string;
+	/** 服务端自动拒绝(60s 超时兜底;true 时 UI 呈现超时语义而非人工拒绝) */
+	auto_rejected?: boolean;
 }
 
 /** 一轮完成(汇总:最终内容 + 步数 + 耗时;cancelled=true = 用户中断收敛,interrupt 后必达) */
@@ -74,10 +82,12 @@ export interface ErrorEvent {
 	error: string;
 }
 
-/** 提示信息(如 interrupt sent) */
+/** 提示信息(如 interrupt sent;rewind 回执附 actual_version 权威 Fact 版本) */
 export interface InfoEvent {
 	type: 'Info';
 	message: string;
+	/** rewind 回执附带:实际回滚到的服务端 Fact 版本(旧载荷缺省 undefined) */
+	actual_version?: number;
 }
 
 export type AgentServerEvent =
@@ -137,7 +147,13 @@ export function parseAgentEvent(raw: string): AgentServerEvent | null {
 	const f = data as Record<string, unknown>;
 	switch (f.type) {
 		case 'SessionCreated':
-			return isStr(f.session_id) ? { type: 'SessionCreated', session_id: f.session_id } : null;
+			return isStr(f.session_id)
+				? {
+						type: 'SessionCreated',
+						session_id: f.session_id,
+						memory_enabled: f.memory_enabled === true ? true : undefined
+					}
+				: null;
 		case 'LlmDelta':
 			return isStr(f.text) ? { type: 'LlmDelta', text: f.text } : null;
 		case 'ToolCall':
@@ -151,12 +167,19 @@ export function parseAgentEvent(raw: string): AgentServerEvent | null {
 						tool_name: f.tool_name,
 						command: isStr(f.command) ? f.command : undefined,
 						risk: isStr(f.risk) ? f.risk : undefined,
-						alternative: isStr(f.alternative) ? f.alternative : undefined
+						alternative: isStr(f.alternative) ? f.alternative : undefined,
+						proposal_id: isStr(f.proposal_id) ? f.proposal_id : undefined
 					}
 				: null;
 		case 'ApprovalResult':
 			return isStr(f.tool_name) && typeof f.approved === 'boolean'
-				? { type: 'ApprovalResult', tool_name: f.tool_name, approved: f.approved }
+				? {
+						type: 'ApprovalResult',
+						tool_name: f.tool_name,
+						approved: f.approved,
+						approver: isStr(f.approver) ? f.approver : undefined,
+						auto_rejected: f.auto_rejected === true ? true : undefined
+					}
 				: null;
 		case 'Done':
 			return typeof f.success === 'boolean' && isStr(f.content) && isNum(f.steps) && isNum(f.duration_ms)
@@ -172,7 +195,13 @@ export function parseAgentEvent(raw: string): AgentServerEvent | null {
 		case 'Error':
 			return isStr(f.error) ? { type: 'Error', error: f.error } : null;
 		case 'Info':
-			return isStr(f.message) ? { type: 'Info', message: f.message } : null;
+			return isStr(f.message)
+				? {
+						type: 'Info',
+						message: f.message,
+						actual_version: isNum(f.actual_version) ? f.actual_version : undefined
+					}
+				: null;
 		default:
 			return null;
 	}

@@ -24,15 +24,19 @@
     agentSessions,
     attachSessionId,
     createSession,
+    setSessionMemoryEnabled,
     setSessionRewound,
     setSessionStatus,
     setSessionTitle,
     touchSession,
+    updateSessionVersion,
     type AgentSession
   } from "$lib/agent/agent-sessions";
-  import { AgentClient, type AgentClientOptions } from "$lib/agent/agent-client";
+  import { AgentClient, type AgentClientOptions, type ApproveOptions } from "$lib/agent/agent-client";
   import type { AgentLinkStatus, AgentStatusDetail } from "$lib/agent/agent-client";
   import type { AgentServerEvent } from "$lib/agent/types";
+  import { netConfig } from "$lib/config/net-config";
+  import { can, currentUser } from "$lib/stores/auth";
   import { t } from "$lib/locale";
 
   /** P1 固定角色(首批裁定 researcher + rule-copilot + general;后续接 listAgents 动态化) */
@@ -64,6 +68,8 @@
         command: string;
         risk: string;
         alternative: string;
+        /** 审批提案 ID(贯穿 REST /approve 的 proposal_id;旧服务端缺省空串) */
+        proposalId: string;
         /** 倒计时截止(Unix 秒);服务端 60s 超时自动拒绝,UI 显式倒计时 */
         deadline: number;
         state: "pending" | "approved" | "rejected" | "stopped" | "timeout";
@@ -131,7 +137,8 @@
   });
   /**
    * 可回滚版本 chips(降序 v(current-1)…v1;当前版本自身回滚为无操作不列入)。
-   * 版本指针为轮次近似口径:服务端按消息持久化粒度递增,精确 fact 级回放归 P3。
+   * 版本指针为轮次近似口径(每轮 Done +1),rewind 回执以服务端 actual_version
+   * 权威修正为 Fact 版本;精确 fact 级回放归 P3。
    */
   const pastVersions = $derived.by<number[]>(() => {
     const v = selected?.version ?? 1;
@@ -158,6 +165,25 @@
   let rewinding = $state(false);
   /** 倒计时基准(Unix 秒;每秒推进驱动审批卡环形倒计时) */
   let nowSec = $state(Math.floor(Date.now() / 1000));
+
+  /** 审批凭据:平台登录 token(netConfig;仅随 approve 请求透传,不落 agent-sessions 持久化、不进日志) */
+  const approverToken = $derived($netConfig.authToken);
+  /**
+   * 审批/回滚门控:仅平台登录身份受权限矩阵约束;演示/未登录不禁用
+   * (执行语义不变,approve 不携带 approver_token,evo-agent 落 unverified)
+   */
+  const canIntervene = $derived(
+    $currentUser?.authKind === "platform" ? can("intervene_runtime") : true
+  );
+  const canRollbackRuleset = $derived(
+    $currentUser?.authKind === "platform" ? can("rollback_ruleset") : true
+  );
+  /** 审批卡按钮提示:无权限 → 权限说明;有权限但无平台凭据 → 身份未验证 */
+  const approvalHint = $derived.by(() => {
+    if (!canIntervene) return t("agent.approval.noPermission");
+    if (!approverToken) return t("agent.approval.unverified");
+    return "";
+  });
 
   $effect(() => {
     const timer = setInterval(() => {
@@ -312,8 +338,13 @@
     const lid = activeLocalId;
     if (!client || !lid || deciding || item.state !== "pending") return;
     deciding = true;
+    // proposal_id 贯穿审批链;approver_token 仅随本次请求透传(用后即弃——不写入
+    // agent-sessions 持久化、不进日志);未登录/演示模式不携带,evo-agent 落 unverified
+    const opts: ApproveOptions = {};
+    if (item.proposalId) opts.proposal_id = item.proposalId;
+    if (approverToken) opts.approver_token = approverToken;
     try {
-      await client.approve(approved);
+      await client.approve(approved, opts);
     } catch (e) {
       pushItem(lid, {
         kind: "error",
@@ -413,6 +444,8 @@
     if (!lid) return;
     if (e.type === "SessionCreated") {
       attachSessionId(lid, e.session_id);
+      // 多轮记忆标记回填(左栏「多轮记忆」小徽标,仅 true 呈现)
+      setSessionMemoryEnabled(lid, e.memory_enabled === true);
       return;
     }
     const tr = transcripts[lid];
@@ -504,16 +537,18 @@
       case "Info": {
         // 中断回执/无轮次竞态:中断卡由 Done(cancelled) 呈现,此处不重复推行
         if (e.message === "interrupt sent" || e.message.includes("no active turn")) break;
-        // 回滚回执:绿条 + 时间线重建 + 版本指针/角标更新(以服务端确认为准)
+        // 回滚回执:绿条 + 时间线重建 + 版本指针/角标更新(以服务端确认为准;
+        // actual_version 为权威 Fact 版本,旧服务端缺省时回退消息内版本)
         const m = /^rewound to version (\d+)$/.exec(e.message);
         if (m) {
-          const ver = Number(m[1]);
+          const ver = e.actual_version ?? Number(m[1]);
           tr.push({ kind: "summary", text: t("agent.sys.rewound", { ver }) });
           timelines[lid] = [];
           openTlId = null;
           turnSummaries[lid] = null;
           rewinding = false;
-          setSessionRewound(lid, ver);
+          updateSessionVersion(lid, ver); // 版本指针按服务端 Fact 版本权威修正
+          setSessionRewound(lid); // 「已回滚」角标置位
           touchSession(lid);
           break;
         }
@@ -540,33 +575,42 @@
             result: null
           });
         }
-        // 右栏:审批卡(替代 T4 的 sys 占位行;60s 显式倒计时)
+        // 右栏:审批卡(替代 T4 的 sys 占位行;60s 显式倒计时;proposal_id 随卡留存供送达)
         tr.push({
           kind: "approval",
           tool: e.tool_name,
           command: e.command ?? "",
           risk: e.risk ?? "",
           alternative: e.alternative ?? "",
+          proposalId: e.proposal_id ?? "",
           deadline: Math.floor(Date.now() / 1000) + APPROVAL_TIMEOUT_SEC,
           state: "pending"
         });
         break;
       }
       case "ApprovalResult": {
-        // 卡片收敛:pending → approved/rejected(超时已收敛为 timeout 的卡不再改写,忽略迟到回执)
+        // 卡片收敛:pending → approved/rejected/timeout(超时已收敛为 timeout 的卡不再改写,忽略迟到回执;
+        // auto_rejected=true 为服务端 60s 兜底,呈现超时语义而非人工拒绝)
         const card = findPendingApproval(lid, e.tool_name);
         if (card && card.kind === "approval") {
           const idx = tr.indexOf(card);
-          if (idx >= 0) tr[idx] = { ...card, state: e.approved ? "approved" : "rejected" };
+          if (idx >= 0) {
+            const state: "approved" | "rejected" | "timeout" = e.approved
+              ? "approved"
+              : e.auto_rejected
+                ? "timeout"
+                : "rejected";
+            tr[idx] = { ...card, state };
+          }
         }
-        // 中栏:待审批条目 → 运行中(批准继续执行)/ 已拒绝·跳过
+        // 中栏:待审批条目 → 运行中(批准继续执行)/ 已拒绝·超时·跳过
         const tlItem = findTl(lid, e.tool_name, ["wait"]);
         if (tlItem) {
           if (e.approved) {
             tlItem.state = "run";
           } else {
             tlItem.state = "skip";
-            tlItem.skipReason = "rejected";
+            tlItem.skipReason = e.auto_rejected ? "timeout" : "rejected";
           }
         }
         break;
@@ -749,6 +793,7 @@
             <span class="tt">
               <span class="n">{s.title}</span>
               {#if s.rolledBack}<span class="rb">{t("agent.ses.rolledBack")}</span>{/if}
+              {#if s.memoryEnabled}<span class="rb">{t("agent.memoryBadge")}</span>{/if}
               <span class="m">{s.sessionId ? `${s.role} · v${s.version}` : s.role}</span>
             </span>
           </button>
@@ -945,7 +990,8 @@
                     <button
                       class="apv-btn pri"
                       type="button"
-                      disabled={deciding}
+                      disabled={deciding || !canIntervene}
+                      title={approvalHint}
                       onclick={() => void decideApproval(item, true)}
                     >
                       {t("agent.card.approve")}
@@ -953,7 +999,8 @@
                     <button
                       class="apv-btn dg"
                       type="button"
-                      disabled={deciding}
+                      disabled={deciding || !canIntervene}
+                      title={approvalHint}
                       onclick={() => void decideApproval(item, false)}
                     >
                       {t("agent.card.reject")}
@@ -985,6 +1032,7 @@
               class="vch"
               class:sel={rewindTarget === v}
               type="button"
+              title={t("agent.rewind.factHint")}
               onclick={() => (rewindSel = v)}
             >
               v{v}
@@ -994,8 +1042,12 @@
             <button
               class="btn-rw"
               type="button"
-              disabled={turnRunning || rewinding}
-              title={turnRunning ? t("agent.rewind.busyHint") : ""}
+              disabled={turnRunning || rewinding || !canRollbackRuleset}
+              title={turnRunning
+                ? t("agent.rewind.busyHint")
+                : !canRollbackRuleset
+                  ? t("agent.rewind.noPermission")
+                  : ""}
               onclick={doRewind}
             >
               {t("agent.rewind.apply")}

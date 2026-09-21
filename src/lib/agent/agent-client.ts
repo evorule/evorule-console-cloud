@@ -70,6 +70,17 @@ export interface AgentClientOptions {
 }
 
 const WS_OPEN = 1;
+
+/** approve 请求可选字段(批 2:proposal_id 贯穿审批链;approver_token 平台身份凭据) */
+export interface ApproveOptions {
+	/** 审批提案 ID(ApprovalRequired 帧下发,服务端据此对账) */
+	proposal_id?: string;
+	/** 平台身份凭据(仅随本次请求体透传,用后即弃——不落持久化、不进日志) */
+	approver_token?: string;
+	/** 审批理由(可空) */
+	reason?: string;
+}
+
 const DEFAULT_CONNECT_TIMEOUT_MS = 10_000;
 const DEFAULT_RECONNECT: AgentReconnectPolicy = {
 	maxAttempts: 5,
@@ -185,15 +196,19 @@ export class AgentClient {
 		return data.agents;
 	}
 
-	/** REST 兜底:送达审批结果(POST /agents/{type}/approve) */
-	async approve(approved: boolean): Promise<void> {
+	/** REST 兜底:送达审批结果(POST /agents/{type}/approve);可选字段仅在有值时并入请求体 */
+	async approve(approved: boolean, opts?: ApproveOptions): Promise<void> {
 		if (this._sessionId === 'new') throw new Error('no-session');
+		const body: Record<string, unknown> = { session_id: this._sessionId, approved };
+		if (opts?.proposal_id) body.proposal_id = opts.proposal_id;
+		if (opts?.approver_token) body.approver_token = opts.approver_token;
+		if (opts?.reason) body.reason = opts.reason;
 		const res = await this.fetchImpl(
 			`${this.restBase()}/agents/${encodeURIComponent(this.agentType)}/approve`,
 			{
 				method: 'POST',
 				headers: { ...this.restHeaders(), 'Content-Type': 'application/json' },
-				body: JSON.stringify({ session_id: this._sessionId, approved })
+				body: JSON.stringify(body)
 			}
 		);
 		if (!res.ok) throw new Error(`approve-http-${res.status}`);

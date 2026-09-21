@@ -24,10 +24,12 @@ export interface AgentSession {
 	title: string;
 	role: string;
 	status: AgentSessionStatus;
-	/** 工作区版本指针(初始 1;每完成一轮 +1,回滚后指向目标版本——轮次近似口径) */
+	/** 工作区版本指针(初始 1;每完成一轮 +1 的轮次近似口径,rewind 回执以 actual_version 权威修正) */
 	version: number;
 	/** 会话是否执行过回滚(左栏「已回滚」角标;回滚成功后置位,持久留存) */
 	rolledBack: boolean;
+	/** 是否开启多轮记忆(SessionCreated.memory_enabled;左栏「多轮记忆」小徽标,仅 true 显示) */
+	memoryEnabled: boolean;
 	createdAt: number;
 	updatedAt: number;
 }
@@ -63,9 +65,9 @@ function isSession(v: unknown): v is AgentSession {
 	);
 }
 
-/** 旧版落盘数据无 rolledBack 字段,装载时归一化为 false */
+/** 旧版落盘数据无 rolledBack/memoryEnabled 字段,装载时归一化为 false */
 function normalize(s: AgentSession): AgentSession {
-	return { ...s, rolledBack: s.rolledBack === true };
+	return { ...s, rolledBack: s.rolledBack === true, memoryEnabled: s.memoryEnabled === true };
 }
 
 function loadSessions(): AgentSession[] {
@@ -104,6 +106,7 @@ export function createSession(role: string, title: string): AgentSession {
 		status: 'draft',
 		version: 1,
 		rolledBack: false,
+		memoryEnabled: false,
 		createdAt: now,
 		updatedAt: now
 	};
@@ -147,13 +150,31 @@ export function advanceSessionVersion(localId: string): void {
 	);
 }
 
-/** 回滚收敛:版本指针置为目标版本并置「已回滚」角标(服务端 Info 回执确认后调用) */
-export function setSessionRewound(localId: string, version: number): void {
+/**
+ * 版本指针权威修正(rewind 回执 actual_version;服务端 Fact 版本为准)。
+ * 与 advanceSessionVersion 的每轮 +1 轮次近似口径相区分:回执携带的
+ * actual_version 可能与请求目标版本不一致,以此处为权威。
+ */
+export function updateSessionVersion(localId: string, actualVersion: number): void {
 	agentSessions.update((list) =>
 		list.map((s) =>
-			s.localId === localId
-				? { ...s, version, rolledBack: true, updatedAt: Date.now() }
-				: s
+			s.localId === localId ? { ...s, version: actualVersion, updatedAt: Date.now() } : s
+		)
+	);
+}
+
+/** 回滚收敛:「已回滚」角标置位(版本指针由 updateSessionVersion 按 actual_version 权威修正) */
+export function setSessionRewound(localId: string): void {
+	agentSessions.update((list) =>
+		list.map((s) => (s.localId === localId ? { ...s, rolledBack: true, updatedAt: Date.now() } : s))
+	);
+}
+
+/** 多轮记忆标记回填(SessionCreated.memory_enabled;服务端开启时置 true) */
+export function setSessionMemoryEnabled(localId: string, enabled: boolean): void {
+	agentSessions.update((list) =>
+		list.map((s) =>
+			s.localId === localId ? { ...s, memoryEnabled: enabled, updatedAt: Date.now() } : s
 		)
 	);
 }
