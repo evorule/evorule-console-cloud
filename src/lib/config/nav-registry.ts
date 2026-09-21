@@ -85,7 +85,7 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     icon: "🤖",
     path: "/agent",
     group: "home",
-    title: "Agent 会话台 — 连接 evo-agent 的 IDE 式三栏会话工作区(设置中启用后可见)",
+    title: "Agent 会话台 — 编程 agent(执行者):连接 evo-agent 的 IDE 式三栏会话工作区(设置中启用后可见;与右侧规则助理互斥式并存)",
     // 功能开关门控:agentConfig.enabled(设置页 Agent 连接,禁用时入口不渲染)
     featureFlag: "agent",
   },

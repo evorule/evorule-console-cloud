@@ -5,7 +5,7 @@
 //      空态三型(无会话/未配置/不可达) / 新建会话 / 发送与流式渲染全链 / 刷新恢复续接
 // 组件级 DOM 测试需 jsdom 环境(仓库既有单测默认 node,不动;此处按文件声明)
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/svelte';
 import { screen } from '@testing-library/dom';
 import { get } from 'svelte/store';
@@ -13,6 +13,7 @@ import { tick } from 'svelte';
 import AgentWorkspace from './AgentWorkspace.svelte';
 import { agentConfig, isAgentConfigured, type AgentConfig } from '$lib/config/agent-config';
 import {
+  agentSessions,
   resetAgentSessions,
   createSession,
   attachSessionId
@@ -571,3 +572,55 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			expect(auditLink.getAttribute('href')).toContain('/audit?session=session_9f3a2c');
 		});
 	});
+
+describe('AgentWorkspace — 接力 CTA 消费(?handoff=,整合批1)', () => {
+	beforeEach(() => {
+		// 显式重置会话元数据(内存+localStorage)与地址栏:本组用例对"无会话"前置
+		// 有硬依赖,不依赖 afterEach 钩子顺序假设
+		resetAgentSessions();
+		window.history.replaceState({}, '', '/');
+	});
+
+	afterEach(() => {
+		// 清地址栏,避免污染同文件其他用例(全局 afterEach 不管 URL)
+		window.history.replaceState({}, '', '/');
+	});
+
+	it('URL 带 handoff:无会话时自动建「来自规则助理」草稿会话并预填输入行,参数一次性清除', async () => {
+		setCfg({ enabled: true });
+		window.history.replaceState(
+			{},
+			'',
+			'/agent?handoff=' + encodeURIComponent('把这段校验逻辑改写成 evorule 规则集')
+		);
+		const { container } = render(AgentWorkspace);
+		await tick();
+		const textarea = container.querySelector('.rinput textarea') as HTMLTextAreaElement;
+		expect(textarea.disabled).toBe(false);
+		expect(textarea.value).toBe('把这段校验逻辑改写成 evorule 规则集');
+		// 参数一次性消费:预填后地址栏即清,刷新不重灌
+		expect(window.location.search).toBe('');
+		// 会话承载:自动建草稿,标题用接力语义
+		expect(screen.getByText('来自规则助理')).toBeTruthy();
+	});
+
+	it('无 handoff 参数:不建会话不预填(输入行恒渲染但禁用,既有空态行为不变)', async () => {
+		setCfg({ enabled: true });
+		const { container } = render(AgentWorkspace);
+		await tick();
+		// 输入行恒渲染(disabled={!selected});无会话 → 禁用且空值
+		const textarea = container.querySelector('.rinput textarea') as HTMLTextAreaElement;
+		expect(textarea.disabled).toBe(true);
+		expect(textarea.value).toBe('');
+		// 未建「来自规则助理」会话
+		expect(screen.queryByText('来自规则助理')).toBeNull();
+	});
+
+	it('enabled=false:保留参数不消费(启用引导优先,用户启用后 effect 重跑再消费)', async () => {
+		setCfg({ enabled: false });
+		window.history.replaceState({}, '', '/agent?handoff=hello');
+		render(AgentWorkspace);
+		await tick();
+		expect(window.location.search).toBe('?handoff=hello');
+	});
+});
