@@ -19,6 +19,8 @@ import {
   attachSessionId
 } from '$lib/agent/agent-sessions';
 import type { AgentClientOptions } from '$lib/agent/agent-client';
+import { currentUser, type User } from '$lib/stores/auth';
+import { setAuthToken } from '$lib/config/net-config';
 
 function setCfg(partial: Partial<AgentConfig>): void {
 	agentConfig.set({
@@ -80,7 +82,23 @@ afterEach(() => {
 	cleanup();
 	setCfg({});
 	resetAgentSessions();
+	// 权限/凭据全局态复位:门控用例构造的 platform 身份与 netConfig token 不外溢
+	currentUser.set(null);
+	setAuthToken('');
 });
+
+/** 平台登录用户(门控用例构造;permissions 即 can() 的唯一依据) */
+function platformUser(permissions: string[]): User {
+	return {
+		id: 'p-tester',
+		username: 'tester',
+		displayName: '平台测试用户',
+		role: 'rule_engineer',
+		status: 'active',
+		authKind: 'platform',
+		permissions
+	};
+}
 
 describe('AgentWorkspace — 未启用分支', () => {
 	it('enabled=false:渲染启用引导,不渲染三栏', () => {
@@ -396,7 +414,7 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			await tick();
 			fireEvent.click(screen.getByText('批准'));
 			await tick();
-			expect(stubs[0].approve).toHaveBeenCalledWith(true);
+			expect(stubs[0].approve).toHaveBeenCalledWith(true, {});
 			// 服务端回执前卡片保持等待(以服务端回推为准)
 			expect((container.querySelector('.rcol .apv') as HTMLElement).classList.contains('apv')).toBe(true);
 			ev({ type: 'ApprovalResult', tool_name: 'shell_exec', approved: true });
@@ -416,7 +434,7 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			await tick();
 			fireEvent.click(screen.getByText('拒绝'));
 			await tick();
-			expect(stubs[0].approve).toHaveBeenCalledWith(false);
+			expect(stubs[0].approve).toHaveBeenCalledWith(false, {});
 			ev({ type: 'ApprovalResult', tool_name: 'shell_exec', approved: false });
 			await tick();
 			expect(screen.getByText('✕ 已拒绝 · agent 已收到拒绝信号')).toBeTruthy();
@@ -454,6 +472,94 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			expect(errc.textContent).toContain('审批送达失败:approve-http-503');
 			// 卡片未收敛,等待服务端回执/超时兜底
 			expect(container.querySelector('.rcol .apv')).toBeTruthy();
+		});
+	});
+
+	describe('AgentWorkspace — 批 2:审批门控与协议字段', () => {
+		/** 带 proposal_id 的审批请求(契约新增字段贯穿用例) */
+		const args2 = {
+			type: 'ApprovalRequired' as const,
+			tool_name: 'shell_exec',
+			command: 'cargo test',
+			risk: 'medium',
+			alternative: '',
+			proposal_id: 'prop_77'
+		};
+
+		it('平台登录无 intervene_runtime:审批按钮禁用并提示缺权限;授权后解禁', async () => {
+			currentUser.set(platformUser([]));
+			const { ev } = await setupConnected();
+			ev(args2);
+			await tick();
+			const approve = screen.getByText('批准') as HTMLButtonElement;
+			const reject = screen.getByText('拒绝') as HTMLButtonElement;
+			expect(approve.disabled).toBe(true);
+			expect(reject.disabled).toBe(true);
+			expect(approve.getAttribute('title')).toContain('无审批权限');
+			// 授权 intervene_runtime 后解禁(门控随权限矩阵响应,非身份一刀切)
+			currentUser.set(platformUser(['intervene_runtime']));
+			await tick();
+			expect(approve.disabled).toBe(false);
+			expect(reject.disabled).toBe(false);
+		});
+
+		it('演示/未登录:审批按钮不禁用,tooltip 提示「审批身份未验证」', async () => {
+			currentUser.set(null);
+			const { ev } = await setupConnected();
+			ev(args2);
+			await tick();
+			const approve = screen.getByText('批准') as HTMLButtonElement;
+			expect(approve.disabled).toBe(false);
+			expect(approve.getAttribute('title')).toContain('审批身份未验证');
+		});
+
+		it('decideApproval:请求体透传 proposal_id + approver_token(取 netConfig authToken)', async () => {
+			setAuthToken('tok-abc');
+			const { stubs, ev } = await setupConnected();
+			ev(args2);
+			await tick();
+			fireEvent.click(screen.getByText('批准'));
+			await tick();
+			expect(stubs[0].approve).toHaveBeenCalledWith(true, {
+				proposal_id: 'prop_77',
+				approver_token: 'tok-abc'
+			});
+		});
+
+		it('ApprovalResult auto_rejected=true:呈现超时语义(卡片灰态+中栏「已超时·跳过」)', async () => {
+			const { container, ev } = await setupConnected();
+			ev(args2);
+			await tick();
+			ev({ type: 'ApprovalResult', tool_name: 'shell_exec', approved: false, auto_rejected: true });
+			await tick();
+			expect(screen.getByText('⏱ 已超时自动拒绝 · 续接会话可重试')).toBeTruthy();
+			const bd = container.querySelector('.mcol .te .bd') as HTMLElement;
+			expect(bd.classList.contains('skip')).toBe(true);
+			expect(bd.textContent).toContain('已超时·跳过');
+		});
+
+		it('memory_enabled=true:会话条目呈现「多轮记忆」徽标;缺省不呈现', async () => {
+			const { container, ev } = await setupConnected();
+			expect(container.querySelector('.sit .rb')).toBeNull();
+			ev({ type: 'SessionCreated', session_id: 's_mem', memory_enabled: true });
+			await tick();
+			expect(container.querySelector('.sit .rb')?.textContent).toBe('多轮记忆');
+		});
+
+		it('rewind 回执 actual_version:版本指针按服务端 Fact 版本修正', async () => {
+			const { container, stubs, ev } = await setupConnected();
+			ev({ type: 'SessionCreated', session_id: 's_av' });
+			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000 });
+			await tick();
+			fireEvent.click(container.querySelector('.btn-rw') as HTMLElement);
+			await tick();
+			expect(stubs[0].rewind).toHaveBeenCalledWith(1);
+			// actual_version(2)与消息内版本(1)不一致:以服务端 Fact 版本为准
+			ev({ type: 'Info', message: 'rewound to version 1', actual_version: 2 });
+			await tick();
+			const sit = container.querySelector('.sit') as HTMLElement;
+			expect(sit.querySelector('.m')?.textContent).toBe('general · v2');
+			expect(sit.querySelector('.rb')?.textContent).toBe('已回滚');
 		});
 	});
 
