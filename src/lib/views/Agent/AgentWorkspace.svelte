@@ -213,6 +213,20 @@
     if (logEl) logEl.scrollTop = logEl.scrollHeight;
   });
 
+  // === 接力 CTA(批1 整合):消费侧栏「转执行」带来的 ?handoff= 上下文 ===
+  // ?session= 深链同族(侧栏无 server 会话,携带最后话题文本)。一次性消费:
+  // 预填输入行即清地址栏参数,刷新不重灌;未启用时保留参数,启用后此 effect
+  // 随 enabled 变化重跑再消费。无选中会话先建本地草稿(输入行 disabled={!selected})。
+  $effect(() => {
+    if (!enabled) return;
+    const sp = new URLSearchParams(window.location.search);
+    const handoff = sp.get("handoff");
+    if (!handoff) return;
+    if (!selectedLocalId) newSession(t("agent.session.handoff"));
+    input = handoff;
+    window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+  });
+
   function pushItem(localId: string, item: ChatItem): void {
     // 注意:必须经 proxy 引用操作——`(transcripts[k] ??= []).push()` 会被编译改写致数据落入
     // 孤儿数组(实测 len=0);先判空赋值,再取 proxy 数组 push,变更才能被响应式追踪
@@ -650,8 +664,8 @@
     }
   }
 
-  function newSession(): void {
-    const s = createSession(selectedRole, t("agent.session.untitled"));
+  function newSession(title?: string): void {
+    const s = createSession(selectedRole, title ?? t("agent.session.untitled"));
     if (client) {
       client.close();
       client = null;
@@ -714,7 +728,7 @@
     <aside class="lcol" aria-label={t("agent.sessions")}>
       <div class="sec">
         <b>{t("agent.sessions")}</b>
-        <button class="mini" type="button" disabled={!configured} onclick={newSession}>
+        <button class="mini" type="button" disabled={!configured} onclick={() => newSession()}>
           {t("agent.newSession")}
         </button>
       </div>
@@ -766,6 +780,7 @@
     <section class="mcol" aria-label={t("agent.execution")}>
       <header class="mh">
         <b>{t("agent.execution")}</b>
+        <span class="chp">{t("agent.positionBadge")}</span>
         <span class="chp mono">{selected?.sessionId || t("agent.noSessionChip")}</span>
         <span class="chp mono">{selected ? selected.role : selectedRole}</span>
         <a class="mh-link" href={auditHref}>{t("agent.auditLink")}</a>
@@ -867,7 +882,7 @@
           <span class="emp-ic">＋</span>
           <b>{t("agent.empty.noSession.title")}</b>
           <p>{t("agent.empty.noSession.hint")}</p>
-          <button class="emp-cta" type="button" onclick={newSession}>
+          <button class="emp-cta" type="button" onclick={() => newSession()}>
             {t("agent.empty.noSession.cta")}
           </button>
         </div>

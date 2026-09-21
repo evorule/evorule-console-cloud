@@ -13,6 +13,8 @@
 -->
 
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { llmConfig, isLlmConfigured } from '$lib/config/llm-config';
 	import { callChatApiAudited } from '$lib/assistant/audited-llm';
 	import { EVORULE_RULE_SPEC } from '$lib/assistant/prompts';
@@ -96,12 +98,36 @@ ${EVORULE_RULE_SPEC}
 			void send();
 		}
 	}
+
+	// === 接力 CTA(整合方案批1,2026-09-20 裁定):「转执行」把当前话题转交编程 Agent ===
+	// 互斥后两面间唯一切换路径(?session= 深链范式;侧栏无 server 会话,携带
+	// 最后一条用户消息文本作上下文)。会话台经 ?handoff= 一次性消费预填输入行。
+	const hasHandoffCtx = $derived(
+		messages.some((m) => m.role === 'user') || input.trim().length > 0
+	);
+
+	function handoffToAgent(): void {
+		const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+		const ctx = lastUser?.content.trim() || input.trim();
+		if (!ctx) return;
+		void goto(`${base}/agent?handoff=${encodeURIComponent(ctx)}`);
+	}
 </script>
 
 <aside class="llm-sidebar">
 	<header class="llm-header">
-		<span class="llm-title">LLM 助手</span>
-		<button class="llm-clear" onclick={clear} title="清空对话">清空</button>
+		<span class="llm-title" title="规则助理(草稿笔) — 规则问答与草稿辅助,不执行编排">规则助理</span>
+		<div class="llm-actions">
+			<button
+				class="llm-handoff"
+				onclick={handoffToAgent}
+				disabled={!hasHandoffCtx}
+				title="把当前话题转交编程 Agent(会话台)执行"
+			>
+				转执行
+			</button>
+			<button class="llm-clear" onclick={clear} title="清空对话">清空</button>
+		</div>
 	</header>
 
 	<div class="llm-messages" bind:this={listEl}>
@@ -186,6 +212,28 @@ ${EVORULE_RULE_SPEC}
 	.llm-clear:hover {
 		background: var(--sidebar-hover);
 		color: #fff;
+	}
+
+	/* 接力 CTA(批1):互斥后两面间唯一切换路径,brand 色显性提示 */
+	.llm-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-xs);
+	}
+	.llm-handoff {
+		font-size: var(--fs-xs);
+		color: var(--brand);
+		padding: 2px var(--sp-sm);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--r-sm);
+		transition: background var(--tr-fast), color var(--tr-fast), opacity var(--tr-fast);
+	}
+	.llm-handoff:hover:not(:disabled) {
+		background: var(--bg-active);
+	}
+	.llm-handoff:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
 	}
 
 	.llm-messages {

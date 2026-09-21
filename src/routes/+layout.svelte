@@ -477,6 +477,11 @@
     };
   });
 
+  // === 互斥式并存(整合方案批1,2026-09-20 裁定):/agent 会话台激活时右 LLM 侧栏让位收起 ===
+  // 让位≠销毁:LlmChatSidebar 实例不经 {#if} 卸载(仅 CSS 让位),会话状态保留;
+  // 离开 /agent 即恢复常驻——互斥后两面间切换走接力 CTA(/agent 会话台)。
+  const agentRouteActive = $derived($page.url.pathname === `${base}/agent`);
+
   // 当前活动路由字符串,用于导航高亮
   function isActive(pathname: string): boolean {
     return $page.url.pathname === pathname && !showSettings;
@@ -784,20 +789,23 @@
       {/if}
     </main>
 
-    <!-- 右拖动分隔条 -->
+    <!-- 右拖动分隔条(互斥让位时随 rail 一并隐藏) -->
     <div
       class="resizer"
       class:dragging={draggingSide === "right"}
+      class:rail-yield={agentRouteActive}
       onpointerdown={(e) => startDrag("right", e)}
       role="separator"
       aria-orientation="vertical"
       aria-label="调整右侧栏宽度"
     ></div>
 
-    <!-- 右 LLM 交互侧栏(PR5:未配置时折叠窄条;PR10-重1:窄屏变抽屉) -->
+    <!-- 右 LLM 交互侧栏(PR5:未配置时折叠窄条;PR10-重1:窄屏变抽屉;
+         批1 互斥:/agent 页让位收起,组件保活状态不丢) -->
     <aside
       class="sidebar llm-rail {rightDrawerOpen ? 'drawer-open' : ''}"
-      style:width={`${llmConfigured ? rightWidth : LLM_COLLAPSED_W}px`}
+      class:rail-yield={agentRouteActive}
+      style:width={agentRouteActive ? undefined : `${llmConfigured ? rightWidth : LLM_COLLAPSED_W}px`}
     >
       {#if llmConfigured}
         <LlmChatSidebar />
@@ -872,6 +880,17 @@
     overflow: hidden;
     background: var(--sidebar-bg);
     border-left: 1px solid var(--border);
+  }
+
+  /* 互斥式并存(批1):/agent 页激活时右栏让位——宽 0 收起,组件保活(会话状态不丢);
+     恢复路径=路由切换(离开 /agent 即常驻),两面间显式切换走接力 CTA */
+  .llm-rail.rail-yield {
+    width: 0 !important;
+    min-width: 0;
+    border-left: none;
+  }
+  .resizer.rail-yield {
+    display: none;
   }
 
   /* 联网/离线切换 icon-btn 显示 emoji 时字号微调 */
@@ -1009,6 +1028,13 @@
     }
     .llm-rail.drawer-open {
       transform: translateX(0);
+    }
+
+    /* 窄屏抽屉制:让位态仅作用于桌面 rail;抽屉默认收起(translateX),
+       显式拉回即互斥语义的"可拉回",宽度与边框在此恢复 */
+    .llm-rail.rail-yield {
+      width: 320px !important;
+      border-left: 1px solid var(--border);
     }
 
     /* 抽屉模式不再可拖拽,隐藏分隔条 */
