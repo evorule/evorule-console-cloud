@@ -247,8 +247,10 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 		await typeAndSend(container, '写个参数校验模块');
 		await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalledWith('写个参数校验模块'));
 		await tick();
-		// 用户气泡 + 轮次进行中发送禁用
-		expect(container.querySelector('.msg.u')?.textContent).toBe('写个参数校验模块');
+		// 用户气泡 + 轮次进行中发送禁用(共享气泡结构:ChatBubble)
+		expect(container.querySelector('.chat-bubble.user .chat-bubble-body')?.textContent).toBe(
+			'写个参数校验模块'
+		);
 		const sendBtn = screen.getByText('发送') as HTMLButtonElement;
 		expect(sendBtn.disabled).toBe(true);
 		// 草稿首条消息回填标题
@@ -259,9 +261,9 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 		ev({ type: 'LlmDelta', text: '好的,' });
 		ev({ type: 'LlmDelta', text: '我来实现。' });
 		await tick();
-		const agentMsg = container.querySelector('.msg.a') as HTMLElement;
+		const agentMsg = container.querySelector('.chat-bubble.assistant .chat-bubble-body') as HTMLElement;
 		expect(agentMsg.textContent).toContain('好的,我来实现。');
-		expect(agentMsg.querySelector('.crt')).toBeTruthy(); // 流式光标
+		expect(agentMsg.querySelector('.chat-bubble-cursor')).toBeTruthy(); // 流式光标
 
 		ev({ type: 'ToolCall', name: 'file_read', args: { path: 'src/a.rs' } });
 		await tick();
@@ -278,7 +280,7 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 		ev({ type: 'SessionCreated', session_id: 'session_9f3a2c' });
 		ev({ type: 'Done', success: true, content: '', steps: 3, duration_ms: 4200 });
 		await tick();
-		expect(container.querySelector('.msg.a .crt')).toBeNull(); // 光标收起
+		expect(container.querySelector('.chat-bubble.assistant .chat-bubble-cursor')).toBeNull(); // 光标收起
 		// 汇总双呈现:右栏汇总行 + 中栏汇总条(同一文案)
 		expect(screen.getAllByText('✔ 本轮完成 · 3 步 · 耗时 4s').length).toBe(2);
 		expect(container.querySelector('.mcol .donebar')).toBeTruthy();
@@ -300,7 +302,7 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 		ev({ type: 'LlmDelta', text: '部分输出' });
 		ev({ type: 'Error', error: 'a turn is already active' });
 		await tick();
-		expect(container.querySelector('.msg.a .crt')).toBeNull();
+		expect(container.querySelector('.chat-bubble.assistant .chat-bubble-cursor')).toBeNull();
 		const errc = container.querySelector('.errc') as HTMLElement;
 		expect(errc.textContent).toContain('执行出错:a turn is already active');
 	});

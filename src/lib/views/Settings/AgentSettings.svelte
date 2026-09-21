@@ -22,6 +22,8 @@
 		resetAgentConfig,
 		isAgentConfigured,
 		testAgentConnection,
+		fetchAgentLlmStatus,
+		type AgentLlmStatus,
 		PASSPHRASE_MIN_LEN,
 		type AgentSummary,
 		type SaveAgentTokenError
@@ -35,6 +37,10 @@
 	let isTesting = $state(false);
 	let testResult = $state<{ ok: boolean; message: string; agents?: AgentSummary[] } | null>(null);
 	let actionMessage = $state<{ ok: boolean; text: string } | null>(null);
+	// LLM 配置状态卡(evo-agent 侧脱敏只读查询)
+	let isCheckingLlm = $state(false);
+	let llmStatus = $state<AgentLlmStatus | null>(null);
+	let llmStatusError = $state<string | null>(null);
 
 	// 同步 store 到本地输入
 	$effect(() => {
@@ -178,6 +184,20 @@
 			};
 		}
 	}
+
+	/** 查询 evo-agent 侧 LLM 配置状态(脱敏;未配置时给 .env 三件套指引) */
+	async function handleCheckLlm() {
+		isCheckingLlm = true;
+		llmStatus = null;
+		llmStatusError = null;
+		const result = await fetchAgentLlmStatus($agentConfig);
+		isCheckingLlm = false;
+		if (result.ok) {
+			llmStatus = result.status;
+		} else {
+			llmStatusError = t('settings.agent.llmStatus.fail', { message: result.message });
+		}
+	}
 </script>
 
 <section class="agent-settings">
@@ -307,6 +327,50 @@
 						<small class="agent-tools">{t('settings.agent.toolsCount', { count: a.tools.length })}</small>
 					</div>
 				{/each}
+			</div>
+		{/if}
+	{/if}
+
+	<!-- LLM 配置状态(evo-agent 侧脱敏只读;key 全值永不下发) -->
+	<div class="form-actions">
+		<button
+			class="btn btn-secondary"
+			onclick={handleCheckLlm}
+			disabled={isCheckingLlm || !isAgentConfigured($agentConfig)}
+		>
+			{isCheckingLlm ? t('common.testing') : t('settings.agent.llmStatus.btn')}
+		</button>
+	</div>
+
+	{#if llmStatusError}
+		<div class="alert alert-error">❌ {llmStatusError}</div>
+	{:else if llmStatus}
+		{#if llmStatus.configured}
+			<div class="llm-status-card ok">
+				<p class="status-title">✅ {t('settings.agent.llmStatus.okTitle')}</p>
+				<dl>
+					<dt>{t('settings.agent.llmStatus.provider')}</dt>
+					<dd><code>{llmStatus.provider}</code></dd>
+					<dt>{t('settings.agent.llmStatus.model')}</dt>
+					<dd><code>{llmStatus.model}</code></dd>
+					<dt>{t('settings.agent.llmStatus.apiBase')}</dt>
+					<dd><code>{llmStatus.api_base}</code></dd>
+					<dt>{t('settings.agent.llmStatus.keyPresent')}</dt>
+					<dd>
+						✓ {llmStatus.api_key.hint
+							? t('settings.agent.llmStatus.keyHint', { hint: llmStatus.api_key.hint })
+							: t('settings.agent.llmStatus.keyYes')}
+						{#if llmStatus.api_key.source}
+							<span class="key-source">{t('settings.agent.llmStatus.keySource', { source: llmStatus.api_key.source })}</span>
+						{/if}
+					</dd>
+				</dl>
+			</div>
+		{:else}
+			<div class="llm-status-card missing">
+				<p class="status-title warn">⚠ {t('settings.agent.llmStatus.notConfiguredTitle')}</p>
+				<p class="status-hint">{t('settings.agent.llmStatus.notConfiguredHint')}</p>
+				<pre class="env-sample">{t('settings.agent.llmStatus.envSample')}</pre>
 			</div>
 		{/if}
 	{/if}
@@ -514,5 +578,71 @@
 		background: var(--border);
 		padding: 0 var(--spacing-xs);
 		border-radius: var(--radius-sm);
+	}
+	.llm-status-card {
+		margin: var(--spacing-sm) 0 var(--spacing-md);
+		padding: var(--spacing-md);
+		background: var(--bg-hover);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+	}
+	.llm-status-card.ok {
+		border-color: var(--success);
+	}
+	.llm-status-card.missing {
+		border-color: var(--warning);
+	}
+	.status-title {
+		margin: 0 0 var(--spacing-sm);
+		font-size: var(--text-sm);
+		font-weight: 600;
+		color: var(--success);
+	}
+	.status-title.warn {
+		color: var(--warning);
+	}
+	.status-hint {
+		margin: 0 0 var(--spacing-sm);
+		font-size: var(--text-xs);
+		color: var(--text-secondary);
+		line-height: 1.5;
+	}
+	.llm-status-card dl {
+		margin: 0;
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: var(--spacing-xs) var(--spacing-md);
+		font-size: var(--text-sm);
+	}
+	.llm-status-card dt {
+		font-weight: 500;
+		color: var(--text-secondary);
+	}
+	.llm-status-card dd {
+		margin: 0;
+		color: var(--text-primary);
+		overflow-wrap: anywhere;
+	}
+	.llm-status-card code {
+		font-family: var(--font-mono);
+		background: var(--border);
+		padding: 0 var(--spacing-xs);
+		border-radius: var(--radius-sm);
+	}
+	.key-source {
+		margin-left: var(--spacing-sm);
+		color: var(--text-secondary);
+	}
+	.env-sample {
+		margin: 0;
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: var(--bg-page);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--text-primary);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 </style>

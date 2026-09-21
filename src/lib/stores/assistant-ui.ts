@@ -30,6 +30,27 @@ export const activeAssistantDialog = writable<AssistantDialogType | null>(null);
  */
 export const pendingInstructionDraft = writable<string | null>(null);
 
+/** 外部预填草稿(Agent 会话台「转规则草稿」一次性投递) */
+export interface PendingExternalDraft {
+	/** 规则草案 JSON 文本(已格式化) */
+	draft: string;
+	/** 来源摘要(来自 agent 消息,采用时用作规则描述) */
+	description: string;
+}
+
+/**
+ * 待预填入 DraftRuleDialog 的外部草稿(会话台「转规则草稿」桥)。
+ * null = 无;AgentWorkspace 写入 → 打开 draft Dialog → Dialog 挂载时一次性
+ * 消费并清空(信箱语义,与 pendingInstructionDraft 同款)。
+ * 走既有校验+人审采用链,agent 不直接入库。
+ */
+export const pendingExternalDraft = writable<PendingExternalDraft | null>(null);
+
+/** DraftRuleDialog 消费外部草稿后清空信箱 */
+export function clearPendingExternalDraft(): void {
+	pendingExternalDraft.set(null);
+}
+
 /** 打开指定 Dialog(若已打开其他 Dialog,先关闭) */
 export function openAssistantDialog(type: AssistantDialogType): void {
 	activeAssistantDialog.set(type);
