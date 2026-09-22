@@ -99,7 +99,7 @@ export interface ValidationResult {
 }
 
 // 公开白名单 4 元指令(权威源 evorule-tcb/src/executor.rs dispatch;_shared L166)
-// collect/merge 已退役（2026-09-14 清理）；enforce 仅 tier=meta 文件,业务文件由 server 装载门禁拒载
+// collect/merge 已退役（2026-09-14 清理）；enforce 仅 L2 层级文件（00_constraint_ 新前缀/00_meta_ 旧兼容 + L2 tier 声明）,业务文件由 server 装载门禁拒载
 const VALID_META_INSTRUCTIONS = ['set', 'push', 'branch', 'io_request'];
 // 7 基础域类型(权威源 evorule-tcb/src/domain.rs;_shared L30,派生域不在枚举内)
 const VALID_DOMAIN_TYPES = ['eq', 'lt', 'exists', 'instruction', 'all', 'not', 'has_fields'];
