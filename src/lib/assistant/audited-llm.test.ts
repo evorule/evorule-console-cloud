@@ -93,6 +93,7 @@ function mountSidecarMocks(opts: {
 	createSessionStatus?: number;
 }) {
 	const calls = {
+		sessionBodies: [] as unknown[],
 		commandBodies: [] as Array<{ instruction: { type: string; params: Record<string, unknown> } }>,
 		ioResponseBodies: [] as Array<{ request_id: number; result: unknown; error: string | null }>,
 		llmBodies: [] as unknown[]
@@ -100,6 +101,7 @@ function mountSidecarMocks(opts: {
 	mockFetch.mockImplementation(async (url: string, init?: RequestInit) => {
 		const method = (init?.method ?? 'GET').toUpperCase();
 		if (url === `${SERVER_BASE}/api/sessions` && method === 'POST') {
+			calls.sessionBodies.push(JSON.parse(String(init?.body)));
 			if (opts.createSessionStatus !== undefined) {
 				return {
 					ok: false,
@@ -307,6 +309,16 @@ describe('审计桥 happy path', () => {
 			result: { content: '好的,这是回复' },
 			error: null
 		});
+	});
+
+	test('create_session 请求体声明 caller_role=llm（O-185：会话主体=LLM 执行）', async () => {
+		const calls = mountSidecarMocks({
+			sseEvents: [{ type: 'IoRequest', id: 5, io_type: 'call_external' }, { type: 'Stable' }]
+		});
+
+		await callChatApiAudited({ ...BASE_PARAMS, auditPurpose: 'draft_rule' });
+
+		expect(calls.sessionBodies).toEqual([{ caller_role: 'llm' }]);
 	});
 
 	test('多轮 history 进命令事实(审计内容与真实请求一致)', async () => {

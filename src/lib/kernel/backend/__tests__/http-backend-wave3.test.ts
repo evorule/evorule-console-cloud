@@ -383,3 +383,20 @@ describe("W1 HttpBackend - 共享事实", () => {
 		expect(url).toBe(`${BASE}/api/shared/facts/version`);
 	});
 });
+
+// ============ O-185:会话创建主体声明 ============
+
+describe("W1 HttpBackend - createSession 主体声明", () => {
+	test("createSession:POST /api/sessions,body 声明 caller_role=human(人驱动语义)", async () => {
+		const fetchMock = mockFetchJson({ session_id: 7, message: "Session created" });
+		const backend = new HttpBackend(BASE);
+
+		const id = await backend.createSession();
+
+		expect(id).toBe(7);
+		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+		expect(url).toBe(`${BASE}/api/sessions`);
+		expect(init.method).toBe("POST");
+		expect(JSON.parse(String(init.body))).toEqual({ caller_role: "human" });
+	});
+});

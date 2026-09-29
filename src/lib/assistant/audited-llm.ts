@@ -161,12 +161,13 @@ export async function callChatApiAudited(
 	const headers = buildHeaders();
 	const wait = SIDECAR_WAIT_TIMEOUT_MS;
 
-	// 1. 一次性 sidecar 会话
+	// 1. 一次性 sidecar 会话（声明 llm：会话内执行主体是 LLM 审计调用，
+	//    服务端按声明走权限判定；未声明将 fail-closed Unknown → Deny）
 	let sessionId = '';
 	try {
 		const r = await fetchWithTimeout(
 			`${base}/api/sessions`,
-			{ method: 'POST', headers, body: '{}' },
+			{ method: 'POST', headers, body: JSON.stringify({ caller_role: 'llm' }) },
 			wait,
 			'create_session'
 		);

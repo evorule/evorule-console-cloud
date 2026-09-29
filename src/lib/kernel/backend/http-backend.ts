@@ -213,11 +213,15 @@ export class HttpBackend implements ExecutionBackend {
    * C1 修复(2026-08-03):对齐 INTEGRATION_GUIDE §2.1,server 返回
    *   { session_id: number, message: string },字段名是 session_id(不是 id)。
    *   保留对裸数字 / {id} 的兜底以兼容其他实现。
+   *
+   * 声明 human:kernel 会话是规则编辑/执行台人驱动语义(O-185);
+   *   服务端登记后按声明走权限判定,未声明将 fail-closed Unknown → Deny。
    */
   async createSession(): Promise<SessionId> {
     const r = await fetch(`${this.baseUrl}/api/sessions`, {
       method: 'POST',
-      headers: this.headers()
+      headers: this.headers(),
+      body: JSON.stringify({ caller_role: 'human' })
     });
     if (!r.ok) {
       throw new HttpBackendError(`createSession failed: ${r.status}`, r.status, '/api/sessions');
