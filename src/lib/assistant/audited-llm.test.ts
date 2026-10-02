@@ -311,7 +311,7 @@ describe('审计桥 happy path', () => {
 		});
 	});
 
-	test('create_session 请求体声明 caller_role=llm（O-185：会话主体=LLM 执行）', async () => {
+	test('create_session 请求体声明 caller_role=llm（会话主体=LLM 执行）', async () => {
 		const calls = mountSidecarMocks({
 			sseEvents: [{ type: 'IoRequest', id: 5, io_type: 'call_external' }, { type: 'Stable' }]
 		});

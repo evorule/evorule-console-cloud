@@ -135,7 +135,10 @@ export async function createWorkspaceSession(
     const record = await wsBackend.createWorkspaceSession(workspaceId, {
       rule_id: ruleId,
       rule_version_id: ruleVersionId,
-      created_by: 'console'
+      created_by: 'console',
+      // 人驱动规则会话声明 human：服务端登记后按声明走权限判定，
+      // 未声明将 fail-closed Unknown → Deny
+      caller_role: 'human'
     });
 
     // SessionRecord.id 即 evorule runtime session id(server 端联动创建)

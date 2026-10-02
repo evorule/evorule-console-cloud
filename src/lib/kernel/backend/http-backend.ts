@@ -214,7 +214,7 @@ export class HttpBackend implements ExecutionBackend {
    *   { session_id: number, message: string },字段名是 session_id(不是 id)。
    *   保留对裸数字 / {id} 的兜底以兼容其他实现。
    *
-   * 声明 human:kernel 会话是规则编辑/执行台人驱动语义(O-185);
+   * 声明 human:kernel 会话是规则编辑/执行台人驱动语义;
    *   服务端登记后按声明走权限判定,未声明将 fail-closed Unknown → Deny。
    */
   async createSession(): Promise<SessionId> {
