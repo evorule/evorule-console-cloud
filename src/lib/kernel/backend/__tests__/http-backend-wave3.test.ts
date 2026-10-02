@@ -384,7 +384,7 @@ describe("W1 HttpBackend - 共享事实", () => {
 	});
 });
 
-// ============ O-185:会话创建主体声明 ============
+// ============ 会话创建主体声明 ============
 
 describe("W1 HttpBackend - createSession 主体声明", () => {
 	test("createSession:POST /api/sessions,body 声明 caller_role=human(人驱动语义)", async () => {

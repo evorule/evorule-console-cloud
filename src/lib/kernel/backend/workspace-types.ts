@@ -293,6 +293,9 @@ export interface CreateSessionRequest {
   rule_id?: string;
   rule_version_id?: string;
   created_by: string;
+  /** 可选会话主体声明（"human" | "llm"）：登记后命令入口注入 __meta__.caller_role，
+   * 权限门按声明判定；缺省不声明 = fail-closed 默认策略（零回归）。 */
+  caller_role?: string;
 }
 
 /** 启动沙盒测试请求 */
