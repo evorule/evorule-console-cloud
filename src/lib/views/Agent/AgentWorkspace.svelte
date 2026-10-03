@@ -516,7 +516,14 @@
           tr.push({ kind: "summary", text: t("agent.sys.turnDone", { steps: e.steps, sec }) });
           turnSummaries[lid] = { steps: e.steps, sec };
         }
-        advanceSessionVersion(lid);
+        // 每轮权威校正(2026-10-03): Done 回执携 actual_version(服务端 Fact 版本)
+        // 时权威校正本地指针(漂移窗口清零);旧服务端/查询失败缺省时回落
+        // advanceSessionVersion 轮次近似 +1(容错,行为同前)。
+        if (typeof e.actual_version === "number") {
+          updateSessionVersion(lid, e.actual_version);
+        } else {
+          advanceSessionVersion(lid);
+        }
         turnRunning = false;
         touchSession(lid);
         break;
