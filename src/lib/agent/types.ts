@@ -74,6 +74,8 @@ export interface DoneEvent {
 	duration_ms: number;
 	/** 用户中断标记(evo-agent AgentResult.cancelled;旧载荷缺省视为 false) */
 	cancelled?: boolean;
+	/** 服务端 Fact 版本(每轮权威校正本地指针;查询失败/旧服务端缺省 undefined,客户端回落轮次近似) */
+	actual_version?: number;
 }
 
 /** 错误(含服务端语义报错,如「a turn is already active」→ UI 层转译提示) */
