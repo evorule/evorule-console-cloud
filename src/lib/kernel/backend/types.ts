@@ -413,6 +413,26 @@ export interface KnowledgeEntryRecord {
   /** 领域分类(manifest 携带;旧 manifest → 空串) */
   domain: string;
   tags: string[];
+  /** 知识五分法谱系 fact/procedure/heuristic/narrative/model/custom:{name}(A 批;旧 manifest → 缺省) */
+  knowledge_kind?: string | null;
+  /** 来源信任级 human | llm | external:{source}(旧 manifest → 缺省) */
+  trust_level?: string | null;
+  /** 许可证域引用(external 信任级必带;旧 manifest → 缺省) */
+  license_ref?: string | null;
+  /** 运行契约(A 批仅字段流通;行为约束在治理侧批次 B 落地;旧 manifest → 缺省) */
+  execution_contract?: ExecutionContractView | null;
+}
+
+/** 运行契约(对齐 evorule-server ExecutionContractView) */
+export interface ExecutionContractView {
+  /** 运行通路:direct(机器直行)| injection(检索注入)| criterion(判据评估) */
+  pathway: string;
+  /** 判据引用(heuristic/model 类知识行权必填) */
+  criterion_ref?: string | null;
+  /** 消费面白名单(缺省 ["*"] 全放行) */
+  consumer_allowlist: string[];
+  /** 消费预算类 */
+  budget_class: string;
 }
 
 /** GET /api/knowledge 响应 */

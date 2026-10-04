@@ -141,6 +141,27 @@ export interface AddKnowledgeEntryRequest {
 	/** 领域 JSON Schema 引用（D3 强校验锚） */
 	schema_ref: string;
 	provenance?: GovernanceProvenanceInput;
+	/** 知识五分法谱系 fact/procedure/heuristic/narrative/model/custom:{name}（A 批入账闸校验；缺省=旧通路） */
+	knowledge_kind?: string;
+	/** 来源信任级 human | llm | external:{source} */
+	trust_level?: string;
+	/** 许可证域引用（external 信任级必带，入账闸强制） */
+	license_ref?: string;
+	/** 运行契约（A 批仅字段流通；行为约束在批次 B 落地） */
+	execution_contract?: GovernanceExecutionContract;
+}
+
+/**
+ * 运行契约输入形状（对齐 evorule-bundle ExecutionContract serde）
+ *
+ * 机器验壳不验核：pathway ∈ direct|injection|criterion；heuristic/model 类
+ * 行权须带 criterion_ref（入账闸校验）；allowlist 缺省全放行。
+ */
+export interface GovernanceExecutionContract {
+	pathway: string;
+	criterion_ref?: string | null;
+	consumer_allowlist?: string[];
+	budget_class?: string;
 }
 
 /**
@@ -197,6 +218,14 @@ export interface KnowledgeEntry {
 	/** 领域 JSON Schema 引用 URI（D3） */
 	schema_ref: string;
 	governance?: unknown;
+	/** 知识五分法谱系（A 批；存量条目/旧格式 → 缺省） */
+	knowledge_kind?: string | null;
+	/** 来源信任级 human | llm | external:{source}（存量条目/旧格式 → 缺省） */
+	trust_level?: string | null;
+	/** 许可证域引用（external 信任级必带；存量条目/旧格式 → 缺省） */
+	license_ref?: string | null;
+	/** 运行契约（A 批字段流通；存量条目/旧格式 → 缺省） */
+	execution_contract?: GovernanceExecutionContract | null;
 	[key: string]: unknown;
 }
 
