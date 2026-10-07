@@ -24,7 +24,7 @@ export interface AgentSession {
 	title: string;
 	role: string;
 	status: AgentSessionStatus;
-	/** 工作区版本指针(初始 1;每完成一轮 +1 的轮次近似口径,rewind 回执以 actual_version 权威修正) */
+	/** 工作区版本指针(初始 1;纯回执驱动投影——唯一写入口 updateSessionVersion,服务端 Fact 版本为准) */
 	version: number;
 	/** 会话是否执行过回滚(左栏「已回滚」角标;回滚成功后置位,持久留存) */
 	rolledBack: boolean;
@@ -141,19 +141,10 @@ export function touchSession(localId: string): void {
 	);
 }
 
-/** 版本指针 +1(每完成一轮 Done 调用;轮次近似口径,回滚前后一致递推) */
-export function advanceSessionVersion(localId: string): void {
-	agentSessions.update((list) =>
-		list.map((s) =>
-			s.localId === localId ? { ...s, version: s.version + 1, updatedAt: Date.now() } : s
-		)
-	);
-}
-
 /**
- * 版本指针权威修正(rewind 回执 actual_version;服务端 Fact 版本为准)。
- * 与 advanceSessionVersion 的每轮 +1 轮次近似口径相区分:回执携带的
- * actual_version 可能与请求目标版本不一致,以此处为权威。
+ * 版本指针唯一写入口(服务端回执驱动投影):rewind/Done 回执携带的
+ * actual_version(服务端 Fact 版本)为唯一权威来源——本地不存在第二
+ * 独立可写位,回执缺省时指针保持原值(宁可暂旧,不做本地近似递推)。
  */
 export function updateSessionVersion(localId: string, actualVersion: number): void {
 	agentSessions.update((list) =>
