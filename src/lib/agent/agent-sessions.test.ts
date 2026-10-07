@@ -66,26 +66,26 @@ describe('agent-sessions — 会话生命周期', () => {
 		expect(persisted[0].status).toBe('disconnected');
 	});
 
-	it('advanceSessionVersion:每轮 Done 版本指针 +1 并落盘', async () => {
-		const { createSession, advanceSessionVersion, agentSessions } = await fresh();
+	it('版本指针纯回执驱动:本地无递推写入口,仅 updateSessionVersion 可移动', async () => {
+		const { createSession, updateSessionVersion, agentSessions } = await fresh();
 		const s = createSession('general', '推进');
-		advanceSessionVersion(s.localId);
-		advanceSessionVersion(s.localId);
+		// 回执缺省时指针保持原值(宁可暂旧,不产第二可写位)
+		const [before] = get(agentSessions);
+		expect(before.version).toBe(1);
+		// 唯一写入口=服务端回执权威修正
+		updateSessionVersion(s.localId, 5);
 		const [item] = get(agentSessions);
-		expect(item.version).toBe(3);
+		expect(item.version).toBe(5);
 		const persisted = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as Array<{
 			version: number;
 		}>;
-		expect(persisted[0].version).toBe(3);
+		expect(persisted[0].version).toBe(5);
 	});
 
 	it('updateSessionVersion:版本指针权威修正(rewind 回执 actual_version)并落盘', async () => {
-		const { createSession, advanceSessionVersion, updateSessionVersion, agentSessions } =
-			await fresh();
+		const { createSession, updateSessionVersion, agentSessions } = await fresh();
 		const s = createSession('general', '回滚');
-		advanceSessionVersion(s.localId);
-		advanceSessionVersion(s.localId);
-		// 服务端 actual_version 与本地轮次近似指针不一致时,以服务端 Fact 版本为准
+		// 服务端 actual_version 为唯一权威来源(初始指针 1 → 修正为 3)
 		updateSessionVersion(s.localId, 3);
 		const [item] = get(agentSessions);
 		expect(item.version).toBe(3);

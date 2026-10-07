@@ -20,7 +20,6 @@
   import { base } from "$app/paths";
   import { agentConfig, isAgentConfigured } from "$lib/config/agent-config";
   import {
-    advanceSessionVersion,
     agentSessions,
     attachSessionId,
     createSession,
@@ -516,13 +515,11 @@
           tr.push({ kind: "summary", text: t("agent.sys.turnDone", { steps: e.steps, sec }) });
           turnSummaries[lid] = { steps: e.steps, sec };
         }
-        // 每轮权威校正(2026-10-03): Done 回执携 actual_version(服务端 Fact 版本)
-        // 时权威校正本地指针(漂移窗口清零);旧服务端/查询失败缺省时回落
-        // advanceSessionVersion 轮次近似 +1(容错,行为同前)。
+        // 每轮权威校正: Done 回执携 actual_version(服务端 Fact 版本)时
+        // 权威修正本地指针。版本指针为纯回执驱动投影——回执缺省(旧服务端/
+        // 查询失败)时保持原值不本地递推(宁可暂旧,不产第二可写位)。
         if (typeof e.actual_version === "number") {
           updateSessionVersion(lid, e.actual_version);
-        } else {
-          advanceSessionVersion(lid);
         }
         turnRunning = false;
         touchSession(lid);

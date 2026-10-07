@@ -278,7 +278,7 @@ describe('AgentWorkspace — 发送与流式渲染', () => {
 		expect(chip.classList.contains('hl')).toBe(false);
 
 		ev({ type: 'SessionCreated', session_id: 'session_9f3a2c' });
-		ev({ type: 'Done', success: true, content: '', steps: 3, duration_ms: 4200 });
+		ev({ type: 'Done', success: true, content: '', steps: 3, duration_ms: 4200, actual_version: 2 });
 		await tick();
 		expect(container.querySelector('.chat-bubble.assistant .chat-bubble-cursor')).toBeNull(); // 光标收起
 		// 汇总双呈现:右栏汇总行 + 中栏汇总条(同一文案)
@@ -551,7 +551,7 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 		it('rewind 回执 actual_version:版本指针按服务端 Fact 版本修正', async () => {
 			const { container, stubs, ev } = await setupConnected();
 			ev({ type: 'SessionCreated', session_id: 's_av' });
-			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000 });
+			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000, actual_version: 2 });
 			await tick();
 			fireEvent.click(container.querySelector('.btn-rw') as HTMLElement);
 			await tick();
@@ -585,7 +585,7 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			expect(container.querySelector('.errc')).toBeNull();
 			// Done(cancelled) 权威收敛:中断卡 + 时间线已停止 + 版本照常 +1 → 回滚条出现
 			ev({ type: 'SessionCreated', session_id: 'session_stop' });
-			ev({ type: 'Done', success: false, content: '', steps: 2, duration_ms: 2000, cancelled: true });
+			ev({ type: 'Done', success: false, content: '', steps: 2, duration_ms: 2000, cancelled: true, actual_version: 2 });
 			await tick();
 			const intc = container.querySelector('.intc') as HTMLElement;
 			expect(intc.textContent).toContain('已中断');
@@ -603,7 +603,7 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			const { container, stubs, ev } = await setupConnected();
 			ev({ type: 'ToolCall', name: 'file_read', args: { path: 'src/a.rs' } });
 			ev({ type: 'SessionCreated', session_id: 'session_rw' });
-			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000 });
+			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000, actual_version: 2 });
 			await tick();
 			expect(container.querySelector('.mcol .te')).toBeTruthy(); // 待回滚时间线
 			fireEvent.click(container.querySelector('.btn-rw') as HTMLElement);
@@ -611,7 +611,7 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 			expect(stubs[0].rewind).toHaveBeenCalledWith(1);
 			// 送达防抖:服务端回执前回滚键禁用
 			expect((container.querySelector('.btn-rw') as HTMLButtonElement).disabled).toBe(true);
-			ev({ type: 'Info', message: 'rewound to version 1' });
+			ev({ type: 'Info', message: 'rewound to version 1', actual_version: 1 });
 			await tick();
 			expect(screen.getByText('✔ 已回滚到 v1 · 时间线已重建,后续对话基于 v1 继续')).toBeTruthy();
 			expect(container.querySelector('.mcol .te')).toBeNull(); // 时间线重建
@@ -623,7 +623,7 @@ describe('AgentWorkspace — 刷新恢复(续接)', () => {
 		it('活跃轮次:回滚键禁用并提示先停止;chips 为当前版之前降序', async () => {
 			const { container, stubs, ev } = await setupConnected();
 			ev({ type: 'SessionCreated', session_id: 'session_x' });
-			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000 });
+			ev({ type: 'Done', success: true, content: '', steps: 1, duration_ms: 1000, actual_version: 2 });
 			await tick();
 			expect(
 				Array.from(container.querySelectorAll('.vch')).map((c) => c.textContent?.trim())
