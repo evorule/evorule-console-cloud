@@ -41,35 +41,39 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		await expect(page.locator('.brand-cloud')).toHaveText('console-cloud');
 	});
 
-	test('侧栏导航包含 17 项(home 2 + 分析视图 5 + discover 3 + 治理协作 6 + 设置),标签正确', async ({
+	test('侧栏导航包含 20 项(home 3 + 分析视图 5 + discover 4 + 治理协作 7 + 设置),标签正确', async ({
 		page
 	}) => {
-		// 侧栏分组重构后(适配,W3 增权限策略,W5 增知识库):
-		// home 组(总览/监控) + 分析视图组(5 内核视图) + discover 组(市场/知识库/帮助)
-		// + 治理与协作组(导出/发布队列/版本历史/审计记录/治理中心/权限策略;it 角色无 view_users/manage_roles → 用户/角色管理隐藏)
-		// + 设置 = 17 项
+		// 实况对齐(2026-10-11 模板渲染批重校):home 组(总览/监控/流程) + 分析视图组(5 内核视图)
+		// + discover 组(市场/模板渲染/知识库/帮助) + 治理与协作组(导出/发布队列/插件审批/版本历史/审计记录/治理中心/权限策略;
+		// admin 演示身份无 view_users/manage_roles/manage_apps → 用户/角色/应用管理隐藏) + 设置 = 20 项
+		// (旧断言「17 项」自 flow/plugin-approvals 加入注册表后未同步,与实况漂移,本批顺手修正;
+		//  i18n nav.* 缺 key 显示原始 key 的 O-025 同批闭环——五 key 补齐后断言按中文名匹配)
 		const items = page.locator('.sidebar-item .nav-label');
-		await expect(items).toHaveCount(17);
-		// home 组 2 项
+		await expect(items).toHaveCount(20);
+		// home 组 3 项
 		await expect(items.nth(0)).toHaveText('总览');
 		await expect(items.nth(1)).toHaveText('监控');
+		await expect(items.nth(2)).toHaveText('流程');
 		// 分析视图组 5 项(内核视图)
 		for (let i = 0; i < VIEW_TABS.length; i++) {
-			await expect(items.nth(2 + i)).toHaveText(VIEW_TABS[i]);
+			await expect(items.nth(3 + i)).toHaveText(VIEW_TABS[i]);
 		}
-		// discover 组 3 项
-		await expect(items.nth(7)).toHaveText('市场');
-		await expect(items.nth(8)).toHaveText('知识库');
-		await expect(items.nth(9)).toHaveText('帮助');
-		// 治理与协作组 6 项
-		await expect(items.nth(10)).toHaveText('导出');
-		await expect(items.nth(11)).toHaveText('发布队列');
-		await expect(items.nth(12)).toHaveText('版本历史');
-		await expect(items.nth(13)).toHaveText('审计记录');
-		await expect(items.nth(14)).toHaveText('治理中心');
-		await expect(items.nth(15)).toHaveText('权限策略');
+		// discover 组 4 项
+		await expect(items.nth(8)).toHaveText('市场');
+		await expect(items.nth(9)).toHaveText('模板渲染');
+		await expect(items.nth(10)).toHaveText('知识库');
+		await expect(items.nth(11)).toHaveText('帮助');
+		// 治理与协作组 7 项
+		await expect(items.nth(12)).toHaveText('导出');
+		await expect(items.nth(13)).toHaveText('部署审批');
+		await expect(items.nth(14)).toHaveText('插件审批');
+		await expect(items.nth(15)).toHaveText('版本历史');
+		await expect(items.nth(16)).toHaveText('审计记录');
+		await expect(items.nth(17)).toHaveText('治理中心');
+		await expect(items.nth(18)).toHaveText('权限策略');
 		// 设置
-		await expect(items.nth(16)).toHaveText('设置');
+		await expect(items.nth(19)).toHaveText('设置');
 	});
 
 	test('设置项在侧栏底部(独立 section,不属于内核 5 视图)', async ({ page }) => {

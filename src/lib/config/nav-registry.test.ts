@@ -110,10 +110,15 @@ describe('featureFlag 门控(agent ← agentConfig.enabled)', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('四组归位:home 4(总览/监控/流程/Agent 会话)/ discover 3 / governance 10', () => {
+	it('四组归位:home 4(总览/监控/流程/Agent 会话)/ discover 4(市场/模板渲染/知识库/帮助)/ governance 10', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor', 'flow', 'agent']);
-		expect(g.discover.map((i) => i.id)).toEqual(['marketplace', 'knowledge', 'help']);
+		expect(g.discover.map((i) => i.id)).toEqual([
+			'marketplace',
+			'template-render',
+			'knowledge',
+			'help',
+		]);
 		expect(g.governance).toHaveLength(10);
 	});
 

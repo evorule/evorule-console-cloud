@@ -60,6 +60,7 @@ export const load: LayoutLoad = ({ url }) => {
 		url.pathname === '/import-export' ||
 		url.pathname === '/marketplace' ||
 		url.pathname === '/flow' ||
+		url.pathname === '/template-render' ||
 		url.pathname.startsWith('/view/')
 	) {
 		if (!session.loggedIn) {
