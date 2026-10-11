@@ -566,4 +566,7 @@ export const messagesEn: Dict = {
   "err.INTERNAL_ERROR": "Internal server error. Please retry later.",
   "err.BAD_GATEWAY": "Upstream service returned an invalid response. Please retry later.",
   "err.SERVICE_UNAVAILABLE": "Service temporarily unavailable. Please retry later.",
+  // === Command verdict codes (wait=true window: interception / timeout fallback) ===
+  "err.RULE_VIOLATION": "The command failed governance rule validation and was intercepted.",
+  "err.WAIT_TIMEOUT": "The verdict wait window timed out; the command continues in the background. Please check the result later.",
 };
