@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+### 🆕 新增
+
+- **模板渲染调试器（template-services 消费面）** — 新增 `/template-render` 独立页面：模板 + 上下文 JSON + 输出格式（text/markdown/json）在线调试,调用 evorule-server `POST /api/templates/render`（fail-fast 400 带 1 基行列诊断,错误原样透传）,产物一键复制；内置 `{{user.name}}` 插值与 `{{#each}}` 语法速查。导航挂 discover 组（登录可见）,命令面板/跳单卡经 nav-registry 单一事实源自动同步
+
+### 🔧 技术细节
+
+- `TemplatesClient` 仿 plugin-packs 惯例：baseUrl 尾斜杠归一化 + Bearer 条件注入 + 统一错误类型（TemplatesError 带 status/endpoint）
+- i18n 补齐 5 个缺失的 kebab 命名导航键（nav.flow/publish-queue/plugin-approvals/version-history/audit-log）,侧栏不再显示原始 key；导航 e2e 断言按实况重校为 20 项
+- 渲染为确定性纯函数:同入同出,不落库、不产生审计副作用
+
 ### 🗑 移除
 
 - **deploy-gitee.yml 流水线删除（Gitee Pages 停服终审，2026-09-15）** — Gitee Pages 平台服务已停服（官方答复「该功能已下线」；管理入口 / 站点域名 / 帮助文档均 404，四条独立证据见 设计文档《双平台部署与离线缓存配置说明》§6），该流水线永远无法成功，仅持续产生红色流水线噪音。README 中失效的 Gitee Pages 镜像启用指引同批清理（在线入口只保留 GitHub Pages）；历史版本条目保留原文并加停服标注。国内访问替代方案按 设计文档 §6.5 另行承接

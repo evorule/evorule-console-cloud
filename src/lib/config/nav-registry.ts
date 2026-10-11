@@ -104,6 +104,16 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     lockHint: "需登录后使用市场(演示登录亦可)",
   },
   {
+    id: "template-render",
+    label: "模板渲染",
+    icon: "🧾",
+    path: "/template-render",
+    group: "discover",
+    title: "模板渲染 — 确定性模板调试器:上下文+模板→JSON/Markdown/文本(同输入同输出,纯函数不落库)",
+    // 与页面守卫(routes/+layout.ts /template-render)同口径:渲染端点走 server 统一认证
+    loginRequired: true,
+  },
+  {
     id: "knowledge",
     label: "知识库",
     icon: "📚",
