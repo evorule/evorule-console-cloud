@@ -566,4 +566,7 @@ export const messagesZh: Dict = {
   "err.INTERNAL_ERROR": "服务内部错误，请稍后重试。",
   "err.BAD_GATEWAY": "上游服务响应异常，请稍后重试。",
   "err.SERVICE_UNAVAILABLE": "服务暂时不可用，请稍后重试。",
+  // === 命令裁决码（wait=true 等待窗口: 拦截 / 超时降级） ===
+  "err.RULE_VIOLATION": "指令未通过治理规则校验，已被拦截。",
+  "err.WAIT_TIMEOUT": "等待裁决窗口超时，指令已转后台继续执行，请稍后查询结果。",
 };
