@@ -35,6 +35,8 @@
   import MarketplaceCard from "../Marketplace/MarketplaceCard.svelte";
   import RulesetImporter from "../Marketplace/RulesetImporter.svelte";
   import OfficialAssetsSection from "../Marketplace/OfficialAssetsSection.svelte";
+  import PluginSection from "../Marketplace/PluginSection.svelte";
+  import { loadPlugins } from "$lib/stores/marketplace-plugins";
   import { toastSuccess, toastError } from "$lib/stores/toast";
   import {
     refreshOfficialAssets,
@@ -44,12 +46,17 @@
   import { page } from "$app/stores";
 
   /** 分区视图:模板(既有) | 官方资产(治理中心公开+已上架数据集,历史批次接线专项) */
-  type MarketViewMode = "templates" | "official";
+  type MarketViewMode = "templates" | "official" | "plugins";
   let viewMode = $state<MarketViewMode>("templates");
 
   function switchView(mode: MarketViewMode): void {
     viewMode = mode;
-    if (mode === "official" && get(governanceStore).connected) {
+    if (mode === "plugins") {
+      // 插件类目（官方审核制只读）：每次切入刷新（目录即事实源，运维放置后可见）
+      void loadPlugins().catch(() => {
+        /* 错误原文由 pluginsError 上屏，不静默吞 */
+      });
+    } else if (mode === "official" && get(governanceStore).connected) {
       void refreshOfficialAssets().catch(() => {
         /* 错误原文由 officialAssetsUi 上屏,不静默吞 */
       });
@@ -60,8 +67,12 @@
   // 仅 /marketplace 独立路由消费(?import-export 复用本组件不受 query 影响);响应式监听使同页导航也生效。
   $effect(() => {
     if ($page.url.pathname !== "/marketplace") return;
-    if ($page.url.searchParams.get("view") === "official" && viewMode !== "official") {
+    const wanted = $page.url.searchParams.get("view");
+    if (wanted === "official" && viewMode !== "official") {
       switchView("official");
+    }
+    if (wanted === "plugins" && viewMode !== "plugins") {
+      switchView("plugins");
     }
   });
 
@@ -220,10 +231,21 @@
     >
       🏛️ 官方资产
     </button>
+    <button
+      role="tab"
+      aria-selected={viewMode === "plugins"}
+      class="mt-viewbtn"
+      class:active={viewMode === "plugins"}
+      onclick={() => switchView("plugins")}
+    >
+      🧬 插件
+    </button>
   </div>
 
   {#if viewMode === "official"}
     <OfficialAssetsSection />
+  {:else if viewMode === "plugins"}
+    <PluginSection />
   {:else}
     <!-- 加载中 / server 降级错误显式上屏(拒绝静默) -->
     {#if $marketplaceLoading}
