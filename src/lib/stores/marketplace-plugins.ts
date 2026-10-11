@@ -111,3 +111,91 @@ function bumpPluginDownloadCount(pluginId: string): void {
 		),
 	);
 }
+
+// ============================================================================
+// 4. 安装自动化（三期：一键安装/卸载/禁用——server 代理 wasm-host 管理面）
+// ============================================================================
+
+/** 安装各阶段耗时（server 透传 wasm-host stage_timings；透明性回显） */
+export interface InstallStages {
+	verify_ms: number;
+	persist_ms: number;
+	compile_ms: number;
+	swap_ms: number;
+}
+
+/** 安装结果（成功含阶段耗时；失败 error 为阶段定位信息） */
+export interface InstallResult {
+	ok: boolean;
+	installed: string;
+	stages: InstallStages;
+	modules: number;
+	integrity?: { state: string; key_id?: string };
+	reconciliation?: unknown;
+}
+
+async function pluginAction(id: string, action: "install" | "uninstall" | "disable"): Promise<InstallResult> {
+	const res = await fetch(
+		`${resolveApiBase()}/api/marketplace/plugins/${encodeURIComponent(id)}/${action}`,
+		{ method: "POST", headers: authHeaders() },
+	);
+	const body = (await res.json().catch(() => ({}))) as {
+		success?: boolean;
+		detail?: InstallResult;
+		error?: string;
+		message?: string;
+	};
+	if (!res.ok) {
+		throw new Error(body.error ?? body.message ?? `安装动作失败: HTTP ${res.status}`);
+	}
+	return body.detail ?? { ok: true, installed: id, stages: { verify_ms: 0, persist_ms: 0, compile_ms: 0, swap_ms: 0 }, modules: 0 };
+}
+
+export function installPlugin(id: string): Promise<InstallResult> {
+	return pluginAction(id, "install");
+}
+
+export function uninstallPlugin(id: string): Promise<InstallResult> {
+	return pluginAction(id, "uninstall");
+}
+
+export function disablePlugin(id: string): Promise<InstallResult> {
+	return pluginAction(id, "disable");
+}
+
+/**
+ * 带字节进度的大文件下载（ReadableStream 流式读取；服务端无 content-length 时
+ * 退化为不定进度——进度条显示已收字节）。
+ */
+export async function downloadPluginPartWithProgress(
+	pluginId: string,
+	part: PluginPart,
+	onProgress: (received: number, total: number | null) => void,
+): Promise<Blob> {
+	const res = await fetch(
+		`${resolveApiBase()}/api/marketplace/plugins/${encodeURIComponent(pluginId)}/download?part=${part}`,
+		{ headers: authHeaders() },
+	);
+	if (!res.ok) {
+		throw new Error(await serverErrorMessage(res, "插件下载失败"));
+	}
+	const totalHeader = res.headers.get("content-length");
+	const total = totalHeader ? Number(totalHeader) : null;
+	if (!res.body) {
+		return await res.blob();
+	}
+	const reader = res.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let received = 0;
+	for (;;) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		if (value) {
+			chunks.push(value);
+			received += value.length;
+			onProgress(received, total);
+		}
+	}
+	bumpPluginDownloadCount(pluginId);
+	return new Blob(chunks as BlobPart[]);
+}

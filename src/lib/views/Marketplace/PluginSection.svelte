@@ -1,32 +1,52 @@
 <script lang="ts">
 	/**
-	 * WASM 插件类目（官方审核制只读）——分发物材料状态陈列 + 三件套下载。
-	 * 职责边界：签名与纯度的机器验证在 wasm-host 加载期（enforce 策略），
-	 * 本分区不构成信任背书；安装 = 半自动（下载 + 按《插件发布指南》落盘）。
+	 * WASM 插件类目——一键安装 + 全程透明进度（安装自动化三期）。
+	 * 用户原则（2026-10-12 项目方令）：点确认按钮即完成安装；下载/安装全程
+	 * 进度可见（下载=字节级进度条；安装=阶段 stepper+各阶段真实耗时回显）。
+	 * 职责边界：机器验证在 wasm-host 安装期（enforce），市场不构成信任背书。
 	 */
 	import {
 		marketplacePlugins,
 		pluginsLoading,
 		pluginsError,
 		loadPlugins,
-		downloadPluginPart,
+		downloadPluginPartWithProgress,
+		installPlugin,
+		uninstallPlugin,
 		type MarketplacePlugin,
 		type PluginPart,
+		type InstallResult,
 	} from "$lib/stores/marketplace-plugins";
 	import { toastSuccess, toastError } from "$lib/stores/toast";
 
 	let downloadingId = $state<string | null>(null);
+	let downloadBytes = $state<{ received: number; total: number | null }>({ received: 0, total: null });
+
+	// 安装确认对话框（治理确认：五要素展示后显式放行）
+	let confirmTarget = $state<MarketplacePlugin | null>(null);
+	let installing = $state(false);
+	let installStage = $state<string>("");
+	let installStages = $state<InstallResult | null>(null);
+	let uninstallingId = $state<string | null>(null);
 
 	const PART_FILES: Record<PluginPart, string> = {
 		wasm: ".wasm",
 		manifest: ".plugin-module.json",
 		signature: ".wasm.sig",
 	};
+	const INSTALL_STEPS = ["校验签名与清单", "落盘", "编译与加载", "服务注册"] as const;
+
+	function fmtBytes(n: number): string {
+		return n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`;
+	}
 
 	async function handleDownload(p: MarketplacePlugin, part: PluginPart): Promise<void> {
 		downloadingId = `${p.id}:${part}`;
+		downloadBytes = { received: 0, total: null };
 		try {
-			const blob = await downloadPluginPart(p.id, part);
+			const blob = await downloadPluginPartWithProgress(p.id, part, (received, total) => {
+				downloadBytes = { received, total };
+			});
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
@@ -38,6 +58,51 @@
 			toastError(e instanceof Error ? e.message : String(e));
 		} finally {
 			downloadingId = null;
+		}
+	}
+
+	function openConfirm(p: MarketplacePlugin): void {
+		confirmTarget = p;
+		installStage = "";
+		installStages = null;
+	}
+
+	async function doInstall(): Promise<void> {
+		const p = confirmTarget;
+		if (!p || installing) return;
+		installing = true;
+		// 阶段指示：请求期间按序推进（各阶段真实耗时在响应后回显）
+		for (const step of INSTALL_STEPS) {
+			installStage = step;
+			await new Promise((r) => setTimeout(r, 350));
+			if (installStages) break;
+		}
+		try {
+			const result = await installPlugin(p.id);
+			installStages = result;
+			installStage = "完成";
+			toastSuccess(
+				`已安装 ${p.id}（验签 ${result.stages.verify_ms}ms · 编译 ${result.stages.compile_ms}ms · 注册 ${result.stages.swap_ms}ms）`,
+			);
+			await loadPlugins();
+		} catch (e) {
+			toastError(e instanceof Error ? e.message : String(e));
+			confirmTarget = null;
+		} finally {
+			installing = false;
+		}
+	}
+
+	async function handleUninstall(p: MarketplacePlugin): Promise<void> {
+		uninstallingId = p.id;
+		try {
+			await uninstallPlugin(p.id);
+			toastSuccess(`已卸载 ${p.id}（三件套已删除）`);
+			await loadPlugins();
+		} catch (e) {
+			toastError(e instanceof Error ? e.message : String(e));
+		} finally {
+			uninstallingId = null;
 		}
 	}
 </script>
@@ -57,8 +122,8 @@
 		</p>
 	{:else}
 		<p class="pl-hint">
-			安装 = 下载三件套后按《插件发布指南》落盘至 wasm 插件目录并重启宿主；
-			签名与纯度在宿主加载期机器验证（市场陈列不构成信任背书）。
+			一键安装 = 确认后自动完成校验、落盘、加载与服务注册（全程进度透明）；
+			签名与纯度在宿主安装期机器验证（市场陈列不构成信任背书）。
 		</p>
 		<div class="pl-grid">
 			{#each $marketplacePlugins as p (p.id)}
@@ -86,35 +151,108 @@
 						{/if}
 					</div>
 					<footer class="pl-foot">
+						<button class="pl-primary" onclick={() => openConfirm(p)}>一键安装</button>
 						<button
 							disabled={downloadingId !== null}
 							onclick={() => void handleDownload(p, "wasm")}
+							title="仅下载（不安装）"
 						>
-							{downloadingId === `${p.id}:wasm` ? "下载中…" : "下载模块"}
+							下载
 						</button>
 						<button
-							disabled={downloadingId !== null}
-							onclick={() => void handleDownload(p, "manifest")}
+							class="pl-danger"
+							disabled={uninstallingId !== null}
+							onclick={() => void handleUninstall(p)}
 						>
-							清单
+							卸载
 						</button>
-						{#if p.has_signature}
-							<button
-								disabled={downloadingId !== null}
-								onclick={() => void handleDownload(p, "signature")}
-							>
-								签名
-							</button>
-						{/if}
 						{#if p.download_count !== undefined}
-							<span class="pl-count">{p.download_count} 次下载</span>
+							<span class="pl-count">{p.download_count}</span>
 						{/if}
 					</footer>
+					{#if downloadingId === `${p.id}:wasm` && downloadBytes.received > 0}
+						<div class="pl-progress">
+							<div
+								class="pl-progress-bar"
+								style="width: {downloadBytes.total
+									? Math.round((downloadBytes.received / downloadBytes.total) * 100)
+									: 30}%"
+							></div>
+							<span class="pl-progress-text">
+								下载中 {fmtBytes(downloadBytes.received)}{downloadBytes.total
+									? ` / ${fmtBytes(downloadBytes.total)}`
+									: ""}
+							</span>
+						</div>
+					{/if}
 				</article>
 			{/each}
 		</div>
 	{/if}
 </div>
+
+{#if confirmTarget}
+	<div
+		class="pl-modal-backdrop"
+		role="presentation"
+		onclick={() => (installing ? null : (confirmTarget = null))}
+	>
+		<div
+			class="pl-modal"
+			role="dialog"
+			tabindex="-1"
+			aria-modal="true"
+			aria-label="安装确认"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<h3>安装确认 —— {confirmTarget.name}</h3>
+			<p class="pl-modal-warn">
+				该操作将向执行面装载代码（WASM 沙箱内运行）。请核对以下要素：
+			</p>
+			<dl class="pl-facts">
+				<dt>签名</dt>
+				<dd>
+					{confirmTarget.has_signature
+						? `已签名（${confirmTarget.key_id ?? "未知钥匙"}）`
+						: "未签名"}
+				</dd>
+				<dt>纯度声明</dt>
+				<dd>{confirmTarget.purity ?? "未声明"}</dd>
+				<dt>内容哈希</dt>
+				<dd class="mono">{confirmTarget.content_hash.slice(0, 24)}…</dd>
+				<dt>版本 / ABI</dt>
+				<dd>{confirmTarget.version ?? "-"} / {confirmTarget.abi ?? "-"}</dd>
+				<dt>来源</dt>
+				<dd>{confirmTarget.author ?? "官方"}（官方审核制）</dd>
+			</dl>
+			{#if installing}
+				<ol class="pl-steps">
+					{#each INSTALL_STEPS as step, i}
+						<li class:active={installStage === step} class:done={!!installStages}>
+							{step}{installStages
+								? `（${
+										[
+											installStages.stages.verify_ms,
+											installStages.stages.persist_ms,
+											installStages.stages.compile_ms,
+											installStages.stages.swap_ms,
+										][i]
+									}ms）`
+								: ""}
+						</li>
+					{/each}
+				</ol>
+			{/if}
+			<footer class="pl-modal-foot">
+				<button onclick={() => (confirmTarget = null)} disabled={installing}>取消</button>
+				<button class="pl-primary" onclick={() => void doInstall()} disabled={installing}>
+					{installing ? "安装中…" : "确认安装"}
+				</button>
+			</footer>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.pl-section {
@@ -198,9 +336,89 @@
 		align-items: center;
 		margin-top: auto;
 	}
+	.pl-primary {
+		background: var(--cd-accent, #2563eb);
+		color: #fff;
+	}
+	.pl-danger {
+		color: var(--cd-danger, #b00);
+	}
 	.pl-count {
 		margin-left: auto;
 		font-size: 0.75rem;
 		color: var(--cd-fg-muted, #999);
+	}
+	.pl-progress {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.pl-progress-bar {
+		height: 4px;
+		background: var(--cd-accent, #2563eb);
+		border-radius: 2px;
+		transition: width 0.15s;
+	}
+	.pl-progress-text {
+		font-size: 0.75rem;
+		color: var(--cd-fg-muted, #666);
+	}
+	.pl-modal-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgb(0 0 0 / 40%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 50;
+	}
+	.pl-modal {
+		background: var(--cd-bg, #fff);
+		border-radius: 10px;
+		padding: 1.25rem;
+		width: min(30rem, 92vw);
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+	.pl-modal-warn {
+		margin: 0;
+		font-size: 0.8125rem;
+		color: var(--cd-danger, #b00);
+	}
+	.pl-facts {
+		display: grid;
+		grid-template-columns: 6rem 1fr;
+		gap: 0.25rem 0.5rem;
+		font-size: 0.8125rem;
+		margin: 0;
+	}
+	.pl-facts dt {
+		color: var(--cd-fg-muted, #666);
+	}
+	.pl-facts dd {
+		margin: 0;
+		word-break: break-all;
+	}
+	.mono {
+		font-family: monospace;
+	}
+	.pl-steps {
+		margin: 0;
+		padding-left: 1.25rem;
+		font-size: 0.8125rem;
+		color: var(--cd-fg-muted, #666);
+	}
+	.pl-steps li.active {
+		color: var(--cd-accent, #2563eb);
+		font-weight: 600;
+	}
+	.pl-steps li.done {
+		color: var(--cd-ok, #16a34a);
+	}
+	.pl-modal-foot {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.5rem;
 	}
 </style>
