@@ -47,6 +47,7 @@
   import type { EntryDiffResponse, EntryVersionPayloadResponse, EntryVersionSummary, GovernanceEntry, KnowledgeEntry, LifecycleStatus } from '$lib/governance/types';
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import { useWorkspaceBackendOrNull, currentWorkspace, HttpWorkspaceBackendError } from '$lib/kernel';
+  import VerdictContractsPanel from '$lib/views/Governance/VerdictContractsPanel.svelte';
   import type {
     ActiveBundleInfo,
     BundleDryRunResult,
@@ -2606,6 +2607,8 @@
         </div>
 
         <!-- 测试工作台(W1.2:数据集管理 + 沙盒编排 + 报告查看;接线②为其中报告区) -->
+  <!-- 判定契约管理(P3-12 补角:封装在位此前零消费) -->
+  <VerdictContractsPanel />
         <div class="sec">
           <div class="sec-head">
             <button class="btn btn-sm" onclick={toggleSandboxZone}>
