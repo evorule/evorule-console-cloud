@@ -721,4 +721,35 @@ export class CloudHttpBackend implements ExecutionBackend {
 			{ reason }
 		);
 	}
+
+	// === 会话级干预端点(server 干预端点族) ===
+
+	/**
+	 * 注入心跳(消费 `POST /api/sessions/{id}/heartbeat`)。
+	 * 60s 限频由 server 执行:窗口内重复调用 → HttpBackendError(429)。
+	 */
+	async injectSessionHeartbeat(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(`/api/sessions/${sessionId}/heartbeat`);
+	}
+
+	/**
+	 * pause 准入闸置位(消费 `POST /api/sessions/{id}/pause`)。
+	 * 置位后新 Command 被 server 拒绝(SESSION_PAUSED);在途队列与 pending io 不受影响。
+	 */
+	async pauseSession(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(`/api/sessions/${sessionId}/pause`);
+	}
+
+	/** 解除 pause 准入闸(消费 `POST /api/sessions/{id}/resume`,幂等)。 */
+	async resumeSession(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(`/api/sessions/${sessionId}/resume`);
+	}
+
+	/**
+	 * 手动事实链压缩(消费 `POST /api/sessions/{id}/gc`)。
+	 * server 侧 --allow-interventions 门控:未启用时路由不注册 → HttpBackendError(404)。
+	 */
+	async gcSession(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(`/api/sessions/${sessionId}/gc`);
+	}
 }
