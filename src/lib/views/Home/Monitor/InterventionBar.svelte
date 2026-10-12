@@ -31,6 +31,8 @@
     onAction: (action: InterventionAction, payload?: unknown) => void;
     /** 是否禁用(例如 offline/switching 状态禁用) */
     disabled?: boolean;
+    /** 无后端端点支撑的干预动作(按钮置灰+指引,P3 运维域批) */
+    unwiredActions?: readonly InterventionAction[];
   }
 
   /** 取当前用户角色(未登录 → null),喂给纯函数层 */
@@ -57,7 +59,12 @@
     return canPerform(action) ? "" : "无权限(角色限制)";
   }
 
-  let { currentRulesetVersion, onAction, disabled = false }: Props = $props();
+  let {
+    currentRulesetVersion,
+    onAction,
+    disabled = false,
+    unwiredActions = []
+  }: Props = $props();
 
   // === Confirm Dialog 状态 ===
   let confirmOpen = $state(false);
@@ -114,7 +121,7 @@
     <div class="iv-grid">
       <button
         class={`${btnBaseCls} iv-secondary`}
-        disabled={disabled || !canPerform("reactor.pause")}
+        disabled={disabled || !canPerform("reactor.pause") || unwiredActions.includes("reactor.pause")}
         title={permissionTooltip("reactor.pause")}
         onclick={() => request("reactor.pause")}
       >
@@ -122,7 +129,7 @@
       </button>
       <button
         class={`${btnBaseCls} iv-success`}
-        disabled={disabled || !canPerform("reactor.resume")}
+        disabled={disabled || !canPerform("reactor.resume") || unwiredActions.includes("reactor.resume")}
         title={permissionTooltip("reactor.resume")}
         onclick={() => request("reactor.resume")}
       >
@@ -130,7 +137,7 @@
       </button>
       <button
         class={`${btnBaseCls} iv-info`}
-        disabled={disabled || !canPerform("reactor.gc")}
+        disabled={disabled || !canPerform("reactor.gc") || unwiredActions.includes("reactor.gc")}
         title={permissionTooltip("reactor.gc")}
         onclick={() => request("reactor.gc")}
       >
@@ -138,7 +145,7 @@
       </button>
       <button
         class={`${btnBaseCls} iv-info`}
-        disabled={disabled || !canPerform("reactor.check_invariants")}
+        disabled={disabled || !canPerform("reactor.check_invariants") || unwiredActions.includes("reactor.check_invariants")}
         title={permissionTooltip("reactor.check_invariants")}
         onclick={() => request("reactor.check_invariants")}
       >
@@ -153,7 +160,7 @@
     <div class="iv-grid">
       <button
         class={`${btnBaseCls} iv-primary`}
-        disabled={disabled || !canPerform("publish.start_session")}
+        disabled={disabled || !canPerform("publish.start_session") || unwiredActions.includes("publish.start_session")}
         title={permissionTooltip("publish.start_session")}
         onclick={() => request("publish.start_session")}
       >
@@ -161,7 +168,7 @@
       </button>
       <button
         class={`${btnBaseCls} iv-warning`}
-        disabled={disabled || !canPerform("publish.approve_mode")}
+        disabled={disabled || !canPerform("publish.approve_mode") || unwiredActions.includes("publish.approve_mode")}
         title={permissionTooltip("publish.approve_mode")}
         onclick={() => request("publish.approve_mode")}
       >
@@ -169,7 +176,7 @@
       </button>
       <button
         class={`${btnBaseCls} iv-secondary`}
-        disabled={disabled || !canPerform("publish.export_package")}
+        disabled={disabled || !canPerform("publish.export_package") || unwiredActions.includes("publish.export_package")}
         title={permissionTooltip("publish.export_package")}
         onclick={() => request("publish.export_package")}
       >
@@ -184,14 +191,15 @@
     <div class="iv-grid">
       <button
         class={`${btnBaseCls} iv-secondary`}
-        {disabled}
+        disabled={disabled || unwiredActions.includes("session.switch")}
+        title={unwiredActions.includes("session.switch") ? "需 server 立项干预端点" : undefined}
         onclick={() => request("session.switch")}
       >
         🔀 切换 Session
       </button>
       <button
         class={`${btnBaseCls} iv-danger`}
-        disabled={disabled || !canPerform("session.rollback")}
+        disabled={disabled || !canPerform("session.rollback") || unwiredActions.includes("session.rollback")}
         title={permissionTooltip("session.rollback")}
         onclick={openRollback}
       >
@@ -206,7 +214,7 @@
     <div class="iv-grid">
       <button
         class={`${btnBaseCls} iv-warning`}
-        disabled={disabled || !canPerform("io.cancel_all_pending")}
+        disabled={disabled || !canPerform("io.cancel_all_pending") || unwiredActions.includes("io.cancel_all_pending")}
         title={permissionTooltip("io.cancel_all_pending")}
         onclick={() => request("io.cancel_all_pending")}
       >
@@ -214,7 +222,7 @@
       </button>
       <button
         class={`${btnBaseCls} iv-info`}
-        disabled={disabled || !canPerform("io.inject_heartbeat")}
+        disabled={disabled || !canPerform("io.inject_heartbeat") || unwiredActions.includes("io.inject_heartbeat")}
         title={permissionTooltip("io.inject_heartbeat")}
         onclick={() => request("io.inject_heartbeat")}
       >
@@ -229,7 +237,7 @@
     <div class="iv-grid">
       <button
         class={`${btnBaseCls} iv-secondary`}
-        disabled={disabled || !canPerform("audit.export_chain")}
+        disabled={disabled || !canPerform("audit.export_chain") || unwiredActions.includes("audit.export_chain")}
         title={permissionTooltip("audit.export_chain")}
         onclick={() => request("audit.export_chain")}
       >
@@ -237,7 +245,7 @@
       </button>
       <button
         class={`${btnBaseCls} iv-secondary`}
-        disabled={disabled || !canPerform("wal.force_rotate")}
+        disabled={disabled || !canPerform("wal.force_rotate") || unwiredActions.includes("wal.force_rotate")}
         title={permissionTooltip("wal.force_rotate")}
         onclick={() => request("wal.force_rotate")}
       >
