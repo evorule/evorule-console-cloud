@@ -75,11 +75,14 @@
     baseUrl?: string;
     /** 外部干预回调(真实部署时调用 API,演示模式 toast 提示) */
     onIntervention?: (action: InterventionAction, payload?: unknown) => void;
+    /** 无后端端点支撑的干预动作清单(按钮置灰+title 指引,P3 运维域批) */
+    unwiredActions?: readonly InterventionAction[];
   }
 
   let {
     baseUrl = "http://127.0.0.1:18080",
     onIntervention: externalIntervention,
+    unwiredActions = []
   }: Props = $props();
 
   // === SessionSwitchToast 展示态 ===
@@ -291,6 +294,7 @@
         currentRulesetVersion={productionState.rulesetVersion}
         onAction={handleIntervention}
         disabled={productionState.status === "offline"}
+        unwiredActions={unwiredActions}
       />
     </aside>
   </div>
