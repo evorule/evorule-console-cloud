@@ -10,6 +10,8 @@
 		filteredPlugins,
 		pluginSearchQuery,
 		pluginSignatureFilter,
+		pluginPublisherFilter,
+		pluginPublishers,
 		pluginsLoading,
 		pluginsError,
 		hostInfo,
@@ -167,6 +169,12 @@
 				<option value="all">全部签名状态</option>
 				<option value="signed">已签名</option>
 				<option value="unsigned">未签名</option>
+			</select>
+			<select bind:value={$pluginPublisherFilter}>
+				<option value="all">全部发行方</option>
+				{#each $pluginPublishers as pub (pub)}
+					<option value={pub}>{pub}</option>
+				{/each}
 			</select>
 		</div>
 		<div class="pl-grid">

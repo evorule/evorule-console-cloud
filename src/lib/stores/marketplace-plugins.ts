@@ -66,9 +66,11 @@ export const hostInfo = writable<HostInfo>({ available: false });
 export const pluginsLoading = writable<boolean>(false);
 export const pluginsError = writable<string | null>(null);
 
-/** 类目筛选（对齐模板 Tab 惯例）：关键词匹配 name/description；签名状态三选 */
+/** 类目筛选（对齐模板 Tab 惯例）：关键词匹配 name/description；签名状态三选；
+ *  发行方筛选（多发行方命名空间展示——服务名全局唯一维持，author 仅作归属展示） */
 export const pluginSearchQuery = writable<string>("");
 export const pluginSignatureFilter = writable<"all" | "signed" | "unsigned">("all");
+export const pluginPublisherFilter = writable<string>("all");
 
 // ============================================================================
 // 3. 列表与下载
@@ -105,8 +107,8 @@ export type PluginPart = "wasm" | "manifest" | "signature";
 
 /** 筛选后的插件列表（关键词 + 签名状态；server 保证 name 序确定性） */
 export const filteredPlugins = derived(
-	[marketplacePlugins, pluginSearchQuery, pluginSignatureFilter],
-	([plugins, q, sigFilter]) => {
+	[marketplacePlugins, pluginSearchQuery, pluginSignatureFilter, pluginPublisherFilter],
+	([plugins, q, sigFilter, publisher]) => {
 		const needle = q.trim().toLowerCase();
 		return plugins.filter((p) => {
 			if (
@@ -117,10 +119,18 @@ export const filteredPlugins = derived(
 			}
 			if (sigFilter === "signed" && !p.has_signature) return false;
 			if (sigFilter === "unsigned" && p.has_signature) return false;
+			if (publisher !== "all" && (p.author ?? "official") !== publisher) return false;
 			return true;
 		});
 	},
 );
+
+/** 在架发行方去重清单（发行方筛选下拉事实源；official 恒首） */
+export const pluginPublishers = derived([marketplacePlugins], ([plugins]) => {
+	const set = new Set<string>("official");
+	for (const p of plugins) if (p.author) set.add(p.author);
+	return [...set];
+});
 
 /** 下载分发物部件（Blob 交给调用方触发浏览器保存） */
 export async function downloadPluginPart(
