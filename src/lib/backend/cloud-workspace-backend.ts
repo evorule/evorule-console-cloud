@@ -225,6 +225,15 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 	blockRule(workspaceId: string, ruleId: string): Promise<RuleRecord> {
 		return this.backend.blockRule(workspaceId, ruleId);
 	}
+	listAnchors(sessionId: number): Promise<unknown> {
+		return this.http.listAnchors(sessionId);
+	}
+	sealAnchorNow(sessionId: number): Promise<unknown> {
+		return this.http.sealAnchorNow(sessionId);
+	}
+	verifyAnchors(sessionId: number, keys?: Record<string, string>): Promise<unknown> {
+		return this.http.verifyAnchors(sessionId, keys);
+	}
 	archiveRule(workspaceId: string, ruleId: string): Promise<RuleRecord> {
 		return this.backend.archiveRule(workspaceId, ruleId);
 	}
