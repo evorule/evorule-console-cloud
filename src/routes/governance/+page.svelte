@@ -594,9 +594,10 @@
   }
 
   /**
-   * 导出带结构化证据的 bundle(W1.3:ExportEvidence 三形态,取代历史批次单一人工背书)。
+   * 导出带结构化证据的 bundle(W1.3:ExportEvidence 两形态;sandbox:-only 收紧
+   * 后人工降级通路下线,机器背书为唯一 pass 通路)。
    * 仅在 deployConfirmed 勾选后可调用 — 证据声明先于一切部署动作;
-   * 证据形态由 evidenceSource 决定(机器背书默认/人工降级显式)。
+   * 证据形态由 evidenceSource 决定(沙盒报告机器背书)。
    */
   async function exportBundleForDeploy(): Promise<unknown> {
     const s = get(governanceStore);
@@ -1173,9 +1174,9 @@
     }
   }
 
-  // --- 部署证据（/W1.4:ExportEvidence 三形态,机器背书默认+人工降级显式） ---
-  /** 证据源选择:勾选证据声明后二选一(sandbox=机器背书默认/human=人工降级显式) */
-  let evidenceSource = $state<'sandbox' | 'human'>('sandbox');
+  // --- 部署证据（W1.4:sandbox:-only 收紧后机器背书为唯一 pass 通路） ---
+  /** 证据源选择:sandbox=沙盒报告机器背书(人工降级通路已下线,保留单选项作证据声明载体) */
+  let evidenceSource = $state<'sandbox'>('sandbox');
   /** 最近可用机器证据(最近一次 completed 沙盒的 PASS 报告;null=无) */
   let latestMachineEvidence = $state<{ sandboxId: number; report: SandboxTestReport } | null>(null);
   let evidenceChecking = $state(false);
@@ -1220,22 +1221,19 @@
   }
 
   /**
-   * 构造当前选择的导出证据(W1.3:三形态)。
-   * 机器路径无可用报告时禁用(UI 已拦),此处防御性回落 none——verdict=fail,
-   * 执行侧闸门一硬拒,绝不静默伪造 pass。
+   * 构造当前选择的导出证据(W1.3 两形态;sandbox:-only 收紧后无人工降级变体)。
+   * 有最近 PASS 沙盒报告 → 机器背书;否则回落 none——verdict=fail 如实标注
+   * 未验证,执行侧闸门一硬拒,绝不静默伪造 pass。
    */
   function currentEvidence(): ExportEvidence {
-    if (evidenceSource === 'sandbox') {
-      if (latestMachineEvidence) {
-        return {
-          kind: 'sandbox-report',
-          sandboxId: latestMachineEvidence.sandboxId,
-          verdict: 'pass' // 由 findLatestMachineEvidence 从报告 summary 派生(failed===0)
-        };
-      }
-      return { kind: 'none' };
+    if (latestMachineEvidence) {
+      return {
+        kind: 'sandbox-report',
+        sandboxId: latestMachineEvidence.sandboxId,
+        verdict: 'pass' // 由 findLatestMachineEvidence 从报告 summary 派生(failed===0)
+      };
     }
-    return { kind: 'human-confirmed', actor: get(governanceStore).username || 'console' };
+    return { kind: 'none' };
   }
 
   // --- 会话清单(接线⑤,只读) ---
@@ -2034,12 +2032,12 @@
               <input type="checkbox" bind:checked={deployConfirmed} />
               <span>
                 <strong>证据声明(闸门一)</strong>
-                部署需要验证证据。选择证据来源(机器背书优先,人工背书为显式降级):
+                部署需要验证证据。机器背书为唯一 pass 通路(人工背书通路已下线):
               </span>
             </label>
 
             {#if deployConfirmed}
-              <!-- W1.4 证据源二选一:机器背书(默认)/人工降级(显式选择) -->
+              <!-- W1.4 证据源:sandbox:-only 收紧后机器背书单通路 -->
               <div class="evidence-picker">
                 <label class="check">
                   <input
@@ -2062,28 +2060,8 @@
                       <!-- A: 机器背书边界提示(合成 IO 应答不等价于生产 IO) -->
                       <span class="warn-text">合成 IO 背书:报告应答由 MockIoResponder 提供,依赖外部 LLM/服务的规则不等价于生产行为</span>
                     {:else}
-                      无可用沙盒报告——请先在「测试工作台」运行沙盒并得到 PASS,
-                      或改用人工背书
-                    {/if}
-                  </span>
-                </label>
-                <label class="check">
-                  <input
-                    type="radio"
-                    name="evidence-source"
-                    value="human"
-                    bind:group={evidenceSource}
-                    disabled={evidenceSource === 'sandbox' && latestMachineEvidence ? false : evidenceChecking}
-                  />
-                  <span>
-                    <strong>👤 人工背书(降级)</strong>
-                    {#if evidenceSource === 'human'}
-                      <span class="warn-text">
-                        ⚠ 未经沙盒验证,人工背书责任自负——本版本将标记
-                        human:{$governanceStore.username || 'console'}(降级可追溯)
-                      </span>
-                    {:else}
-                      显式选择以跳过沙盒报告(降级路径)
+                      无可用沙盒报告——请先在「测试工作台」运行沙盒并得到 PASS
+                      (人工背书通路已下线,无沙盒报告仅能导出 verdict=fail 的预览包)
                     {/if}
                   </span>
                 </label>
@@ -2102,8 +2080,8 @@
               <button
                 class="btn btn-sm btn-primary"
                 onclick={handleDeploy}
-                disabled={!deployConfirmed || deploying || dryRunning || (evidenceSource === 'sandbox' && !latestMachineEvidence && !evidenceChecking)}
-                title={evidenceSource === 'sandbox' && !latestMachineEvidence && !evidenceChecking ? '机器路径无可用沙盒报告(verdict=fail 必被闸门一拒绝);请先跑沙盒或改人工背书' : ''}
+                disabled={!deployConfirmed || deploying || dryRunning || (!latestMachineEvidence && !evidenceChecking)}
+                title={!latestMachineEvidence && !evidenceChecking ? '机器路径无可用沙盒报告(verdict=fail 必被闸门一拒绝);请先在测试工作台跑沙盒' : ''}
               >
                 {deploying ? '部署中…' : '确认部署'}
               </button>
