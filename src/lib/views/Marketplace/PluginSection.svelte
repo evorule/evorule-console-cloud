@@ -7,6 +7,9 @@
 	 */
 	import {
 		marketplacePlugins,
+		filteredPlugins,
+		pluginSearchQuery,
+		pluginSignatureFilter,
 		pluginsLoading,
 		pluginsError,
 		hostInfo,
@@ -146,13 +149,28 @@
 			暂无插件。分发物由官方审核后放置（三件套：模块 + 清单 + 签名），
 			放置流程见《插件发布指南》。
 		</p>
+	{:else if $filteredPlugins.length === 0}
+		<p class="pl-status">无匹配筛选条件的插件。</p>
 	{:else}
 		<p class="pl-hint">
 			一键安装 = 确认后自动完成校验、落盘、加载与服务注册（全程进度透明）；
 			签名与纯度在宿主安装期机器验证（市场陈列不构成信任背书）。
 		</p>
+		<div class="pl-filters">
+			<input
+				class="pl-search"
+				type="text"
+				placeholder="🔍 搜索插件名称/描述..."
+				bind:value={$pluginSearchQuery}
+			/>
+			<select bind:value={$pluginSignatureFilter}>
+				<option value="all">全部签名状态</option>
+				<option value="signed">已签名</option>
+				<option value="unsigned">未签名</option>
+			</select>
+		</div>
 		<div class="pl-grid">
-			{#each $marketplacePlugins as p (p.id)}
+			{#each $filteredPlugins as p (p.id)}
 				<article class="pl-card" class:pl-mismatch={p.integrity_mismatch}>
 					<header class="pl-head">
 						<strong>{p.name}</strong>
@@ -333,6 +351,13 @@
 		align-items: center;
 		color: var(--cd-danger, #b00);
 		font-size: 0.875rem;
+	}
+	.pl-filters {
+		display: flex;
+		gap: 0.5rem;
+	}
+	.pl-search {
+		flex: 1;
 	}
 	.pl-grid {
 		display: grid;

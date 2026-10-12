@@ -7,7 +7,7 @@
  * 签名与纯度的机器验证在 wasm-host 加载期（enforce 策略）——市场不构成信任背书。
  * 安装语义 = 半自动（下载三件套 + 按《插件发布指南》落盘），市场不做落盘动作。
  */
-import { writable, get } from "svelte/store";
+import { writable, get, derived } from "svelte/store";
 import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
 import { netConfig } from "$lib/config/net-config";
 
@@ -66,6 +66,10 @@ export const hostInfo = writable<HostInfo>({ available: false });
 export const pluginsLoading = writable<boolean>(false);
 export const pluginsError = writable<string | null>(null);
 
+/** 类目筛选（对齐模板 Tab 惯例）：关键词匹配 name/description；签名状态三选 */
+export const pluginSearchQuery = writable<string>("");
+export const pluginSignatureFilter = writable<"all" | "signed" | "unsigned">("all");
+
 // ============================================================================
 // 3. 列表与下载
 // ============================================================================
@@ -98,6 +102,25 @@ export async function loadPlugins(): Promise<void> {
 }
 
 export type PluginPart = "wasm" | "manifest" | "signature";
+
+/** 筛选后的插件列表（关键词 + 签名状态；server 保证 name 序确定性） */
+export const filteredPlugins = derived(
+	[marketplacePlugins, pluginSearchQuery, pluginSignatureFilter],
+	([plugins, q, sigFilter]) => {
+		const needle = q.trim().toLowerCase();
+		return plugins.filter((p) => {
+			if (
+				needle &&
+				!`${p.name} ${p.description ?? ""}`.toLowerCase().includes(needle)
+			) {
+				return false;
+			}
+			if (sigFilter === "signed" && !p.has_signature) return false;
+			if (sigFilter === "unsigned" && p.has_signature) return false;
+			return true;
+		});
+	},
+);
 
 /** 下载分发物部件（Blob 交给调用方触发浏览器保存） */
 export async function downloadPluginPart(
