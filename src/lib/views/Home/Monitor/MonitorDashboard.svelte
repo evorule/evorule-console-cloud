@@ -31,6 +31,7 @@
   //(带 Bearer token,随 mode 切换),不再直连 fetch
   import { useBackend } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
+  import { HttpBackendError } from "$lib/kernel/backend/http-backend";
   import {
     sseConnectionStore,
     startSSE,
@@ -48,7 +49,12 @@
     startMetricsPolling,
     stopMetricsPolling,
   } from "$lib/stores/performance-metrics";
-  import { toastInfo } from "$lib/stores/toast";
+  import {
+    toastInfo,
+    toastSuccess,
+    toastWarning,
+    toastError,
+  } from "$lib/stores/toast";
   import { fmtTime } from "$lib/locale";
   // T4: P07 ExportDialog(InterventionBar 的 audit.export_chain 触发)
   import ExportDialog from "$lib/views/Export/ExportDialog.svelte";
@@ -79,10 +85,23 @@
     unwiredActions?: readonly InterventionAction[];
   }
 
+  /**
+   * server 端点尚未就位的干预动作(默认置灰,防假动作;调用方可显式覆盖)。
+   * pause/resume/gc/heartbeat 四动作已接真端点,不在此列。
+   */
+  const DEFAULT_UNWIRED_ACTIONS: readonly InterventionAction[] = [
+    "reactor.check_invariants",
+    "io.cancel_all_pending",
+    "publish.start_session",
+    "publish.approve_mode",
+    "wal.force_rotate",
+    "session.switch",
+  ];
+
   let {
     baseUrl = "http://127.0.0.1:18080",
     onIntervention: externalIntervention,
-    unwiredActions = []
+    unwiredActions = DEFAULT_UNWIRED_ACTIONS
   }: Props = $props();
 
   // === SessionSwitchToast 展示态 ===
@@ -176,8 +195,11 @@
     stopMetricsPolling();
   });
 
-  // === 干预按钮回调(默认实现:Toast,外部可覆盖) ===
-  function handleIntervention(action: InterventionAction, payload?: unknown) {
+  // === 干预按钮回调(外部可覆盖;默认实现:会话级干预直连 server 真端点) ===
+  async function handleIntervention(
+    action: InterventionAction,
+    payload?: unknown,
+  ) {
     // T4: audit.export_chain 拦截 → 打开 P07 ExportDialog(preset: audit_chain)
     // 即使有 externalIntervention,导出对话框也在本组件内打开(属于 UI 行为,不属于外部 API)
     if (action === "audit.export_chain") {
@@ -189,6 +211,46 @@
     }
     if (externalIntervention) {
       externalIntervention(action, payload);
+      return;
+    }
+    // 会话级干预端点直连(server 真端点;外部回调缺省时生效)。
+    // 失败语义按 server 契约区分:404(gc 门控未开)/429(心跳限频)/其余通用。
+    const sessionScoped: Partial<
+      Record<InterventionAction, (sid: number) => Promise<unknown>>
+    > = {
+      "reactor.pause": (sid) => backendRef.pauseSession(sid),
+      "reactor.resume": (sid) => backendRef.resumeSession(sid),
+      "reactor.gc": (sid) => backendRef.gcSession(sid),
+      "io.inject_heartbeat": (sid) => backendRef.injectSessionHeartbeat(sid),
+    };
+    const run = sessionScoped[action];
+    if (run) {
+      const sid = get(productionStateStore).currentSessionId;
+      if (sid === null) {
+        toastWarning("当前无活跃会话,干预不可用");
+        return;
+      }
+      try {
+        await run(sid);
+        const okMsg: Partial<Record<InterventionAction, string>> = {
+          "reactor.pause": "会话已暂停:新指令准入闸关闭(resume 恢复)",
+          "reactor.resume": "会话已恢复:指令准入闸开启",
+          "reactor.gc": "事实链压缩已执行(history/rewind 对已压缩区间失效)",
+          "io.inject_heartbeat": "心跳 Fact 已注入",
+        };
+        toastSuccess(okMsg[action] ?? "干预完成");
+      } catch (e) {
+        const status = e instanceof HttpBackendError ? e.status : 0;
+        if (action === "reactor.gc" && status === 404) {
+          toastError(
+            "server 未启用高危干预端点(需 --allow-interventions 启动)",
+          );
+        } else if (action === "io.inject_heartbeat" && status === 429) {
+          toastWarning("心跳限频中(60 秒/次),请稍后再试");
+        } else {
+          toastError(`干预失败:HTTP ${status || "网络错误"}`);
+        }
+      }
       return;
     }
     // 默认 demo 实现:显示 toast
