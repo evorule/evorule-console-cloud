@@ -9,6 +9,7 @@
 		marketplacePlugins,
 		pluginsLoading,
 		pluginsError,
+		hostInfo,
 		loadPlugins,
 		downloadPluginPartWithProgress,
 		installPlugin,
@@ -18,6 +19,7 @@
 		type InstallResult,
 	} from "$lib/stores/marketplace-plugins";
 	import { toastSuccess, toastError } from "$lib/stores/toast";
+	import { get } from "svelte/store";
 
 	let downloadingId = $state<string | null>(null);
 	let downloadBytes = $state<{ received: number; total: number | null }>({ received: 0, total: null });
@@ -60,6 +62,16 @@
 			downloadingId = null;
 		}
 	}
+
+	/** 兼容性三态：compatible / incompatible / unknown（fail-visible，不默认兼容） */
+	function compatState(p: MarketplacePlugin): "compatible" | "incompatible" | "unknown" {
+		const host = get(hostInfo);
+		if (!host.available || host.abi === undefined) return "unknown";
+		if (p.abi === undefined) return "unknown";
+		return p.abi === host.abi ? "compatible" : "incompatible";
+	}
+
+	const hostAbi = $derived($hostInfo.available ? $hostInfo.abi : undefined);
 
 	function openConfirm(p: MarketplacePlugin): void {
 		confirmTarget = p;
@@ -223,6 +235,18 @@
 				<dd class="mono">{confirmTarget.content_hash.slice(0, 24)}…</dd>
 				<dt>版本 / ABI</dt>
 				<dd>{confirmTarget.version ?? "-"} / {confirmTarget.abi ?? "-"}</dd>
+				<dt>兼容性</dt>
+				<dd>
+					{#if compatState(confirmTarget) === "compatible"}
+						<span class="chip chip-ok">与本宿主兼容</span>
+					{:else if compatState(confirmTarget) === "incompatible"}
+						<span class="chip chip-bad">
+							ABI {confirmTarget.abi} 与宿主 {hostAbi ?? "?"} 不兼容——插件需重编译并重签
+						</span>
+					{:else}
+						<span class="chip chip-warn">无法预检（宿主不可达）</span>
+					{/if}
+				</dd>
 				<dt>来源</dt>
 				<dd>{confirmTarget.author ?? "官方"}（官方审核制）</dd>
 			</dl>
@@ -246,7 +270,14 @@
 			{/if}
 			<footer class="pl-modal-foot">
 				<button onclick={() => (confirmTarget = null)} disabled={installing}>取消</button>
-				<button class="pl-primary" onclick={() => void doInstall()} disabled={installing}>
+				<button
+					class="pl-primary"
+					onclick={() => void doInstall()}
+					disabled={installing || compatState(confirmTarget) === "incompatible"}
+					title={compatState(confirmTarget) === "incompatible"
+						? "与本宿主 ABI 不兼容，需重编译插件"
+						: undefined}
+				>
 					{installing ? "安装中…" : "确认安装"}
 				</button>
 			</footer>
