@@ -46,6 +46,7 @@ function Get-ProcByPort([int]$port) {
 $services = @(
     @{ Name = "evorule-server @ 18080"; Port = $PORT_SERVER },
     @{ Name = "evorule-rule-serve @ 18081"; Port = $PORT_RULE },
+    @{ Name = "wasm-host @ 9140"; Port = 9140 },
     @{ Name = "console-cloud dev @ 5174"; Port = $PORT_WEB }
 )
 

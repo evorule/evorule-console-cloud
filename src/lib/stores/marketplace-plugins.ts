@@ -57,6 +57,8 @@ export interface HostInfo {
 	available: boolean;
 	version?: string;
 	abi?: number;
+	/** server 侧管理凭证已配置（安装通道开启）；与 available 正交 */
+	install_channel_enabled?: boolean;
 }
 
 export const marketplacePlugins = writable<MarketplacePlugin[]>([]);
