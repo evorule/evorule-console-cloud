@@ -333,7 +333,7 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
   }
 
   /** POST /api/workspaces/{id}/rules/{rule_id}/block (Active→Blocked) */
-  // === 审计锚点链 (G-A2 三端点,109 号补批接线) ===
+  // === 审计锚点链 (G-A2 三端点) ===
   async listAnchors(sessionId: number): Promise<unknown> {
     return this.fetchJson<unknown>(`/api/sessions/${sessionId}/anchors`);
   }

@@ -88,7 +88,7 @@
     exportPreset = undefined;
   }
 
-  // === 回滚请求(P0 stub 已接真实 API:111 号走查 P0-2 修复) ===
+  // === 回滚请求(P0 stub 已接真实 API:111 走查修复) ===
   const backend = useBackend();
   let rolling = $state(false);
   async function handleRollbackRequest(targetVersion: number): Promise<void> {
