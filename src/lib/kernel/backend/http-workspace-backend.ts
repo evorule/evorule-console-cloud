@@ -333,6 +333,28 @@ export class HttpWorkspaceBackend implements WorkspaceBackend {
   }
 
   /** POST /api/workspaces/{id}/rules/{rule_id}/block (Active→Blocked) */
+  // === 审计锚点链 (G-A2 三端点,109 号补批接线) ===
+  async listAnchors(sessionId: number): Promise<unknown> {
+    return this.fetchJson<unknown>(`/api/sessions/${sessionId}/anchors`);
+  }
+
+  async sealAnchorNow(sessionId: number): Promise<unknown> {
+    return this.fetchJson<unknown>(
+      `/api/sessions/${sessionId}/anchors/seal`,
+      this.postJson()
+    );
+  }
+
+  async verifyAnchors(
+    sessionId: number,
+    keys?: Record<string, string>
+  ): Promise<unknown> {
+    return this.fetchJson<unknown>(
+      `/api/sessions/${sessionId}/anchors/verify`,
+      this.postJson(keys ? { keys } : undefined)
+    );
+  }
+
   async blockRule(workspaceId: string, ruleId: string): Promise<RuleRecord> {
     return this.fetchJson<RuleRecord>(
       `/api/workspaces/${encodeURIComponent(workspaceId)}/rules/${encodeURIComponent(ruleId)}/block`,

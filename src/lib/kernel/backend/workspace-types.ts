@@ -694,6 +694,11 @@ export interface WorkspaceBackend {
     req: TranslateToConditionalRequest
   ): Promise<TranslateToConditionalResponse>;
 
+  // === 审计锚点链 (G-A2,0.9.2 server 三端点) ===
+  listAnchors(sessionId: number): Promise<unknown>;
+  sealAnchorNow(sessionId: number): Promise<unknown>;
+  verifyAnchors(sessionId: number, keys?: Record<string, string>): Promise<unknown>;
+
   // === 判定契约 (阶段 A.3,应用层判定非 evorule 确定性) ===
   listVerdictContracts(workspaceId: string): Promise<VerdictContractRecord[]>;
   createVerdictContract(

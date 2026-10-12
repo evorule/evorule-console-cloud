@@ -249,6 +249,21 @@ export class MockWorkspaceBackend implements WorkspaceBackend {
 		return this.transition(workspaceId, ruleId, 'candidate');
 	}
 
+	async listAnchors(_sessionId: number): Promise<unknown> {
+		return { session_id: _sessionId, count: 0, anchors: [] };
+	}
+
+	async sealAnchorNow(_sessionId: number): Promise<unknown> {
+		return { session_id: _sessionId, sealed: true, mock: true };
+	}
+
+	async verifyAnchors(
+		_sessionId: number,
+		_keys?: Record<string, string>
+	): Promise<unknown> {
+		return { session_id: _sessionId, ok: true, mock: true };
+	}
+
 	async blockRule(workspaceId: string, ruleId: string): Promise<RuleRecord> {
 		return this.transition(workspaceId, ruleId, 'blocked');
 	}

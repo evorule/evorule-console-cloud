@@ -14,6 +14,7 @@ import { base } from '$app/paths';
   import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
   import { toastSuccess, toastError } from '$lib/stores/toast';
   import BusinessAuditView from '$lib/views/Audit/BusinessAuditView.svelte';
+  import AnchorClockPanel from '$lib/views/Audit/AnchorClockPanel.svelte';
   import ArchiveSessionsPanel from '$lib/views/Audit/ArchiveSessionsPanel.svelte';
   import PlatformEventsPanel from '$lib/views/Audit/PlatformEventsPanel.svelte';
   import BundleImportsPanel from '$lib/views/Audit/BundleImportsPanel.svelte';
@@ -73,6 +74,8 @@ import { base } from '$app/paths';
       <p><Term id="blake3" /> 不可篡改审计链 · 因果链回溯 · <Term id="timetravel" /> 回放</p>
     </header>
     <BusinessAuditView onRollbackRequest={handleRollbackRequest} />
+    <!-- :锚点链与时钟面板(G-A2/109 号补批接线) -->
+    <AnchorClockPanel />
     <!-- :历史会话审计档案(只读,服务器重启后 WAL 重建回看) -->
     <ArchiveSessionsPanel />
     <!-- :平台认证事件报表(登录/用户/角色管理事件,prev_hash 链) -->
