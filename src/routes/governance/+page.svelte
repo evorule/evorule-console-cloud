@@ -1436,6 +1436,7 @@
   let nominateTargetId = $state<string | null>(null);
   let metaRuleContent = $state('');
   let nominating = $state(false);
+  let blocking = $state(false);
 
   /** 元规则内容轻量预校验(与 server validate_meta_rule_content 同源的骨架检查;最终以 server 判定为准) */
   function validateMetaRuleContent(text: string): string | null {
@@ -1489,6 +1490,25 @@
       null,
       2
     );
+  }
+
+  async function handleBlockRule(rule: RuleRecord): Promise<void> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    if (!ws || !wb) {
+      toastError('执行域通道不可用,无法下架规则', '规则下架(Block)');
+      return;
+    }
+    blocking = true;
+    try {
+      await wb.blockRule(ws.id, rule.id);
+      toastSuccess(`已下架至 Blocked 态(可重新提交候选恢复):${rule.name}`, '规则下架(Block)');
+      await loadWsRules();
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e), '规则下架(Block)');
+    } finally {
+      blocking = false;
+    }
   }
 
   async function handleNominate(rule: RuleRecord): Promise<void> {
@@ -2524,6 +2544,16 @@
                       <span class="entry-id" title={r.id}>{r.name}</span>
                       <span class="badge {ruleStateClass(r.state)}">{r.state}</span>
                       <button class="btn btn-sm" onclick={() => startFork(r)}>fork</button>
+                      {#if r.state === 'active'}
+                        <button
+                          class="btn btn-sm btn-danger"
+                          onclick={() => void handleBlockRule(r)}
+                          disabled={blocking}
+                          title="下架至 Blocked 态(可重新提交候选恢复)"
+                        >
+                          ⛔ 下架(Block)
+                        </button>
+                      {/if}
                       {#if r.state === 'candidate' && r.current_version_id}
                         <button class="btn btn-sm btn-primary" onclick={() => startNominate(r)}>
                           提名晋升
