@@ -2,12 +2,13 @@
 # Copyright (C) 2026 EvoRule Project
 # start-all.ps1 - 一键启动 evorule 全栈
 #
-# 启 3 个进程(隐藏窗口):
+# 启 4 个进程(隐藏窗口):
 #   1. evorule-server  @ 18080  (<evorule-server 仓根>\target\<profile>\evorule-server.exe)
 #   2. evorule-rule-serve @ 18081  (<evorule-rule 仓根>\target\<profile>\evorule-rule-serve.exe)
 #   3. console-cloud dev @ 5174  (node scripts/dev.mjs --yes)
+#   4. evorule-wasm-host @ 9140  (<evorule-server 仓根>\plugins\wasm-host\target\debug\evorule-wasm-host.exe)
 #
-# 等 3 个端口就绪后,自动开浏览器到 /(HomeRouter 状态机首页,带新手引导)
+# 等 4 个端口就绪后,自动开浏览器到 /(HomeRouter 状态机首页,带新手引导)
 #
 # 参数:
 #   -Quiet      无人值守模式:精简输出、不 Read-Host(供 status-all.ps1 -AutoRestart /
@@ -49,6 +50,14 @@ $SERVER_EXE = if ($env:EVORULE_SERVER_BIN) { $env:EVORULE_SERVER_BIN } else { $D
 $RULE_EXE   = if ($env:EVORULE_RULE_BIN)   { $env:EVORULE_RULE_BIN }   else { $DEFAULT_RULE_BIN }
 $DEV_DIR    = $ROOT
 $LOGS_DIR   = Join-Path $ROOT 'logs'
+# wasm-host（安装自动化三期；exe 存在才拉起——可选组件语义）
+$DEFAULT_WASM_BIN = Join-Path $PARENT 'evorule-server\plugins\wasm-host	arget\debug\evorule-wasm-host.exe'
+$WASM_EXE = if ($env:EVORULE_WASM_HOST_BIN) { $env:EVORULE_WASM_HOST_BIN } else { $DEFAULT_WASM_BIN }
+# 管理凭证缺省不设（wasm-host 管理面缺省关闭）；EVORULE_WASM_ADMIN_TOKEN 显式设置时
+# 两端同值注入（server 代理与 wasm-host 鉴权同源）
+if ($env:EVORULE_WASM_ADMIN_TOKEN) {
+    $env:WASM_HOST_ADMIN_TOKEN = $env:EVORULE_WASM_ADMIN_TOKEN
+}
 $PORT_SERVER = 18080
 $PORT_RULE   = 18081
 $PORT_WEB    = 5174
@@ -250,15 +259,25 @@ Show-Section "[2/3] evorule-rule-serve @ 18081"
 $ok2 = Start-Backend $RULE_EXE $PORT_RULE "evorule-rule-serve" $RULE_ARGS
 if ($ok2) { $ok2 = Wait-Port $PORT_RULE 30 "evorule-rule-serve" }
 
-Show-Section "[3/3] console-cloud dev @ 5174"
+Show-Section "[3/4] console-cloud dev @ 5174"
 $ok3 = Start-Dev $DEV_DIR $PORT_WEB
 if ($ok3) { $ok3 = Wait-Port $PORT_WEB 60 "console-cloud dev" }
+
+Show-Section "[4/4] evorule-wasm-host @ 9140"
+if (Test-Path $WASM_EXE) {
+    $ok4 = Start-Backend $WASM_EXE 9140 "evorule-wasm-host" ""
+    if ($ok4) { $ok4 = Wait-Port 9140 15 "evorule-wasm-host" }
+} else {
+    Write-Host "SKIPPED (exe missing: $WASM_EXE) - install channel unavailable" -ForegroundColor Yellow
+    $ok4 = $true
+}
 
 Show-Section "Startup Summary"
 $results = @{
     "evorule-server @ 18080" = (Test-Port $PORT_SERVER)
     "evorule-rule @ 18081"   = (Test-Port $PORT_RULE)
     "console-cloud @ 5174"   = (Test-Port $PORT_WEB)
+    "wasm-host @ 9140"       = (Test-Port 9140)
 }
 foreach ($k in $results.Keys) {
     if ($results[$k]) { Show-Ok "$k ready" }

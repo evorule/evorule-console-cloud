@@ -14,6 +14,7 @@
 		downloadPluginPartWithProgress,
 		installPlugin,
 		uninstallPlugin,
+		disablePlugin,
 		type MarketplacePlugin,
 		type PluginPart,
 		type InstallResult,
@@ -117,6 +118,19 @@
 			uninstallingId = null;
 		}
 	}
+
+	async function handleDisable(p: MarketplacePlugin): Promise<void> {
+		uninstallingId = p.id;
+		try {
+			await disablePlugin(p.id);
+			toastSuccess(`已下线 ${p.id}（运行时禁用——文件保留，宿主重启后恢复在役）`);
+			await loadPlugins();
+		} catch (e) {
+			toastError(e instanceof Error ? e.message : String(e));
+		} finally {
+			uninstallingId = null;
+		}
+	}
 </script>
 
 <div class="pl-section">
@@ -163,13 +177,30 @@
 						{/if}
 					</div>
 					<footer class="pl-foot">
-						<button class="pl-primary" onclick={() => openConfirm(p)}>一键安装</button>
+						<button
+						class="pl-primary"
+						onclick={() => openConfirm(p)}
+						disabled={$hostInfo.available && $hostInfo.install_channel_enabled === false}
+						title={$hostInfo.available && $hostInfo.install_channel_enabled === false
+							? "宿主未开启安装通道（server 未配置管理凭证）"
+							: undefined}
+					>
+						一键安装
+					</button>
 						<button
 							disabled={downloadingId !== null}
 							onclick={() => void handleDownload(p, "wasm")}
 							title="仅下载（不安装）"
 						>
 							下载
+						</button>
+						<button
+							class="pl-danger"
+							disabled={uninstallingId !== null}
+							onclick={() => void handleDisable(p)}
+							title="运行时禁用（文件保留，宿主重启后恢复在役）"
+						>
+							下线
 						</button>
 						<button
 							class="pl-danger"
