@@ -208,6 +208,18 @@
 		}
 	}
 
+	async function handleInterruptSession() {
+		if (!backend || $currentSessionId === null) return;
+		try {
+			const r = await backend.interruptSession($currentSessionId);
+			if (!r.success) {
+				console.warn('[ExecutionPad] interrupt failed:', r.message);
+			}
+		} catch (e) {
+			console.warn('[ExecutionPad] interrupt error:', e);
+		}
+	}
+
 	async function handleCreateSession() {
 		if (!backend) return;
 		await createSession(backend);
@@ -269,6 +281,14 @@
 			<aside class="session-panel">
 				<header class="panel-header">
 					<h2>Sessions</h2>
+					<button
+						class="btn-mini"
+						onclick={handleInterruptSession}
+						disabled={$isLoading || $currentSessionId === null}
+						title="向当前会话发送中断(完成当前步后停止)"
+					>
+						⏸ 中断
+					</button>
 					<button class="btn-mini btn-primary" onclick={handleCreateSession} disabled={$isLoading}>
 						+ 新建
 					</button>
