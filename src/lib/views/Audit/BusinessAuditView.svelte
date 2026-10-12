@@ -443,9 +443,13 @@ ${causalChain.nodes
 
   function handleConfirmRollback(): void {
     showRollbackConfirm = false;
-    if (rollbackTarget !== null) {
-      onRollbackRequest?.(rollbackTarget);
-      toastInfo(`回滚请求已提交: ruleset v${rollbackTarget}`);
+    if (rollbackTarget === null) return;
+    if (onRollbackRequest) {
+      // 回调方负责真实回滚与成败 toast
+      onRollbackRequest(rollbackTarget);
+    } else {
+      // 诚实反馈:宿主页未接回滚通道时不再假报「已提交」
+      toastError(`回滚通道未接入:ruleset v${rollbackTarget} 未回滚`);
     }
     rollbackTarget = null;
   }

@@ -10,6 +10,9 @@ import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { isLoggedIn, can } from '$lib/stores/auth';
   import { currentSessionId } from '$lib/kernel/stores/session';
+  import { useBackend } from '$lib/kernel';
+  import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
+  import { toastSuccess, toastError } from '$lib/stores/toast';
   import BusinessAuditView from '$lib/views/Audit/BusinessAuditView.svelte';
   import ArchiveSessionsPanel from '$lib/views/Audit/ArchiveSessionsPanel.svelte';
   import PlatformEventsPanel from '$lib/views/Audit/PlatformEventsPanel.svelte';
@@ -34,6 +37,26 @@ import { base } from '$app/paths';
       currentSessionId.set(sid);
     }
   });
+
+  // 回滚真实接线(P0 修复:此前页面未传回调,组件空转 toast 假反馈)
+  let auditBackend: CloudHttpBackend;
+  onMount(() => {
+    if (!$isLoggedIn || !can('view_audit_chain')) return;
+    const b = useBackend();
+    auditBackend = b as CloudHttpBackend;
+  });
+
+  async function handleRollbackRequest(targetVersion: number): Promise<void> {
+    const res = await auditBackend.emergencyRollbackRequest(
+      targetVersion,
+      '审计工作台紧急回滚',
+    );
+    if (res.ok) {
+      toastSuccess(`已回滚到 ruleset v${targetVersion}(新版本号递增)`);
+    } else {
+      toastError(res.error ?? '回滚失败');
+    }
+  }
 </script>
 
 {#if $isLoggedIn && can('view_audit_chain')}
@@ -49,7 +72,7 @@ import { base } from '$app/paths';
       <h1>🔍 审计员工作台</h1>
       <p><Term id="blake3" /> 不可篡改审计链 · 因果链回溯 · <Term id="timetravel" /> 回放</p>
     </header>
-    <BusinessAuditView />
+    <BusinessAuditView onRollbackRequest={handleRollbackRequest} />
     <!-- :历史会话审计档案(只读,服务器重启后 WAL 重建回看) -->
     <ArchiveSessionsPanel />
     <!-- :平台认证事件报表(登录/用户/角色管理事件,prev_hash 链) -->

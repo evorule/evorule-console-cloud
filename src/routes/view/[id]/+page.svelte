@@ -22,7 +22,9 @@
     pendingInstructionDraft,
     clearPendingInstructionDraft,
   } from "$lib/stores/assistant-ui";
-  import { toastInfo } from "$lib/stores/toast";
+  import { toastInfo, toastError, toastSuccess } from "$lib/stores/toast"
+	import { CloudHttpBackend } from "$lib/backend/cloud-http-backend"
+	import { useBackend } from "$lib/kernel";
   // T2: rules 视图接入 BusinessRuleLibrary(包装内核 RuleLibraryView + 业务/开发者模式)
   import BusinessRuleLibrary from "$lib/views/Rules/BusinessRuleLibrary.svelte";
   import DraftRuleDialog from "$lib/views/Assistant/DraftRuleDialog.svelte";
@@ -86,11 +88,25 @@
     exportPreset = undefined;
   }
 
-  // === 回滚请求(P0:toast 提示;真实回滚 API 由后续阶段接入) ===
-  function handleRollbackRequest(targetVersion: number): void {
-    toastInfo(
-      `回滚请求已记录: ruleset v${targetVersion}(P0 演示模式,真实回滚 API 待接入)`,
-    );
+  // === 回滚请求(P0 stub 已接真实 API:111 号走查 P0-2 修复) ===
+  const backend = useBackend();
+  let rolling = $state(false);
+  async function handleRollbackRequest(targetVersion: number): Promise<void> {
+    if (rolling) return;
+    rolling = true;
+    try {
+      const cb = backend as CloudHttpBackend;
+      const res = await cb.emergencyRollbackRequest(targetVersion, "视图页紧急回滚");
+      if (res.ok) {
+        toastSuccess(`已回滚到 ruleset v${targetVersion}(新版本号递增)`);
+      } else {
+        toastError(res.error ?? "回滚失败");
+      }
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : String(e));
+    } finally {
+      rolling = false;
+    }
   }
 </script>
 
