@@ -111,7 +111,7 @@ export class HttpBackend implements ExecutionBackend {
    * @param path  - 以 / 开头的 path,如 /api/sessions
    * @param opts  - RequestInit(method/headers/body)
    */
-  private async fetchJson<T>(path: string, opts: RequestInit = {}): Promise<T> {
+  async fetchJson<T>(path: string, opts: RequestInit = {}): Promise<T> {
     const url = this.baseUrl + path;
     let r: Response;
     try {
@@ -426,6 +426,49 @@ export class HttpBackend implements ExecutionBackend {
   async getAutoVerify(id: SessionId): Promise<AutoVerifyStatus> {
     return this.fetchJson<AutoVerifyStatus>(
       `/api/sessions/${id}/audit/auto_verify`
+    );
+  }
+
+  // === 审计锚点链 (G-A2 三端点,109 号补批接线) ===
+  async listAnchors(id: SessionId): Promise<unknown> {
+    return this.fetchJson<unknown>(`/api/sessions/${id}/anchors`);
+  }
+
+  async sealAnchorNow(id: SessionId): Promise<unknown> {
+    return this.fetchJson<unknown>(`/api/sessions/${id}/anchors/seal`, this.postJson());
+  }
+
+  async verifyAnchors(id: SessionId, keys?: Record<string, string>): Promise<unknown> {
+    return this.fetchJson<unknown>(
+      `/api/sessions/${id}/anchors/verify`,
+      this.postJson(keys ? { keys } : undefined)
+    );
+  }
+
+  // === 版本↔墙钟旁路映射 (clock/record|lookup,不进审计链哈希) ===
+  async recordClock(
+    id: SessionId,
+    version: number,
+    wallClock: string,
+    source?: string
+  ): Promise<unknown> {
+    return this.fetchJson<unknown>(
+      `/api/sessions/${id}/clock/record`,
+      this.postJson({ version, wall_clock: wallClock, source })
+    );
+  }
+
+  async lookupClock(
+    id: SessionId,
+    fromVersion?: number,
+    toVersion?: number
+  ): Promise<unknown> {
+    const q = new URLSearchParams();
+    if (fromVersion !== undefined) q.set('from_version', String(fromVersion));
+    if (toVersion !== undefined) q.set('to_version', String(toVersion));
+    const qs = q.toString();
+    return this.fetchJson<unknown>(
+      `/api/sessions/${id}/clock/lookup${qs ? `?${qs}` : ''}`
     );
   }
 

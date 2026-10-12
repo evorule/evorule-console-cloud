@@ -569,6 +569,37 @@ export class CloudHttpBackend implements ExecutionBackend {
 	 * @param includeContent true 时每条附 content_json 完整 Fact 内容
 	 *   (含 IoRequest params / IoResponse result,LLM 审计详情依赖此参数)
 	 */
+	// === 审计锚点链 (G-A2 三端点,109 号补批接线;委托内核 HttpBackend) ===
+	async listAnchors(sessionId: number): Promise<unknown> {
+		return this.backend.listAnchors(sessionId);
+	}
+
+	async sealAnchorNow(sessionId: number): Promise<unknown> {
+		return this.backend.sealAnchorNow(sessionId);
+	}
+
+	async verifyAnchors(sessionId: number, keys?: Record<string, string>): Promise<unknown> {
+		return this.backend.verifyAnchors(sessionId, keys);
+	}
+
+	// === 版本↔墙钟旁路映射 (clock/record|lookup) ===
+	async recordClock(
+		sessionId: number,
+		version: number,
+		wallClock: string,
+		source?: string
+	): Promise<unknown> {
+		return this.backend.recordClock(sessionId, version, wallClock, source);
+	}
+
+	async lookupClock(
+		sessionId: number,
+		fromVersion?: number,
+		toVersion?: number
+	): Promise<unknown> {
+		return this.backend.lookupClock(sessionId, fromVersion, toVersion);
+	}
+
 	async getArchiveAudit(
 		id: SessionId,
 		includeContent: boolean = false
