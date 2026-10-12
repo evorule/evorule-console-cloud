@@ -149,7 +149,7 @@ describe('CloudWorkspaceBackend 透传(部署通道)', () => {
 	});
 });
 
-describe('GovernanceBackend.buildTestsForEvidence(证据三形态构造,W1.3)', () => {
+describe('GovernanceBackend.buildTestsForEvidence(证据两形态构造,W1.3;sandbox:-only 收紧)', () => {
 	test('sandbox-report 机器背书 → subset 引用沙盒 ID + verdict 透传(不伪造:fail 报告如实 fail)', () => {
 		expect(
 			GovernanceBackend.buildTestsForEvidence({ kind: 'sandbox-report', sandboxId: 7, verdict: 'pass' })
@@ -157,12 +157,6 @@ describe('GovernanceBackend.buildTestsForEvidence(证据三形态构造,W1.3)', 
 		expect(
 			GovernanceBackend.buildTestsForEvidence({ kind: 'sandbox-report', sandboxId: 9, verdict: 'fail' })
 		).toEqual({ subset: ['sandbox:9'], verdict: 'fail' });
-	});
-
-	test('human-confirmed 人工降级 → subset 带 human:<actor> 标记(降级可追溯)+ verdict=pass', () => {
-		expect(
-			GovernanceBackend.buildTestsForEvidence({ kind: 'human-confirmed', actor: 'admin' })
-		).toEqual({ subset: ['human:admin'], verdict: 'pass' });
 	});
 
 	test('none 无证据 → verdict=fail(执行侧闸门一硬拒,不静默)', () => {
@@ -192,19 +186,6 @@ describe('GovernanceBackend.exportBundle(带证据导出)', () => {
 			dataset_id: 'ds-1',
 			version: 'V2',
 			tests: { subset: ['sandbox:7'], verdict: 'pass' }
-		});
-	});
-
-	test('human-confirmed 人工降级 → tests={subset:[human:actor],verdict:pass}(显式降级可追溯)', async () => {
-		await login();
-		mockFetch.mockResolvedValue(okResponse({ bundle: {} }));
-
-		await gb.exportBundle('ds-1', 'V2', { kind: 'human-confirmed', actor: 'admin' });
-
-		const init = mockFetch.mock.calls[1][1] as RequestInit;
-		expect(JSON.parse(init.body as string).tests).toEqual({
-			subset: ['human:admin'],
-			verdict: 'pass'
 		});
 	});
 

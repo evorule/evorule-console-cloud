@@ -47,19 +47,17 @@ export interface GovernanceConnectionConfig {
 }
 
 /**
- * 导出证据三形态（W1.3/W1.4，设计方案 §1.3）。
+ * 导出证据两形态（W1.3/W1.4，设计方案 §1.3；sandbox:-only 收紧后人工降级通路下线）。
  *
- * - sandbox-report：机器背书（首选路径）——verdict 从沙盒报告派生
+ * - sandbox-report：机器背书（唯一 pass 通路）——verdict 从沙盒报告派生
  *   （调用方以 reportVerdict() 从报告 summary 派生，不手填不伪造），
- *   subset 引用沙盒 ID 使机器证据在 bundle 内可追溯；
- * - human-confirmed：人工降级（显式路径）——操作者选择未经沙盒验证的人工
- *   背书，subset 带 human:<actor> 标记，降级在 bundle 内可追溯（W1.4 阶段一）；
- * - none：无证据 —— verdict=fail，执行侧闸门一硬拒导入（evorule-bundle
- *   L359-363 enforcement，非 console 侧拦截）。
+ *   subset 引用沙盒 ID 使机器证据在 bundle 内可追溯（导入侧深度校验
+ *   存在性与报告一致性）；
+ * - none：无证据 —— verdict=fail，如实标注未验证；执行侧闸门一硬拒导入
+ *   （evorule-bundle L359-363 enforcement，非 console 侧拦截）。
  */
 export type ExportEvidence =
 	| { kind: 'sandbox-report'; sandboxId: number; verdict: 'pass' | 'fail' }
-	| { kind: 'human-confirmed'; actor: string }
 	| { kind: 'none' };
 
 interface RequestOptions {
@@ -362,9 +360,6 @@ export class GovernanceBackend {
 					subset: [`sandbox:${ev.sandboxId}`],
 					verdict: ev.verdict
 				};
-			case 'human-confirmed':
-				// 人工降级:显式选择才可到达,actor 进 subset 使降级可追溯
-				return { subset: [`human:${ev.actor}`], verdict: 'pass' };
 			case 'none':
 				// 无证据:verdict=fail,导入侧硬拒(fail-fast,不静默)
 				return { verdict: 'fail' };
@@ -377,15 +372,15 @@ export class GovernanceBackend {
 	 * 部署到执行域必须走本端点（带证据）：GET 导出固定 unverified()
 	 * （verdict=fail），执行侧闸门一会拒绝导入（T0 决策：未验证不得默认 Pass）。
 	 *
-	 * 证据语义（W1.3 升级，取代 设计方案 B 的单一人工背书）：
-	 * evidence 为结构化三形态（ExportEvidence）——sandbox-report 机器背书为
-	 * 默认路径，human-confirmed 为显式降级路径，none 导出不可导入的预览包。
+	 * 证据语义（W1.3 升级；sandbox:-only 收紧后人工降级通路下线）：
+	 * evidence 为结构化两形态（ExportEvidence）——sandbox-report 机器背书为
+	 * 唯一 pass 通路，none 导出不可导入的预览包（verdict=fail 如实未验证）。
 	 * 本客户端如实按 evidence 构造 tests 段（buildTestsForEvidence），
 	 * 不伪造沙箱验证产出；机器证据的 verdict 必须由调用方从真实报告派生。
 	 *
 	 * @param datasetId 数据集 ID
 	 * @param version 要导出的版本（如 "V1"）
-	 * @param evidence 结构化导出证据（三形态见 ExportEvidence）
+	 * @param evidence 结构化导出证据（两形态见 ExportEvidence）
 	 */
 	async exportBundle(
 		datasetId: string,
