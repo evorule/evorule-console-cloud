@@ -429,7 +429,7 @@ export class HttpBackend implements ExecutionBackend {
     );
   }
 
-  // === 审计锚点链 (G-A2 三端点,109 号补批接线) ===
+  // === 审计锚点链 (G-A2 三端点) ===
   async listAnchors(id: SessionId): Promise<unknown> {
     return this.fetchJson<unknown>(`/api/sessions/${id}/anchors`);
   }

@@ -569,7 +569,7 @@ export class CloudHttpBackend implements ExecutionBackend {
 	 * @param includeContent true 时每条附 content_json 完整 Fact 内容
 	 *   (含 IoRequest params / IoResponse result,LLM 审计详情依赖此参数)
 	 */
-	// === 审计锚点链 (G-A2 三端点,109 号补批接线;委托内核 HttpBackend) ===
+	// === 审计锚点链 (G-A2 三端点;委托内核 HttpBackend) ===
 	async listAnchors(sessionId: number): Promise<unknown> {
 		return this.backend.listAnchors(sessionId);
 	}

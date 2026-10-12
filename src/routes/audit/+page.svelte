@@ -74,7 +74,7 @@ import { base } from '$app/paths';
       <p><Term id="blake3" /> 不可篡改审计链 · 因果链回溯 · <Term id="timetravel" /> 回放</p>
     </header>
     <BusinessAuditView onRollbackRequest={handleRollbackRequest} />
-    <!-- :锚点链与时钟面板(G-A2/109 号补批接线) -->
+    <!-- :锚点链与时钟面板(G-A2 接线) -->
     <AnchorClockPanel />
     <!-- :历史会话审计档案(只读,服务器重启后 WAL 重建回看) -->
     <ArchiveSessionsPanel />
