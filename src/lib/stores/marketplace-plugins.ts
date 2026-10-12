@@ -52,7 +52,15 @@ export interface MarketplacePlugin {
 	created_at?: string;
 }
 
+/** 宿主信息（三态显式建模：available=false=无法预检，不默认兼容） */
+export interface HostInfo {
+	available: boolean;
+	version?: string;
+	abi?: number;
+}
+
 export const marketplacePlugins = writable<MarketplacePlugin[]>([]);
+export const hostInfo = writable<HostInfo>({ available: false });
 export const pluginsLoading = writable<boolean>(false);
 export const pluginsError = writable<string | null>(null);
 
@@ -70,11 +78,15 @@ export async function loadPlugins(): Promise<void> {
 		if (!res.ok) {
 			throw new Error(await serverErrorMessage(res, "插件列表加载失败"));
 		}
-		const body = (await res.json()) as { plugins?: MarketplacePlugin[] };
+		const body = (await res.json()) as {
+			plugins?: MarketplacePlugin[];
+			host?: HostInfo;
+		};
 		if (!Array.isArray(body.plugins)) {
 			throw new Error("插件列表响应形态异常（plugins 非数组）");
 		}
 		marketplacePlugins.set(body.plugins);
+		hostInfo.set(body.host ?? { available: false });
 	} catch (e) {
 		// 显式降级：错误原文上屏，保留已加载列表可浏览，拒绝静默
 		pluginsError.set(e instanceof Error ? e.message : String(e));
