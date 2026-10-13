@@ -45,6 +45,7 @@
   import DevJsonEditor from "./DevJsonEditor.svelte";
   import BusinessTermFilter from "./BusinessTermFilter.svelte";
   import TermManagerDialog from "./TermManagerDialog.svelte";
+  import BusinessEventView from "./BusinessEventView.svelte";
   import BusinessRuleCard from "./BusinessRuleCard.svelte";
   import BusinessForm from "./BusinessForm.svelte";
   import BusinessPreview from "./BusinessPreview.svelte";
@@ -68,6 +69,8 @@
   let devMode = $state(false);
   let selectedTermId = $state<string | null>(null);
   let termManagerOpen = $state(false);
+  // 业务模式顶层切换:规则库(默认) | 业务事件(孤儿域接线批)
+  let businessSection = $state<"rules" | "events">("rules");
   // schema 选择器 ID(null = 用 meta.schemaId 或无 schema)
   let selectedSchemaId = $state<string | null>(null);
 
@@ -264,9 +267,21 @@
         >
           🏷 分类与标签
         </button>
+        <button
+          class="btn"
+          class:btn-active={businessSection === "events"}
+          onclick={() => (businessSection = businessSection === "events" ? "rules" : "events")}
+          title="业务事件工作台:模板表单 → LLM 翻译 → 影响预览 → 试提交"
+        >
+          📨 业务事件
+        </button>
         <DeveloperModeToggle bind:devMode />
       </div>
     </header>
+
+    {#if businessSection === "events"}
+      <BusinessEventView />
+    {:else}
 
     <div class="lib-body">
       <aside class="lib-sidebar">
@@ -394,6 +409,8 @@
     </section>
   </div>
 
+
+    {/if}
   <!-- W2-B5:分类与标签管理抽屉 -->
   {#if manageOpen}
     <!-- tabindex="-1":dialog 容器可编程聚焦(ARIA 惯例),同时满足 a11y 焦点要求;
