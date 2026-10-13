@@ -87,14 +87,12 @@
 
   /**
    * server 端点尚未就位的干预动作(默认置灰,防假动作;调用方可显式覆盖)。
-   * pause/resume/gc/heartbeat 四动作已接真端点,不在此列。
+   * pause/resume/gc/heartbeat/check_invariants/cancel_all/wal_rotate 七动作
+   * 已接真端点,不在此列。
    */
   const DEFAULT_UNWIRED_ACTIONS: readonly InterventionAction[] = [
-    "reactor.check_invariants",
-    "io.cancel_all_pending",
     "publish.start_session",
     "publish.approve_mode",
-    "wal.force_rotate",
     "session.switch",
   ];
 
@@ -222,6 +220,10 @@
       "reactor.resume": (sid) => backendRef.resumeSession(sid),
       "reactor.gc": (sid) => backendRef.gcSession(sid),
       "io.inject_heartbeat": (sid) => backendRef.injectSessionHeartbeat(sid),
+      "reactor.check_invariants": (sid) =>
+        backendRef.scanSessionInvariants(sid),
+      "io.cancel_all_pending": (sid) => backendRef.cancelAllPendingIo(sid),
+      "wal.force_rotate": (sid) => backendRef.rotateSessionWal(sid),
     };
     const run = sessionScoped[action];
     if (run) {
@@ -231,17 +233,38 @@
         return;
       }
       try {
-        await run(sid);
+        const result = (await run(sid)) as Record<string, unknown>;
+        if (action === "reactor.check_invariants") {
+          const n = Number(result?.violation_count ?? 0);
+          if (n > 0) {
+            toastWarning(`不变式扫描:检出 ${n} 条违规(已落账,详见审计链)`);
+          } else {
+            toastSuccess("不变式扫描:未检出违规");
+          }
+          return;
+        }
+        if (action === "wal.force_rotate") {
+          if (result?.rotated === true) {
+            toastSuccess("WAL 已轮换(新分片追加,旧分片完整)");
+          } else {
+            toastInfo("当前会话无 WAL(纯内存模式),无需轮换");
+          }
+          return;
+        }
         const okMsg: Partial<Record<InterventionAction, string>> = {
           "reactor.pause": "会话已暂停:新指令准入闸关闭(resume 恢复)",
           "reactor.resume": "会话已恢复:指令准入闸开启",
           "reactor.gc": "事实链压缩已执行(history/rewind 对已压缩区间失效)",
           "io.inject_heartbeat": "心跳 Fact 已注入",
+          "io.cancel_all_pending": "已请求取消全部 pending I/O(Error 事实入链)",
         };
         toastSuccess(okMsg[action] ?? "干预完成");
       } catch (e) {
         const status = e instanceof HttpBackendError ? e.status : 0;
-        if (action === "reactor.gc" && status === 404) {
+        if (
+          (action === "reactor.gc" || action === "io.cancel_all_pending") &&
+          status === 404
+        ) {
           toastError(
             "server 未启用高危干预端点(需 --allow-interventions 启动)",
           );
