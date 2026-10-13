@@ -109,20 +109,19 @@ describe('T8-7 高危操作 level 断言', () => {
 		expect(ACTION_TO_CONFIRM['io.cancel_all_pending'].level).toBe('danger');
 	});
 
-	test('publish.approve_mode / reactor.pause / session.switch / reactor.check_invariants / wal.force_rotate 必须为 warning', () => {
+	test('publish.approve_mode / reactor.pause / reactor.check_invariants / wal.force_rotate 必须为 warning', () => {
 		const warnings: InterventionAction[] = [
 			'publish.approve_mode',
 			'reactor.pause',
-			'session.switch',
 			'reactor.check_invariants',
 			'wal.force_rotate',
 			'reactor.resume',
 		];
 		// 注意:resume 实际是 info,上面数组剔除
+		// session.switch 实际是 info(直开选择浮层,浮层内选择即确认)
 		const expectedWarnings: InterventionAction[] = [
 			'publish.approve_mode',
 			'reactor.pause',
-			'session.switch',
 			'reactor.check_invariants',
 			'wal.force_rotate',
 		];
