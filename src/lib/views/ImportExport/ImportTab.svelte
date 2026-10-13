@@ -28,7 +28,14 @@
   import { importRuleUniversal, importRulesBatch } from "$lib/stores/rule-import-export";
   import { importDataset } from "$lib/stores/dataset-import-export";
   import { importFormSchema } from "$lib/stores/form-import-export";
-  import { createImportSnapshot, listSnapshotsByUser } from "$lib/stores/import-snapshot";
+  import {
+    createImportSnapshot,
+    listSnapshotsByUser,
+    restoreSnapshot,
+    deleteSnapshot,
+    purgeExpiredSnapshots,
+    importSnapshotsStore,
+  } from "$lib/stores/import-snapshot";
   import { buildDjbhRulesetPackage } from "$lib/stores/ruleset-import";
   import ConflictResolver from "./ConflictResolver.svelte";
   import { toastSuccess, toastError, toastInfo } from "$lib/stores/toast";
@@ -50,6 +57,54 @@
   let importResult = $state<ImportResult | null>(null);
   let showConflictResolver = $state(false);
   let createSnapshot = $state(true);
+
+  // === 快照管理（P2-3 接线：restoreSnapshot/deleteSnapshot 此前全库零消费） ===
+  const snapshots = $derived($importSnapshotsStore);
+  const userSnapshots = $derived(
+    (() => {
+      const uid = getCurrentUser()?.id;
+      return uid ? listSnapshotsByUser(uid) : snapshots;
+    })(),
+  );
+  let restoringId = $state<string | null>(null);
+
+  function fmtTime(iso: string): string {
+    return iso.replace("T", " ").slice(0, 16);
+  }
+
+  async function handleRestore(id: string): Promise<void> {
+    if (
+      !window.confirm(
+        "恢复快照将覆盖当前数据集与表单;规则恢复受 P0 简化限制不自动执行(恢复后需手动同步规则)。确认恢复?",
+      )
+    ) {
+      return;
+    }
+    restoringId = id;
+    try {
+      const ok = await restoreSnapshot(id);
+      if (ok) {
+        toastSuccess(
+          `快照 ${id.slice(0, 16)} 已恢复(数据集+表单已覆盖;规则需手动同步)`,
+        );
+      }
+    } catch (e) {
+      toastError(`恢复失败: ${(e as Error).message}`);
+    } finally {
+      restoringId = null;
+    }
+  }
+
+  function handleDeleteSnapshot(id: string): void {
+    if (!window.confirm(`删除快照 ${id.slice(0, 16)}?快照内容将一并清除。`)) return;
+    deleteSnapshot(id);
+    toastSuccess(`快照 ${id.slice(0, 16)} 已删除`);
+  }
+
+  function handlePurge(): void {
+    const n = purgeExpiredSnapshots();
+    toastInfo(n > 0 ? `已清理 ${n} 个过期快照` : "没有过期快照");
+  }
 
   const objectTypes: ObjectType[] = ["rule", "dataset", "form", "library_schema"];
 
@@ -296,6 +351,41 @@
     {/if}
   </section>
 
+  <!-- 导入快照管理（P2-3：恢复/删除此前无入口） -->
+  <section class="it-section">
+    <h3 class="it-sec-title">5. 导入快照（恢复点）</h3>
+    {#if userSnapshots.length === 0}
+      <p class="it-snap-empty">
+        暂无快照——导入时勾选「导入前创建快照」即自动生成恢复点。
+      </p>
+    {:else}
+      <ul class="it-snap-list">
+        {#each userSnapshots as snap (snap.id)}
+          <li class="it-snap-row">
+            <span class="it-snap-label" title={snap.id}>{snap.label}</span>
+            <span class="it-snap-time">{fmtTime(snap.createdAt)}</span>
+            <span class="it-snap-actions">
+              <button
+                class="it-snap-btn restore"
+                disabled={restoringId !== null}
+                onclick={() => handleRestore(snap.id)}
+              >
+                {restoringId === snap.id ? "恢复中…" : "⏪ 恢复"}
+              </button>
+              <button
+                class="it-snap-btn del"
+                onclick={() => handleDeleteSnapshot(snap.id)}
+              >
+                删除
+              </button>
+            </span>
+          </li>
+        {/each}
+      </ul>
+      <button class="it-snap-btn purge" onclick={handlePurge}>清理过期快照</button>
+    {/if}
+  </section>
+
   <!-- 导入结果 -->
   {#if importResult}
     <section class="it-result">
@@ -352,6 +442,67 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary, #4b5563);
+  }
+  .it-snap-empty {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+  }
+  .it-snap-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .it-snap-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 6px;
+  }
+  .it-snap-label {
+    font-size: 12px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .it-snap-time {
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+    margin-left: auto;
+  }
+  .it-snap-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .it-snap-btn {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border, #d1d5db);
+    background: var(--bg-card, #fff);
+    color: var(--text-secondary, #4b5563);
+    cursor: pointer;
+  }
+  .it-snap-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .it-snap-btn.restore {
+    border-color: var(--info, #93c5fd);
+    color: var(--info, #1e40af);
+  }
+  .it-snap-btn.del:hover {
+    background: var(--danger-bg, #fee2e2);
+  }
+  .it-snap-btn.purge {
+    align-self: flex-start;
   }
   .it-type-grid {
     display: grid;

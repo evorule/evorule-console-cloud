@@ -11,11 +11,51 @@
 <script lang="ts">
   import { tagStore } from "$lib/stores/tag";
   import { createTag, updateTag, deleteTag } from "$lib/stores/tag";
-  import { getRulesOfTag } from "$lib/stores/rule-tag";
+  import {
+    getRulesOfTag,
+    addTagToRule,
+    removeTagFromRule,
+  } from "$lib/stores/rule-tag";
+  import { getAllRules } from "$lib/kernel";
   import { pushToast } from "$lib/stores/toast";
   import EmptyState from "$lib/views/Feedback/EmptyState.svelte";
 
   type EditorMode = "hidden" | "new" | "edit";
+
+  // === 关联规则编辑（P2-5 接线:addTagToRule/removeTagFromRule 此前零消费） ===
+  let assocTagId = $state<string | null>(null);
+  let assocPickRuleId = $state("");
+
+  const assocOpen = $derived(assocTagId !== null);
+  const assocRules = $derived(assocTagId ? getRulesOfTag(assocTagId) : []);
+  const assocTagName = $derived(
+    assocTagId ? ($tagStore.find((t) => t.id === assocTagId)?.name ?? assocTagId) : "",
+  );
+  const unassociatedRules = $derived.by(() => {
+    if (!assocTagId) return [];
+    const associated = new Set(assocRules);
+    return getAllRules()
+      .map((r) => ({ id: String(r.id), name: String(r.name ?? r.id) }))
+      .filter((r) => !associated.has(r.id));
+  });
+
+  function openAssoc(id: string): void {
+    assocTagId = id;
+    assocPickRuleId = "";
+  }
+
+  function handleAddAssoc(): void {
+    if (!assocTagId || !assocPickRuleId) return;
+    addTagToRule(assocPickRuleId, assocTagId);
+    pushToast(`规则 ${assocPickRuleId} 已关联标签 "${assocTagName}"`, "success");
+    assocPickRuleId = "";
+  }
+
+  function handleRemoveAssoc(ruleId: string): void {
+    if (!assocTagId) return;
+    removeTagFromRule(ruleId, assocTagId);
+    pushToast(`规则 ${ruleId} 已取消关联标签 "${assocTagName}"`, "success");
+  }
 
   let editorMode = $state<EditorMode>("hidden");
   let editingId = $state<string | null>(null);
@@ -130,6 +170,9 @@
               <span class="meta-item" title="关联规则数">📋 {ruleCount} 条规则</span>
             </div>
             <div class="card-actions">
+              <button type="button" class="btn btn-sm" onclick={() => openAssoc(tag.id)}>
+                🔗 关联({ruleCount})
+              </button>
               <button type="button" class="btn btn-sm" onclick={() => openEdit(tag.id)}>
                 ✏️ 编辑
               </button>
@@ -146,6 +189,53 @@
       </div>
     {/if}
   </div>
+
+  {#if assocOpen}
+    <div class="editor-modal" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <header class="modal-header">
+          <h3>关联规则 —「{assocTagName}」</h3>
+          <button type="button" class="btn-close" onclick={() => (assocTagId = null)}>✕</button>
+        </header>
+        <div class="modal-body">
+          {#if assocRules.length === 0}
+            <p class="assoc-empty">暂无关联规则——从下方选择规则建立关联。</p>
+          {:else}
+            <ul class="assoc-list">
+              {#each assocRules as rid (rid)}
+                <li class="assoc-row">
+                  <span class="assoc-rid">{rid}</span>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-danger"
+                    onclick={() => handleRemoveAssoc(rid)}
+                  >
+                    取消关联
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+          <div class="assoc-add">
+            <select bind:value={assocPickRuleId}>
+              <option value="" disabled>选择要关联的规则…</option>
+              {#each unassociatedRules as r (r.id)}
+                <option value={r.id}>{r.name}（{r.id.slice(0, 8)}…）</option>
+              {/each}
+            </select>
+            <button
+              type="button"
+              class="btn btn-sm btn-primary"
+              disabled={!assocPickRuleId}
+              onclick={handleAddAssoc}
+            >
+              + 关联
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   {#if editorMode !== "hidden"}
     <div class="editor-modal" role="dialog" aria-modal="true">
@@ -424,5 +514,42 @@
     gap: 8px;
     padding: 12px 16px;
     border-top: 1px solid var(--border, #e2e8f0);
+  }
+  .assoc-empty {
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+  }
+  .assoc-list {
+    list-style: none;
+    margin: 0 0 10px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .assoc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 6px;
+  }
+  .assoc-rid {
+    font-family: var(--font-mono, monospace);
+    font-size: 11px;
+  }
+  .assoc-add {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .assoc-add select {
+    flex: 1;
+    font-size: 12px;
+    padding: 5px 8px;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 5px;
   }
 </style>

@@ -218,12 +218,17 @@
     actionError = null;
     try {
       const r = await backend.reviewPermission(id, approve);
+      if (!r.success) {
+        // server success=false 必须走失败反馈（低-1：不得先 toastSuccess 再补错误）
+        const msg = `审批未生效(${id}): server 返回 success=false`;
+        actionError = msg;
+        toastError(msg);
+        await reload();
+        return;
+      }
       toastSuccess(
         `权限条目 ${id} 已${approve ? "批准(→ Active,进入判定集合)" : "拒绝(→ Rejected)"}`
       );
-      if (!r.success) {
-        actionError = `server 返回 success=false(${id})`;
-      }
       await reload();
     } catch (e) {
       actionError = `审批失败(${id}): ${(e as Error).message}`;
