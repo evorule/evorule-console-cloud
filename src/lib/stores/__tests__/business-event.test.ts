@@ -362,7 +362,7 @@ describe("translateEvent / submitEvent — mock 链路", () => {
 		const after = getEvent(id)!;
 		expect(after.translateStatus).toBe("translated");
 		expect(after.instruction).toEqual({ type: "noop" });
-		expect((mockAssistant as { generateInput: ReturnType<typeof vi.fn> }).generateInput)
+		expect((mockAssistant as unknown as { generateInput: ReturnType<typeof vi.fn> }).generateInput)
 			.toHaveBeenCalledTimes(1);
 	});
 

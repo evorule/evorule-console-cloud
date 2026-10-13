@@ -48,6 +48,7 @@
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import { useWorkspaceBackendOrNull, currentWorkspace, HttpWorkspaceBackendError } from '$lib/kernel';
   import VerdictContractsPanel from '$lib/views/Governance/VerdictContractsPanel.svelte';
+  import LocalAssemblyImportDialog from '$lib/views/Governance/LocalAssemblyImportDialog.svelte';
   import type {
     ActiveBundleInfo,
     BundleDryRunResult,
@@ -148,6 +149,14 @@
     } else {
       govSaveErr = GOV_SAVE_ERR_TEXT[r.error];
     }
+  }
+
+  // ===== 本地装配导入（06 号桥接 B2） =====
+  let localImportOpen = $state(false);
+
+  async function handleLocalImported(governanceDatasetId: string): Promise<void> {
+    await refreshDatasets().catch(() => undefined);
+    selectDataset(governanceDatasetId);
   }
 
   // ===== 创建数据集 =====
@@ -1871,6 +1880,13 @@
       <button class="btn" onclick={() => refreshDatasets().catch(() => undefined)} title="刷新数据集列表">
         ⟳ 刷新
       </button>
+      <button
+        class="btn"
+        onclick={() => (localImportOpen = true)}
+        title="把 console 本地数据集(规则装配)注册为治理域 rule_set 数据集(Draft)"
+      >
+        📥 本地装配导入
+      </button>
       <button class="btn btn-ghost" onclick={handleDisconnect}>断开</button>
     </div>
   </div>
@@ -2942,6 +2958,14 @@
       {/if}
     </div>
   </div>
+{/if}
+
+<!-- 本地装配导入浮层（06 号桥接 B2） -->
+{#if localImportOpen}
+  <LocalAssemblyImportDialog
+    onImported={(gid) => void handleLocalImported(gid)}
+    onClose={() => (localImportOpen = false)}
+  />
 {/if}
 
 <style>
