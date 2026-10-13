@@ -501,6 +501,7 @@
     "/version-history": "nav.versionHistory",
     "/audit": "nav.auditLog",
     "/governance": "nav.governance",
+    "/hit-stats": "nav.hitStats",
     "/users": "nav.users",
     "/roles": "nav.roles",
     "/apps": "nav.apps",
