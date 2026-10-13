@@ -44,6 +44,7 @@
   import DeveloperModeToggle from "./DeveloperModeToggle.svelte";
   import DevJsonEditor from "./DevJsonEditor.svelte";
   import BusinessTermFilter from "./BusinessTermFilter.svelte";
+  import TermManagerDialog from "./TermManagerDialog.svelte";
   import BusinessRuleCard from "./BusinessRuleCard.svelte";
   import BusinessForm from "./BusinessForm.svelte";
   import BusinessPreview from "./BusinessPreview.svelte";
@@ -66,6 +67,7 @@
   // === 模式状态 ===
   let devMode = $state(false);
   let selectedTermId = $state<string | null>(null);
+  let termManagerOpen = $state(false);
   // schema 选择器 ID(null = 用 meta.schemaId 或无 schema)
   let selectedSchemaId = $state<string | null>(null);
 
@@ -269,6 +271,9 @@
     <div class="lib-body">
       <aside class="lib-sidebar">
         <BusinessTermFilter bind:selectedTermId />
+        <button class="lib-term-mgr" onclick={() => (termManagerOpen = true)}>
+          📚 术语管理
+        </button>
         <div class="rule-list">
           <div class="list-header">
             规则列表({filteredRules.length})
@@ -437,6 +442,11 @@
       </div>
     </div>
   {/if}
+{/if}
+
+<!-- 术语管理弹窗（P2-4：写操作此前全库零消费） -->
+{#if termManagerOpen}
+  <TermManagerDialog onClose={() => (termManagerOpen = false)} />
 {/if}
 
 <style>
@@ -719,5 +729,17 @@
     font-size: 16px;
     color: var(--text-secondary, #64748b);
     padding: 0 4px;
+  }
+  .lib-term-mgr {
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px dashed var(--border, #d1d5db);
+    background: var(--bg-card, #fff);
+    color: var(--text-secondary, #4b5563);
+    cursor: pointer;
+  }
+  .lib-term-mgr:hover {
+    background: var(--bg-page, #f9fafb);
   }
 </style>
