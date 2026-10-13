@@ -7,7 +7,14 @@
 -->
 
 <script lang="ts">
-	import { taskFlowStore, nextStep, prevStep, jumpToStep, cancelTaskFlow } from "$lib/stores/task-flow";
+	import {
+		taskFlowStore,
+		nextStep,
+		prevStep,
+		jumpToStep,
+		cancelTaskFlow,
+		completeTaskFlow,
+	} from "$lib/stores/task-flow";
 	import { getCurrentFlowDef, getCurrentStepDef } from "$lib/stores/task-flow";
 	import { toastInfo } from "$lib/stores/toast";
 
@@ -32,7 +39,9 @@
 	function handleComplete() {
 		if (!instance) return;
 		const guidedId = instance.isDemo ? guidedTaskMap[instance.flowId] : undefined;
-		nextStep({}, guidedId); // 触发完成
+		// 完成收尾必须走 completeTaskFlow（置 completed+记历史+3s 清理）——
+		// 此前误调 nextStep,历史漏记+完成态丢失（孤儿域尽调 P2-7 发现）
+		completeTaskFlow(guidedId);
 		toastInfo("任务流已完成!", "🎉");
 	}
 
