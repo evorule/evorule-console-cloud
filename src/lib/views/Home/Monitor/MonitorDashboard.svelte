@@ -87,12 +87,9 @@
 
   /**
    * server 端点尚未就位的干预动作(默认置灰,防假动作;调用方可显式覆盖)。
-   * pause/resume/gc/heartbeat/check_invariants/cancel_all/wal_rotate 七动作
-   * 已接真端点,不在此列。
+   * 13 动作中 12 项已接真端点,仅 session.switch 仍缺 server 侧语义。
    */
   const DEFAULT_UNWIRED_ACTIONS: readonly InterventionAction[] = [
-    "publish.start_session",
-    "publish.approve_mode",
     "session.switch",
   ];
 
@@ -212,7 +209,7 @@
       return;
     }
     // 会话级干预端点直连(server 真端点;外部回调缺省时生效)。
-    // 失败语义按 server 契约区分:404(gc 门控未开)/429(心跳限频)/其余通用。
+    // 失败语义按 server 契约区分:404(gc/cancel_all 门控未开)/429(心跳限频)/其余通用。
     const sessionScoped: Partial<
       Record<InterventionAction, (sid: number) => Promise<unknown>>
     > = {
@@ -225,6 +222,50 @@
       "io.cancel_all_pending": (sid) => backendRef.cancelAllPendingIo(sid),
       "wal.force_rotate": (sid) => backendRef.rotateSessionWal(sid),
     };
+    // 发布域治理端点(不依赖当前会话;无活跃会话也可用)
+    if (action === "publish.start_session" && !externalIntervention) {
+      try {
+        const r = (await backendRef.startPublishSession()) as Record<
+          string,
+          unknown
+        >;
+        toastSuccess(
+          `发布试验会话 #${r?.session_id} 已创建(fork 自生产会话 #${r?.forked_from},不接管生产)`,
+        );
+      } catch (e) {
+        const status = e instanceof HttpBackendError ? e.status : 0;
+        if (status === 409) {
+          toastWarning("当前无生产会话(尚未部署规则集),无可 fork");
+        } else {
+          toastError(`发布试验会话创建失败:HTTP ${status || "网络错误"}`);
+        }
+      }
+      return;
+    }
+    if (action === "publish.approve_mode" && !externalIntervention) {
+      try {
+        const cur = await backendRef.getApproveMode();
+        const next = !cur.approve_mode;
+        await backendRef.setApproveMode(next);
+        if (next) {
+          toastWarning(
+            "审批模式已开启:发布提交将直发(跳过人工审批驻留)",
+          );
+        } else {
+          toastSuccess("审批模式已关闭:发布提交恢复人工审批驻留");
+        }
+      } catch (e) {
+        const status = e instanceof HttpBackendError ? e.status : 0;
+        if (status === 403) {
+          toastError("切换审批模式须平台管理员登录");
+        } else if (status === 401) {
+          toastWarning("请先以平台账号登录后再切换审批模式");
+        } else {
+          toastError(`审批模式切换失败:HTTP ${status || "网络错误"}`);
+        }
+      }
+      return;
+    }
     const run = sessionScoped[action];
     if (run) {
       const sid = get(productionStateStore).currentSessionId;
