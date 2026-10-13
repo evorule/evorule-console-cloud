@@ -407,10 +407,11 @@
         {/if}
       {/if}
     </section>
+    {/if}
   </div>
 
 
-    {/if}
+
   <!-- W2-B5:分类与标签管理抽屉 -->
   {#if manageOpen}
     <!-- tabindex="-1":dialog 容器可编程聚焦(ARIA 惯例),同时满足 a11y 焦点要求;
