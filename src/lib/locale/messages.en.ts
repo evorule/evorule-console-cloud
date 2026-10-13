@@ -575,4 +575,6 @@ export const messagesEn: Dict = {
   // === Command verdict codes (wait=true window: interception / timeout fallback) ===
   "err.RULE_VIOLATION": "The command failed governance rule validation and was intercepted.",
   "err.WAIT_TIMEOUT": "The verdict wait window timed out; the command continues in the background. Please check the result later.",
+  // === Session admission gate (pause/resume) ===
+  "err.SESSION_PAUSED": "The session is paused; new commands are rejected. Resume the session and try again.",
 };
