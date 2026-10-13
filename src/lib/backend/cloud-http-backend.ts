@@ -752,4 +752,34 @@ export class CloudHttpBackend implements ExecutionBackend {
 	async gcSession(sessionId: number): Promise<unknown> {
 		return this.backend.postJsonPublic(`/api/sessions/${sessionId}/gc`);
 	}
+
+	/**
+	 * 不变式扫描(消费 `POST /api/sessions/{id}/invariants/scan`)。
+	 * 读引擎最近一轮自检报告;检出违规时 server 侧逐条落 Violation 事实。
+	 */
+	async scanSessionInvariants(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(
+			`/api/sessions/${sessionId}/invariants/scan`
+		);
+	}
+
+	/**
+	 * 取消全部 pending I/O(消费 `POST /api/sessions/{id}/io/cancel_all`)。
+	 * server 侧 --allow-interventions 门控:未启用时路由不注册 → HttpBackendError(404)。
+	 */
+	async cancelAllPendingIo(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(
+			`/api/sessions/${sessionId}/io/cancel_all`
+		);
+	}
+
+	/**
+	 * 手动轮换会话 WAL(消费 `POST /api/sessions/{id}/wal/rotate`)。
+	 * 纯存储操作(追加式分片切换);无 WAL(纯内存)返回 rotated:false。
+	 */
+	async rotateSessionWal(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(
+			`/api/sessions/${sessionId}/wal/rotate`
+		);
+	}
 }
