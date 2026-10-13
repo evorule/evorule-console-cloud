@@ -10,6 +10,7 @@ export const messagesEn: Dict = {
   // === 导航 ===
   "nav.overview": "Overview",
   "nav.monitor": "Monitor",
+  "nav.hitStats": "Hit Stats",
   "nav.flow": "Flow",
   "nav.marketplace": "Marketplace",
   "nav.template-render": "Template Render",

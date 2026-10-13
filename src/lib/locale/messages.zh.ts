@@ -10,6 +10,7 @@ export const messagesZh: Dict = {
   // === 导航（nav-registry 英语化的数据来源之一；实际由 nav-registry 通过 key 引用） ===
   "nav.overview": "总览",
   "nav.monitor": "监控",
+  "nav.hitStats": "命中分析",
   "nav.flow": "流程",
   "nav.marketplace": "市场",
   "nav.template-render": "模板渲染",

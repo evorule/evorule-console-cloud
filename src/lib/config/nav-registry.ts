@@ -198,6 +198,17 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     lockHint: "需治理角色登录(admin/approver 等,演示凭据见启动说明)",
   },
   {
+    id: "hit-stats",
+    label: "命中分析",
+    icon: "📈",
+    path: "/hit-stats",
+    group: "governance",
+    title: "规则命中分析 — 结构命中计数/零命中(死规则候选)/跨版本切片",
+    loginRequired: true,
+    permissions: ["view_monitor"],
+    jump: true,
+  },
+  {
     id: "users",
     label: "用户管理",
     icon: "👥",

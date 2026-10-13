@@ -818,4 +818,20 @@ export class CloudHttpBackend implements ExecutionBackend {
 			`/api/publish/sessions/${sessionId}/promote`
 		);
 	}
+	// === 规则命中分析(G1:server 聚合器查询面) ===
+
+	/**
+	 * 规则命中统计清单(消费 `GET /api/rules/hit-stats`)。
+	 * @param qs 查询串(如 "?filter=zero"),空串 = 当前版本全部
+	 */
+	async getHitStats(qs = ''): Promise<unknown> {
+		return this.backend.getJson(`/api/rules/hit-stats${qs}`);
+	}
+
+	/** 单规则跨版本命中切片(消费 `GET /api/rules/hit-stats/{rule_key}`)。 */
+	async getRuleHitSeries(ruleKey: string): Promise<unknown> {
+		return this.backend.getJson(
+			`/api/rules/hit-stats/${encodeURIComponent(ruleKey)}`
+		);
+	}
 }

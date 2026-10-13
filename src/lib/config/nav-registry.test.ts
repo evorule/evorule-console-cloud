@@ -110,7 +110,7 @@ describe('featureFlag 门控(agent ← agentConfig.enabled)', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('四组归位:home 4(总览/监控/流程/Agent 会话)/ discover 4(市场/模板渲染/知识库/帮助)/ governance 10', () => {
+	it('四组归位:home 4(总览/监控/流程/Agent 会话)/ discover 4(市场/模板渲染/知识库/帮助)/ governance 11(含命中分析)', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor', 'flow', 'agent']);
 		expect(g.discover.map((i) => i.id)).toEqual([
@@ -119,17 +119,20 @@ describe('navItemsByGroup', () => {
 			'knowledge',
 			'help',
 		]);
-		expect(g.governance).toHaveLength(10);
+		expect(g.governance).toHaveLength(11);
+		const gi = g.governance.map((i) => i.id);
+		expect(gi.indexOf('hit-stats')).toBe(gi.indexOf('governance') + 1);
 	});
 
-	it('跳单卡子集(jump:true)为 5 项且顺序稳定:marketplace/export/publish-queue/plugin-approvals/governance', () => {
+	it('跳单卡子集(jump:true)为 6 项且顺序稳定:marketplace/export/publish-queue/plugin-approvals/governance/hit-stats', () => {
 		const jump = visibleNavItems(NAV_REGISTRY, adminCtx()).filter((i) => i.jump);
 		expect(jump.map((i) => i.id)).toEqual([
 			'marketplace',
 			'export',
 			'publish-queue',
 			'plugin-approvals',
-			'governance'
+			'governance',
+			'hit-stats'
 		]);
 	});
 });
