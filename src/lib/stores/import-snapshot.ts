@@ -13,12 +13,13 @@
 // P0 简化:
 //   - 不存 ZIP blob,直接存 JSON 字符串(localStorage 容量够用)
 //   - 与 P08 production_audit 不同:后者管规则集版本,快照管导入操作
+//   （恢复语义已全量化:rules/datasets/forms 三 store 均直接覆盖）
 //
 // 关联设计:P09_IMPORT_EXPORT_INFRA_DESIGN.md §3.6 + §4.5
 
 import { writable, get } from "svelte/store";
 import { browser } from "$app/environment";
-import { getAllRules } from "$lib/kernel";
+import { getAllRules, rules as kernelRules } from "$lib/kernel";
 import { datasetStore } from "./dataset";
 import { businessFormSchemaStore } from "./business-form-schema";
 import type { ImportSnapshot } from "./import-export-types";
@@ -171,17 +172,10 @@ export async function restoreSnapshot(snapshotId: string): Promise<boolean> {
 		forms: unknown[];
 	};
 
-	// 恢复 datasets / forms(直接覆盖 store)
+	// 恢复 rules / datasets / forms(三者均为公开 writable,直接覆盖)
+	kernelRules.set(content.rules as never);
 	datasetStore.set(content.datasets as never);
 	businessFormSchemaStore.set(content.forms as never);
-
-	// 恢复 rules:内核 rules store 没有公开的 set 方法,
-	// P0 简化:清除现有规则 + 逐条 importRule
-	// 注:这里不实际清除,避免误删;仅提示用户恢复后需手动同步
-	// P1 接入真实后端时,通过 API restore
-	console.warn(
-		`[import-snapshot] 已恢复 datasets + forms(${content.datasets.length} 数据集, ${content.forms.length} 表单)。rules 恢复需手动操作(P0 限制)。`,
-	);
 
 	return true;
 }

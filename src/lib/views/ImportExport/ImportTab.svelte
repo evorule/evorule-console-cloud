@@ -75,7 +75,7 @@
   async function handleRestore(id: string): Promise<void> {
     if (
       !window.confirm(
-        "恢复快照将覆盖当前数据集与表单;规则恢复受 P0 简化限制不自动执行(恢复后需手动同步规则)。确认恢复?",
+        "恢复快照将覆盖当前规则、数据集与表单(建议先导入一份当前状态作备份)。确认恢复?",
       )
     ) {
       return;
@@ -84,9 +84,7 @@
     try {
       const ok = await restoreSnapshot(id);
       if (ok) {
-        toastSuccess(
-          `快照 ${id.slice(0, 16)} 已恢复(数据集+表单已覆盖;规则需手动同步)`,
-        );
+        toastSuccess(`快照 ${id.slice(0, 16)} 已恢复(规则+数据集+表单已覆盖)`);
       }
     } catch (e) {
       toastError(`恢复失败: ${(e as Error).message}`);

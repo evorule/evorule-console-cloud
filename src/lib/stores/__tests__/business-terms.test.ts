@@ -29,9 +29,15 @@ import {
   addBusinessTerm,
   updateBusinessTerm,
   deprecateBusinessTerm,
+  renameBusinessTermKey,
   rebuildSynonymIndex,
   businessTermsStore,
 } from "../business-terms";
+import {
+  ruleBusinessMetaStore,
+  setMeta,
+  type RuleBusinessMeta,
+} from "../rule-business-meta";
 import { get } from "svelte/store";
 import { BUILTIN_BUSINESS_TERMS } from "$lib/data/business-terms-builtin";
 
@@ -239,5 +245,98 @@ describe("business-terms — CRUD + 状态变更", () => {
     expect(() =>
       updateBusinessTerm("finance.threshold", { key: "newKey" }),
     ).toThrow(/key 不能修改/);
+  });
+});
+
+
+describe("business-terms — renameBusinessTermKey 级联改名", () => {
+  function seedMeta(ruleId: string, termIds: string[]): void {
+    const meta: RuleBusinessMeta = {
+      ruleId,
+      industry: "finance",
+      businessObject: "订单",
+      businessTermIds: termIds,
+      scenarioContext: "",
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+    };
+    setMeta(meta);
+  }
+
+  beforeEach(() => {
+    ruleBusinessMetaStore.set({});
+  });
+
+  test("改名同步更新术语 id/key + 级联改写规则元数据引用", () => {
+    seedMeta("rule-1", ["finance.amount", "finance.currency"]);
+    seedMeta("rule-2", ["finance.amount"]);
+
+    const newId = renameBusinessTermKey("finance.amount", "total_amount");
+
+    expect(newId).toBe("finance.total_amount");
+    const term = get(businessTermsStore).find((t) => t.id === newId);
+    expect(term).toBeDefined();
+    expect(term?.key).toBe("total_amount");
+    expect(term?.version).toBe(2); // 改名版本 +1
+    // 旧 id 不复存在
+    expect(
+      get(businessTermsStore).some((t) => t.id === "finance.amount"),
+    ).toBe(false);
+    // 规则元数据引用级联更新
+    const m = get(ruleBusinessMetaStore)["rule-1"];
+    expect(m.businessTermIds).toEqual([
+      "finance.total_amount",
+      "finance.currency",
+    ]);
+    expect(get(ruleBusinessMetaStore)["rule-2"].businessTermIds).toEqual([
+      "finance.total_amount",
+    ]);
+  });
+
+  test("无引用的术语改名不改写元数据", () => {
+    seedMeta("rule-1", ["finance.currency"]);
+    renameBusinessTermKey("finance.amount", "total_amount");
+    expect(get(ruleBusinessMetaStore)["rule-1"].businessTermIds).toEqual([
+      "finance.currency",
+    ]);
+  });
+
+  test("新 key 与同 industry 现存术语冲突 → 拒绝", () => {
+    // 自建冲突目标（不依赖 builtin 内容）
+    addBusinessTerm({
+      industry: "finance",
+      key: "target_key",
+      label: "冲突目标",
+      synonyms: [],
+      description: "",
+      status: "active",
+    });
+    expect(() => renameBusinessTermKey("finance.amount", "target_key")).toThrow(
+      /术语已存在/,
+    );
+  });
+
+  test("非法 key（数字开头/含连字符/空）→ 拒绝", () => {
+    expect(() => renameBusinessTermKey("finance.amount", "1abc")).toThrow(
+      /非法 key/,
+    );
+    expect(() => renameBusinessTermKey("finance.amount", "a-b")).toThrow(
+      /非法 key/,
+    );
+    expect(() => renameBusinessTermKey("finance.amount", "  ")).toThrow(
+      /非法 key/,
+    );
+  });
+
+  test("同名 key（无变化）→ 幂等返回原 id", () => {
+    expect(renameBusinessTermKey("finance.amount", "amount")).toBe(
+      "finance.amount",
+    );
+  });
+
+  test("不存在的术语 → 拒绝", () => {
+    expect(() => renameBusinessTermKey("finance.nope", "abc")).toThrow(
+      /术语不存在/,
+    );
   });
 });

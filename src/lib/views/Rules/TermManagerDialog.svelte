@@ -15,6 +15,7 @@
     addBusinessTerm,
     updateBusinessTerm,
     deprecateBusinessTerm,
+    renameBusinessTermKey,
     type BusinessTerm,
   } from "$lib/stores/business-terms";
   import { toastSuccess, toastError } from "$lib/stores/toast";
@@ -88,12 +89,23 @@
         });
         toastSuccess(`术语 ${fIndustry}.${fKey.trim()} 已创建`);
       } else if (editId) {
-        updateBusinessTerm(editId, {
+        // key 改名走级联函数（同步改写全部规则元数据引用）;其余字段走更新
+        let currentId = editId;
+        const term = $businessTermsStore.find((t) => t.id === editId);
+        const renamed = term !== undefined && fKey.trim() !== term.key;
+        if (renamed) {
+          currentId = renameBusinessTermKey(editId, fKey);
+        }
+        updateBusinessTerm(currentId, {
           label: fLabel.trim(),
           synonyms: parseSynonyms(fSynonyms),
           description: fDescription.trim(),
         });
-        toastSuccess(`术语 ${editId} 已更新`);
+        toastSuccess(
+          renamed
+            ? `术语已改名: ${editId} → ${currentId}(规则引用已级联更新)`
+            : `术语 ${editId} 已更新`,
+        );
       }
       closeEditor();
     } catch (e) {
@@ -161,13 +173,12 @@
             </select>
           </label>
           <label class="tm-field">
-            <span>key（英文字段名）*{editorMode === "edit" ? "（不可改）" : ""}</span>
-            <input
-              bind:value={fKey}
-              disabled={editorMode === "edit"}
-              placeholder="如 amount"
-              required
-            />
+            <span>
+              key（英文字段名）*{editorMode === "edit"
+                ? "（可改名;规则引用将自动级联更新）"
+                : ""}
+            </span>
+            <input bind:value={fKey} placeholder="如 amount" required />
           </label>
           <label class="tm-field">
             <span>中文标签 *</span>
