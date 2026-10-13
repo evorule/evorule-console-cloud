@@ -782,4 +782,29 @@ export class CloudHttpBackend implements ExecutionBackend {
 			`/api/sessions/${sessionId}/wal/rotate`
 		);
 	}
+
+	// === 发布域治理端点 ===
+
+	/** 查询审批模式开关(消费 `GET /api/publish/approve_mode`)。 */
+	async getApproveMode(): Promise<{ approve_mode: boolean }> {
+		return this.backend.getJson('/api/publish/approve_mode');
+	}
+
+	/**
+	 * 切换审批模式开关(消费 `POST /api/publish/approve_mode`)。
+	 * 须平台管理员登录:非管理员 403、未认证 401。
+	 */
+	async setApproveMode(enabled: boolean): Promise<unknown> {
+		return this.backend.postJsonPublic('/api/publish/approve_mode', {
+			enabled,
+		});
+	}
+
+	/**
+	 * 发布试验会话(消费 `POST /api/publish/sessions`)。
+	 * fork 自当前生产会话,不接管生产状态;无生产会话 409。
+	 */
+	async startPublishSession(): Promise<unknown> {
+		return this.backend.postJsonPublic('/api/publish/sessions');
+	}
 }
