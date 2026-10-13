@@ -575,4 +575,6 @@ export const messagesZh: Dict = {
   // === 命令裁决码（wait=true 等待窗口: 拦截 / 超时降级） ===
   "err.RULE_VIOLATION": "指令未通过治理规则校验，已被拦截。",
   "err.WAIT_TIMEOUT": "等待裁决窗口超时，指令已转后台继续执行，请稍后查询结果。",
+  // === 会话准入闸（pause/resume） ===
+  "err.SESSION_PAUSED": "会话已暂停，新指令被拒；恢复会话后再试。",
 };
