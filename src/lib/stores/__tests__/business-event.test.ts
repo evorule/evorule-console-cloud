@@ -54,10 +54,14 @@ import {
   updateInstruction,
   updateEventName,
   deleteEvent,
+  translateEvent,
+  submitEvent,
   currentEventId,
   type TranslateStatus,
   type BusinessEvent,
 } from "$lib/stores/business-event";
+import type { LlmAssistant } from "$lib/assistant/types";
+import type { ExecutionBackend } from "$lib/kernel";
 
 beforeEach(() => {
   mockLs.clear.mockClear();
@@ -338,4 +342,50 @@ describe("localStorage Mock - 避免持久化污染", () => {
   test("独立测试不共享状态(本测试初始应为空)", () => {
     expect(storeGet(businessEventStore)).toEqual([]);
   });
+});
+
+// ============================================================================
+// translateEvent / submitEvent — mock 链路（孤儿域接线批）
+// ============================================================================
+
+describe("translateEvent / submitEvent — mock 链路", () => {
+	const mockAssistant = {
+		generateInput: vi.fn(async () => ({ type: "noop" })),
+	} as unknown as LlmAssistant;
+	const mockBackend = {
+		submitCommand: vi.fn(async () => ({ accepted: true, version: 3 })),
+	} as unknown as ExecutionBackend;
+
+	test("translateEvent:调 assistant.generateInput 并把产物写入 instruction,状态 translated", async () => {
+		const id = createEventFromTemplate(BUILTIN_TEMPLATES[0].id);
+		await translateEvent(id, mockAssistant);
+		const after = getEvent(id)!;
+		expect(after.translateStatus).toBe("translated");
+		expect(after.instruction).toEqual({ type: "noop" });
+		expect((mockAssistant as { generateInput: ReturnType<typeof vi.fn> }).generateInput)
+			.toHaveBeenCalledTimes(1);
+	});
+
+	test("translateEvent:不存在的事件 → 抛错", async () => {
+		await expect(translateEvent("nope", mockAssistant)).rejects.toThrow(
+			/不存在/,
+		);
+	});
+
+	test("submitEvent:走 backend.submitCommand 并记录 lastResult", async () => {
+		const id = createEventFromTemplate(BUILTIN_TEMPLATES[0].id);
+		await translateEvent(id, mockAssistant);
+		const result = await submitEvent(id, 42, mockBackend);
+		expect(result.accepted).toBe(true);
+		const after = getEvent(id)!;
+		expect(after.lastResult?.accepted).toBe(true);
+		expect(after.lastSubmittedAt).not.toBeNull();
+	});
+
+	test("submitEvent:未翻译(无 instruction) → 抛错且不调 backend", async () => {
+		const id = createEventFromTemplate(BUILTIN_TEMPLATES[0].id);
+		await expect(submitEvent(id, 42, mockBackend)).rejects.toThrow(
+			/尚未翻译/,
+		);
+	});
 });
