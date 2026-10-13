@@ -127,10 +127,11 @@ export const ACTION_TO_CONFIRM: Readonly<
 		confirmLabel: '导出',
 	},
 	'session.switch': {
-		title: '手动切换 Session?',
-		message: '主动触发一次滚动 session 切换(不等发布)。',
-		level: 'warning',
-		confirmLabel: '切换',
+		// 直开选择浮层(不经通用确认,浮层内选择即确认)——本条目仅兜底
+		title: '切换 Session?',
+		message: '打开会话选择浮层:切监控视角(不动生产)或晋级试验会话(管理员)。',
+		level: 'info',
+		confirmLabel: '打开',
 	},
 	// session.rollback 走 RollbackVersionPicker(选版本),不用通用 ConfirmDialog
 	'session.rollback': {

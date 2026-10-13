@@ -192,8 +192,8 @@
       <button
         class={`${btnBaseCls} iv-secondary`}
         disabled={disabled || unwiredActions.includes("session.switch")}
-        title={unwiredActions.includes("session.switch") ? "需 server 立项干预端点" : undefined}
-        onclick={() => request("session.switch")}
+        title={unwiredActions.includes("session.switch") ? "需 server 立项干预端点" : "切换监控视角/晋级试验会话"}
+        onclick={() => onAction("session.switch")}
       >
         🔀 切换 Session
       </button>

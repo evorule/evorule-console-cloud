@@ -72,6 +72,7 @@
     type InterventionAction,
   } from "./InterventionBar.svelte";
   import SessionSwitchToast from "./SessionSwitchToast.svelte";
+  import SessionSwitchPicker from "./SessionSwitchPicker.svelte";
   // W2 接线3+5:调试区(活跃会话清单 + 六路调试面板)
   import ActiveSessionsPanel from "./ActiveSessionsPanel.svelte";
   import DebugPanel from "./DebugPanel.svelte";
@@ -87,11 +88,9 @@
 
   /**
    * server 端点尚未就位的干预动作(默认置灰,防假动作;调用方可显式覆盖)。
-   * 13 动作中 12 项已接真端点,仅 session.switch 仍缺 server 侧语义。
+   * 13 动作全部接真(session.switch=监控视角切换浮层),默认无置灰项。
    */
-  const DEFAULT_UNWIRED_ACTIONS: readonly InterventionAction[] = [
-    "session.switch",
-  ];
+  const DEFAULT_UNWIRED_ACTIONS: readonly InterventionAction[] = [];
 
   let {
     baseUrl = "http://127.0.0.1:18080",
@@ -145,6 +144,21 @@
     });
   }
 
+  // === 监控视角切换(session.switch):实时流跟手切,不动生产状态 ===
+  // null = 跟随生产会话;U7 生产切换到达时回归跟随(可预期性优先)
+  let monitorTarget = $state<number | null>(null);
+  let switchPickerOpen = $state(false);
+
+  function handleMonitorPick(sid: number): void {
+    switchPickerOpen = false;
+    monitorTarget = sid;
+    stopSSE();
+    startSSE(sid, baseUrl, handleU7Switched);
+    stopReactorPolling();
+    startReactorPolling(sid, baseUrl);
+    toastSuccess(`监控视角已切至会话 #${sid}(生产状态显示不受影响)`);
+  }
+
   // === U7 SSE session_switched 回调(生产态切换) ===
   function handleU7Switched(e: SessionSwitchedEvent) {
     const d = e.data;
@@ -157,6 +171,8 @@
     ssToastReason = d.reason;
     // 更新 production store(会触发内部 SSE 重连)
     productionOnSessionSwitched(d.new_session_id, d.new_ruleset_version);
+    // 监控视角回归跟随生产(可预期性优先;晋级/滚动切换后 trial 即旧物)
+    monitorTarget = null;
     // 显示 Toast
     ssToastVisible = true;
   }
@@ -206,6 +222,11 @@
     }
     if (externalIntervention) {
       externalIntervention(action, payload);
+      return;
+    }
+    // 监控视角切换:打开会话选择浮层(A 视角切换 + B 晋级入口)
+    if (action === "session.switch" && !externalIntervention) {
+      switchPickerOpen = true;
       return;
     }
     // 会话级干预端点直连(server 真端点;外部回调缺省时生效)。
@@ -348,6 +369,15 @@
     reason={ssToastReason}
     onClose={() => (ssToastVisible = false)}
   />
+
+  <!-- 会话选择浮层(session.switch):监控视角切换 + 试验会话晋级入口 -->
+  {#if switchPickerOpen}
+    <SessionSwitchPicker
+      monitorTarget={monitorTarget}
+      onPick={handleMonitorPick}
+      onCancel={() => (switchPickerOpen = false)}
+    />
+  {/if}
 
   <!-- 顶部 连接 + 生产状态 -->
   <header class="md-topbar">

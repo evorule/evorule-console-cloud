@@ -807,4 +807,15 @@ export class CloudHttpBackend implements ExecutionBackend {
 	async startPublishSession(): Promise<unknown> {
 		return this.backend.postJsonPublic('/api/publish/sessions');
 	}
+
+	/**
+	 * 试验会话晋级生产(消费 `POST /api/publish/sessions/{id}/promote`)。
+	 * 窄场景:目标须 fork 自当前生产会话(非 fork 400);须平台管理员(403/401)。
+	 * 生产引用换防,ruleset 版本/哈希原样保留。
+	 */
+	async promoteSession(sessionId: number): Promise<unknown> {
+		return this.backend.postJsonPublic(
+			`/api/publish/sessions/${sessionId}/promote`
+		);
+	}
 }
