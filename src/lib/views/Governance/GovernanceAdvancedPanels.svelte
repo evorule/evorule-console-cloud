@@ -17,6 +17,10 @@
   import ApiKeysPanel from "./ApiKeysPanel.svelte";
   import JsonViewer from "$lib/views/Dataset/JsonViewer.svelte";
   import { toastSuccess, toastError } from "$lib/stores/toast";
+  import { useBackend } from "$lib/kernel";
+  import { CloudHttpBackend, type RulesReloadedResult } from "$lib/backend/cloud-http-backend";
+
+  const kernelBackend = useBackend() as CloudHttpBackend;
 
   type Tab = "audit" | "keys" | "search" | "deps" | "orgs";
 
@@ -26,6 +30,7 @@
     ["search", "🔍 检索"],
     ["deps", "🔗 数据依赖"],
     ["orgs", "🏢 组织"],
+    ["ops", "⚡ 执行域运维(18080)"],
   ];
 
   let tab = $state<Tab>("audit");
@@ -174,7 +179,67 @@
     if (tab === "orgs" && orgs.length === 0 && !orgsLoading) void loadOrgs();
     if (tab === "deps" && templates.length === 0 && !tplLoading) void loadTemplates();
   });
+
+  // === 执行域运维(G8):从磁盘重载规则 ===
+  let reloading = $state(false);
+  let reloadResult = $state<RulesReloadedResult | null>(null);
+
+  async function handleReload(): Promise<void> {
+    if (
+      !window.confirm(
+        "从磁盘重载执行域规则?
+" +
+          "语义:rules_dir/bundles 落盘内容 → 内存生效;存量会话不改 TCB(新会话用新规则);
+" +
+          "生产引用切换仍归治理链(rolling_swap/晋级)。",
+      )
+    ) {
+      return;
+    }
+    reloading = true;
+    try {
+      reloadResult = await kernelBackend.reloadRules();
+      if (reloadResult.reload_ok) {
+        toastSuccess(
+          `规则已重载:${reloadResult.previous_rules} → ${reloadResult.current_rules} 条(新会话生效)`,
+        );
+      } else {
+        toastError(`重载失败: ${reloadResult.error ?? "未知原因"}`);
+      }
+    } catch (e) {
+      toastError(`重载失败: ${(e as Error).message}`);
+    } finally {
+      reloading = false;
+    }
+  }
 </script>
+
+{#if tab === "ops"}
+  <div class="adv-sec" aria-label="执行域运维">
+    <p class="adv-status">
+      对象:18080 执行域。手动触发 rules_dir/bundles 落盘内容 → 内存重载
+      (带外放置 bundle 后的收口动作;正常发布链会自动触发)。
+    </p>
+    <div class="adv-form">
+      <button
+        type="button"
+        class="adv-btn primary"
+        disabled={reloading}
+        onclick={() => void handleReload()}
+      >
+        {reloading ? "重载中…" : "⚡ 从磁盘重载规则"}
+      </button>
+    </div>
+    {#if reloadResult}
+      <div class="adv-json"><JsonViewer data={reloadResult} /></div>
+      {#if (reloadResult.rejected_overlaps?.length ?? 0) + (reloadResult.rejected_domains?.length ?? 0) > 0}
+        <p class="adv-status">
+          ⚠️ 本次装载有被拒条目(重叠/域门禁),明细见上方 JSON——落盘前显式拒,不静默半激活。
+        </p>
+      {/if}
+    {/if}
+  </div>
+{/if}
 
 <div class="adv" aria-label="高级治理">
   <div class="adv-tabs" role="tablist">
@@ -285,6 +350,8 @@
         {/if}
       {/if}
     </div>
+  {:else if tab === "ops"}
+    <OpsPanel />
   {:else if tab === "orgs"}
     <div class="adv-sec">
       {#if orgsLoading}
