@@ -38,7 +38,7 @@ export interface RuleBusinessMeta {
   updatedAt: string;
 }
 
-type RuleBusinessMetaMap = Record<string, RuleBusinessMeta>;
+export type RuleBusinessMetaMap = Record<string, RuleBusinessMeta>;
 
 const STORAGE_KEY = "evorule-console-cloud:rule-business-meta";
 

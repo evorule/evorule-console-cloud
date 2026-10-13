@@ -14,6 +14,10 @@ import { writable, derived, get } from "svelte/store";
 import { browser } from "$app/environment";
 import { BUILTIN_BUSINESS_TERMS } from "$lib/data/business-terms-builtin";
 import { dbStore } from "$lib/stores/db";
+import {
+  ruleBusinessMetaStore,
+  type RuleBusinessMetaMap,
+} from "./rule-business-meta";
 
 export type TermStatus = "draft" | "active" | "deprecated";
 
@@ -227,6 +231,69 @@ export function deprecateBusinessTerm(
     ),
   );
   rebuildIndex();
+}
+
+/**
+ * 改名（修改 key）:级联更新全部规则元数据引用,使改名成为安全操作。
+ *
+ * 术语 id = `industry.key`,规则元数据 businessTermIds 存术语 id——直接改
+ * key 会让 id 变更、引用脱钩（旧版因此硬禁 key 修改）。本函数在改术语的
+ * 同时同步改写全部规则元数据引用,引用完整性由函数保证而非由调用方自觉。
+ *
+ * @param id 术语现状 id（industry.key）
+ * @param newKey 新 key（字母开头,字母/数字/下划线;同 industry 内唯一）
+ * @returns 改名后的新 id
+ */
+export function renameBusinessTermKey(id: string, newKey: string): string {
+  const terms = get(businessTermsStore);
+  const term = terms.find((t) => t.id === id);
+  if (!term) {
+    throw new Error(`术语不存在: ${id}`);
+  }
+  const key = newKey.trim();
+  if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(key)) {
+    throw new Error(`非法 key: ${key}(须字母开头,仅字母/数字/下划线)`);
+  }
+  if (key === term.key) {
+    return id;
+  }
+  const newId = `${term.industry}.${key}`;
+  if (terms.some((t) => t.id === newId)) {
+    throw new Error(`术语已存在: ${newId}`);
+  }
+  // 1) 改术语 id + key(版本 +1)
+  businessTermsStore.update((list) =>
+    list.map((t) =>
+      t.id === id ? { ...t, id: newId, key, version: t.version + 1 } : t,
+    ),
+  );
+  // 2) 级联改写规则元数据引用（businessTermIds: 旧 id → 新 id）
+  ruleBusinessMetaStore.update((m) => {
+    const out: RuleBusinessMetaMap = {};
+    let touched = false;
+    for (const [ruleId, meta] of Object.entries(m)) {
+      if (meta.businessTermIds.includes(id)) {
+        out[ruleId] = {
+          ...meta,
+          businessTermIds: meta.businessTermIds.map((t) =>
+            t === id ? newId : t,
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+        touched = true;
+      } else {
+        out[ruleId] = meta;
+      }
+    }
+    if (touched) {
+      console.info(
+        `[business-terms] 术语改名 ${id} -> ${newId}: 规则元数据引用已级联更新`,
+      );
+    }
+    return out;
+  });
+  rebuildIndex();
+  return newId;
 }
 
 /** 重建索引(批量导入术语后调用) */
