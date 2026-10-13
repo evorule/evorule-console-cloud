@@ -48,6 +48,7 @@
   import { isKnowledgeEntry } from '$lib/governance/governance-store';
   import { useWorkspaceBackendOrNull, currentWorkspace, HttpWorkspaceBackendError } from '$lib/kernel';
   import VerdictContractsPanel from '$lib/views/Governance/VerdictContractsPanel.svelte';
+  import GovernanceAdvancedPanels from '$lib/views/Governance/GovernanceAdvancedPanels.svelte';
   import LocalAssemblyImportDialog from '$lib/views/Governance/LocalAssemblyImportDialog.svelte';
   import type {
     ActiveBundleInfo,
@@ -2633,6 +2634,14 @@
         <!-- 测试工作台(W1.2:数据集管理 + 沙盒编排 + 报告查看;接线②为其中报告区) -->
   <!-- 判定契约管理(P3-12 补角:封装在位此前零消费) -->
   <VerdictContractsPanel />
+
+  <!-- 高级治理面板(07 号缺口 G2-G6 接线:审计/API Keys/检索/数据依赖/组织) -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="muted">高级治理(审计/API Keys/检索/数据依赖/组织——权限不足时 server 返回 403)</span>
+    </div>
+    <GovernanceAdvancedPanels />
+  </div>
         <div class="sec">
           <div class="sec-head">
             <button class="btn btn-sm" onclick={toggleSandboxZone}>

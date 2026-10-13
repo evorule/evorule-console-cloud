@@ -22,11 +22,28 @@ import type {
 	GovernanceEntry,
 	KnowledgeEntry,
 	LifecycleStatus,
-	Page,
 	PatchKnowledgeEntryRequest,
 	UpdateDatasetMetaRequest,
 	VersioningInfo
 } from './types';
+
+/** API Key 摘要（GET /v1/api_keys 条目;不含哈希与明文,G5） */
+export interface ApiKeySummary {
+	key_id: string;
+	name: string;
+	scope: string;
+	created_at: string;
+	revoked_at: string | null;
+}
+
+/** API Key 创建响应（明文 key 仅创建时返回一次,G5） */
+export interface ApiKeyCreated {
+	key_id: string;
+	name: string;
+	scope: string;
+	key: string;
+	created_at: string;
+}
 
 /** 统一错误：message 取自后端 error.message，网络错误标注来源 */
 export class GovernanceError extends Error {
@@ -452,5 +469,141 @@ export class GovernanceBackend {
 		} catch {
 			throw new GovernanceError('治理服务返回了非 JSON 响应', 'bad_response');
 		}
+	}
+
+	// ====================================================================
+	// 高级治理面（07 号缺口 G2-G6 接线）
+	// ====================================================================
+
+	/** 认证审计（GET /v1/audits/auth,仅管理员;G2） */
+	async listAuthAudits(): Promise<unknown[]> {
+		return this.request<unknown[]>({ method: 'GET', path: '/v1/audits/auth' });
+	}
+
+	/** 生命周期审计（GET /v1/audits/lifecycle,仅管理员;可按数据集过滤;G2） */
+	async listLifecycleAudits(datasetId?: string): Promise<unknown[]> {
+		const qs = datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : '';
+		return this.request<unknown[]>({
+			method: 'GET',
+			path: `/v1/audits/lifecycle${qs}`
+		});
+	}
+
+	/** LLM 调用审计（GET /v1/llm/audits;G2） */
+	async listLlmAudits(): Promise<unknown[]> {
+		return this.request<unknown[]>({ method: 'GET', path: '/v1/llm/audits' });
+	}
+
+	/** LLM 调用统计（GET /v1/llm/audits/stats;G2） */
+	async llmAuditStats(): Promise<unknown> {
+		return this.request<unknown>({ method: 'GET', path: '/v1/llm/audits/stats' });
+	}
+
+	/** API Key 列表（GET /v1/api_keys,仅管理员,不含哈希明文;G5） */
+	async listApiKeys(): Promise<Page<ApiKeySummary>> {
+		return this.request<Page<ApiKeySummary>>({
+			method: 'GET',
+			path: '/v1/api_keys'
+		});
+	}
+
+	/** 创建 API Key（POST /v1/api_keys,仅管理员;明文 key 仅此一次返回;G5） */
+	async createApiKey(
+		name: string,
+		scope?: string
+	): Promise<ApiKeyCreated> {
+		return this.request<ApiKeyCreated>({
+			method: 'POST',
+			path: '/v1/api_keys',
+			body: { name, scope }
+		});
+	}
+
+	/** 吊销 API Key（DELETE /v1/api_keys/{id},仅管理员;G5） */
+	async revokeApiKey(id: string): Promise<void> {
+		await this.request<null>({
+			method: 'DELETE',
+			path: `/v1/api_keys/${encodeURIComponent(id)}`
+		});
+	}
+
+	/** 数据集检索（GET /v1/search/datasets,q/domain/tags/visibility;G4） */
+	async searchDatasets(params: {
+		q?: string;
+		domain?: string;
+		tags?: string;
+	}): Promise<Page<GovernanceDataset>> {
+		const qs = new URLSearchParams();
+		if (params.q) qs.set('q', params.q);
+		if (params.domain) qs.set('domain', params.domain);
+		if (params.tags) qs.set('tags', params.tags);
+		const q = qs.toString();
+		return this.request<Page<RuleDataset>>({
+			method: 'GET',
+			path: `/v1/search/datasets${q ? `?${q}` : ''}`
+		});
+	}
+
+	/** 条目检索（GET /v1/search/entries;G4） */
+	async searchEntries(params: { q?: string }): Promise<unknown> {
+		const qs = params.q ? `?q=${encodeURIComponent(params.q)}` : '';
+		return this.request<unknown>({
+			method: 'GET',
+			path: `/v1/search/entries${qs}`
+		});
+	}
+
+	/** 数据集数据依赖声明（GET /v1/deps/datasets/{id};G3） */
+	async getDatasetDeps(id: string): Promise<unknown> {
+		return this.request<unknown>({
+			method: 'GET',
+			path: `/v1/deps/datasets/${encodeURIComponent(id)}`
+		});
+	}
+
+	/** 数据依赖模板清单（GET /v1/deps/templates;G3） */
+	async listDepTemplates(): Promise<unknown[]> {
+		return this.request<unknown[]>({
+			method: 'GET',
+			path: '/v1/deps/templates'
+		});
+	}
+
+	/** 绑定数据依赖模板（POST /v1/deps/templates/{id}/bind;G3） */
+	async bindDepTemplate(
+		templateId: string,
+		body: Record<string, unknown>
+	): Promise<unknown> {
+		return this.request<unknown>({
+			method: 'POST',
+			path: `/v1/deps/templates/${encodeURIComponent(templateId)}/bind`,
+			body
+		});
+	}
+
+	/** 组织清单（GET /v1/orgs;G6,非管理角色仅本组织） */
+	async listOrgs(): Promise<unknown[]> {
+		return this.request<unknown[]>({ method: 'GET', path: '/v1/orgs' });
+	}
+
+	/** 组织成员清单（GET /v1/orgs/{org_id}/members;G6） */
+	async listOrgMembers(orgId: string): Promise<unknown[]> {
+		return this.request<unknown[]>({
+			method: 'GET',
+			path: `/v1/orgs/${encodeURIComponent(orgId)}/members`
+		});
+	}
+
+	/** 添加组织成员（POST /v1/orgs/{org_id}/members,仅管理员;G6） */
+	async addOrgMember(
+		orgId: string,
+		userId: string,
+		role: string
+	): Promise<unknown> {
+		return this.request<unknown>({
+			method: 'POST',
+			path: `/v1/orgs/${encodeURIComponent(orgId)}/members`,
+			body: { user_id: userId, role }
+		});
 	}
 }
