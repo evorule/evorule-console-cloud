@@ -834,4 +834,23 @@ export class CloudHttpBackend implements ExecutionBackend {
 			`/api/rules/hit-stats/${encodeURIComponent(ruleKey)}`
 		);
 	}
+
+	/**
+	 * 从磁盘重载规则(消费 `POST /api/rules/reload`,G8 运维入口)。
+	 * 语义:rules_dir/bundles 落盘内容 → 内存生效;存量会话不改 TCB,
+	 * 新会话用新规则;生产引用切换归治理链(rolling_swap/晋级)。
+	 */
+	async reloadRules(): Promise<RulesReloadedResult> {
+		return this.backend.postJsonPublic('/api/rules/reload');
+	}
+}
+
+/** POST /api/rules/reload 响应(server RulesReloadedResponse) */
+export interface RulesReloadedResult {
+	reload_ok: boolean;
+	previous_rules: number;
+	current_rules: number;
+	error?: string;
+	rejected_overlaps?: unknown[];
+	rejected_domains?: unknown[];
 }
