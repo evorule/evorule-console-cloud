@@ -70,7 +70,7 @@
     error = null;
     try {
       const qs = f === "all" ? "" : `?filter=${f}`;
-      data = await backend.getHitStats(qs);
+      data = (await backend.getHitStats(qs)) as HitStatsResponse;
       expanded = null;
       series = null;
     } catch (e) {
@@ -91,7 +91,7 @@
     seriesLoading = true;
     series = null;
     try {
-      series = await backend.getRuleHitSeries(key);
+      series = (await backend.getRuleHitSeries(key)) as RuleSeriesResponse;
     } catch (e) {
       toastError(`切片读取失败: ${(e as Error).message}`);
       expanded = null;
