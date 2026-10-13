@@ -46,6 +46,7 @@
   import BusinessTermFilter from "./BusinessTermFilter.svelte";
   import TermManagerDialog from "./TermManagerDialog.svelte";
   import BusinessEventView from "./BusinessEventView.svelte";
+  import TranslateDialog from "./TranslateDialog.svelte";
   import BusinessRuleCard from "./BusinessRuleCard.svelte";
   import BusinessForm from "./BusinessForm.svelte";
   import BusinessPreview from "./BusinessPreview.svelte";
@@ -71,6 +72,7 @@
   let termManagerOpen = $state(false);
   // 业务模式顶层切换:规则库(默认) | 业务事件(孤儿域接线批)
   let businessSection = $state<"rules" | "events">("rules");
+  let translateOpen = $state(false);
   // schema 选择器 ID(null = 用 meta.schemaId 或无 schema)
   let selectedSchemaId = $state<string | null>(null);
 
@@ -236,6 +238,13 @@
         <span class="subtitle">开发者模式 · JSON 直接编辑</span>
       </div>
       <div class="header-actions">
+        <button
+          class="btn"
+          onclick={() => (translateOpen = true)}
+          title="server 形态翻译:transform ↔ condition+action_set(lossy 提示)"
+        >
+          ⇄ 形态翻译
+        </button>
         <DeveloperModeToggle bind:devMode />
       </div>
     </header>
@@ -245,6 +254,9 @@
       selectedRuleId={$selectedRuleId}
       onSelect={handleSelect}
     />
+    {#if translateOpen}
+      <TranslateDialog {wb} onClose={() => (translateOpen = false)} />
+    {/if}
   </div>
 {:else}
   <!-- 业务模式:业务表单 + 业务预览 -->
