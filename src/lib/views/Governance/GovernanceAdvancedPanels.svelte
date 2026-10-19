@@ -41,9 +41,7 @@
   let q = $state("");
   let searchDomain = $state("");
   let searching = $state(false);
-  let searchResults = $state<
-    { dataset_id: string; name: string; dataset_kind?: string; lifecycle?: { status: string } }[]
-  > | null>(null);
+  let searchResults = $state<{ dataset_id: string; name: string; dataset_kind?: string; lifecycle?: { status: string } }[] | null>(null);
   let entryResults = $state<unknown>(null);
 
   async function handleSearch(): Promise<void> {
@@ -187,10 +185,8 @@
   async function handleReload(): Promise<void> {
     if (
       !window.confirm(
-        "从磁盘重载执行域规则?
-" +
-          "语义:rules_dir/bundles 落盘内容 → 内存生效;存量会话不改 TCB(新会话用新规则);
-" +
+        "从磁盘重载执行域规则?\n" +
+          "语义:rules_dir/bundles 落盘内容 → 内存生效;存量会话不改 TCB(新会话用新规则);\n" +
           "生产引用切换仍归治理链(rolling_swap/晋级)。",
       )
     ) {
