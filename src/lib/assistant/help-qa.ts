@@ -2,16 +2,19 @@
 // Copyright (C) 2026 EvoRule Project
 //
 // 帮助中心 · LLM 只读问答(PR10-重2)。
-// 经审计桥(callChatApiAudited)以一次性 sidecar 会话执行,问答 prompt 与
-// 回答全文进 evorule 审计链;仅做"问答",不调用 generateRuleDraft /
+// 经 server 通道(callChatApiServerChannel)执行,问答 prompt 与回答全文进
+// evorule 审计链;仅做"问答",不调用 generateRuleDraft /
 // explainRule / generateInput,不生成规则 JSON、不执行任何动作
 // —— 严格的只读联动。
+//
+// SG-1 收编(v1.2 F-3):原经 callChatApiAudited(浏览器持 key 直连)——
+// 旧通道生产构建已收死,运行态统一走 server 通道(凭据托管 ai-plugin)。
 //
 // 与 LlmChatSidebar 的区别:
 //   - LlmChatSidebar 是通用多轮对话(面向规则编写/解释/测试);
 //   - 本模块是帮助场景的单轮问答,上下文限定为 evorule 产品使用问题。
 
-import { callChatApiAudited } from './audited-llm';
+import { callChatApiServerChannel } from './audited-llm';
 import type { CloudLlmConfig } from './types';
 
 const SYSTEM_PROMPT = `你是 evorule-console-cloud 的产品帮助助手。
@@ -37,14 +40,13 @@ export async function askHelp(
 	const q = question.trim();
 	const userMessage = q.length > 0 ? q : '请简要介绍 evorule-console-cloud 是什么,以及它能做什么。';
 
-	return callChatApiAudited({
-		apiEndpoint: cfg.apiEndpoint,
-		apiKey: cfg.apiKey,
+	return callChatApiServerChannel({
+		apiEndpoint: '',
+		apiKey: '',
 		model: cfg.model,
 		userMessage,
 		systemMessage: SYSTEM_PROMPT,
 		temperature: 0.3,
-		timeoutMs: 30_000,
 		auditPurpose: 'help_qa'
 	});
 }

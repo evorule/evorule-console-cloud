@@ -16,7 +16,7 @@
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { llmConfig, isLlmConfigured } from '$lib/config/llm-config';
-	import { callChatApiAudited } from '$lib/assistant/audited-llm';
+	import { callChatApiServerChannel } from '$lib/assistant/audited-llm';
 	import { EVORULE_RULE_SPEC } from '$lib/assistant/prompts';
 	import ChatBubble from '$lib/components/chat/ChatBubble.svelte';
 	import TypewriterText from '$lib/components/chat/TypewriterText.svelte';
@@ -70,10 +70,11 @@ ${EVORULE_RULE_SPEC}
 
 		try {
 			const cfg = $llmConfig;
-			// 经审计桥执行:对话 prompt 全文与回复入 evorule 审计链(侧车协议)
-			const reply = await callChatApiAudited({
-				apiEndpoint: cfg.apiEndpoint,
-				apiKey: cfg.apiKey,
+			// 经 server 通道执行:对话 prompt 全文与回复入 evorule 审计链
+			// (SG-1 收编 v1.2 F-3:原浏览器直连通道生产构建已收死)
+			const reply = await callChatApiServerChannel({
+				apiEndpoint: '',
+				apiKey: '',
 				model: cfg.model,
 				userMessage: text,
 				systemMessage: SYSTEM_PROMPT,

@@ -86,10 +86,12 @@ export interface CloudLlmConfig {
 	locked: boolean;
 }
 
-/** 默认配置:LLM 关闭 + OpenAI 预设 + 浏览器通道(向后兼容:老配置无 channel 字段) */
+/** 默认配置:LLM 关闭 + OpenAI 预设 + server 通道
+ * (SG-1 收编 v1.2 F-3:默认路径收编为服务端执行,原 browser 缺省废弃;
+ *  dev 构建仍可显式选 browser,生产构建强制 server——不留运行时开关) */
 export const DEFAULT_LLM_CONFIG: CloudLlmConfig = {
 	enabled: false,
-	channel: 'browser',
+	channel: 'server',
 	provider: 'openai',
 	apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 	apiKey: '',

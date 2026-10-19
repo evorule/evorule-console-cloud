@@ -9,8 +9,11 @@
 //     + transpileCommand(L2 P2 第 4+1 操作,NL→命令草稿,内核不感知)
 //   - 草案校验:LLM 产出后用内核 RuleValidator 校验,失败也不抛错,返回 confidence=0 + 校验错误
 //   - apiKey 安全:不进 prompt / 不进日志 / 不进 error.message(由 llm-fetch.ts 保证)
-//   - 审计桥(2026-08-30):各方法经 callChatApiAudited 走 evorule 侧车协议,
+//   - 审计桥(2026-08-30):各方法经审计链入 evorule 侧车协议,
 //     prompt 全文与 LLM 结果入审计链;testConnection 保持直连(连通性探针)
+//   - SG-1 收编(v1.2 F-3,2026-10-14):生产构建统一 server 通道
+//     (callChatApiServerChannel,凭据托管 ai-plugin)——浏览器直连旧通道
+//     (callChatApiAudited)生产收死、仅 dev 保留且限 loopback,不留运行时开关
 //
 // 与内核边界:
 //   - 注入到内核扩展槽后,内核视图只调四方法,不感知 CloudLlmConfig
@@ -80,7 +83,8 @@ export class CloudLlmAssistant implements LlmAssistant {
 	/** 当前配置是否完备(通道感知:server 通道凭据在服务端,只看 enabled) */
 	isConfigured(): boolean {
 		const cfg = this.config;
-		if (cfg.channel === 'server') {
+		// SG-1 收编:生产构建无视 channel 配置一律按 server 通道判(运行时开关不存在)
+		if (cfg.channel === 'server' || import.meta.env.PROD) {
 			return cfg.enabled;
 		}
 		return (
@@ -110,8 +114,9 @@ export class CloudLlmAssistant implements LlmAssistant {
 
 		const cfg = this.config;
 		// server 通道:探针=真实执行路径(经 ai-plugin 服务端点,审计链内),
-		// 连通即证明 server+插件+托管凭据整链可用
-		if (cfg.channel === 'server') {
+		// 连通即证明 server+插件+托管凭据整链可用。
+		// SG-1 收编:生产构建一律走本分支(browser 探针仅 dev 构建可达)
+		if (cfg.channel === 'server' || import.meta.env.PROD) {
 			try {
 				const reply = await callChatApiServerChannel({
 					userMessage: 'ping',
@@ -174,9 +179,11 @@ export class CloudLlmAssistant implements LlmAssistant {
 	 * —— browser 通道它是配置连通性探针,可在 server 未启动时独立验证 LLM
 	 * 端点;server 通道探针即真实执行路径。
 	 *
-	 * 通道(双通道并存):
-	 *   - browser:审计桥侧车协议,浏览器本地执行 LLM(用户自有 key)——现状
-	 *   - server:ai-plugin 服务端点,服务端托管凭据自编排审计回路
+	 * 通道(SG-1 收编 v1.2 F-3):
+	 *   - server:ai-plugin 服务端点,服务端托管凭据自编排审计回路——生产构建
+	 *     唯一路径(无视 channel 配置,不留运行时开关)
+	 *   - browser:审计桥侧车协议,浏览器本地执行 LLM(用户自有 key)——仅 dev
+	 *     构建保留,且旧通道本体限 loopback(见 audited-llm.ts 收编门)
 	 *
 	 * @throws LlmError 子类(browser 通道 LLM 执行失败) /
 	 *         AuditedBridgeError(server 不可达 / 协议失败)
@@ -190,7 +197,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 				new LlmError('LLM 未配置或已停用:请到 设置 → LLM 配置 完成配置后再试', 'api')
 			);
 		}
-		if (cfg.channel === 'server') {
+		if (cfg.channel === 'server' || import.meta.env.PROD) {
 			// server 通道:凭据在 ai-plugin 服务端,apiEndpoint/apiKey 不使用;
 			// model 可选覆盖(空 = 插件缺省模型)
 			return callChatApiServerChannel({
@@ -205,6 +212,7 @@ export class CloudLlmAssistant implements LlmAssistant {
 				new LlmError('LLM 未配置或已停用:请到 设置 → LLM 配置 完成配置后再试', 'api')
 			);
 		}
+		// dev-only browser 通道(生产构建不可达:上方 PROD 分支恒真)
 		return callChatApiAudited({
 			apiEndpoint: cfg.apiEndpoint,
 			apiKey: cfg.apiKey,

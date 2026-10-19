@@ -439,6 +439,8 @@ function updateForConfigure(mod: {
 	setLlmApiEndpoint: (v: string) => void;
 	setLlmModel: (v: string) => void;
 }): void {
+	// SG-1 收编后缺省通道为 server;本测组专测 browser key 加密生命周期,显式指明
+	mod.llmConfig.update((c) => ({ ...c, channel: 'browser' }));
 	mod.setLlmEnabled(true);
 	mod.setLlmApiEndpoint('https://api.example.com/v1/chat/completions');
 	mod.setLlmModel('m1');

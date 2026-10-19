@@ -371,7 +371,8 @@ import { base } from '$app/paths';
 					<button class="wz-btn ghost" onclick={goPrev}>← 上一步</button>
 					<button class="wz-btn primary" onclick={goNext}>下一步 →</button>
 				</div>
-			{:else}
+			{:else if import.meta.env.DEV}
+				<!-- dev 构建:保留浏览器 key 配置向导(旧通道 dev 专用,SG-1 收编 v1.2 F-3) -->
 				<div class="wz-form">
 					<label class="wz-label" for="wz-llm-endpoint">API 端点(OpenAI 兼容)</label>
 					<input id="wz-llm-endpoint" class="wz-input" type="text" bind:value={apiEndpoint} />
@@ -396,6 +397,26 @@ import { base } from '$app/paths';
 							<button class="wz-btn primary" onclick={handleSaveLlm} disabled={savingLlm}>
 								{savingLlm ? '保存中…' : '保存并继续'}
 							</button>
+						</div>
+					</div>
+				</div>
+			{:else}
+				<!-- 生产构建:不收集不分发浏览器 key(SG-1 收编 v1.2 F-3)——
+				     server 通道凭据由部署方在 evorule-server 侧托管(ai-plugin) -->
+				<div class="wz-form">
+					<p class="wz-note">
+						AI 助手默认经 <strong>服务端执行通道</strong>:LLM 调用由 evorule-server 侧
+						ai-plugin 托管执行,凭据保存在服务端配置(推荐环境变量注入),<strong>不经过浏览器</strong>。
+					</p>
+					<p class="wz-hint">
+						部署方在 evorule-server 机器上完成 ai-plugin 配置后,
+						到「设置 → LLM 配置」启用并测试连接即可。
+					</p>
+					<div class="wz-actions">
+						<button class="wz-btn ghost" onclick={goPrev}>← 上一步</button>
+						<div class="wz-actions-right">
+							<button class="wz-btn ghost" onclick={skipLlm}>跳过,暂不配置</button>
+							<button class="wz-btn primary" onclick={goNext}>下一步 →</button>
 						</div>
 					</div>
 				</div>
