@@ -40,7 +40,7 @@
   const bannerVisible = $derived(!$onboardingStore.bannerDismissed);
 
   /**
-   * 读 rule-serve(18081)运行时版本(P2-01)。
+   * 读 rule-serve(governanceConfig.baseUrl,缺省 127.0.0.1:18081)运行时版本(P2-01)。
    * /v1/health 返回形如 { version: "v0.3.0", ... };取不到如实返回 null(不静默造假)。
    */
   async function fetchRuleVersion(baseUrl: string): Promise<string | null> {
@@ -60,8 +60,8 @@
   const wsBackend = useWorkspaceBackend();
 
   // === 健康检查 ===
-  // server 走 ExecutionBackend.health()(18080)
-  // rule 没有原生 health,server 起来后试着 listWorkspaces 间接探测(18081)
+  // server 走 ExecutionBackend.health()(基址经 netConfig 单点解析,proxy 态='/console-api')
+  // rule 没有原生 health,server 起来后试着 listWorkspaces 间接探测(同基址)
   async function checkHealth(): Promise<void> {
     let serverOk = false;
     let ruleOk = false;

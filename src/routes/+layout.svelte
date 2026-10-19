@@ -599,16 +599,22 @@
     </div>
 
     <div class="header-actions">
-      <!-- 联网/离线切换(快捷,正式配置在设置面板) -->
+      <!-- 联网/离线/代理切换(快捷,正式配置在设置面板;proxy 经设置面板切换) -->
       <button
         class="icon-btn"
         onclick={toggleNetMode}
-        title={$netConfig.mode === "online"
+        title={$netConfig.mode === "proxy"
+          ? "同源代理模式 · /console-api · 切换须经设置面板"
+          : $netConfig.mode === "online"
           ? `联网模式 · ${$netConfig.remoteBaseUrl} · 点击切回本地`
           : `离线模式 · ${DEFAULT_LOCAL_BASE_URL.replace(/^https?:\/\//, "")} · 点击切到联网`}
-        aria-label="切换联网/离线模式"
+        aria-label={
+          $netConfig.mode === "proxy"
+            ? "网络模式:同源代理(经设置面板切换)"
+            : "切换联网/离线模式"
+        }
       >
-        {$netConfig.mode === "online" ? "☁️" : "🖥️"}
+        {$netConfig.mode === "proxy" ? "🔗" : $netConfig.mode === "online" ? "☁️" : "🖥️"}
       </button>
 
       <!-- 帮助 / 术语表(顶栏随处可达,PR4) -->
