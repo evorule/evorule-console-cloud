@@ -272,7 +272,8 @@
 	{/if}
 
 	{#if $llmConfig.enabled}
-		<!-- 2. 执行通道(browser=现状;server=ai-plugin 托管执行) -->
+		<!-- 2. 执行通道(SG-1 收编 v1.2 F-3:生产构建仅 server——浏览器直连旧通道
+		     收死不留运行时开关;dev 构建保留 browser 选项限本地开发) -->
 	<div class="form-row">
 		<label for="llm-channel">{t('llm.channelLabel')}</label>
 		<select
@@ -281,7 +282,9 @@
 			onchange={(e) =>
 				updateLlmConfig({ channel: (e.target as HTMLSelectElement).value as 'browser' | 'server' })}
 		>
-			<option value="browser">{t('llm.channelBrowser')}</option>
+			{#if import.meta.env.DEV}
+				<option value="browser">{t('llm.channelBrowser')}</option>
+			{/if}
 			<option value="server">{t('llm.channelServer')}</option>
 		</select>
 		{#if $llmConfig.channel === 'server'}

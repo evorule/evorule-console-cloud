@@ -25,7 +25,9 @@ import {
 import { netConfig } from '$lib/config/net-config';
 import { LlmAuthError } from './llm-fetch';
 
-const SERVER_BASE = 'http://test-server';
+// SG-1 收编门(v1.2 F-3)后,旧通道仅 dev+loopback server 可用——
+// 测试基址改为 loopback(旧通道测试组专测 dev 保留路径)
+const SERVER_BASE = 'http://127.0.0.1:18080';
 const API_ENDPOINT = 'https://llm.example/v1/chat/completions';
 
 // ============ mock fetch ============
@@ -511,5 +513,31 @@ describe('收尾清理(signal 桥接 + keepalive)', () => {
 		const del = m.getDeleteInit();
 		expect(del).toBeTruthy();
 		expect(del?.keepalive).toBe(true);
+	});
+});
+
+// ============ SG-1 收编门(v1.2 F-3:旧通道生产收死+dev 限 loopback) ============
+
+describe('SG-1 收编门 assertLegacyChannelAllowed', () => {
+	test('dev 构建:非 loopback server 显式拒绝(不留网络路径)', async () => {
+		netConfig.set({ mode: 'online', remoteBaseUrl: 'http://test-server', authToken: '' });
+		const err = await callChatApiAudited({ ...BASE_PARAMS, auditPurpose: 'chat' }).catch(
+			(e) => e
+		);
+		expect(err).toBeInstanceOf(AuditedBridgeError);
+		expect(err.message).toContain('仅限 loopback');
+	});
+
+	test('生产构建:旧通道整体拒绝(fail-visible,无静默兜底)', async () => {
+		vi.stubEnv('PROD', true);
+		try {
+			const err = await callChatApiAudited({ ...BASE_PARAMS, auditPurpose: 'chat' }).catch(
+				(e) => e
+			);
+			expect(err).toBeInstanceOf(AuditedBridgeError);
+			expect(err.message).toContain('已收编');
+		} finally {
+			vi.unstubAllEnvs();
+		}
 	});
 });

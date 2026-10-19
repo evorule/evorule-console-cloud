@@ -44,9 +44,12 @@ const STORAGE_KEY = 'evorule-console-cloud:llm-config';
 /** 加密块随运行时态保存在模块内(不进 CloudLlmConfig 公共契约) */
 let keyEncBlob: EncryptedKeyBlob | null = null;
 
-/** channel 白名单解析(老配置无此字段/非法值 → 缺省 browser,向后兼容) */
+/** channel 白名单解析。
+ * SG-1 收编(v1.2 F-3):缺省 server(默认路径收编,原缺省 browser 废弃);
+ * 生产构建强制 server——旧浏览器通道运行时开关不存在,仅 dev 构建可显式选 browser。 */
 function parseChannel(v: unknown): LlmChannel {
-	return v === 'server' ? 'server' : 'browser';
+	if (import.meta.env.PROD) return 'server';
+	return v === 'browser' ? 'browser' : 'server';
 }
 
 /** keyStorage 白名单解析(老配置无此字段 → 按 apiKey 有无回推) */

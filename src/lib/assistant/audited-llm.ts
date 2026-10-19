@@ -145,7 +145,43 @@ function buildHeaders(): Record<string, string> {
 }
 
 /**
+ * 旧通道收编门(SG-1,v1.2 F-3):生产构建直接拒绝;dev 构建限 loopback。
+ *
+ * - `import.meta.env.PROD` 是构建期常量:生产构建折叠为 true 后,本函数
+ *   其余网络路径(浏览器本地执行 LLM + 浏览器 key 注入)整段死代码消除
+ *   ——「生产构建删除 callChatApiAudited 代码路径」的落地形态;
+ * - dev 构建保留(本地开发便利),但仅限 loopback server;
+ * - 不留运行时开关;回退走 git revert。
+ */
+function assertLegacyChannelAllowed(base: string): void {
+	if (import.meta.env.PROD) {
+		throw new AuditedBridgeError(
+			'浏览器直连通道已收编(SG-1):LLM 统一经 server 通道执行(凭据托管于 ai-plugin);本通道仅存在于 dev 构建',
+			'protocol'
+		);
+	}
+	let loopback = false;
+	try {
+		const h = new URL(base).hostname;
+		loopback = h === '127.0.0.1' || h === 'localhost' || h === '::1' || h === '[::1]';
+	} catch {
+		// 非法 URL 按非 loopback 处理
+	}
+	if (!loopback) {
+		throw new AuditedBridgeError(
+			`浏览器直连通道(dev 保留)仅限 loopback server 使用,当前 server=${base}`,
+			'protocol'
+		);
+	}
+}
+
+/**
  * 审计链内执行一次 LLM 对话(浏览器侧侧车协议)。
+ *
+ * SG-1 收编(v1.2 F-3):本通道默认路径已收编为 callChatApiServerChannel;
+ * 本函数生产构建不可用(见 assertLegacyChannelAllowed),仅 dev 构建+loopback
+ * server 可用。运行态调用点(help-qa/LlmChatSidebar/auditedChat)已全部改走
+ * server 通道。
  *
  * @param params 与 callChatApi 相同的聊天参数(含 system/history)
  * @param auditPurpose 审计用途标签(写入命令事实 params.audit_purpose)
@@ -158,6 +194,7 @@ export async function callChatApiAudited(
 ): Promise<string> {
 	const { auditPurpose, ...chatParams } = params;
 	const base = resolveBaseUrl();
+	assertLegacyChannelAllowed(base);
 	const headers = buildHeaders();
 	const wait = SIDECAR_WAIT_TIMEOUT_MS;
 
