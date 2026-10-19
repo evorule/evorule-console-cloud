@@ -6,10 +6,12 @@
  * 网络模式:
  *   - offline: 连本地 evorule-server(127.0.0.1:18080,loopback)
  *   - online:  连远程 evorule-server(remoteBaseUrl 可配)
+ *   - proxy:   经 serve 同源反向代理 /console-api(嵌入托管态缺省;
+ *              Authorization 由 serve 服务端注入,token 不进页面)
  *
  * 默认 offline — 与内核 evorule-console 行为一致(本地 HTTP)
  */
-export type NetMode = "offline" | "online";
+export type NetMode = "offline" | "online" | "proxy";
 
 /**
  * CloudHttpBackend 配置。

@@ -228,8 +228,8 @@ export class CloudHttpBackend implements ExecutionBackend {
 		};
 		this.workspace = workspace;
 		// authToken 传给内核 HttpBackend(2026-08-28 快照同步上游 0073a0c):
-		// 执行侧会话 API 请求统一携带 Authorization: Bearer
-		this.backend = new HttpBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
+		// 执行侧会话 API 请求统一携带 Authorization: Bearer(proxy 模式除外)
+		this.backend = new HttpBackend(this.resolveBaseUrl(), this.authTokenForBackend());
 	}
 
 	// === 配置访问器(只读) ===
@@ -261,12 +261,20 @@ export class CloudHttpBackend implements ExecutionBackend {
 	 */
 	reconfigure(config: Partial<CloudBackendConfig>): void {
 		this._config = { ...this._config, ...config };
-		this.backend = new HttpBackend(this.resolveBaseUrl(), this._config.authToken ?? null);
+		this.backend = new HttpBackend(this.resolveBaseUrl(), this.authTokenForBackend());
 	}
 
 	// === 内部工具 ===
 
+	/** 传给内核 HttpBackend 的凭据:proxy 模式恒不送(Authorization 由 serve 代理注入) */
+	private authTokenForBackend(): string | null {
+		return this._config.mode === 'proxy' ? null : (this._config.authToken ?? null);
+	}
+
 	private resolveBaseUrl(): string {
+		// proxy 模式:同源反向代理前缀(相对路径,fetch 自动落当前 origin;
+		// Authorization 由 serve 服务端注入,页面不持有凭据)
+		if (this._config.mode === 'proxy') return '/console-api';
 		const url =
 			this._config.mode === 'online' ? this._config.remoteBaseUrl : this._config.localBaseUrl;
 		// 去掉末尾斜杠(与内核 HttpBackend 构造行为一致,避免 path 拼接出现 //)

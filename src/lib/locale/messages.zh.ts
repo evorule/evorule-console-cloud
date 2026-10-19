@@ -280,6 +280,7 @@ export const messagesZh: Dict = {
   "settings.network.desc": "切换连本地 evorule-server(loopback)或远程 evorule-server。切换后 backend 立即用新 baseUrl(无需重启)。",
   "settings.network.localMode": "🖥️ 本地模式(127.0.0.1:18080)",
   "settings.network.onlineMode": "☁️ 联网模式",
+  "settings.network.proxyMode": "🔀 代理模式(同源托管)",
   "settings.network.remoteUrlLabel": "远程 evorule-server URL",
   "settings.network.remoteUrlHint": "修改后失焦自动保存,backend 会立即用新 URL",
   "settings.network.tokenLabel": "认证 Token(evorule-server EVORULE_AUTH_TOKEN)",

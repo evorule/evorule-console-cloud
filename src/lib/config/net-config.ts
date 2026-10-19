@@ -7,6 +7,7 @@
 
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { base } from '$app/paths';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode } from '$lib/backend/types';
 
 export interface NetConfig {
@@ -19,14 +20,20 @@ export interface NetConfig {
 	 * 生产状态等端点均需凭据。localStorage 持久化(与 mode/baseUrl 同级)——
 	 * 安全取舍:面向内网单机部署场景,XSS 可读取此凭据(代码明示,不隐藏)。
 	 * 留空 = 不带 Authorization 头(仅免认证 server / dev 模式可用)。
+	 * proxy 模式不使用本字段(凭据由 serve 代理服务端注入)。
 	 */
 	authToken: string;
 }
 
 const STORAGE_KEY = 'evorule-console-cloud:net-config';
 
+/** 嵌入托管态判定:构建期 base path 非根(如 /console)= 被 serve 同源托管 */
+const EMBEDDED = base !== '' && base !== '/';
+
 const DEFAULT_CONFIG: NetConfig = {
-	mode: 'offline',
+	// 嵌入态缺省 proxy(同源反向代理,免 CORS、token 不进页面);
+	// 独立部署缺省 offline(与内核 evorule-console 行为一致)
+	mode: EMBEDDED ? 'proxy' : 'offline',
 	remoteBaseUrl: DEFAULT_LOCAL_BASE_URL,
 	authToken: ''
 };
@@ -38,7 +45,13 @@ function loadConfig(): NetConfig {
 		if (!raw) return DEFAULT_CONFIG;
 		const parsed = JSON.parse(raw) as Partial<NetConfig>;
 		return {
-			mode: parsed.mode === 'online' ? 'online' : 'offline',
+			// 显式有效配置(含 offline)一律尊重;无效/缺位按嵌入态分派缺省
+			mode:
+				parsed.mode === 'online' || parsed.mode === 'proxy' || parsed.mode === 'offline'
+					? parsed.mode
+					: EMBEDDED
+						? 'proxy'
+						: 'offline',
 			remoteBaseUrl:
 				typeof parsed.remoteBaseUrl === 'string' && parsed.remoteBaseUrl.length > 0
 					? parsed.remoteBaseUrl
@@ -73,9 +86,12 @@ export function setAuthToken(token: string): void {
 	netConfig.update((c) => ({ ...c, authToken: token.trim() }));
 }
 
-/** 切换 online/offline(toggle) */
+/** 切换 online/offline(toggle;proxy 模式不参与 toggle,经 Settings 面板切换) */
 export function toggleNetMode(): void {
-	netConfig.update((c) => ({ ...c, mode: c.mode === 'online' ? 'offline' : 'online' }));
+	netConfig.update((c) => ({
+		...c,
+		mode: c.mode === 'online' ? 'offline' : c.mode === 'offline' ? 'online' : c.mode
+	}));
 }
 
 /** 重置为默认配置 */

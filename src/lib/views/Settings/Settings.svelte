@@ -12,7 +12,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { netConfig, setNetMode, setRemoteBaseUrl, setAuthToken } from '$lib/config/net-config';
-	import { DEFAULT_LOCAL_BASE_URL } from '$lib/backend/types';
+	import { DEFAULT_LOCAL_BASE_URL, type NetMode } from '$lib/backend/types';
 	import LlmSettings from './LlmSettings.svelte';
 	import AgentSettings from './AgentSettings.svelte';
 	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
@@ -57,7 +57,7 @@
 		authTokenInput = $netConfig.authToken;
 	});
 
-	function handleNetModeChange(mode: 'online' | 'offline') {
+	function handleNetModeChange(mode: NetMode) {
 		setNetMode(mode);
 		netTestResult = null;
 	}
@@ -240,6 +240,13 @@
 							onclick={() => handleNetModeChange('online')}
 						>
 							{t('settings.network.onlineMode')}
+						</button>
+						<button
+							class="mode-btn"
+							class:active={$netConfig.mode === 'proxy'}
+							onclick={() => handleNetModeChange('proxy')}
+						>
+							{t('settings.network.proxyMode')}
 						</button>
 					</div>
 

@@ -280,6 +280,7 @@ export const messagesEn: Dict = {
   "settings.network.desc": "Switch between a local evorule-server (loopback) or a remote evorule-server. After switching, the backend immediately uses the new baseUrl (no restart needed).",
   "settings.network.localMode": "🖥️ Local mode (127.0.0.1:18080)",
   "settings.network.onlineMode": "☁️ Online mode",
+  "settings.network.proxyMode": "🔀 Proxy mode (same-origin hosting)",
   "settings.network.remoteUrlLabel": "Remote evorule-server URL",
   "settings.network.remoteUrlHint": "Auto-saved on blur; the backend immediately uses the new URL",
   "settings.network.tokenLabel": "Auth Token (evorule-server EVORULE_AUTH_TOKEN)",
