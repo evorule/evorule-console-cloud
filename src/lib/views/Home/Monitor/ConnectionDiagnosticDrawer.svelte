@@ -173,13 +173,17 @@
       <div class="diag-row">
         <span class="diag-k">当前模式</span>
         <span
-          class={`badge ${$netConfig.mode === "online" ? "badge-ok" : "badge-info"}`}
-          >{$netConfig.mode === "online" ? "联网 (online)" : "离线 (offline)"}</span
+          class={`badge ${$netConfig.mode === "online" || $netConfig.mode === "proxy" ? "badge-ok" : "badge-info"}`}
+          >{$netConfig.mode === "proxy"
+            ? "同源代理 (proxy)"
+            : $netConfig.mode === "online"
+              ? "联网 (online)"
+              : "离线 (offline)"}</span
         >
       </div>
       <div class="diag-row">
-        <span class="diag-k">远程地址</span>
-        <span class="diag-v">{$netConfig.remoteBaseUrl}</span>
+        <span class="diag-k">{$netConfig.mode === "proxy" ? "代理前缀" : "远程地址"}</span>
+        <span class="diag-v">{$netConfig.mode === "proxy" ? "/console-api (同源反向代理)" : $netConfig.remoteBaseUrl}</span>
       </div>
     </section>
 

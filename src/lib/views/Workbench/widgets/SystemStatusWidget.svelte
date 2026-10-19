@@ -18,6 +18,8 @@
     useBackend,
   } from "$lib/kernel";
   import { netConfig } from "$lib/config/net-config";
+  import { governanceConfig } from "$lib/config/governance-config";
+  import { resolveServerBaseUrl } from "$lib/backend/server-base";
   import { workbenchStatus, workbenchRefreshNow } from "$lib/stores/workbench-status";
   import { goto } from "$app/navigation";
 import { base } from "$app/paths";
@@ -29,6 +31,12 @@ import { base } from "$app/paths";
   const ws = $derived($currentWorkspace);
   const mode = $derived($netConfig.mode);
   const st = $derived($workbenchStatus);
+
+  // 基址显示派生(单点解析在 server-base.ts;proxy 态='/console-api'):
+  // server 随 netConfig 三态;rule 版本探测走治理面(governanceConfig,缺省 18081)
+  const stripUrl = (u: string): string => u.replace(/\/+$/, "").replace(/^https?:\/\//, "");
+  const serverBase = $derived(stripUrl(resolveServerBaseUrl($netConfig)));
+  const ruleBase = $derived(stripUrl($governanceConfig.baseUrl));
 
   function showOnboarding(): void {
     void goto(`${base}/`);
@@ -88,6 +96,8 @@ import { base } from "$app/paths";
     {mode}
     consoleVersion={CONSOLE_VERSION}
     ruleVersion={st.ruleVersion}
+    {serverBase}
+    {ruleBase}
     refreshing={st.refreshing}
     lastRefreshAt={st.lastRefreshAt}
     onRefresh={workbenchRefreshNow}

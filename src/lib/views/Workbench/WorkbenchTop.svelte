@@ -17,6 +17,10 @@
     mode: NetMode;
     consoleVersion: string;
     ruleVersion: string | null;
+    /** server 实际生效基址显示(父层按 netConfig 解析;proxy 态='/console-api') */
+    serverBase: string;
+    /** rule 实际生效基址显示(父层按 governanceConfig 解析) */
+    ruleBase: string;
     refreshing: boolean;
     lastRefreshAt: Date | null;
     onRefresh: () => void;
@@ -30,6 +34,8 @@
     mode,
     consoleVersion,
     ruleVersion,
+    serverBase,
+    ruleBase,
     refreshing,
     lastRefreshAt,
     onRefresh,
@@ -62,18 +68,18 @@
   </div>
   <div class="status-item">
     <span class="label">模式:</span>
-    <span class="value">{mode === "online" ? "☁ 联网" : "🖥 离线"}</span>
+    <span class="value">{mode === "proxy" ? "🔗 代理" : mode === "online" ? "☁ 联网" : "🖥 离线"}</span>
   </div>
 
   <div class="status-divider"></div>
 
   <div class="status-item">
     <span class="label">server:</span>
-    <span class="value">evorule-server v{consoleVersion} (18080)</span>
+    <span class="value">evorule-server v{consoleVersion} ({serverBase})</span>
   </div>
   <div class="status-item">
     <span class="label">rule:</span>
-    <span class="value">evorule-rule {ruleVersion ?? `v${consoleVersion}`} (18081)</span>
+    <span class="value">evorule-rule {ruleVersion ?? `v${consoleVersion}`} ({ruleBase})</span>
   </div>
 
   <div class="status-divider"></div>

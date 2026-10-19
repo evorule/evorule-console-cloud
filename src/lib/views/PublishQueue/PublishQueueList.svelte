@@ -196,11 +196,13 @@
     <span
       class="source-badge"
       class:offline={$netConfig.mode === "offline"}
-      title={$netConfig.mode === "online"
+      title={$netConfig.mode === "proxy"
+        ? "数据来自同源反向代理(/console-api)"
+        : $netConfig.mode === "online"
         ? `数据来自远程 evorule-server(${$netConfig.remoteBaseUrl})`
         : `数据来自本地 evorule-server(${DEFAULT_LOCAL_BASE_URL})`}
     >
-      {$netConfig.mode === "online" ? "联网" : "本地"}
+      {$netConfig.mode === "proxy" ? "代理" : $netConfig.mode === "online" ? "联网" : "本地"}
     </span>
   </header>
 
