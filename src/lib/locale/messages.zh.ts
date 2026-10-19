@@ -26,6 +26,7 @@ export const messagesZh: Dict = {
   "nav.versionHistory": "版本历史",
   "nav.auditLog": "审计记录",
   "nav.governance": "治理中心",
+  "nav.hit-stats": "命中分析",
   "nav.users": "用户管理",
   "nav.roles": "角色管理",
   "nav.apps": "应用管理",

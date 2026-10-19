@@ -26,6 +26,7 @@ export const messagesEn: Dict = {
   "nav.versionHistory": "Version History",
   "nav.auditLog": "Audit Log",
   "nav.governance": "Governance",
+  "nav.hit-stats": "Hit Analysis",
   "nav.users": "User Management",
   "nav.roles": "Role Management",
   "nav.apps": "App Management",

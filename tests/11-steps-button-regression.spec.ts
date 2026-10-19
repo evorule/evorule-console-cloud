@@ -221,11 +221,12 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		).toBeVisible();
 	});
 
-	test('common/[已登录] 导出/审计/版本/发布队列 item 可见', async ({ page }) => {
+	test('common/[已登录] 导出/审计/版本/部署审批 item 可见', async ({ page }) => {
 		await loginAsAdmin(page);
 
 		await expect(page.locator('.sidebar-item', { hasText: '导出' })).toBeVisible();
-		await expect(page.locator('.sidebar-item', { hasText: '发布队列' })).toBeVisible();
+		// 「发布队列」label 已改名「部署审批」(O-523 同步)
+		await expect(page.locator('.sidebar-item', { hasText: '部署审批' })).toBeVisible();
 		await expect(page.locator('.sidebar-item', { hasText: '版本历史' })).toBeVisible();
 		await expect(page.locator('.sidebar-item', { hasText: '审计记录' })).toBeVisible();
 	});
