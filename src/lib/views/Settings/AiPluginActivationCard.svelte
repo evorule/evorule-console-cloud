@@ -16,7 +16,7 @@
 
 <script lang="ts">
 	import { netConfig } from '$lib/config/net-config';
-	import { DEFAULT_LOCAL_BASE_URL } from '$lib/backend/types';
+	import { authTokenForRequest, resolveServerBaseUrl } from '$lib/backend/server-base';
 	import {
 		fetchAiPluginStatus,
 		type AiPluginStatus
@@ -27,14 +27,18 @@
 	let copiedKey = $state<string | null>(null);
 	let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
-	// 与 Settings 联网页同一套基址解析(online=远程 URL,offline=本机缺省)
+	// 基址/凭据解析单点 = lib/backend/server-base.ts
+	// (proxy=同源 '/console-api' 且不送凭据,online=远程 URL,offline=本机缺省)
 	function serverBaseUrl(): string {
-		return $netConfig.mode === 'online' ? $netConfig.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
+		return resolveServerBaseUrl($netConfig);
 	}
 
 	async function refresh() {
 		status = null;
-		status = await fetchAiPluginStatus(serverBaseUrl(), $netConfig.authToken || undefined);
+		status = await fetchAiPluginStatus(
+			serverBaseUrl(),
+			authTokenForRequest($netConfig.mode, $netConfig.authToken) ?? undefined
+		);
 	}
 
 	// 挂载即检测;netConfig 变更(切模式/改 URL)自动重检

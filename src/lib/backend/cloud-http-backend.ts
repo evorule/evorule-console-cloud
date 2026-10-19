@@ -61,6 +61,7 @@ import {
   type WorkspaceBackend
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type NetMode, type CloudBackendConfig } from './types';
+import { authTokenForRequest, resolveServerBaseUrl } from './server-base';
 import {
 	DEFAULT_PRODUCTION_STATE,
 	mapProductionAuditRecords,
@@ -266,19 +267,14 @@ export class CloudHttpBackend implements ExecutionBackend {
 
 	// === 内部工具 ===
 
-	/** 传给内核 HttpBackend 的凭据:proxy 模式恒不送(Authorization 由 serve 代理注入) */
+	/** 传给内核 HttpBackend 的凭据:proxy 恒不送(Authorization 由 serve 代理注入) */
 	private authTokenForBackend(): string | null {
-		return this._config.mode === 'proxy' ? null : (this._config.authToken ?? null);
+		return authTokenForRequest(this._config.mode, this._config.authToken);
 	}
 
 	private resolveBaseUrl(): string {
-		// proxy 模式:同源反向代理前缀(相对路径,fetch 自动落当前 origin;
-		// Authorization 由 serve 服务端注入,页面不持有凭据)
-		if (this._config.mode === 'proxy') return '/console-api';
-		const url =
-			this._config.mode === 'online' ? this._config.remoteBaseUrl : this._config.localBaseUrl;
-		// 去掉末尾斜杠(与内核 HttpBackend 构造行为一致,避免 path 拼接出现 //)
-		return url.replace(/\/+$/, '');
+		// 解析单点在 server-base.ts(proxy → '/console-api',凭据由 serve 注入)
+		return resolveServerBaseUrl(this._config);
 	}
 
 	// === 代理所有 17 方法到内部 HttpBackend ===

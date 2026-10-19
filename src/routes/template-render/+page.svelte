@@ -18,7 +18,7 @@
 <script lang="ts">
   import { get } from "svelte/store";
   import { onMount } from "svelte";
-  import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
+  import { authTokenForRequest, resolveServerBaseUrl } from "$lib/backend/server-base";
   import { netConfig } from "$lib/config/net-config";
   import { TemplatesClient, TemplatesError, type RenderFormat } from "$lib/backend/templates";
 
@@ -54,10 +54,14 @@
   let copied = $state(false);
 
   onMount(() => {
-    // cloud 适配:baseUrl/authToken 取自 netConfig(与 /flow 同一解析逻辑)
+    // cloud 适配:baseUrl/authToken 取自 netConfig(解析单点 server-base.ts,
+    // 与 /flow 同源;proxy 态走同源 '/console-api')
     const cfg = get(netConfig);
-    const baseUrl = cfg.mode === "online" ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
-    client = new TemplatesClient(baseUrl, cfg.authToken.trim() || null);
+    const baseUrl = resolveServerBaseUrl(cfg);
+    client = new TemplatesClient(
+      baseUrl,
+      authTokenForRequest(cfg.mode, cfg.authToken.trim() || null)
+    );
   });
 
   async function render() {

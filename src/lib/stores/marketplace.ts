@@ -27,19 +27,19 @@ import {
 } from "./import-export-types";
 import { BUILTIN_MARKET_TEMPLATES } from "$lib/data/market-template-samples";
 import { netConfig } from "$lib/config/net-config";
-import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
+import { authTokenForRequest, resolveServerBaseUrl } from "$lib/backend/server-base";
 
 // ============================================================================
-// 1. 请求基建(Bearer + base 解析,惯例对齐 audited-llm.ts)
+// 1. 请求基建(Bearer + base 解析,单点在 lib/backend/server-base.ts)
 // ============================================================================
 
 function resolveApiBase(): string {
-	const cfg = get(netConfig);
-	return cfg.mode === "online" ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
+	return resolveServerBaseUrl(get(netConfig));
 }
 
 function authHeaders(): Record<string, string> {
-	const token = get(netConfig).authToken;
+	const cfg = get(netConfig);
+	const token = authTokenForRequest(cfg.mode, cfg.authToken);
 	return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

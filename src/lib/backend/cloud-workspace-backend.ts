@@ -64,6 +64,7 @@ import {
 	type ExecutionRulesResult
 } from '$lib/kernel';
 import { DEFAULT_LOCAL_BASE_URL, type CloudBackendConfig } from './types';
+import { authTokenForRequest, resolveServerBaseUrl } from './server-base';
 import { MockWorkspaceBackend } from './mock-workspace-backend';
 
 /** CloudWorkspaceBackend 配置 — 比 CloudBackendConfig 多 noServer(纯离线演示) */
@@ -134,7 +135,7 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 		// D2(2026-08-28):actor 传入内核实现,审计归属 = 真实登录用户
 		this.http = new HttpWorkspaceBackend(
 			this.resolveBaseUrl(),
-			this._config.authToken ?? null,
+			authTokenForRequest(this._config.mode, this._config.authToken),
 			this._config.actor ?? null
 		);
 		this.mock = new MockWorkspaceBackend();
@@ -164,15 +165,14 @@ export class CloudWorkspaceBackend implements WorkspaceBackend {
 		this._config = { ...this._config, ...config };
 		this.http = new HttpWorkspaceBackend(
 			this.resolveBaseUrl(),
-			this._config.authToken ?? null,
+			authTokenForRequest(this._config.mode, this._config.authToken),
 			this._config.actor ?? null
 		);
 	}
 
 	private resolveBaseUrl(): string {
-		const url =
-			this._config.mode === 'online' ? this._config.remoteBaseUrl : this._config.localBaseUrl;
-		return url.replace(/\/+$/, '');
+		// 解析单点在 server-base.ts(proxy → '/console-api',凭据由 serve 注入)
+		return resolveServerBaseUrl(this._config);
 	}
 
 	/** 当前生效的内部实现(noServer → mock,否则 → http) */
