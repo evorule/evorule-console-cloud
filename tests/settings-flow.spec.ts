@@ -163,6 +163,8 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// 勾选启用
 		await page.locator('input[type="checkbox"]').check();
+		// SG-1 后缺省 server 通道(不渲染 browser 专属字段)——切 browser 通道断言完整配置区
+		await page.locator('#llm-channel').selectOption('browser');
 		// 应该出现厂商预设等字段
 		await expect(page.locator('#llm-provider')).toBeVisible();
 		await expect(page.locator('#llm-endpoint')).toBeVisible();
@@ -175,6 +177,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		// 启用
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		await expect(page.locator('#llm-provider')).toBeVisible();
 		// 再禁用
 		await page.locator('input[type="checkbox"]').uncheck();
@@ -187,6 +190,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 
 		// 选 智谱 GLM
 		await page.locator('#llm-provider').selectOption('glm');
@@ -207,6 +211,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		await page.locator('#llm-provider').selectOption('glm');
 		// 应该有"如何获取 apiKey? ↗"链接
 		await expect(page.locator('.help-link', { hasText: '如何获取 apiKey' })).toBeVisible();
@@ -216,6 +221,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		// 选项 disabled
 		const ernieOption = page.locator('#llm-provider option[value="ernie"]');
 		await expect(ernieOption).toHaveAttribute('disabled', '');
@@ -228,6 +234,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		const apiKeyInput = page.locator('#llm-apikey');
 		await expect(apiKeyInput).toHaveAttribute('type', 'password');
 	});
@@ -236,6 +243,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		await page.locator('#llm-apikey').fill('sk-test-key-123');
 		// 点击切换显示
 		await page.locator('.toggle-visibility').click();
@@ -249,6 +257,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		await page.locator('#llm-apikey').fill('sk-super-secret-key');
 		// 当前 URL 不应包含 apiKey
 		const currentUrl = page.url();
@@ -261,8 +270,9 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
-		// 应显示安全提示
-		await expect(page.locator('.hint', { hasText: 'localStorage' })).toBeVisible();
+		await page.locator('#llm-channel').selectOption('browser');
+		// 应显示安全提示(现文案:Key 与口令只存于浏览器本地)
+		await expect(page.locator('.hint', { hasText: '浏览器本地' })).toBeVisible();
 	});
 
 	// ============ 6. LLM 配置 tab — 测试连接 ============
@@ -271,6 +281,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		// 清空 apiKey(helper 注入了 sk-test-mock,需覆盖才能触发"未填完整"分支)
 		await page.locator('#llm-apikey').fill('');
 		// 限定到 .llm-settings section(联网 tab 也有"测试连接"按钮,避免选错)
@@ -287,6 +298,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		await page.locator('#llm-provider').selectOption('glm');
 		await page.locator('#llm-apikey').fill('sk-test-mock-key');
 		// 限定到 .llm-settings section
@@ -305,6 +317,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		await page.locator('#llm-provider').selectOption('glm');
 		await page.locator('#llm-apikey').fill('sk-persistent-test-key');
 
@@ -331,6 +344,7 @@ test.describe('evorule-console-cloud 设置面板', () => {
 		await page.locator('.sidebar-item', { hasText: '设置' }).click();
 		await page.locator('.settings-tab', { hasText: 'LLM 配置' }).click();
 		await page.locator('input[type="checkbox"]').check();
+		await page.locator('#llm-channel').selectOption('browser');
 		await page.locator('#llm-provider').selectOption('glm');
 		await page.locator('#llm-apikey').fill('sk-will-be-reset');
 

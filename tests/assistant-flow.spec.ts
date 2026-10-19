@@ -11,11 +11,11 @@
 //
 // 关键技术:
 //   - 用 playwright page.route() mock LLM API(避免真实调用产生费用/网络依赖)
-//   - 用 localStorage 注入 LLM 配置(enabled + endpoint + key + model)
-//   - LLM 三方法走审计桥(callChatApiAudited):需 evorule-server 在
-//     18080 运行 —— 侧车会话 + SSE + call_external 命令 + io_response
-//     (与 scripts/validate-audit-bridge.mjs 同链路);server 不可达时
-//     审计桥如实报错(无静默直连兜底)
+//   - 用 localStorage 注入 LLM 配置(enabled + channel + endpoint + key + model)
+//   - LLM 三方法走审计桥(callChatApiAudited):mock 侧车会话四端点
+//     (create_session/SSE/command/io_response,见 beforeEach;本机 dev 栈
+//     server 未装载桥接剧本,真实回路不收敛)+ LLM 端点 mock;协议形态与
+//     scripts/validate-audit-bridge.mjs 同链路
 //
 // 依赖:已登录状态(beforeEach 通过 tests/helpers/login.ts 注入 session + auth + db-meta)
 //      LLM 状态由各 test 内部按需覆盖(disabled 或 enabled)
@@ -92,6 +92,9 @@ const MOCK_EXPLANATION = '这条规则在用户提交 type=register 的指令时
 
 const LLM_CONFIG = {
 	enabled: true,
+	// SG-1 后 llm-config 缺省归一为 'server' 通道(经 ai-plugin invoke);三用例
+	// 走审计桥回路(dev 构建 + loopback server),须显式声明 browser 通道
+	channel: 'browser',
 	provider: 'openai',
 	apiEndpoint: 'https://api.openai.com/v1/chat/completions',
 	apiKey: 'sk-test-mock-key-not-real',
@@ -105,8 +108,54 @@ const LLM_CONFIG_DISABLED = {
 
 // ============ 公共 setup ============
 
+// 审计桥四端点 mock(browser 通道侧车协议,对齐 audited-llm.ts):
+// 本机 dev 栈 server 引擎未装载桥接剧本(submit_command 后无 IoRequest,
+// scripts/validate-audit-bridge.mjs B 项同位超时实证)——回路无法真实收敛,
+// 按协议 mock 侧车会话;LLM 本体仍走下方 **/v1/chat/completions mock。
+// 仅拦截 mock 会话 9001;应用自身会话 CRUD(如执行台「+ 新建」)按
+// caller_role 分流 fallback 到真实 server。
+const MOCK_SESSION_ID = 9001;
+const MOCK_IO_REQUEST_ID = 901;
+
 test.describe('evorule-console-cloud LLM 流程', () => {
 	test.beforeEach(async ({ page }) => {
+		// create_session:仅审计桥声明(caller_role=llm)走 mock,应用会话放行
+		await page.route('**/api/sessions', async (route) => {
+			if (route.request().method() === 'POST') {
+				const body = route.request().postDataJSON() as { caller_role?: string } | null;
+				if (body?.caller_role === 'llm') {
+					await route.fulfill({
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify({ session_id: MOCK_SESSION_ID })
+					});
+					return;
+				}
+			}
+			await route.fallback();
+		});
+		// SSE 事件流:IoRequest(桥本地执行 LLM)→ Stable(回路收敛)——
+		// 事件按序读,IoRequest 在前保证 Stable 到达时 llmReply 已就绪
+		await page.route(`**/api/sessions/${MOCK_SESSION_ID}/events`, async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'text/event-stream',
+				body:
+					`data: {"type":"IoRequest","id":${MOCK_IO_REQUEST_ID},"io_type":"call_external","params":{}}\n\n` +
+					'data: {"type":"Stable"}\n\n'
+			});
+		});
+		await page.route(`**/api/sessions/${MOCK_SESSION_ID}/command`, async (route) => {
+			await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+		});
+		await page.route(`**/api/sessions/${MOCK_SESSION_ID}/io_response`, async (route) => {
+			await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+		});
+		// closeSession(finally 尽力 DELETE)
+		await page.route(`**/api/sessions/${MOCK_SESSION_ID}`, async (route) => {
+			await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+		});
+
 		// mock LLM API 端点(任何对 OpenAI 兼容端点的请求都返回 mock)
 		await page.route('**/v1/chat/completions', async (route) => {
 			// 根据请求 body 中的 user message 内容判断用途,返回不同响应
@@ -252,11 +301,8 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		// 授予剪贴板权限
 		await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-		// 适配:不再 mock /api/sessions —— 旧 mock 的 POST 响应形状({id:1})
-		// 与审计桥协议不符(需 {session_id}),导致"create_session 失败(HTTP 200)"。
-		// 现改走真实 evorule-server:LLM 审计桥自建侧车会话(create_session → SSE →
-		// call_external → io_response),与 validate-audit-bridge.mjs 同链路;
-		// 唯一 mock 是 LLM 端点(beforeEach 的 page.route)。
+		// 适配:审计桥侧车会话走 beforeEach 四端点 mock(本机 dev 栈 server 未装载
+		// 桥接剧本,真实回路不收敛);「+ 新建」等应用会话 CRUD fallback 真实 server。
 
 		// 直接进入执行台(内核 ExecutionPad 的 AI 按钮 only 渲染于 currentSessionId !== null)
 		await page.goto('/view/execution', { waitUntil: 'networkidle' });
@@ -271,9 +317,10 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		// 等"提交命令"区域出现(说明 currentSessionId !== null 已被选中)
 		await expect(page.locator('h2:has-text("提交命令")')).toBeVisible({ timeout: 10_000 });
 
-		// 点击 "AI 生成输入" 按钮(实际文本含 ✨ emoji)
-		const aiBtn = page.locator('.btn-ai').first();
-		await aiBtn.click();
+		// 点击 "AI 生成输入" 按钮 —— 执行台有多个 .btn-ai(✨ AI 转译命令先注册、
+		// ✨ AI 生成输入在后),旧断言 first() 自转译器加入后错位(点开的是
+		// "⌨ AI 转译命令" dialog),按文本精确定位
+		await page.locator('.btn-ai', { hasText: 'AI 生成输入' }).first().click();
 
 		// Dialog 出现
 		await expect(page.locator('#input-dialog-title')).toBeVisible({ timeout: 5000 });

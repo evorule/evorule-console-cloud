@@ -94,7 +94,9 @@ test.describe('WASM 在线模式浏览器兼容', () => {
 			timeout: 10_000
 		});
 
-		// (e) Service Worker 已注册(controller 非 null)
+		// (e) Service Worker:仅生产 preview(playwright.wasm.config.ts,4173 外部
+		//     vite preview 托管)断言已注册(controller 非 null);dev server(主配置
+		//     5174)下 +layout.svelte DEV 门有意不注册 SW —— 反向断言该形态。
 		await page.waitForTimeout(500);
 		const swActive = await page.evaluate(() => {
 			return !!(navigator.serviceWorker && navigator.serviceWorker.controller);
@@ -103,7 +105,11 @@ test.describe('WASM 在线模式浏览器兼容', () => {
 		await page.waitForTimeout(500);
 		assertNoFunctionalErrors(errors, '/?backend=wasm');
 
-		// SW 注册断言单独给出(避免被上面收集噪声掩盖)
-		expect(swActive, 'Service Worker controller should be active').toBeTruthy();
+		const isProdPreview = !page.url().includes(':5174');
+		if (isProdPreview) {
+			expect(swActive, 'Service Worker controller should be active').toBeTruthy();
+		} else {
+			expect(swActive, 'dev 门下 SW 有意不注册(+layout.svelte DEV 分支)').toBeFalsy();
+		}
 	});
 });
