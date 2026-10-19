@@ -8,20 +8,20 @@
  * 安装语义 = 半自动（下载三件套 + 按《插件发布指南》落盘），市场不做落盘动作。
  */
 import { writable, get, derived } from "svelte/store";
-import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
 import { netConfig } from "$lib/config/net-config";
+import { authTokenForRequest, resolveServerBaseUrl } from "$lib/backend/server-base";
 
 // ============================================================================
-// 1. 请求基建（惯例对齐 marketplace.ts；该文件三函数模块私有故同形复制）
+// 1. 请求基建（解析单点 = lib/backend/server-base.ts，原同形复制已收编）
 // ============================================================================
 
 function resolveApiBase(): string {
-	const cfg = get(netConfig);
-	return cfg.mode === "online" ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
+	return resolveServerBaseUrl(get(netConfig));
 }
 
 function authHeaders(): Record<string, string> {
-	const token = get(netConfig).authToken;
+	const cfg = get(netConfig);
+	const token = authTokenForRequest(cfg.mode, cfg.authToken);
 	return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

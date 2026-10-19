@@ -32,6 +32,8 @@
   import { useBackend } from "$lib/kernel";
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import { HttpBackendError } from "$lib/kernel/backend/http-backend";
+  import { resolveServerBaseUrl } from "$lib/backend/server-base";
+  import { netConfig } from "$lib/config/net-config";
   import {
     sseConnectionStore,
     startSSE,
@@ -78,7 +80,7 @@
   import DebugPanel from "./DebugPanel.svelte";
 
   interface Props {
-    /** evorule-server 基地址(默认 http://127.0.0.1:18080) */
+    /** evorule-server 基地址(缺省按 netConfig 解析:proxy='/console-api' 同源代理) */
     baseUrl?: string;
     /** 外部干预回调(真实部署时调用 API,演示模式 toast 提示) */
     onIntervention?: (action: InterventionAction, payload?: unknown) => void;
@@ -93,10 +95,15 @@
   const DEFAULT_UNWIRED_ACTIONS: readonly InterventionAction[] = [];
 
   let {
-    baseUrl = "http://127.0.0.1:18080",
+    baseUrl,
     onIntervention: externalIntervention,
     unwiredActions = DEFAULT_UNWIRED_ACTIONS
   }: Props = $props();
+
+  // 基址解析单点 = lib/backend/server-base.ts(显式 prop 优先;缺省随
+  // netConfig 三态:proxy→'/console-api' 同源代理,否则直连地址——
+  // 原硬编码 127.0.0.1:18080 缺省在嵌入托管态绕过代理,已收编)
+  const serverBase = $derived(baseUrl ?? resolveServerBaseUrl($netConfig));
 
   // === SessionSwitchToast 展示态 ===
   let ssToastVisible = $state(false);
@@ -139,7 +146,7 @@
       const ps = get(productionStateStore);
       if (ps.currentSessionId !== null && ps.status !== "offline") {
         stopSSE();
-        startSSE(ps.currentSessionId, baseUrl, handleU7Switched);
+        startSSE(ps.currentSessionId, serverBase, handleU7Switched);
       }
     });
   }
@@ -153,9 +160,9 @@
     switchPickerOpen = false;
     monitorTarget = sid;
     stopSSE();
-    startSSE(sid, baseUrl, handleU7Switched);
+    startSSE(sid, serverBase, handleU7Switched);
     stopReactorPolling();
-    startReactorPolling(sid, baseUrl);
+    startReactorPolling(sid, serverBase);
     toastSuccess(`监控视角已切至会话 #${sid}(生产状态显示不受影响)`);
   }
 
@@ -185,19 +192,19 @@
     setSessionSwitchHandler((newSid, newVer) => {
       // SSE 重连:关闭旧,订阅新
       stopSSE();
-      startSSE(newSid, baseUrl, handleU7Switched);
+      startSSE(newSid, serverBase, handleU7Switched);
     });
     const ps = get(productionStateStore);
     // 3. SSE Fact/anomaly/切换 订阅
     if (ps.currentSessionId !== null && ps.status !== "offline") {
-      startSSE(ps.currentSessionId, baseUrl, handleU7Switched);
+      startSSE(ps.currentSessionId, serverBase, handleU7Switched);
     }
     // 4. Reactor 2s 轮询
     if (ps.currentSessionId !== null) {
-      startReactorPolling(ps.currentSessionId, baseUrl);
+      startReactorPolling(ps.currentSessionId, serverBase);
     }
     // 5. 性能 5s 轮询
-    startMetricsPolling(baseUrl);
+    startMetricsPolling(serverBase);
   });
 
   onDestroy(() => {
@@ -475,7 +482,7 @@
   {#if diagOpen}
     <ConnectionDiagnosticDrawer
       connection={sseConn}
-      baseUrl={baseUrl}
+      baseUrl={serverBase}
       productionState={productionState}
       onClose={() => (diagOpen = false)}
       onRetry={handleRetry}

@@ -50,7 +50,7 @@
     type SceneAssetRaw,
     type SceneFieldRaw,
   } from "$lib/backend/plugin-packs";
-  import { DEFAULT_LOCAL_BASE_URL } from "$lib/backend/types";
+  import { authTokenForRequest, resolveServerBaseUrl } from "$lib/backend/server-base";
   import { netConfig } from "$lib/config/net-config";
   import { t } from "$lib/locale";
   import { useAssistantOrNull, useWorkspaceBackend } from "$lib/kernel";
@@ -146,10 +146,14 @@
   });
 
   onMount(() => {
-    // cloud 适配:baseUrl/authToken 取自 netConfig(与 CloudHttpBackend 同一解析逻辑)
+    // cloud 适配:baseUrl/authToken 取自 netConfig(解析单点 server-base.ts;
+    // proxy 态走同源 '/console-api',凭据由 serve 代理注入)
     const cfg = get(netConfig);
-    const baseUrl = cfg.mode === "online" ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
-    client = new PluginPacksClient(baseUrl, cfg.authToken.trim() || null);
+    const baseUrl = resolveServerBaseUrl(cfg);
+    client = new PluginPacksClient(
+      baseUrl,
+      authTokenForRequest(cfg.mode, cfg.authToken.trim() || null)
+    );
     void load();
     void loadExistingRules(); // 存量规则与 pack 无关(执行域全局),挂载时预取一次
   });

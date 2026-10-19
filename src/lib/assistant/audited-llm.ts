@@ -16,14 +16,15 @@
 //   - LLM 执行失败也要回写错误 io_response(引擎状态机收尾,不留悬空 IoRequest)
 //   - 无静默直连兜底:server 不可达/协议失败如实报错,调用方展示
 //
-// server 基址与凭据:复用 netConfig store(与 CloudHttpBackend 同一解析逻辑:
-// offline → DEFAULT_LOCAL_BASE_URL,online → remoteBaseUrl;authToken 可选)。
+// server 基址与凭据:复用 netConfig store(解析单点 = lib/backend/server-base.ts:
+// proxy → '/console-api' 同源反向代理,online → remoteBaseUrl,
+// offline → DEFAULT_LOCAL_BASE_URL;proxy 恒不送凭据,由 serve 代理注入)。
 // SSE 用 fetch 流式读取而非 EventSource:后者无法携带 Authorization 头
 // (server 开启认证时 SSE 也会 401)。
 
 import { get } from 'svelte/store';
 import { netConfig } from '$lib/config/net-config';
-import { DEFAULT_LOCAL_BASE_URL } from '$lib/backend/types';
+import { authTokenForRequest, resolveServerBaseUrl } from '$lib/backend/server-base';
 import { buildMessages, callChatApi, type ChatApiParams } from './llm-fetch';
 
 /**
@@ -127,19 +128,18 @@ async function assertOk(r: Response, step: string, sessionId: string): Promise<v
 	);
 }
 
-/** 解析当前 server 基址(与 CloudHttpBackend.resolveBaseUrl 同逻辑) */
+/** 解析当前 server 基址(单点在 server-base.ts;proxy → '/console-api') */
 function resolveBaseUrl(): string {
-	const cfg = get(netConfig);
-	const url = cfg.mode === 'online' ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
-	return url.replace(/\/+$/, '');
+	return resolveServerBaseUrl(get(netConfig));
 }
 
-/** 请求头(可选 Bearer 凭据,与内核 HttpBackend 一致) */
+/** 请求头(可选 Bearer 凭据,与内核 HttpBackend 一致;proxy 恒不送) */
 function buildHeaders(): Record<string, string> {
 	const cfg = get(netConfig);
 	const h: Record<string, string> = { 'Content-Type': 'application/json' };
-	if (cfg.authToken) {
-		h['Authorization'] = `Bearer ${cfg.authToken}`;
+	const token = authTokenForRequest(cfg.mode, cfg.authToken);
+	if (token) {
+		h['Authorization'] = `Bearer ${token}`;
 	}
 	return h;
 }

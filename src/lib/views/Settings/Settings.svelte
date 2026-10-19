@@ -12,7 +12,8 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { netConfig, setNetMode, setRemoteBaseUrl, setAuthToken } from '$lib/config/net-config';
-	import { DEFAULT_LOCAL_BASE_URL, type NetMode } from '$lib/backend/types';
+	import { type NetMode } from '$lib/backend/types';
+	import { authTokenForRequest, resolveServerBaseUrl } from '$lib/backend/server-base';
 	import LlmSettings from './LlmSettings.svelte';
 	import AgentSettings from './AgentSettings.svelte';
 	import { CloudHttpBackend } from '$lib/backend/cloud-http-backend';
@@ -80,16 +81,17 @@
 
 	async function handleTestNetConnection() {
 		const cfg = $netConfig;
-		const url = cfg.mode === 'online' ? cfg.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL;
+		const url = resolveServerBaseUrl(cfg);
 		isTestingNet = true;
 		netTestResult = null;
 		try {
-			// 用临时 CloudHttpBackend 测试连接(不修改主 backend;带当前输入 token 以验证凭据)
+			// 用临时 CloudHttpBackend 按当前模式测试连接(不修改主 backend;
+			// proxy 态测同源 '/console-api' 链路且不送凭据,其余模式带当前输入 token)
 			const testBackend = new CloudHttpBackend({
-				mode: 'online',
-				remoteBaseUrl: url,
+				mode: cfg.mode,
+				remoteBaseUrl: cfg.remoteBaseUrl,
 				localBaseUrl: url,
-				authToken: authTokenInput.trim() || undefined
+				authToken: authTokenForRequest(cfg.mode, authTokenInput.trim()) ?? undefined
 			});
 			const ok = await testBackend.health();
 			netTestResult = {
@@ -305,9 +307,9 @@
 						<h3>{t('settings.network.currentStatus')}</h3>
 						<dl>
 							<dt>{t('settings.network.mode')}</dt>
-							<dd>{$netConfig.mode === 'online' ? t('settings.network.modeOnline') : t('settings.network.modeLocal')}</dd>
+							<dd>{$netConfig.mode === 'proxy' ? '同源代理 (proxy)' : $netConfig.mode === 'online' ? t('settings.network.modeOnline') : t('settings.network.modeLocal')}</dd>
 							<dt>baseUrl</dt>
-							<dd><code>{$netConfig.mode === 'online' ? $netConfig.remoteBaseUrl : DEFAULT_LOCAL_BASE_URL}</code></dd>
+							<dd><code>{resolveServerBaseUrl($netConfig)}</code></dd>
 						</dl>
 					</div>
 				</section>
