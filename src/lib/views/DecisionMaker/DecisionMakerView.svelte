@@ -20,6 +20,7 @@
   import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
   import type { PublishQueueItemView } from "$lib/backend/production-views";
   import { sessionStore } from "$lib/stores/session";
+  import { IS_MOCK } from "$lib/config/backend-kind";
   import EmptyState from "$lib/views/Feedback/EmptyState.svelte";
 
   // 派生:生产运行状态(业务语言)
@@ -122,7 +123,9 @@
     <EmptyState
       type="not_configured"
       noun="生产运行环境"
-      description="evorule-server 未连接,决策者视图需要运行中的生产环境。请先连接服务器或启动 demo 模式。"
+      description={IS_MOCK
+        ? "演示模式:以下指标为空属预期——决策者视图展示真实生产指标,连接 evorule-server 后自动填充。"
+        : "evorule-server 未连接,决策者视图需要运行中的生产环境。请先连接服务器或启动 demo 模式。"}
     />
   {:else}
     <!-- 今日要事(业务语言,无技术术语) -->

@@ -38,6 +38,7 @@
   import { MockBackend } from "$lib/backend/mock-backend";
   import { MockWorkspaceBackend } from "$lib/backend/mock-workspace-backend";
   import { netConfig, toggleNetMode } from "$lib/config/net-config";
+  import { BACKEND_KIND, IS_MOCK, IS_WASM } from "$lib/config/backend-kind";
   import { agentConfig } from "$lib/config/agent-config";
   import { setDemoDataset } from "$lib/stores/demo-dataset";
   import { llmConfig, isLlmConfigured } from "$lib/config/llm-config";
@@ -238,22 +239,10 @@
   // 持有其引用(Cloud 专属读方法委托,带 Bearer token)。
   const initialNet = get(netConfig);
   // === backend 选择(73 文档 §4):?backend=wasm|http|mock,保留 ?mock=1 兼容 ===
-  // 构建期默认值:CI 通过 VITE_DEFAULT_BACKEND=wasm 让在线 demo(GitHub Pages;Gitee Pages 已停服,2026-09-15 流水线删除)
-  // 打开 URL 即进 WASM 模式,无需手动加 ?backend=wasm。本地 dev 不设该变量 → 回落 http。
-  // 仅 Vite 暴露的 VITE_ 前缀变量会进入客户端 bundle。
-  const BUILD_DEFAULT = (import.meta.env.VITE_DEFAULT_BACKEND as string | undefined) ?? "http";
-  const defaultBackendKind =
-    BUILD_DEFAULT === "wasm" || BUILD_DEFAULT === "http" || BUILD_DEFAULT === "mock"
-      ? BUILD_DEFAULT
-      : "http";
-  const sp = browser
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams();
-  const backendKind = browser
-    ? (sp.get("backend") ?? (sp.get("mock") === "1" ? "mock" : defaultBackendKind))
-    : defaultBackendKind;
-  const useWasm = backendKind === "wasm";
-  const useMock = backendKind === "mock";
+  // 解析逻辑单一来源=backend-kind 模块(连接状态显示面同源消费;mock 态如实标「演示数据」)
+  const backendKind = BACKEND_KIND;
+  const useWasm = IS_WASM;
+  const useMock = IS_MOCK;
 
   let cloudWorkspaceBackend: CloudWorkspaceBackend | null = null;
   const workspaceImpl =
@@ -441,8 +430,9 @@
     // 且 pagehide 先于文档销毁执行,稳赢强制中止。
     window.addEventListener("pagehide", abortHealthOnHide);
     healthTimer = window.setTimeout(() => {
-      // WASM 模式本地无网络探测:连接态由引擎初始化完成时设置
-      if (useWasm) return;
+      // WASM 本地无网络探测(连接态由引擎初始化完成时设置);
+      // mock 无真实服务可探,徽标固定「演示数据」,不发探测
+      if (useWasm || useMock) return;
       healthAbort = new AbortController();
       backend
         .health(healthAbort.signal)
@@ -581,18 +571,23 @@
 
     <div
       class="conn-status"
-      class:offline={!useWasm && connected === false}
-      class:checking={!useWasm && connected === null}
+      class:offline={!useWasm && !useMock && connected === false}
+      class:checking={!useWasm && !useMock && connected === null}
+      class:demo={useMock}
       data-tour="connection"
       title={useWasm
         ? "规则在浏览器本地 WASM 引擎中执行(无网络依赖)"
-        : connected === false
-          ? "evorule-server 未响应(检查地址或启动服务器)"
-          : "evorule-server 连接状态"}
+        : useMock
+          ? "演示模式:数据为浏览器内预填示例,不连接 evorule-server"
+          : connected === false
+            ? "evorule-server 未响应(检查地址或启动服务器)"
+            : "evorule-server 连接状态"}
     >
       <span class="dot"></span>
       {#if useWasm}
         {wasmFailed ? "WASM 加载失败" : wasmReady ? "本地运行 (WASM)" : "加载引擎中…"}
+      {:else if useMock}
+        演示数据 · 预填
       {:else}
         {connected === null ? "检测中" : connected ? "已连接" : "未连接"}
       {/if}
@@ -925,6 +920,11 @@
   .conn-status.checking {
     background: var(--warning-bg);
     color: var(--warning);
+  }
+  /* 演示模式:数据为预填示例,不声称 server 连接态(o10) */
+  .conn-status.demo {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
   }
 
   /* WASM 引擎加载中(本地运行模式) */

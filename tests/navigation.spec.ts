@@ -194,10 +194,10 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 		await expect(html).toHaveAttribute('data-theme', 'dark', { timeout: 5000 });
 	});
 
-	test('连接徽标渲染(检测中/已连接/未连接 三态之一)', async ({ page }) => {
+	test('连接徽标渲染(检测中/已连接/未连接/演示数据/本地运行 之一)', async ({ page }) => {
 		const badge = page.locator('.conn-status');
 		await expect(badge).toBeVisible();
-		await expect(badge).toContainText(/检测中|已连接|未连接/);
+		await expect(badge).toContainText(/检测中|已连接|未连接|演示数据|本地运行/);
 	});
 
 	test('视图选择持久化 — 切到执行台后刷新仍恢复', async ({ page }) => {
