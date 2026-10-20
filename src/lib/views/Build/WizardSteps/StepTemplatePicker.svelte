@@ -10,23 +10,24 @@
 
 <script lang="ts">
   import type { BusinessTemplate } from "$lib/data/template-finance";
-  import { FINANCE_TEMPLATE, COMPLIANCE_TEMPLATE } from "$lib/views/Build/templates";
+  import { FINANCE_TEMPLATE, COMPLIANCE_TEMPLATE, AGENT_TEMPLATE } from "$lib/views/Build/templates";
   import { t } from "$lib/locale";
 
   let {
     selected,
     onSelect,
   }: {
-    selected: "blank" | "finance" | "compliance" | null;
-    onSelect: (id: "blank" | "finance" | "compliance") => void;
+    selected: "blank" | "agent" | "finance" | "compliance" | null;
+    onSelect: (id: "blank" | "agent" | "finance" | "compliance") => void;
   } = $props();
 
   const templates: Array<{
-    id: "blank" | "finance" | "compliance";
+    id: "blank" | "agent" | "finance" | "compliance";
     tpl: BusinessTemplate | null;
     icon: string;
     tag: string;
   }> = [
+    { id: "agent", tpl: AGENT_TEMPLATE, icon: "🤖", tag: t("templatePicker.recommended") },
     { id: "blank", tpl: null, icon: "📄", tag: t("templatePicker.blankTag") },
     { id: "finance", tpl: FINANCE_TEMPLATE, icon: "💰", tag: t("templatePicker.recommended") },
     { id: "compliance", tpl: COMPLIANCE_TEMPLATE, icon: "🛡️", tag: t("templatePicker.recommended") },
