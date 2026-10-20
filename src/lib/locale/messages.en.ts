@@ -15,6 +15,7 @@ export const messagesEn: Dict = {
   "nav.marketplace": "Marketplace",
   "nav.template-render": "Template Render",
   "nav.knowledge": "Knowledge Base",
+  "nav.sessionVerify": "Session Verify",
   "nav.help": "Help",
   "nav.export": "Export",
   "nav.publish-queue": "Deploy Approvals",

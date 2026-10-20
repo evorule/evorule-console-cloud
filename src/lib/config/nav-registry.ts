@@ -123,6 +123,15 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     loginRequired: true,
   },
   {
+    id: "sessionVerify",
+    label: "会话验证",
+    icon: "🔎",
+    path: "/sessions",
+    group: "discover",
+    title: "会话验证 — 导入 agent 会话文件,浏览器端重算 BLAKE3 链独立验证(零后端,支持篡改演示)",
+    jump: true,
+  },
+  {
     id: "help",
     label: "帮助",
     icon: "❓",
