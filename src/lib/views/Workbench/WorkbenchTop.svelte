@@ -10,10 +10,12 @@
   import type { NetMode } from "$lib/backend/types";
   import { fmtTime } from "$lib/locale";
 
-  interface Props {
-    serverConnected: boolean | null;
-    ruleConnected: boolean | null;
-    ws: WorkspaceRecord | null;
+interface Props {
+  serverConnected: boolean | null;
+  ruleConnected: boolean | null;
+  /** mock 后端态:server 状态如实标「演示数据」,不声称 evorule-server 已连接(o10) */
+  demoBackend?: boolean;
+  ws: WorkspaceRecord | null;
     mode: NetMode;
     consoleVersion: string;
     ruleVersion: string | null;
@@ -30,6 +32,7 @@
   let {
     serverConnected,
     ruleConnected,
+    demoBackend = false,
     ws,
     mode,
     consoleVersion,
@@ -49,10 +52,10 @@
 </script>
 
 <div class="region-status">
-  <div class="status-item" class:offline={serverConnected === false}>
-    <span class="dot" class:dot-gray={serverConnected === false} class:dot-green={serverConnected === true} class:dot-checking={serverConnected === null}></span>
+  <div class="status-item" class:offline={!demoBackend && serverConnected === false}>
+    <span class="dot" class:dot-gray={!demoBackend && serverConnected === false} class:dot-green={!demoBackend && serverConnected === true} class:dot-checking={demoBackend || serverConnected === null}></span>
     <span class="label">server</span>
-    <span class="value">{serverConnected === null ? "检测中" : serverConnected ? "● 已连接" : "○ 离线"}</span>
+    <span class="value">{demoBackend ? "● 演示数据" : serverConnected === null ? "检测中" : serverConnected ? "● 已连接" : "○ 离线"}</span>
   </div>
   <div class="status-item" class:offline={ruleConnected === false}>
     <span class="dot" class:dot-gray={ruleConnected === false} class:dot-green={ruleConnected === true} class:dot-checking={ruleConnected === null}></span>
@@ -75,7 +78,7 @@
 
   <div class="status-item">
     <span class="label">server:</span>
-    <span class="value">evorule-server v{consoleVersion} ({serverBase})</span>
+    <span class="value">{demoBackend ? "演示数据源(浏览器预填)" : `evorule-server v${consoleVersion} (${serverBase})`}</span>
   </div>
   <div class="status-item">
     <span class="label">rule:</span>
