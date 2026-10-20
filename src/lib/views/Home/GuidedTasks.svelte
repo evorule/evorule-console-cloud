@@ -81,9 +81,9 @@
 			no: 4,
 			icon: "🛡️",
 			name: "进化",
-			pitch: "零代码长出护栏规则 guard_shell_risky(JSON),人工审批后快照激活、零停机热加载。",
-			link: "/view/rules",
-			linkLabel: "看护栏规则 →",
+			pitch: "零代码长出护栏规则 guard_shell_risky(JSON),人工审批后快照激活、零停机热加载。市场一键导入 Agent 审计三件套,把故事变成你自己的护栏。",
+			link: "/marketplace",
+			linkLabel: "导入护栏三件套 →",
 		},
 	];
 

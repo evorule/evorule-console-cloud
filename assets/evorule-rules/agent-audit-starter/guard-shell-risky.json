@@ -1,0 +1,91 @@
+{
+  "$schema": "https://evorule.org/schemas/rule_set/v1.0.json",
+  "kind": "rule_set",
+  "id": "app.consolecloud.agent_audit.guard_shell_risky",
+  "rule_id": "guard_shell_risky",
+  "version": "0.1.0",
+  "description": "Agent 审计 Starter · 破坏性命令护栏 — 提交业务指令 shell_exec_check：risk_class=destructive → 阻断 + 审计留痕（检测归生产者，规则只裁决风险等级是否放行）",
+  "metadata": {
+    "author": "EvoRule Project",
+    "license": "CC0-1.0 Universal (Public Domain)",
+    "spdx_license_id": "CC0-1.0",
+    "provenance": {
+      "derived_from": [
+        "evorule-console-cloud 首页 Agent 编程审计主线四幕故事线（失控→留痕→回退→进化）第 4 幕实物化"
+      ],
+      "date": "2026-10-20",
+      "workstream": "agent-audit-starter",
+      "note": "模式检测（如 rm -rf 识别）由指令生产者产出 risk_class 字段；规则词汇无 contains，检测属生产者职责，规则对已检出风险等级做确定性裁决。与演示杀手会话 analysis fact 的 risk_class 字段同契约。"
+    },
+    "deployment": {
+      "method": "evorule-server 启动参数 --rules-dir <本目录>;变更后 POST /api/rules/reload 生效"
+    },
+    "sections": [
+      "1. 指令分流(shell_exec_check) → 按业务字段分支,set 写入决策字段(字段缺失由 on_missing=error 拒执行,fail-closed;未匹配指令由引擎产生 Error fact,无 noop 收尾)"
+    ],
+    "constraints": [
+      "eq 域显式 on_missing=error:生产者漏扫(无 risk_class 字段)时拒执行而非静默放行",
+      "写路径统一走 __exec__.payload.data 前缀"
+    ]
+  },
+  "transform": [
+    {
+      "type": "branch",
+      "params": {
+        "domain": {
+          "type": "instruction",
+          "instruction_type": "shell_exec_check"
+        },
+        "on_true": [
+          {
+            "type": "set",
+            "params": {
+              "attr": "data",
+              "operation": "set",
+              "value": "__exec__.instruction.params"
+            }
+          },
+          {
+            "type": "branch",
+            "params": {
+              "domain": {
+                "type": "eq",
+                "path": "__exec__.payload.data.risk_class",
+                "value": "destructive",
+                "on_missing": "error"
+              },
+              "on_true": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.gate_decision",
+                    "operation": "set",
+                    "value": "blocked"
+                  }
+                },
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.gate_note",
+                    "operation": "set",
+                    "value": "等保 2.0：破坏性命令须人工审批，已拦截并留痕"
+                  }
+                }
+              ],
+              "on_false": [
+                {
+                  "type": "set",
+                  "params": {
+                    "attr": "__exec__.payload.data.gate_decision",
+                    "operation": "set",
+                    "value": "allowed"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
