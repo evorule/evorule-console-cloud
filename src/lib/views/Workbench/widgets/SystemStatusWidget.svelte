@@ -18,6 +18,7 @@
     useBackend,
   } from "$lib/kernel";
   import { netConfig } from "$lib/config/net-config";
+  import { IS_MOCK } from "$lib/config/backend-kind";
   import { governanceConfig } from "$lib/config/governance-config";
   import { resolveServerBaseUrl } from "$lib/backend/server-base";
   import { workbenchStatus, workbenchRefreshNow } from "$lib/stores/workbench-status";
@@ -92,6 +93,7 @@ import { base } from "$app/paths";
   <WorkbenchTop
     serverConnected={st.serverConnected}
     ruleConnected={st.ruleConnected}
+    demoBackend={IS_MOCK}
     {ws}
     {mode}
     consoleVersion={CONSOLE_VERSION}
