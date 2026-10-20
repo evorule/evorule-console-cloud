@@ -22,6 +22,24 @@ const NOW = "2026-08-01T00:00:00.000Z";
 export const BUILTIN_MARKET_TEMPLATES: MarketTemplate[] = [
 	// === 规则模板 ===
 	{
+		id: "builtin.rule.agent_audit_starter",
+		type: "rule",
+		name: "Agent 审计 Starter 规则集",
+		description: "Agent 护栏三件套:破坏性命令拦截 / AI 自动批准转人工 / 敏感操作 MFA 门禁(等保 2.0)",
+		category: "agent",
+		industry: "agent",
+		tags: ["agent", "guardrail", "audit", "starter"],
+		author: { id: "evorule-team", displayName: "EvoRule Team" },
+		version: "0.1.0",
+		format: "json",
+		content_hash: "builtin-placeholder-agent-audit-starter-v1",
+		download_url: "builtin://agent-audit-starter",
+		download_count: 87,
+		created_at: NOW,
+		updated_at: NOW,
+		source: "builtin",
+	},
+	{
 		id: "official.ruleset.djbh_2_0_level3",
 		type: "rule",
 		name: "等保 2.0 三级门禁规则集(官方)",
