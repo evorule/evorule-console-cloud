@@ -73,7 +73,7 @@
           30 秒看懂 →
         </button>
       {:else}
-        <button class="btn btn-primary" onclick={autoMode}>
+        <button class="btn btn-primary" onclick={() => goto(`${base}/workbench`)}>
           进入工作台 →
         </button>
       {/if}

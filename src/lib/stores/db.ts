@@ -12,7 +12,7 @@ import { writable, derived, get } from "svelte/store";
 import { browser } from "$app/environment";
 import { rules } from "$lib/kernel";
 
-export type Industry = "blank" | "finance" | "compliance" | "medical";
+export type Industry = "blank" | "finance" | "compliance" | "medical" | "agent";
 
 export interface DbMeta {
   /** 库 ID(P0 阶段固定 'default',P1+ 多库时扩展) */
