@@ -1,0 +1,128 @@
+{
+  "format": "evorule-agent-session",
+  "version": 1,
+  "manifest": {
+    "session_id": "evo-agent-demo-compute-001",
+    "producer": "evo-agent",
+    "producer_version": "0.2.0",
+    "created_at": "2026-10-20T11:30:00Z",
+    "task_summary": "agent 计算订单折后价 59.97,双路径互验:十进制与有理数两条通路结果一致",
+    "verdict": "determined|bitwise_replayable",
+    "tool_call_count": 3
+  },
+  "facts": [
+    {
+      "type": "task_received",
+      "id": 1,
+      "logical_time": 1,
+      "timestamp": "2026-10-20T11:30:00Z",
+      "payload": {
+        "agent": "order-settlement",
+        "task": "计算订单折后价(单价 19.99 × 数量 3)",
+        "requester": "billing"
+      }
+    },
+    {
+      "type": "tool_call",
+      "id": 2,
+      "logical_time": 2,
+      "timestamp": "2026-10-20T11:30:01Z",
+      "payload": {
+        "skill": "evorule-deterministic-compute",
+        "tool": "numeric_decimal_eval",
+        "input": "19.99 * 3",
+        "output": "59.97",
+        "service": "numeric/decimal_eval"
+      }
+    },
+    {
+      "type": "tool_call",
+      "id": 3,
+      "logical_time": 3,
+      "timestamp": "2026-10-20T11:30:02Z",
+      "payload": {
+        "skill": "evorule-deterministic-compute",
+        "tool": "numeric_rational_eval",
+        "input": "1999/100 * 3",
+        "output": "5997/100",
+        "service": "numeric/rational_eval"
+      }
+    },
+    {
+      "type": "decision",
+      "id": 4,
+      "logical_time": 4,
+      "timestamp": "2026-10-20T11:30:03Z",
+      "payload": {
+        "decision": "amount=59.97",
+        "verification": "5997/100 == 59.97(双路径一致)",
+        "verdict": "determined"
+      }
+    },
+    {
+      "type": "session_complete",
+      "id": 5,
+      "logical_time": 5,
+      "timestamp": "2026-10-20T11:30:04Z",
+      "payload": {
+        "replayable": "bitwise_replayable",
+        "llm_arithmetic_used": false,
+        "notes": "数值结论全部来自确定性计算服务,模型未参与算数"
+      }
+    }
+  ],
+  "chain": {
+    "algorithm": "blake3-linked",
+    "entries": [
+      {
+        "fact_id": 1,
+        "fact_hash": "blake3:6cb04133d3606d674a29387b28abc185ab69373f58325b450a1abcad96871dff",
+        "prev_hash": null
+      },
+      {
+        "fact_id": 2,
+        "fact_hash": "blake3:aad1c77700d349480ca4c859c1f1f80820e2f3b326a88cf16baae79db03d52a1",
+        "prev_hash": "blake3:6cb04133d3606d674a29387b28abc185ab69373f58325b450a1abcad96871dff"
+      },
+      {
+        "fact_id": 3,
+        "fact_hash": "blake3:2ded0bfd0fc2365a24641cf0eeb6923686cb3e73d4e75be42cc8af78ca894ebb",
+        "prev_hash": "blake3:aad1c77700d349480ca4c859c1f1f80820e2f3b326a88cf16baae79db03d52a1"
+      },
+      {
+        "fact_id": 4,
+        "fact_hash": "blake3:099dafb4daaafaf1e12b4e14345b9af594f1bf5fca4bf9c85bb4e31025f64cf1",
+        "prev_hash": "blake3:2ded0bfd0fc2365a24641cf0eeb6923686cb3e73d4e75be42cc8af78ca894ebb"
+      },
+      {
+        "fact_id": 5,
+        "fact_hash": "blake3:db71bad897c46b208f6dae4b378e1d6d26ba2c5fdd9bfde9e2e4fa21b6e80043",
+        "prev_hash": "blake3:099dafb4daaafaf1e12b4e14345b9af594f1bf5fca4bf9c85bb4e31025f64cf1"
+      }
+    ],
+    "root": "blake3:db71bad897c46b208f6dae4b378e1d6d26ba2c5fdd9bfde9e2e4fa21b6e80043"
+  },
+  "tool_calls": [
+    {
+      "seq": 1,
+      "name": "read_skill",
+      "args_summary": "evorule-deterministic-compute",
+      "result_summary": "技能说明与可用服务清单",
+      "linked_fact_id": 1
+    },
+    {
+      "seq": 2,
+      "name": "numeric_decimal_eval",
+      "args_summary": "19.99 * 3",
+      "result_summary": "59.97",
+      "linked_fact_id": 2
+    },
+    {
+      "seq": 3,
+      "name": "numeric_rational_eval",
+      "args_summary": "1999/100 * 3",
+      "result_summary": "5997/100",
+      "linked_fact_id": 3
+    }
+  ]
+}

@@ -123,6 +123,13 @@
 				</button>
 			{/each}
 		</div>
+
+		<div class="gt-viewer-cta">
+			<span>拿到导出的会话文件?在浏览器里独立验证——不信任任何服务器:</span>
+			<button class="gt-viewer-btn" onclick={() => goto(`${base}/sessions`)}>
+				🔎 打开会话验证器 →
+			</button>
+		</div>
 	</div>
 {:else}
 	<div class="guided-tasks">
@@ -244,6 +251,32 @@
 	.gt-link {
 		color: var(--brand, #2563eb);
 		font-weight: 600;
+	}
+	/* 四幕区尾的会话验证器入口 */
+	.gt-viewer-cta {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-wrap: wrap;
+		margin-top: 12px;
+		padding: 10px 14px;
+		border: 1px dashed var(--border, #e5e7eb);
+		border-radius: 8px;
+		font-size: 12px;
+		color: var(--text-secondary, #6b7280);
+	}
+	.gt-viewer-btn {
+		padding: 6px 12px;
+		border-radius: 6px;
+		border: 1px solid var(--brand, #2563eb);
+		background: transparent;
+		color: var(--brand, #2563eb);
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.gt-viewer-btn:hover {
+		background: var(--bg-hover, #f3f4f6);
 	}
 
 	@media (max-width: 768px) {
