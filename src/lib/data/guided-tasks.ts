@@ -21,8 +21,8 @@ export interface GuidedTask {
 		medical: TaskContext;
 		finance: TaskContext;
 	};
-	/** 引导文案(显示在 DemoHome 卡片上) */
-	pitch: string;
+	/** 引导文案(显示在 DemoHome 卡片上;按场景取用) */
+	pitch: { medical: string; finance: string };
 	/** 图标 */
 	icon: string;
 }
@@ -43,7 +43,10 @@ export const GUIDED_TASKS: GuidedTask[] = [
 				businessObject: { type: "expense", id: "EXP-001" },
 			},
 		},
-		pitch: "给财务加一条「差旅报销限额从3000提到5000」规则",
+		pitch: {
+			medical: "给医疗加一条「抗生素分级处方权限收紧」规则",
+			finance: "给财务加一条「差旅报销限额从3000提到5000」规则",
+		},
 		icon: "➕",
 	},
 	{
@@ -63,7 +66,10 @@ export const GUIDED_TASKS: GuidedTask[] = [
 				auditRange: { from: 1, to: 50 },
 			},
 		},
-		pitch: "追踪报销单 EXP-003 为何触发超额阻断告警",
+		pitch: {
+			medical: "追踪病人 P-001 就诊记录为何触发热诊分诊",
+			finance: "追踪报销单 EXP-003 为何触发超额阻断告警",
+		},
 		icon: "🔍",
 	},
 	{
@@ -89,7 +95,10 @@ export const GUIDED_TASKS: GuidedTask[] = [
 				},
 			},
 		},
-		pitch: "把差旅报销限额从 3000 元改为 5000 元，看版本差异",
+		pitch: {
+			medical: "把热诊体温阈值从 38.5°C 改为 38.0°C，看版本差异",
+			finance: "把差旅报销限额从 3000 元改为 5000 元，看版本差异",
+		},
 		icon: "✏️",
 	},
 	{
@@ -124,7 +133,10 @@ export const GUIDED_TASKS: GuidedTask[] = [
 				},
 			},
 		},
-		pitch: "读取病历未双因子认证 → 看等保门禁如何阻断 + BLAKE3 留痕",
+		pitch: {
+			medical: "读取病历未双因子认证 → 看等保门禁如何阻断 + BLAKE3 留痕",
+			finance: "身份证号明文入库 → 看等保门禁如何阻断 + BLAKE3 留痕",
+		},
 		icon: "🛡️",
 	},
 ];
