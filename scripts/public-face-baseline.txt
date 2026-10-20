@@ -1,0 +1,16 @@
+internal-obs-id|.github/workflows/ci.yml|b64908bee114edcd93a96ba724c34ccc
+internal-obs-id|.trae/skills/evorule-ecosystem-constraints/SKILL.md|00b5a3d15054ede2949517814896e9bb
+internal-obs-id|plan/OBSERVATIONS-存量问题登记册.md|2eb252e4ee9deb9b468f485780c1839b
+internal-obs-id|plan/OBSERVATIONS-存量问题登记册.md|87a064a6d76b7e26c46d724a68162f30
+internal-obs-id|plan/OBSERVATIONS-存量问题登记册.md|9dd417e1a160d8bafc831709f5abb670
+internal-obs-id|plan/OBSERVATIONS-存量问题登记册.md|a710804beb0f828daee6d1572befcd1c
+internal-obs-id|plan/OBSERVATIONS-存量问题登记册.md|d51f7140f5df26aa87341528b302d9fc
+internal-obs-id|src/lib/config/agent-config.ts|537efe0eb3727c96c68ef4d5bb5098bb
+internal-obs-id|tests/11-steps-button-regression.spec.ts|48d2539df47fde70a7fe982a81479861
+internal-obs-id|tests/navigation.spec.ts|16211c924322a307f7032563eb4e358a
+private-repo-path|.trae/documents/发版专项-server0.5.1-console0.4.3-实施方案.md|849ed14efd82ddce3d0286031b6adc88
+private-repo-path|.trae/skills/evorule-ecosystem-constraints/SKILL.md|0775e62068d3b275451179dbc055ec30
+private-repo-path|.trae/skills/evorule-ecosystem-constraints/SKILL.md|0c32274b80630d79d76474a7b3786f60
+private-repo-path|.trae/skills/evorule-ecosystem-constraints/SKILL.md|ae5792f0892a30077df400f2101dd29f
+secret-like-key|src/lib/assistant/cloud-llm-assistant.test.ts|127be1783ae8403f8f8133076967010c
+secret-like-key|tests/assistant-flow.spec.ts|bb1f134c7920cb8cd62f46bbd8980d70
