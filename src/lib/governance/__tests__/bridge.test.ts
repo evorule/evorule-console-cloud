@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// 桥接单测:本地装配 → 治理域 rule_set 注册（06 号方案 B4）
+// 桥接单测:本地装配 → 治理域 rule_set 注册
 //
 // 运行: npx vitest run src/lib/governance/__tests__/bridge.test.ts
 //

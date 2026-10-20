@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:高级治理面板容器（07 号缺口 G2-G6 接线）
+  职责:高级治理面板容器（审计/API Keys/检索/数据依赖/组织 接线）
     tabs: 审计(G2) / API Keys(G5) / 检索(G4) / 数据依赖+服务模板(G3) / 组织(G6)
   挂载:/governance 页折叠区;全部复用 governanceStore.backend(已登录 18081)
   权限:审计与 API Keys 仅管理员(403 原样透传);其余按 View/Edit 角色

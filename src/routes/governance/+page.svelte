@@ -152,7 +152,7 @@
     }
   }
 
-  // ===== 本地装配导入（06 号桥接 B2） =====
+  // ===== 本地装配导入（治理桥接） =====
   let localImportOpen = $state(false);
 
   async function handleLocalImported(governanceDatasetId: string): Promise<void> {
@@ -2635,7 +2635,7 @@
   <!-- 判定契约管理(P3-12 补角:封装在位此前零消费) -->
   <VerdictContractsPanel />
 
-  <!-- 高级治理面板(07 号缺口 G2-G6 接线:审计/API Keys/检索/数据依赖/组织) -->
+  <!-- 高级治理面板(审计/API Keys/检索/数据依赖/组织 接线) -->
   <div class="sec">
     <div class="sec-head">
       <span class="muted">高级治理(审计/API Keys/检索/数据依赖/组织——权限不足时 server 返回 403)</span>
@@ -2969,7 +2969,7 @@
   </div>
 {/if}
 
-<!-- 本地装配导入浮层（06 号桥接 B2） -->
+<!-- 本地装配导入浮层（治理桥接） -->
 {#if localImportOpen}
   <LocalAssemblyImportDialog
     onImported={(gid) => void handleLocalImported(gid)}
