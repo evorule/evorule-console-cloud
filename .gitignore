@@ -35,3 +35,9 @@ vite.config.ts.timestamp-*
 
 # --- 安全删除 shim 中转目录 ---
 .genie-trash/
+
+# 运营登记册（本地私有面，不上库）
+plan/
+
+# public-face ratchet baseline (intentionally tracked)
+!scripts/public-face-baseline.txt
