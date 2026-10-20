@@ -13,21 +13,30 @@
 	import { GUIDED_TASKS } from "$lib/data/guided-tasks";
 	import { startTaskFlow } from "$lib/stores/task-flow";
 	import { demoDatasetStore } from "$lib/stores/demo-dataset";
+	import { sessionStore } from "$lib/stores/session";
 	import { guidedTaskProgressStore, type GuidedTaskId } from "$lib/stores/guided-task-progress";
 	import { toastInfo } from "$lib/stores/toast";
 	import { isWasmBackendMode } from "$lib/config/backend-mode";
+	import { goto } from "$app/navigation";
+	import { base } from "$app/paths";
 	import WasmTour from "./WasmTour.svelte";
 
-	// WASM 在线模式 → 渲染 7 步引导;否则原 4 个 demo 任务(HTTP 默认不变)
+	// WASM 在线模式 → 渲染 7 步引导;否则场景任务(HTTP 默认不变)
 	const isWasm = isWasmBackendMode();
+
+	const DATASET_LABEL: Record<string, string> = {
+		agent: "Agent 编程审计",
+		medical: "医疗合规",
+		finance: "财务合规",
+	};
 
 	function handleStart(taskId: GuidedTaskId) {
 		const task = GUIDED_TASKS.find((t) => t.id === taskId);
 		if (!task) return;
 		const dataset = $demoDatasetStore;
-		// agent 数据集无引导任务预置上下文,用 undefined 兜底(medical/finance 仍按原逻辑)
-		const presetContext =
-			dataset === "agent" ? undefined : task.presetContext[dataset];
+		// agent 场景渲染四幕故事线卡,不启动任务流(此分支仅在医疗/财务下可达)
+		if (dataset === "agent") return;
+		const presetContext = task.presetContext[dataset];
 		startTaskFlow(task.flowId, true, presetContext);
 		toastInfo(`已启动引导任务: ${task.name}`, "demo 任务流");
 	}
@@ -39,10 +48,82 @@
 	const completedCount = $derived(
 		$guidedTaskProgressStore.length,
 	);
+
+	// === agent 场景四幕故事线(取材 mock 杀手会话:代码审查 agent 放行高危命令→链上留痕→回退→护栏进化) ===
+	// 前两幕为叙事与链上实况,后两幕深链至时间旅行/规则库;深链目标受路由守卫(需登录),
+	// 未登录先引导登录,避免点了被静默弹回。
+	const AGENT_ACTS = [
+		{
+			no: 1,
+			icon: "⚡",
+			name: "失控",
+			pitch: "代码审查 agent 自动放行了部署脚本里的高危命令 rm -rf /tmp/build——没有审计层,这一步无人知晓。",
+			link: null as string | null,
+			linkLabel: "",
+		},
+		{
+			no: 2,
+			icon: "🔗",
+			name: "留痕",
+			pitch: "确定性审计链逐条记录每次决策,哈希链防篡改;去审计页看这次会话的完整事实流。",
+			link: "/audit?session=5",
+			linkLabel: "看事实流 →",
+		},
+		{
+			no: 3,
+			icon: "⏪",
+			name: "回退",
+			pitch: "时间旅行 rewind 到危险决策点,fork 出修复分支,diff 证明修复——错误可回溯、可撤销。",
+			link: "/view/timetravel",
+			linkLabel: "去时间旅行 →",
+		},
+		{
+			no: 4,
+			icon: "🛡️",
+			name: "进化",
+			pitch: "零代码长出护栏规则 guard_shell_risky(JSON),人工审批后快照激活、零停机热加载。",
+			link: "/view/rules",
+			linkLabel: "看护栏规则 →",
+		},
+	];
+
+	function goAct(link: string) {
+		if (!$sessionStore.loggedIn) {
+			toastInfo("登录后可查看完整演示(演示模式一键登录)", "引导");
+			goto(`${base}/login`);
+			return;
+		}
+		goto(`${base}${link}`);
+	}
 </script>
 
 {#if isWasm}
 	<WasmTour />
+{:else if $demoDatasetStore === "agent"}
+	<!-- agent 场景:四幕故事线替代财务任务卡 -->
+	<div class="guided-tasks">
+		<div class="gt-header">
+			<h3 class="gt-title">🎯 4 幕看懂 Agent 编程审计(2 分钟)</h3>
+		</div>
+
+		<div class="gt-grid">
+			{#each AGENT_ACTS as act (act.no)}
+				<button class="gt-card" onclick={() => act.link && goAct(act.link)}>
+					<div class="gt-card-header">
+						<span class="gt-card-icon">{act.icon}</span>
+						<span class="gt-card-name">第 {act.no} 幕 · {act.name}</span>
+					</div>
+					<div class="gt-card-pitch">{act.pitch}</div>
+					{#if act.link}
+						<div class="gt-card-meta">
+							<span class="gt-time">🤖 Agent 编程审计</span>
+							<span class="gt-link">{act.linkLabel}</span>
+						</div>
+					{/if}
+				</button>
+			{/each}
+		</div>
+	</div>
 {:else}
 	<div class="guided-tasks">
 		<div class="gt-header">
@@ -66,10 +147,10 @@
 							<span class="gt-done-badge">✓ 已完成</span>
 						{/if}
 					</div>
-					<div class="gt-card-pitch">{task.pitch}</div>
+				<div class="gt-card-pitch">{task.pitch[$demoDatasetStore === "finance" ? "finance" : "medical"]}</div>
 					<div class="gt-card-meta">
 						<span class="gt-time">⏱ ~{task.estimatedMinutes} 分钟</span>
-						<span class="gt-dataset">📊 {$demoDatasetStore === "medical" ? "医疗场景" : "财务场景"}</span>
+						<span class="gt-dataset">📊 {DATASET_LABEL[$demoDatasetStore] ?? ""}</span>
 					</div>
 				</button>
 			{/each}
@@ -157,6 +238,12 @@
 		gap: 12px;
 		font-size: 11px;
 		color: var(--text-secondary, #6b7280);
+		align-items: center;
+	}
+	/* agent 四幕卡的深链引导 */
+	.gt-link {
+		color: var(--brand, #2563eb);
+		font-weight: 600;
 	}
 
 	@media (max-width: 768px) {

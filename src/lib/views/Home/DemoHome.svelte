@@ -10,12 +10,14 @@
 -->
 
 <script lang="ts">
+  import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
   import { sessionStore, login } from "$lib/stores/session";
   import { homeModeStore, autoMode } from "$lib/stores/home-mode";
   import {
     demoDatasetStore,
     setDemoDataset,
-    toggleDemoDataset,
+    type DemoDataset,
   } from "$lib/stores/demo-dataset";
   import { toastSuccess, toastInfo } from "$lib/stores/toast";
   import GuidedTasks from "./GuidedTasks.svelte";
@@ -31,18 +33,15 @@
     autoMode();
   }
 
-  function handleSwitchDataset() {
-    toggleDemoDataset();
-    const next = $demoDatasetStore === "medical" ? "财务场景" : "医疗场景";
-    toastInfo(`已切换到 ${next}`, "demo 数据集");
-  }
+  const DATASET_META: Record<DemoDataset, { label: string }> = {
+    agent: { label: "Agent 编程审计" },
+    medical: { label: "医疗合规" },
+    finance: { label: "财务合规" },
+  };
 
-  function handleSelectDataset(d: "medical" | "finance") {
+  function handleSelectDataset(d: DemoDataset) {
     setDemoDataset(d);
-    toastInfo(
-      `已切换到 ${d === "medical" ? "医疗场景" : "财务场景"}`,
-      "demo 数据集",
-    );
+    toastInfo(`已切换到 ${DATASET_META[d].label}`, "demo 场景");
   }
 
   // 已登录用户在 force-demo 模式下可切回工作台
@@ -66,7 +65,6 @@
     <h1 class="hero-title">evorule</h1>
     <p class="hero-subtitle">企业 AI Agent 合规审计层</p>
     <p class="hero-desc">
-      BLAKE3 不可篡改审计链 · 时间旅行回放 · 三层安全控制<br />
       让 AI Agent 的每一次决策都可审计、可回放、可控制
     </p>
     <div class="hero-actions">
@@ -103,17 +101,26 @@
     {/if}
   </div>
 
-  <div class="demo-dataset-picker">
+  <div class="demo-dataset-picker" data-tour="library">
     <div class="picker-label">选择 demo 场景:</div>
     <div class="picker-options">
+      <button
+        class="dataset-card dataset-card-primary"
+        class:active={$demoDatasetStore === "agent"}
+        onclick={() => handleSelectDataset("agent")}
+      >
+        <span class="card-icon">🤖</span>
+        <span class="card-title">Agent 编程审计</span>
+        <span class="card-desc">AI 写代码,链上验证 —— 放行 / 拦截 / 回退 / 护栏全留痕</span>
+      </button>
       <button
         class="dataset-card"
         class:active={$demoDatasetStore === "medical"}
         onclick={() => handleSelectDataset("medical")}
       >
         <span class="card-icon">🏥</span>
-        <span class="card-title">医疗场景</span>
-        <span class="card-desc">分诊规则 / 用药门禁 / 转诊审批</span>
+        <span class="card-title">医疗合规</span>
+        <span class="card-desc">病历权限门禁 / 用药复核 / 等保阻断</span>
       </button>
       <button
         class="dataset-card"
@@ -121,16 +128,13 @@
         onclick={() => handleSelectDataset("finance")}
       >
         <span class="card-icon">💳</span>
-        <span class="card-title">财务场景</span>
+        <span class="card-title">财务合规</span>
         <span class="card-desc">转账限额 / 风控拦截 / 合规审计</span>
       </button>
     </div>
-    <button class="btn btn-ghost" onclick={handleSwitchDataset}>
-      ↔ 快速切换
-    </button>
   </div>
 
-  <div class="demo-guided-section" data-tour="library">
+  <div class="demo-guided-section">
     <GuidedTasks />
   </div>
 
@@ -138,45 +142,10 @@
     <GettingStartedChecklist />
   </div>
 
-  <div class="demo-capabilities">
-    <h3 class="capabilities-title">⚡ evorule 核心能力</h3>
-    <div class="capabilities-grid">
-      <div class="capability">
-        <span class="cap-icon">🔗</span>
-        <span class="cap-name">BLAKE3 不可篡改审计链</span>
-        <span class="cap-desc">每个决策留痕,哈希链验证完整性</span>
-      </div>
-      <div class="capability">
-        <span class="cap-icon">⏪</span>
-        <span class="cap-name">时间旅行回放</span>
-        <span class="cap-desc">回溯任意版本,diff 对比因果链</span>
-      </div>
-      <div class="capability">
-        <span class="cap-icon">🛡️</span>
-        <span class="cap-name">等保 2.0 三级门禁</span>
-        <span class="cap-desc">AI Agent 工具调用前合规检查</span>
-      </div>
-      <div class="capability">
-        <span class="cap-icon">📤</span>
-        <span class="cap-name">合规报告导出</span>
-        <span class="cap-desc">6 种内容 × 4 种格式,满足 EU AI Act</span>
-      </div>
-      <div class="capability">
-        <span class="cap-icon">🔄</span>
-        <span class="cap-name">滚动 session 热更新</span>
-        <span class="cap-desc">规则集部署零停机,版本单调递增</span>
-      </div>
-      <div class="capability">
-        <span class="cap-icon">✅</span>
-        <span class="cap-name">协作审批工作流</span>
-        <span class="cap-desc">三级权限,规则部署需审批</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="demo-history-section">
+  <details class="demo-history-section">
+    <summary>📜 任务历史(启动任务流后在此留痕)</summary>
     <TaskHistoryView />
-  </div>
+  </details>
 </section>
 
 <style>
@@ -339,7 +308,7 @@
   }
   .picker-options {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 12px;
   }
@@ -363,6 +332,10 @@
     border-color: var(--brand, #2563eb);
     background: var(--info-bg, #eff6ff);
   }
+  /* 主线场景卡(Agent 编程审计):常亮品牌描边,区别于可选场景 */
+  .dataset-card-primary {
+    border-color: var(--brand, #2563eb);
+  }
   .card-icon {
     font-size: 24px;
   }
@@ -381,53 +354,24 @@
     padding: 16px 0;
   }
 
-  /* capabilities section */
-  .demo-capabilities {
-    padding: 24px;
-    background: var(--bg-page, #f8fafc);
-    border-radius: 8px;
-  }
-  .capabilities-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0 0 16px 0;
-    color: var(--text-primary, #1e293b);
-  }
-  .capabilities-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-  .capability {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 14px;
-    background: var(--bg-card);
-    border-radius: 6px;
-    border: 1px solid var(--border, #e2e8f0);
-  }
-  .cap-icon {
-    font-size: 22px;
-  }
-  .cap-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary, #1e293b);
-  }
-  .cap-desc {
-    font-size: 11px;
-    color: var(--text-secondary, #64748b);
-    line-height: 1.4;
-  }
-
-  /* history section */
+  /* history section:折叠态常驻一行,展开看明细 */
   .demo-history-section {
     padding: 0;
   }
+  .demo-history-section summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary, #64748b);
+    padding: 8px 0;
+    user-select: none;
+  }
+  .demo-history-section summary:hover {
+    color: var(--text-primary, #1e293b);
+  }
 
   @media (max-width: 768px) {
-    .capabilities-grid {
+    .picker-options {
       grid-template-columns: 1fr;
     }
   }
