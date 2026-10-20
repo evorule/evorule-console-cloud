@@ -56,7 +56,7 @@
     onCreated,
     onBack,
   }: {
-    template: "blank" | "finance" | "compliance" | null;
+    template: "blank" | "agent" | "finance" | "compliance" | null;
     businessObjects: string[];
     onCreated: (ruleId: string) => void;
     onBack: () => void;

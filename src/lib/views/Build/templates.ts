@@ -27,13 +27,15 @@ import {
   type BusinessTemplate,
 } from "$lib/data/template-finance";
 import { COMPLIANCE_TEMPLATE } from "$lib/data/template-compliance";
+import { AGENT_TEMPLATE } from "$lib/data/template-agent";
 
 const TEMPLATES: Record<string, BusinessTemplate> = {
+  agent: AGENT_TEMPLATE,
   finance: FINANCE_TEMPLATE,
   compliance: COMPLIANCE_TEMPLATE,
 };
 
-export { FINANCE_TEMPLATE, COMPLIANCE_TEMPLATE };
+export { FINANCE_TEMPLATE, COMPLIANCE_TEMPLATE, AGENT_TEMPLATE };
 export type { BusinessTemplate };
 
 /** 解析当前 workspace 写入上下文(组件调用方无需重复取用)
@@ -64,7 +66,7 @@ export function resolveTemplateWriteContext(): {
  * @returns 加载的规则 id 列表(供向导跳转/试运行用)
  */
 export async function loadTemplate(
-  templateId: "finance" | "compliance",
+  templateId: "agent" | "finance" | "compliance",
   dbName: string,
   ctx: { backend: WorkspaceBackend; workspaceId: string } = resolveTemplateWriteContext(),
 ): Promise<string[]> {
@@ -107,7 +109,7 @@ export async function loadTemplate(
 
 /** 获取模板定义(只读,用于向导展示) */
 export function getTemplate(
-  id: "blank" | "finance" | "compliance",
+  id: "blank" | "agent" | "finance" | "compliance",
 ): BusinessTemplate | null {
   if (id === "blank") return null;
   return TEMPLATES[id] ?? null;

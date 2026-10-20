@@ -29,7 +29,7 @@ export interface TemplateRule {
 }
 
 export interface BusinessTemplate {
-  id: "blank" | "finance" | "compliance";
+  id: "blank" | "agent" | "finance" | "compliance";
   /** 行业(对齐 db.Industry,initDb 第三参数类型安全) */
   industry: Industry;
   displayName: string;

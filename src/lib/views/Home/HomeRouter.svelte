@@ -7,9 +7,10 @@
         !session.loggedIn    → A DemoHome
         isEmptyDb            → B OnboardingWizard
         wizardInProgress     → B OnboardingWizard(向导进行中不切走)
-        else                 → C goto('/workbench') 总览着陆(W2)
-    - 历史:状态 C 原内嵌 RealWorkbench(层感知 L1/L2),已随 W2 退役:
-      总览 /workbench 成为唯一首页,监控大屏改由侧栏「监控」直达(/monitor)
+        else                 → C DemoHome(登录态场景首页,CTA 进工作台)
+    - 历史:状态 C 原 W2 为跳 /workbench 总览着陆;首页改造批起 / 为所有人
+      的场景首页(三场景+快速体验),登录用户经 CTA/侧栏「总览」进工作台。
+      空库向导(B)与 force-demo 语义不变。
 
   依赖:sessionStore / isEmptyDb / homeModeStore / wizardInProgress
   关联设计:HOME_DESIGN.md §3(状态机) + 盘点与计划(07)
@@ -47,13 +48,6 @@ import { base } from "$app/paths";
     return "C";
   });
 
-  // 状态 C → 总览着陆:/workbench 是唯一首页
-  $effect(() => {
-    if (mode === "C") {
-      void goto(`${base}/workbench`);
-    }
-  });
-
   // PR3:首次进入首页且未看过/未跳过引导时,自动播放 Tour
   onMount(() => {
     if (shouldAutoStartTour()) {
@@ -62,22 +56,9 @@ import { base } from "$app/paths";
   });
 </script>
 
-{#if mode === "A"}
-  <DemoHome />
-{:else if mode === "B"}
+{#if mode === "B"}
   <OnboardingWizard />
 {:else}
-  <!-- C:跳转 /workbench 过渡态(正常情况一闪而过) -->
-  <div class="redirecting">正在进入总览…</div>
-
-  <style>
-    .redirecting {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 48px 24px;
-      text-align: center;
-      color: var(--text-secondary, #64748b);
-      font-size: 14px;
-    }
-  </style>
+  <!-- A(访客/force-demo)与 C(登录态)同渲染场景首页;DemoHome 内按登录态出 CTA -->
+  <DemoHome />
 {/if}
