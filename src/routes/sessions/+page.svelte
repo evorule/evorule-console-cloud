@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
   /sessions 路由 — Agent 会话验证器(只读验证面,纯浏览器端零后端)。
-  导入 evorule-agent-session v1 文件(或选内置演示)→ BLAKE3 链重算 →
+  导入 evo-agent-session v1 文件(或选内置演示)→ BLAKE3 链重算 →
   时间线/动作明细/级联信任标记 → 篡改实验(改一字节看链红)。
   边界:不做会话编辑、不落库、不替代审计页(真实治理数据走 /audit)。
 -->
@@ -119,7 +119,7 @@
   <header class="sv-header">
     <h1>🔍 会话验证</h1>
     <p class="sv-sub">
-      导入 evorule-agent-session 文件,浏览器端重算 BLAKE3 链——第三方可独立验证,
+      导入 evo-agent-session 文件,浏览器端重算 BLAKE3 链——第三方可独立验证,
       不信任任何服务器
     </p>
   </header>

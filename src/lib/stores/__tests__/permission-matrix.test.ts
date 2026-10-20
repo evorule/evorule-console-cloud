@@ -42,9 +42,9 @@ describe('P08 permission-matrix — 矩阵完整性', () => {
 
 	test('5 个角色标签全部定义', () => {
 		expect(ROLE_LABELS.user).toBe('普通用户');
-		expect(ROLE_LABELS.lead).toBe('科室主任');
-		expect(ROLE_LABELS.it).toBe('信息科');
-		expect(ROLE_LABELS.exec).toBe('院领导');
+		expect(ROLE_LABELS.lead).toBe('部门主管');
+		expect(ROLE_LABELS.it).toBe('IT 管理');
+		expect(ROLE_LABELS.exec).toBe('管理层');
 		expect(ROLE_LABELS.auditor).toBe('审计员');
 	});
 

@@ -51,7 +51,7 @@ describe('hasPermission(can() 后端化)', () => {
 		const u: User = {
 			id: 'u-admin',
 			username: 'admin',
-			displayName: '张主任',
+			displayName: '张主管',
 			role: 'it',
 			status: 'active',
 			authKind: 'demo',
@@ -85,7 +85,7 @@ describe('roleDisplayName', () => {
 				status: 'active',
 				authKind: 'demo',
 			})
-		).toBe('科室主任');
+		).toBe('部门主管');
 	});
 
 	it('未登录 → 空串', () => {

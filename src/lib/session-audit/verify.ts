@@ -53,9 +53,9 @@ export function assertContract(file: unknown): asserts file is AgentSessionFile 
 		throw new ContractError("文件不是 JSON 对象");
 	}
 	const f = file as Record<string, unknown>;
-	if (f.format !== "evorule-agent-session") {
+	if (f.format !== "evo-agent-session") {
 		throw new ContractError(
-			`format 应为 "evorule-agent-session",实际 ${JSON.stringify(f.format)}`,
+			`format 应为 "evo-agent-session",实际 ${JSON.stringify(f.format)}`,
 		);
 	}
 	if (f.version !== 1) {
