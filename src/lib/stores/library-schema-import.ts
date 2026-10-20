@@ -63,6 +63,48 @@ export interface LibrarySchemaTemplate {
  */
 export const BUILTIN_LIBRARY_TEMPLATES: LibrarySchemaTemplate[] = [
 	{
+		id: "builtin.agent_audit_starter",
+		name: "Agent 审计 Starter",
+		description: "Agent 护栏三件套:破坏性命令拦截 / AI 自动批准转人工 / 敏感操作 MFA 门禁",
+		industry: "agent",
+		initialRules: [
+			{
+				id: "guard_shell_risky",
+				version: 1,
+				description: "破坏性命令护栏:risk_class=destructive 阻断转人工(检测归生产者,规则只裁决)",
+				condition: { fact: "command.risk_class", op: "==", value: "destructive" },
+				action: { type: "block", reason: "破坏性命令须人工审批(等保 2.0)" },
+				priority: 95,
+				enabled: true,
+			},
+			{
+				id: "agent_auto_approve_gate",
+				version: 1,
+				description: "AI 自动批准门禁:auto_approved=true 不允许直接生效,转人工确认",
+				condition: { fact: "release.auto_approved", op: "==", value: true },
+				action: { type: "escalate", target: "human_operator", reason: "AI 自动批准须人工确认" },
+				priority: 90,
+				enabled: true,
+			},
+			{
+				id: "ai_mfa_gate",
+				version: 1,
+				description: "敏感操作 MFA 门禁:未过 MFA 的资金/敏感操作阻断留痕(等保 2.0 §8.1.4.1.d)",
+				condition: { fact: "request.mfa_verified", op: "==", value: false },
+				action: { type: "block", reason: "敏感操作需先通过 MFA 验证" },
+				priority: 85,
+				enabled: true,
+			},
+		],
+		initialTerms: [
+			{ key: "command.risk_class", label: "命令风险等级" },
+			{ key: "release.auto_approved", label: "AI 自动批准" },
+			{ key: "request.mfa_verified", label: "MFA 已验证" },
+		],
+		initialForms: [],
+		initialDatasets: [],
+	},
+	{
 		id: "builtin.finance_starter",
 		name: "财务 Starter",
 		description: "发票审批 / 预算校验 / 费用报销 3 条 starter 规则",
