@@ -1,0 +1,147 @@
+{
+  "format": "evorule-agent-session",
+  "version": 1,
+  "manifest": {
+    "session_id": "evo-agent-demo-killer-001",
+    "producer": "evo-agent",
+    "producer_version": "0.2.0",
+    "created_at": "2026-10-20T10:00:00Z",
+    "task_summary": "代码审查 agent 审查部署脚本 deploy.sh,放行高危命令被确定性护栏拦截",
+    "verdict": "guarded",
+    "tool_call_count": 3
+  },
+  "facts": [
+    {
+      "type": "task_received",
+      "id": 1,
+      "logical_time": 1,
+      "timestamp": "2026-10-20T10:00:00Z",
+      "payload": {
+        "agent": "code-review",
+        "task": "审查并批准部署脚本 deploy.sh",
+        "requester": "ci-pipeline"
+      }
+    },
+    {
+      "type": "analysis",
+      "id": 2,
+      "logical_time": 2,
+      "timestamp": "2026-10-20T10:00:01Z",
+      "payload": {
+        "script": "deploy.sh",
+        "line": 14,
+        "detected_command": "rm -rf /tmp/build",
+        "risk_class": "destructive"
+      }
+    },
+    {
+      "type": "rule_triggered",
+      "id": 3,
+      "logical_time": 3,
+      "timestamp": "2026-10-20T10:00:02Z",
+      "rule_id": "agent.auto_approve",
+      "rule_name": "AI 自动批准(无人工)",
+      "trigger": {
+        "command": "rm -rf /tmp/build"
+      },
+      "result": "allowed",
+      "message": "agent 直接放行 rm -rf /tmp/build,未触发人工确认"
+    },
+    {
+      "type": "rule_triggered",
+      "id": 4,
+      "logical_time": 4,
+      "timestamp": "2026-10-20T10:00:03Z",
+      "rule_id": "guardrail.destructive_cmd",
+      "rule_name": "破坏性命令护栏",
+      "trigger": {
+        "command": "rm -rf /tmp/build"
+      },
+      "result": "blocked",
+      "message": "确定性审计拦截:检测到破坏性命令,需人工审批"
+    },
+    {
+      "type": "decision",
+      "id": 5,
+      "logical_time": 5,
+      "timestamp": "2026-10-20T10:00:04Z",
+      "payload": {
+        "decision": "require_human_approval",
+        "reason": "等保 2.0 三级 §8.1.4:破坏性操作须人工确认",
+        "trace_id": "trace-kill-001"
+      }
+    },
+    {
+      "type": "guardrail_evolved",
+      "id": 6,
+      "logical_time": 6,
+      "timestamp": "2026-10-20T10:05:00Z",
+      "payload": {
+        "rule_id": "guard_shell_risky",
+        "format": "json-zero-code",
+        "approved_by": "human-operator",
+        "activation": "hot-reload",
+        "notes": "复盘后零代码长出通用 shell 高危命令护栏并热加载"
+      }
+    }
+  ],
+  "chain": {
+    "algorithm": "blake3-linked",
+    "entries": [
+      {
+        "fact_id": 1,
+        "fact_hash": "blake3:36f4710f11919dcf08d53d4623c26171a6ed704a3f3142a97fa60c6850fd8b1b",
+        "prev_hash": null
+      },
+      {
+        "fact_id": 2,
+        "fact_hash": "blake3:301b27f1818b93fbb83640ea8a757ee3cbfc236a03277bee37933b0c771ea887",
+        "prev_hash": "blake3:36f4710f11919dcf08d53d4623c26171a6ed704a3f3142a97fa60c6850fd8b1b"
+      },
+      {
+        "fact_id": 3,
+        "fact_hash": "blake3:37ab1b42ed1c5db5c6fba29fa4437c22a0f0fbff10ac006b0d7af6a486339b23",
+        "prev_hash": "blake3:301b27f1818b93fbb83640ea8a757ee3cbfc236a03277bee37933b0c771ea887"
+      },
+      {
+        "fact_id": 4,
+        "fact_hash": "blake3:930b2aec046ce9a8bbc7154379363d9be11e48fcb70e9e4756108624869cf9bc",
+        "prev_hash": "blake3:37ab1b42ed1c5db5c6fba29fa4437c22a0f0fbff10ac006b0d7af6a486339b23"
+      },
+      {
+        "fact_id": 5,
+        "fact_hash": "blake3:887077227b9eddc5e551a267389291c846e7ef88cc0f0817f3c9e5d0c8f355a0",
+        "prev_hash": "blake3:930b2aec046ce9a8bbc7154379363d9be11e48fcb70e9e4756108624869cf9bc"
+      },
+      {
+        "fact_id": 6,
+        "fact_hash": "blake3:d206ff2ee7e069c7b8aa65eda90752ea456db4a41b128ce4326fa0a3fd4c0aa7",
+        "prev_hash": "blake3:887077227b9eddc5e551a267389291c846e7ef88cc0f0817f3c9e5d0c8f355a0"
+      }
+    ],
+    "root": "blake3:d206ff2ee7e069c7b8aa65eda90752ea456db4a41b128ce4326fa0a3fd4c0aa7"
+  },
+  "tool_calls": [
+    {
+      "seq": 1,
+      "name": "read_file",
+      "args_summary": "deploy.sh",
+      "result_summary": "142 行 shell 脚本",
+      "linked_fact_id": 1
+    },
+    {
+      "seq": 2,
+      "name": "scan_commands",
+      "args_summary": "静态扫描高危命令模式",
+      "result_summary": "命中 1 条:rm -rf /tmp/build(L14)",
+      "linked_fact_id": 2
+    },
+    {
+      "seq": 3,
+      "name": "approve_release",
+      "args_summary": "自动批准发布",
+      "result_summary": "被护栏拦截(blocked),转人工审批",
+      "linked_fact_id": 4
+    }
+  ]
+}
