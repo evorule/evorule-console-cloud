@@ -42,7 +42,7 @@
   let step = $state<1 | 2 | 3 | 4 | 5>(1);
 
   // === 共享状态(跨步骤传递) ===
-  let template = $state<"blank" | "finance" | "compliance" | null>(null);
+  let template = $state<"blank" | "agent" | "finance" | "compliance" | null>(null);
   let dbName = $state<string>("");
   let businessObjects = $state<string[]>([]);
   // Step 2 loadTemplate 返回的规则 id 列表(模板路径用)
@@ -61,7 +61,7 @@
   });
 
   // === Step 1 → 2 ===
-  function handleTemplateSelect(id: "blank" | "finance" | "compliance"): void {
+  function handleTemplateSelect(id: "blank" | "agent" | "finance" | "compliance"): void {
     // 切换模板时重置业务对象:避免从「财务模板」切到「空白库」时,
     // 财务模板预填的 报销单/审批流/财务凭证 残留(体验反馈:消费者困惑空白库为何有业务对象)
     if (id !== template) {
@@ -77,7 +77,7 @@
       // 空白库:仅初始化库元数据,不加规则(Step 3 必须创建一条)
       initDb(dbName, businessObjects, "blank");
       templateLoadedRuleIds = [];
-    } else if (template === "finance" || template === "compliance") {
+    } else if (template === "agent" || template === "finance" || template === "compliance") {
       // 模板库:初始化库 + 加载 builtin 规则 + 关联业务元数据
       // 模板加载会让 isEmptyDb 变 false,但 wizardInProgress=true 阻止 HomeRouter 切到 C
       try {
