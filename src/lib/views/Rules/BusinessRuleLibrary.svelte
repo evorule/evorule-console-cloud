@@ -235,7 +235,7 @@
     <header class="lib-header">
       <div class="title-group">
         <h1>规则库</h1>
-        <span class="subtitle">开发者模式 · JSON 直接编辑</span>
+        <span class="subtitle">开发者视角</span>
       </div>
       <div class="header-actions">
         <button
@@ -264,7 +264,7 @@
     <header class="lib-header">
       <div class="title-group">
         <h1>规则库</h1>
-        <span class="subtitle">业务专家视角 · 表单填写自动生成 JSON</span>
+        <span class="subtitle">业务专家视角</span>
       </div>
       <div class="header-actions">
         {#if onaiGenerateDraft}
