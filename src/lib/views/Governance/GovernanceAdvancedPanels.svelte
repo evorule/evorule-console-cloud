@@ -22,7 +22,7 @@
 
   const kernelBackend = useBackend() as CloudHttpBackend;
 
-  type Tab = "audit" | "keys" | "search" | "deps" | "orgs";
+  type Tab = "audit" | "keys" | "search" | "deps" | "orgs" | "ops";
 
   const TABS: readonly [Tab, string][] = [
     ["audit", "🕵 审计"],
@@ -227,7 +227,7 @@
       </button>
     </div>
     {#if reloadResult}
-      <div class="adv-json"><JsonViewer data={reloadResult} /></div>
+      <div class="adv-json"><JsonViewer value={reloadResult} /></div>
       {#if (reloadResult.rejected_overlaps?.length ?? 0) + (reloadResult.rejected_domains?.length ?? 0) > 0}
         <p class="adv-status">
           ⚠️ 本次装载有被拒条目(重叠/域门禁),明细见上方 JSON——落盘前显式拒,不静默半激活。
@@ -300,7 +300,7 @@
         </ul>
         {#if entryResults}
           <h4 class="adv-sub">条目检索</h4>
-          <div class="adv-json"><JsonViewer data={entryResults} /></div>
+          <div class="adv-json"><JsonViewer value={entryResults} /></div>
         {/if}
       {/if}
     </div>
@@ -316,7 +316,7 @@
         </button>
       </div>
       {#if depsData}
-        <div class="adv-json"><JsonViewer data={depsData} /></div>
+        <div class="adv-json"><JsonViewer value={depsData} /></div>
       {/if}
       {#if templates.length > 0}
         <h4 class="adv-sub">服务模板({templates.length})——选模板填占位符生成 ServiceTemplate</h4>
@@ -341,13 +341,11 @@
             </button>
           </div>
           {#if boundTemplate}
-            <div class="adv-json"><JsonViewer data={boundTemplate} /></div>
+            <div class="adv-json"><JsonViewer value={boundTemplate} /></div>
           {/if}
         {/if}
       {/if}
     </div>
-  {:else if tab === "ops"}
-    <OpsPanel />
   {:else if tab === "orgs"}
     <div class="adv-sec">
       {#if orgsLoading}
