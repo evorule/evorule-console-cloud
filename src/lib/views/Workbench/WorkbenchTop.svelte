@@ -57,10 +57,10 @@ interface Props {
     <span class="label">server</span>
     <span class="value">{demoBackend ? "● 演示数据" : serverConnected === null ? "检测中" : serverConnected ? "● 已连接" : "○ 离线"}</span>
   </div>
-  <div class="status-item" class:offline={ruleConnected === false}>
-    <span class="dot" class:dot-gray={ruleConnected === false} class:dot-green={ruleConnected === true} class:dot-checking={ruleConnected === null}></span>
+  <div class="status-item" class:offline={!demoBackend && ruleConnected === false}>
+    <span class="dot" class:dot-gray={!demoBackend && ruleConnected === false} class:dot-green={!demoBackend && ruleConnected === true} class:dot-checking={demoBackend || ruleConnected === null}></span>
     <span class="label">rule</span>
-    <span class="value">{ruleConnected === null ? "检测中" : ruleConnected ? "● 已连接" : "○ 离线"}</span>
+    <span class="value">{demoBackend ? "● 演示数据" : ruleConnected === null ? "检测中" : ruleConnected ? "● 已连接" : "○ 离线"}</span>
   </div>
 
   <div class="status-divider"></div>
@@ -82,7 +82,7 @@ interface Props {
   </div>
   <div class="status-item">
     <span class="label">rule:</span>
-    <span class="value">evorule-rule {ruleVersion ?? `v${consoleVersion}`} ({ruleBase})</span>
+    <span class="value">{demoBackend ? "演示数据源(浏览器预填)" : `evorule-rule ${ruleVersion ?? `v${consoleVersion}`} (${ruleBase})`}</span>
   </div>
 
   <div class="status-divider"></div>
