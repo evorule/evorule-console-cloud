@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// 后端模式检测:与 +layout.svelte 中 `?backend=wasm|http|mock` 的解析保持一致。
-// 仅用于前端视图决定渲染哪套引导(WASM 7 步 vs demo 4 任务),不参与 backend 构造。
+// 后端模式检测:判定收敛至 backend-kind 单一来源(原各自解析 URL 参数,
+// 与根布局注入逻辑三处同构易漂移)。本模块仅保留视图层消费的便捷谓词。
 
-import { browser } from "$app/environment";
+import { IS_WASM } from "./backend-kind";
 
-/** 当前是否以 ?backend=wasm 在线 WASM 模式运行 */
+/** 当前是否以 WASM 后端模式运行(视图层渲染分派用,不参与 backend 构造) */
 export function isWasmBackendMode(): boolean {
-	if (!browser) return false;
-	try {
-		return new URLSearchParams(window.location.search).get("backend") === "wasm";
-	} catch {
-		return false;
-	}
+	return IS_WASM;
 }

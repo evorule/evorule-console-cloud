@@ -33,40 +33,33 @@ beforeEach(() => {
 	resetAllOnboarding();
 });
 
-describe('TOUR_STEPS(向导扩步)', () => {
-	test('含治理连接步:route 指向 /governance 且明示体验包默认凭据+安全标注', () => {
-		const gov = TOUR_STEPS.find((s) => s.id === 'governance');
-		expect(gov).toBeDefined();
-		expect(gov?.route).toBe('/governance');
-		expect(gov?.description).toContain('admin');
-		expect(gov?.description).toContain('evorule-demo');
-		expect(gov?.description).toContain('正式部署');
-	});
-
-	test('含 AI 助手可选步:不强制(route 缺省)且明示跳过不影响使用', () => {
-		const ai = TOUR_STEPS.find((s) => s.id === 'ai');
-		expect(ai).toBeDefined();
-		expect(ai?.route).toBeUndefined();
-		expect(ai?.title).toContain('可选');
-		expect(ai?.description).toContain('没有 Key');
-	});
-
-	test('步骤顺序:治理连接在 connection 之后、library 之前', () => {
+describe('TOUR_STEPS(关键路径 4 步)', () => {
+	test('步骤集合与顺序:welcome → connection → execute → audit', () => {
 		const ids = TOUR_STEPS.map((s) => s.id);
-		expect(ids.indexOf('governance')).toBeGreaterThan(ids.indexOf('connection'));
-		expect(ids.indexOf('governance')).toBeLessThan(ids.indexOf('library'));
+		expect(ids).toEqual(['welcome', 'connection', 'execute', 'audit']);
+	});
+
+	test('连接步:target 指向顶栏连接徽标', () => {
+		const conn = TOUR_STEPS.find((s) => s.id === 'connection');
+		expect(conn?.target).toBe('[data-tour="connection"]');
+	});
+
+	test('审计步:route 指向 /audit', () => {
+		const audit = TOUR_STEPS.find((s) => s.id === 'audit');
+		expect(audit?.route).toBe('/audit');
 	});
 });
 
-describe('上手清单(扩条)', () => {
-	test('默认清单含「连接治理服务」与「配置 AI 助手(可选)」条目且未完成', () => {
+describe('上手清单(关键路径 4 条)', () => {
+	test('默认清单为 连接/登录/执行/审计 四条且未完成', () => {
 		const items = get(onboardingStore).checklist;
-		const gov = items.find((i) => i.id === 'governance');
-		const ai = items.find((i) => i.id === 'ai-llm');
-		expect(gov?.route).toBe('/governance');
-		expect(gov?.done).toBe(false);
-		expect(ai?.title).toContain('可选');
-		expect(ai?.done).toBe(false);
+		expect(items.map((i) => i.id)).toEqual(['connect', 'login', 'execute', 'audit']);
+		expect(items.every((i) => i.done === false)).toBe(true);
+	});
+
+	test('登录条目路由指向 /login', () => {
+		const login = get(onboardingStore).checklist.find((i) => i.id === 'login');
+		expect(login?.route).toBe('/login');
 	});
 });
 
@@ -145,9 +138,10 @@ describe('旧数据兼容(mergeState,扩条不丢老用户标记)', () => {
 		// 存量标记保留
 		expect(byId('connect')?.done).toBe(true);
 		expect(byId('login')?.done).toBe(false);
-		// 新增条目天然补全(老用户升级后可见新引导项)
-		expect(byId('governance')?.done).toBe(false);
-		expect(byId('ai-llm')?.done).toBe(false);
+		// 新清单条目天然补全未完成;已裁撤条目(library)不再出现
+		expect(byId('execute')?.done).toBe(false);
+		expect(byId('audit')?.done).toBe(false);
+		expect(byId('library')).toBeUndefined();
 		// 其余引导态按存量恢复
 		expect(merged.bannerDismissed).toBe(true);
 		expect(merged.tour.completed).toBe(true);

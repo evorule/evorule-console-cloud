@@ -17,9 +17,10 @@ import { base } from "$app/paths";
   import HelpWorkbench from "$lib/views/Help/HelpWorkbench.svelte";
   import HelpStart from "$lib/views/Help/HelpStart.svelte";
   import HelpFaq from "$lib/views/Help/HelpFaq.svelte";
+  import HelpCapabilities from "$lib/views/Help/HelpCapabilities.svelte";
   import { resetWelcome } from "$lib/stores/onboarding";
 
-  let activeTab = $state<"quickstart" | "workbench" | "start" | "faq">("quickstart");
+  let activeTab = $state<"quickstart" | "capabilities" | "workbench" | "start" | "faq">("quickstart");
 
   /** 重新运行首跑向导(帮助页常驻重跑入口) */
   function rerunWelcome() {
@@ -66,6 +67,13 @@ import { base } from "$app/paths";
     </button>
     <button
       class="help-tab"
+      class:active={activeTab === "capabilities"}
+      onclick={() => (activeTab = "capabilities")}
+    >
+      ⚡ 核心能力
+    </button>
+    <button
+      class="help-tab"
       class:active={activeTab === "workbench"}
       onclick={() => (activeTab = "workbench")}
     >
@@ -91,6 +99,8 @@ import { base } from "$app/paths";
   <div class="help-content">
     {#if activeTab === "quickstart"}
       <HelpQuickstart />
+    {:else if activeTab === "capabilities"}
+      <HelpCapabilities />
     {:else if activeTab === "workbench"}
       <HelpWorkbench />
     {:else if activeTab === "start"}
