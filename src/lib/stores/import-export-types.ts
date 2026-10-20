@@ -24,6 +24,7 @@ export type ObjectType = "rule" | "dataset" | "form" | "library_schema";
 
 /** 模板市场分类(§4.3) */
 export type TemplateCategory =
+	| "agent"
 	| "medical"
 	| "finance"
 	| "compliance"
@@ -213,6 +214,7 @@ export const CONFLICT_RESOLUTION_LABELS: Record<ConflictResolution, string> = {
 };
 
 export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
+	agent: "Agent 审计",
 	medical: "医疗",
 	finance: "金融",
 	compliance: "合规",
