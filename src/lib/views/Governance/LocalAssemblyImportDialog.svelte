@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!-- Copyright (C) 2026 EvoRule Project -->
 <!--
-  职责:本地装配导入浮层（06 号桥接方案 B2）
+  职责:本地装配导入浮层（治理桥接方案:本地装配导入）
     列 console 本地数据集(规则装配单元) → 预检(入条数/跳过) → 桥接注册为
     治理域 rule_set 数据集(Draft) → 生命周期由人在本页既有闸推进。
   红线:桥接止步于注册+入条,不代推任何生命周期跃迁。
