@@ -45,7 +45,7 @@ function buildSession(manifest, facts, toolCalls) {
 		prev = h;
 	}
 	return {
-		format: "evorule-agent-session",
+		format: "evo-agent-session",
 		version: 1,
 		manifest,
 		facts,

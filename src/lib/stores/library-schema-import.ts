@@ -63,53 +63,6 @@ export interface LibrarySchemaTemplate {
  */
 export const BUILTIN_LIBRARY_TEMPLATES: LibrarySchemaTemplate[] = [
 	{
-		id: "builtin.hospital_starter",
-		name: "医院 Starter",
-		description: "病人就诊 / 药品开具 / 发票审批 3 条 starter 规则",
-		industry: "medical",
-		initialRules: [
-			{
-				id: "hospital.patient_consult",
-				version: 1,
-				description: "病人就诊规则:体温 > 38°C 触发热诊分诊",
-				condition: { fact: "patient.temperature", op: ">", value: 38 },
-				action: { type: "route", target: "fever_clinic", reason: "高温分诊" },
-				priority: 50,
-				enabled: true,
-			},
-			{
-				id: "hospital.drug_prescription",
-				version: 1,
-				description: "药品开具规则:抗生素需二次审核",
-				condition: {
-					all: [
-						{ fact: "drug.category", op: "==", value: "antibiotic" },
-						{ fact: "prescription.reviewed", op: "==", value: false },
-					],
-				},
-				action: { type: "block", reason: "抗生素需二次审核" },
-				priority: 80,
-				enabled: true,
-			},
-			{
-				id: "hospital.invoice_approval",
-				version: 1,
-				description: "发票审批规则:金额 > 5000 需主任签字",
-				condition: { fact: "invoice.amount", op: ">", value: 5000 },
-				action: { type: "escalate", target: "department_head", reason: "高额审批" },
-				priority: 60,
-				enabled: true,
-			},
-		],
-		initialTerms: [
-			{ key: "patient.temperature", label: "病人体温", unit: "°C" },
-			{ key: "drug.category", label: "药品类别" },
-			{ key: "invoice.amount", label: "发票金额", unit: "元" },
-		],
-		initialForms: [],
-		initialDatasets: [],
-	},
-	{
 		id: "builtin.finance_starter",
 		name: "财务 Starter",
 		description: "发票审批 / 预算校验 / 费用报销 3 条 starter 规则",
@@ -240,6 +193,53 @@ export const BUILTIN_LIBRARY_TEMPLATES: LibrarySchemaTemplate[] = [
 			{ key: "storage.encrypted", label: "存储是否加密" },
 			{ key: "response.contains_pi", label: "响应含个人信息" },
 			{ key: "audit.blake3_recorded", label: "BLAKE3 审计已记录" },
+		],
+		initialForms: [],
+		initialDatasets: [],
+	},
+	{
+		id: "builtin.hospital_starter",
+		name: "医院 Starter",
+		description: "病人就诊 / 药品开具 / 发票审批 3 条 starter 规则",
+		industry: "medical",
+		initialRules: [
+			{
+				id: "hospital.patient_consult",
+				version: 1,
+				description: "病人就诊规则:体温 > 38°C 触发热诊分诊",
+				condition: { fact: "patient.temperature", op: ">", value: 38 },
+				action: { type: "route", target: "fever_clinic", reason: "高温分诊" },
+				priority: 50,
+				enabled: true,
+			},
+			{
+				id: "hospital.drug_prescription",
+				version: 1,
+				description: "药品开具规则:抗生素需二次审核",
+				condition: {
+					all: [
+						{ fact: "drug.category", op: "==", value: "antibiotic" },
+						{ fact: "prescription.reviewed", op: "==", value: false },
+					],
+				},
+				action: { type: "block", reason: "抗生素需二次审核" },
+				priority: 80,
+				enabled: true,
+			},
+			{
+				id: "hospital.invoice_approval",
+				version: 1,
+				description: "发票审批规则:金额 > 5000 需主任签字",
+				condition: { fact: "invoice.amount", op: ">", value: 5000 },
+				action: { type: "escalate", target: "department_head", reason: "高额审批" },
+				priority: 60,
+				enabled: true,
+			},
+		],
+		initialTerms: [
+			{ key: "patient.temperature", label: "病人体温", unit: "°C" },
+			{ key: "drug.category", label: "药品类别" },
+			{ key: "invoice.amount", label: "发票金额", unit: "元" },
 		],
 		initialForms: [],
 		initialDatasets: [],

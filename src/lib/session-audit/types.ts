@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
-// evorule-agent-session v1 — Agent 会话导出契约(查看器/验证器共用)。
+// evo-agent-session v1 — Agent 会话导出契约(查看器/验证器共用)。
 //
 // 设计原则:通用性在契约不在显示端。
 //   - 一个标准格式 + 一个查看器,N 个生产者(evo-agent 今日首个,任何按
@@ -53,7 +53,7 @@ export interface AgentSessionManifest {
 
 /** Agent 会话导出文件根结构 */
 export interface AgentSessionFile {
-	format: "evorule-agent-session";
+	format: "evo-agent-session";
 	version: 1;
 	manifest: AgentSessionManifest;
 	facts: AgentSessionFact[];

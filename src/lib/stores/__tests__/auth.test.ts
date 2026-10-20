@@ -75,7 +75,7 @@ describe('P08 loginAs', () => {
 		expect(u).not.toBeNull();
 		expect(u!.username).toBe('admin');
 		expect(u!.role).toBe('it');
-		expect(u!.displayName).toBe('张主任');
+		expect(u!.displayName).toBe('张主管');
 	});
 
 	test('lead 用户登录 → role=lead', () => {
@@ -113,12 +113,12 @@ describe('P08 loginAs', () => {
 
 	test('登录后 displayName 派生正确', () => {
 		loginAs('admin');
-		expect(storeGet(displayName)).toBe('张主任');
+		expect(storeGet(displayName)).toBe('张主管');
 	});
 
 	test('登录后 roleLabel 派生正确', () => {
 		loginAs('lead');
-		expect(storeGet(roleLabel)).toBe('科室主任');
+		expect(storeGet(roleLabel)).toBe('部门主管');
 	});
 });
 
@@ -132,7 +132,7 @@ describe('P08 auth ↔ session 协同', () => {
 		const s = storeGet(sessionStore);
 		expect(s.loggedIn).toBe(true);
 		expect(s.userId).toBe('u-admin');
-		expect(s.username).toBe('张主任');
+		expect(s.username).toBe('张主管');
 	});
 
 	test('logout 同步清除 sessionStore', () => {

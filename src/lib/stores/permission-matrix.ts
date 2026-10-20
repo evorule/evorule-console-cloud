@@ -52,9 +52,9 @@ export type Role = 'user' | 'lead' | 'it' | 'exec' | 'auditor';
 /** 角色中文标签(UI 显示用) */
 export const ROLE_LABELS: Record<Role, string> = {
 	user: '普通用户',
-	lead: '科室主任',
-	it: '信息科',
-	exec: '院领导',
+	lead: '部门主管',
+	it: 'IT 管理',
+	exec: '管理层',
 	auditor: '审计员',
 };
 
