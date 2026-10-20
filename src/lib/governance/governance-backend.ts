@@ -22,6 +22,7 @@ import type {
 	GovernanceEntry,
 	KnowledgeEntry,
 	LifecycleStatus,
+	Page,
 	PatchKnowledgeEntryRequest,
 	UpdateDatasetMetaRequest,
 	VersioningInfo
@@ -538,7 +539,7 @@ export class GovernanceBackend {
 		if (params.domain) qs.set('domain', params.domain);
 		if (params.tags) qs.set('tags', params.tags);
 		const q = qs.toString();
-		return this.request<Page<RuleDataset>>({
+		return this.request<Page<GovernanceDataset>>({
 			method: 'GET',
 			path: `/v1/search/datasets${q ? `?${q}` : ''}`
 		});

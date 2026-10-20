@@ -92,16 +92,16 @@
   {:else}
     {#if tab === "llm" && llmStats}
       <div class="ga-stats">
-        <JsonViewer data={llmStats} />
+        <JsonViewer value={llmStats} />
       </div>
     {/if}
     <div class="ga-json">
       {#if tab === "auth" && authData !== null}
-        <JsonViewer data={authData} />
+        <JsonViewer value={authData} />
       {:else if tab === "lifecycle" && lifecycleData !== null}
-        <JsonViewer data={lifecycleData} />
+        <JsonViewer value={lifecycleData} />
       {:else if tab === "llm" && llmData !== null}
-        <JsonViewer data={llmData} />
+        <JsonViewer value={llmData} />
       {/if}
     </div>
   {/if}

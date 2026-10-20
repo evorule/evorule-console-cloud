@@ -235,14 +235,6 @@
   .btn-primary:hover {
     opacity: 0.9;
   }
-  .btn-ghost {
-    background: transparent;
-    color: var(--text-secondary, #64748b);
-    border: 1px solid var(--border, #cbd5e1);
-  }
-  .btn-ghost:hover {
-    background: var(--bg-page, #f8fafc);
-  }
 
   /* 这是什么? 可折叠说明 */
   .whatis-toggle {
