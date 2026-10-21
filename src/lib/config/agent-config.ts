@@ -309,7 +309,7 @@ export async function testAgentConnection(
 	}
 }
 
-// === LLM 配置状态(脱敏只读;O-029 收口) ===
+// === LLM 配置状态(脱敏只读;密钥面收口) ===
 
 export interface AgentLlmKeyStatus {
 	/** evo-agent 侧是否已配置 key(仅存在性,永不含 key 值) */
