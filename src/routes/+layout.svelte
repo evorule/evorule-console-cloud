@@ -484,6 +484,7 @@
     "/marketplace": "nav.marketplace",
     "/agent": "nav.agent",
     "/knowledge": "nav.knowledge",
+    "/compute": "nav.compute",
     "/sessions": "nav.sessionVerify",
     "/help": "nav.help",
     "/export": "nav.export",

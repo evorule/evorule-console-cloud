@@ -69,7 +69,7 @@ describe('visibleNavItems', () => {
 		// 0.4.1 行为变更:marketplace 补标 loginRequired(其页面受登录守卫),
 		// 未登录导航中随之隐藏——与页面可达性口径一致(未登录不可达即不展示)。
 		// agent 默认禁用(ctx 缺省 agentEnabled=false),同口径不在未登录清单。
-		expect(ids).toEqual(['overview', 'monitor', 'sessionVerify', 'help']);
+		expect(ids).toEqual(['overview', 'monitor', 'compute', 'sessionVerify', 'help']);
 	});
 
 	it('保序:输出顺序与注册表声明顺序一致', () => {
@@ -110,13 +110,14 @@ describe('featureFlag 门控(agent ← agentConfig.enabled)', () => {
 });
 
 describe('navItemsByGroup', () => {
-	it('四组归位:home 4(总览/监控/流程/Agent 会话)/ discover 5(市场/模板渲染/知识库/会话验证/帮助)/ governance 11(含命中分析)', () => {
+	it('四组归位:home 4(总览/监控/流程/Agent 会话)/ discover 6(市场/模板渲染/知识库/确定性计算/会话验证/帮助)/ governance 11(含命中分析)', () => {
 		const g = navItemsByGroup(visibleNavItems(NAV_REGISTRY, adminCtx()));
 		expect(g.home.map((i) => i.id)).toEqual(['overview', 'monitor', 'flow', 'agent']);
 		expect(g.discover.map((i) => i.id)).toEqual([
 			'marketplace',
 			'template-render',
 			'knowledge',
+			'compute',
 			'sessionVerify',
 			'help',
 		]);
@@ -125,10 +126,11 @@ describe('navItemsByGroup', () => {
 		expect(gi.indexOf('hit-stats')).toBe(gi.indexOf('governance') + 1);
 	});
 
-	it('跳单卡子集(jump:true)为 7 项且顺序稳定:marketplace/sessionVerify/export/publish-queue/plugin-approvals/governance/hit-stats', () => {
+	it('跳单卡子集(jump:true)为 8 项且顺序稳定:marketplace/compute/sessionVerify/export/publish-queue/plugin-approvals/governance/hit-stats', () => {
 		const jump = visibleNavItems(NAV_REGISTRY, adminCtx()).filter((i) => i.jump);
 		expect(jump.map((i) => i.id)).toEqual([
 			'marketplace',
+			'compute',
 			'sessionVerify',
 			'export',
 			'publish-queue',

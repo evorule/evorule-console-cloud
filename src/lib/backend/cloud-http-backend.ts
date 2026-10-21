@@ -664,6 +664,23 @@ export class CloudHttpBackend implements ExecutionBackend {
 		return this.backend.getJson<BoundServiceInfo[]>('/api/services');
 	}
 
+	/**
+	 * 直调原生服务(POST /api/services/{name}/invoke)。
+	 *
+	 * 确定性计算工坊消费:量纲验证/量纲求值等只读计算服务。
+	 * 失败(网络/404/校验)→ 抛 Error(message 含服务端自诊断指引),
+	 * 由调用方展示;不做静默降级。
+	 */
+	async invokeService<T = Record<string, unknown>>(
+		name: string,
+		args: Record<string, unknown>,
+	): Promise<T> {
+		return this.backend.postJsonPublic<T>(
+			`/api/services/${encodeURIComponent(name)}/invoke`,
+			args,
+		);
+	}
+
 	// === 插件审批代理(走 server 审批代理端点,approver 由 server 强制注入) ===
 
 	/**
