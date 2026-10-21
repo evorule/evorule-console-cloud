@@ -11,7 +11,7 @@ test.describe('后端不可达诚实性', () => {
 	}) => {
 		// 环境无关的确定性不可达:net-config 指向必然死端口(online 模式绝对
 		// URL 不走 dev 代理,本地 18080 常驻实例/CI 无实例两种环境同样成立)
-		await page.goto('/', { waitUntil: 'domcontentloaded' });
+		await page.goto('/?backend=http', { waitUntil: 'domcontentloaded' });
 		await page.evaluate(() => {
 			localStorage.setItem(
 				'evorule-console-cloud:net-config',
@@ -22,16 +22,16 @@ test.describe('后端不可达诚实性', () => {
 		await expect(page.locator('html')).toHaveAttribute('data-theme', /.+/, { timeout: 10_000 });
 
 		// /audit 受登录守卫 → 演示模式一键登录(纯客户端,无需后端)
-		await page.goto('/login', { waitUntil: 'networkidle' });
+		await page.goto('/login?backend=http', { waitUntil: 'networkidle' });
 		await page.getByRole('button', { name: /切换到演示模式/ }).click();
 		await page.getByRole('button', { name: /刘审计/ }).click();
 		await page.getByRole('button', { name: '登录 →' }).click();
 		await page.waitForTimeout(1000);
 
-		await page.goto('/audit', { waitUntil: 'domcontentloaded' });
+		await page.goto('/audit?backend=http', { waitUntil: 'domcontentloaded' });
 		// 警示条:明确区分「连不上」与「没数据」
 		await expect(page.locator('[data-testid="backend-unreachable"]')).toBeVisible({
-			timeout: 15_000
+			timeout: 30_000
 		});
 		await expect(page.locator('[data-testid="backend-unreachable"]')).toContainText(
 			'无法连接 evorule-server'

@@ -373,7 +373,7 @@
 
       <main class="lib-detail">
         {#if $selectedRule}
-          <header class="detail-header">
+          <header class="detail-header" data-content-loaded={$selectedRule.content !== undefined}>
             <h2 class="rule-id">{$selectedRule.id}</h2>
             {#if onaiExplainRule}
               <button class="btn btn-ai" onclick={() => onaiExplainRule?.()}>

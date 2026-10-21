@@ -8,6 +8,8 @@ export default defineConfig({
 	testDir: './tests',
 	fullyParallel: false,
 	workers: 1,
+	// 单测上限 60s:冷启动(dev server+水合+Vite 冷缓存)时序边际
+	timeout: 60_000,
 	reporter: 'line',
 	use: {
 		baseURL: 'http://localhost:5174',
