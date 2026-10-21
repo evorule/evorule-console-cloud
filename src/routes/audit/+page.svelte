@@ -7,6 +7,7 @@
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
 import { base } from '$app/paths';
+  import BackendUnreachableBanner from '$lib/views/Feedback/BackendUnreachableBanner.svelte';
   import { page } from '$app/stores';
   import { isLoggedIn, can } from '$lib/stores/auth';
   import { currentSessionId } from '$lib/kernel/stores/session';
@@ -73,7 +74,8 @@ import { base } from '$app/paths';
       title="审计员工作台 · 一切可追溯"
       body="这里呈现 BLAKE3 不可篡改审计链与因果链回溯。每步操作都可验证、可回放,是 evorule 治理闭环的「黑匣子」。"
     />
-    <header class="audit-header">
+    <BackendUnreachableBanner />
+        <header class="audit-header">
       <h1>🔍 审计员工作台</h1>
       <p><Term id="blake3" /> 不可篡改审计链 · 因果链回溯 · <Term id="timetravel" /> 回放</p>
       {#if inIframe && $currentSessionId}
