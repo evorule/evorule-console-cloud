@@ -225,7 +225,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		await loginAsAdmin(page);
 
 		await expect(page.locator('.sidebar-item', { hasText: '导出' })).toBeVisible();
-		// 「发布队列」label 已改名「部署审批」(O-523 同步)
+		// 「发布队列」label 已改名「部署审批」(导航改名同步)
 		await expect(page.locator('.sidebar-item', { hasText: '部署审批' })).toBeVisible();
 		await expect(page.locator('.sidebar-item', { hasText: '版本历史' })).toBeVisible();
 		await expect(page.locator('.sidebar-item', { hasText: '审计记录' })).toBeVisible();

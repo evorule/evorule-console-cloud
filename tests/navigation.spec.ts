@@ -44,7 +44,7 @@ test.describe('evorule-console-cloud 导航 + 主题 + 联网徽标', () => {
 	test('侧栏导航包含 21 项(home 3 + 分析视图 5 + discover 4 + 治理协作 8 + 设置),标签正确', async ({
 		page
 	}) => {
-		// 实况对齐(2026-10-19 O-523 重校):home 组(总览/监控/流程) + 分析视图组(5 内核视图)
+		// 实况对齐(2026-10-19 重校):home 组(总览/监控/流程) + 分析视图组(5 内核视图)
 		// + discover 组(市场/模板渲染/知识库/帮助) + 治理与协作组(导出/部署审批/插件审批/版本历史/审计记录/治理中心/命中分析/权限策略;
 		// admin 演示身份无 view_users/manage_roles/manage_apps → 用户/角色/应用管理隐藏;
 		// Agent 会话 featureFlag 'agent' 未启用 fail-closed 隐藏) + 设置 = 21 项
