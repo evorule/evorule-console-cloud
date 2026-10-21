@@ -81,3 +81,7 @@ jobs:
         run: npx playwright test
         env:
           CI: 'true'
+          # 套件缺省 mock 后端:整套 spec 自包含零外部依赖(干净 CI 无
+          # evorule-server;本地 dev 代理+常驻实例的隐性依赖由此消除)。
+          # 需要 http 态的用例(如不可达诚实性)显式 ?backend=http 选择。
+          VITE_DEFAULT_BACKEND: mock
