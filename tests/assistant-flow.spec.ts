@@ -277,11 +277,13 @@ test.describe('evorule-console-cloud LLM 流程', () => {
 		// 适配:refreshRules 虽自动选中第一条规则,但 content 懒加载只在
 		// 点击卡片(selectRule)时触发 —— ExplainRuleDialog 需要 rule.content,
 		// 未加载会报"规则内容未加载,无法解释"。先点第一张规则卡片并等版本拉取完成。
-		const versionsLoaded = page.waitForResponse(
-			(r) => r.url().includes('/versions') && r.request().method() === 'GET'
-		);
 		await page.locator('.rule-card').first().click();
-		await versionsLoaded;
+		// 内容加载完成信号:详情头 data-content-loaded(selectedRule.content 派生)
+		// (原 waitForResponse('/versions') 隐性依赖 http 后端——mock 后端内存调用
+		// 不发网络请求,该等待永不满足)
+		await expect(page.locator('.detail-header[data-content-loaded="true"]')).toBeVisible({
+			timeout: 10_000
+		});
 
 		// 点击规则详情面板的 "✨ LLM 解释" 按钮(业务模式,选中规则后渲染)
 		await page.locator('.btn-ai:has-text("LLM 解释")').first().click();
