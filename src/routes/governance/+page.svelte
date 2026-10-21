@@ -333,6 +333,8 @@
 
   // ===== 上架确认 =====
   let publishConfirm = $state(false);
+  // 静态体检存证行(上架时拼入发布理由,随治理域发布记录落盘)
+  let publishAttestation = $state('');
   let publishReason = $state('');
 
   // 文本域占位(Svelte 不解析单引号属性内的花括号表达式,故用变量)
@@ -542,9 +544,14 @@
       } else if (fresh.report?.overall === 'red') {
         toastWarning('最近体检有红色发现(静态分析只报告,人裁决):详情见规则库体检报告', '静态体检');
       }
+      // L4 存证:体检结论行写入发布理由,随治理域发布记录服务端持久化
+      // (提交时刻快照;完整报告可打印存档,报告页有打印按钮)
+      publishAttestation = fresh.fresh && fresh.report
+        ? ` | 静态体检:${fresh.report.overall === 'green' ? '绿' : fresh.report.overall === 'yellow' ? '黄' : '红'}·指纹 ${fresh.report.fingerprint}·${fresh.report.ranAt}`
+        : '';
     }
     try {
-      await publish(publishReason.trim() || undefined);
+      await publish((publishReason.trim() || '独立上架') + publishAttestation);
       toastSuccess('已上架(Published)', '治理');
       publishConfirm = false;
       publishReason = '';
