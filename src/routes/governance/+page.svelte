@@ -12,6 +12,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
+  import {
+    latestCheckup,
+    checkupGate,
+    setGateBlocking,
+    buildRulesetBundle,
+  } from '$lib/rules-checkup/checkup';
+  import { rules as kernelRules } from '$lib/kernel';
   import { toastSuccess, toastError, toastInfo, toastWarning } from '$lib/stores/toast';
   import { fmtDateTime } from '$lib/locale';
   import {
@@ -477,6 +484,32 @@
     }
   }
 
+  /** 体检门新鲜度:对当前 console 工作区规则集形态计算指纹,与最近报告比对 */
+  async function checkupGateFresh(): Promise<{
+    fresh: boolean;
+    reason: string;
+    report: import("$lib/rules-checkup/checkup").CheckupReport | null;
+  }> {
+    const ws = get(currentWorkspace);
+    const wb = workspaceBackend;
+    const report = get(latestCheckup);
+    if (!ws || !wb) {
+      return { fresh: false, reason: '工作区通道不可用,无法核对体检指纹', report };
+    }
+    if (!report) {
+      return { fresh: false, reason: '尚无体检报告', report };
+    }
+    try {
+      const bundle = await buildRulesetBundle(wb, ws.id, get(kernelRules));
+      if (bundle.fingerprint !== report.fingerprint) {
+        return { fresh: false, reason: '规则集已变动,报告过期', report };
+      }
+      return { fresh: true, reason: '', report };
+    } catch (e) {
+      return { fresh: false, reason: `指纹核对失败:${(e as Error).message}`, report };
+    }
+  }
+
   async function handlePublish(): Promise<void> {
     if (!publishConfirm) {
       toastError('独立上架需二次确认:请勾选确认框', '上架审批');
@@ -492,6 +525,23 @@
       );
       openLawEdit();
       return;
+    }
+    // 静态体检门(D1 可切换:阻断/仅提示):要求对当前规则集形态的新鲜体检报告。
+    // 分析层只报告不拦截;此为流程门——阻断态缺新鲜报告即拦,仅提示态放行但警告。
+    {
+      const fresh = await checkupGateFresh();
+      if (!fresh.fresh) {
+        if (get(checkupGate).blocking) {
+          toastError(
+            `体检门(阻断):${fresh.reason} — 请先到规则库「🩺 静态体检」跑出报告再上架`,
+            '上架前置校验'
+          );
+          return;
+        }
+        toastWarning(`体检门(仅提示):${fresh.reason}`, '静态体检');
+      } else if (fresh.report?.overall === 'red') {
+        toastWarning('最近体检有红色发现(静态分析只报告,人裁决):详情见规则库体检报告', '静态体检');
+      }
     }
     try {
       await publish(publishReason.trim() || undefined);
@@ -2003,6 +2053,21 @@
                   <button class="link-btn" onclick={openLawEdit}>立即设置</button>
                 </p>
               {/if}
+              <div class="gate-row">
+                <span class="gate-label">体检门:</span>
+                <button
+                  class="gate-btn"
+                  class:gate-on={get(checkupGate).blocking}
+                  onclick={() => setGateBlocking(true)}
+                  title="缺新鲜体检报告时阻止上架(报告须与当前规则集指纹一致)"
+                >阻断</button>
+                <button
+                  class="gate-btn"
+                  class:gate-on={!get(checkupGate).blocking}
+                  onclick={() => setGateBlocking(false)}
+                  title="缺报告仅警告提示,不阻止上架"
+                >仅提示</button>
+              </div>
               <label class="check">
                 <input type="checkbox" bind:checked={publishConfirm} />
                 <span>我确认已完成独立上架审批(上架后对外可见可拉取)</span>
