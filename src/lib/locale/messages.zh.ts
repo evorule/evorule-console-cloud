@@ -16,6 +16,7 @@ export const messagesZh: Dict = {
   "nav.template-render": "模板渲染",
   "nav.knowledge": "知识库",
   "nav.sessionVerify": "会话验证",
+  "nav.compute": "确定性计算",
   "nav.help": "帮助",
   "nav.export": "导出",
   "nav.publish-queue": "部署审批",

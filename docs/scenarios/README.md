@@ -3,7 +3,7 @@
 
 # 场景示例规则
 
-> 4 条**真实业务语义**的示例规则（非机制演示），仓内预置（`assets/evorule-rules/`），服务装载 rules 目录后即可实测复现。
+> 6 个**真实业务语义**的示例（1-4 为装载规则,5-6 为服务直调演示;非机制演示），仓内预置（`assets/evorule-rules/`），服务装载 rules 目录后即可实测复现。
 > 规则即数据：JSON 直接可读可改，改完 reload 即生效，执行结果确定性可复现。
 
 | # | 场景 | 规则文件 | 业务指令 | 一句话语义 |
@@ -12,6 +12,8 @@
 | 2 | [报销合规检查](./02-expense-compliance.md) | [rules/expense-compliance.json](./rules/expense-compliance.json) | `expense_compliance_check` | 重复发票驳回；超标升级审批链 |
 | 3 | [设备巡检告警](./03-equipment-inspection.md) | [rules/equipment-inspection.json](./rules/equipment-inspection.json) | `equipment_inspection_check` | 阈值联动告警与升级上报 |
 | 4 | [AI 合规门禁](./04-ai-mfa-gate.md) | [rules/ai-mfa-gate.json](./rules/ai-mfa-gate.json) | `ai_mfa_gate_check` | AI Agent 未过 MFA 调用工具 → 阻断留痕 |
+| 5 | [公式量纲验证](./05-dimension-verify.md) | 服务直调(无需装载) | `inference_dimension_verify_formula` / `numeric_dim_eval` | AI 给的公式,SI 量纲引擎判单位,`E = m*v` 当场被抓 |
+| 6 | [规则集静态推理](./06-rule-reasoning.md) | 服务直调(无需装载) | `inference_conflict_detect` / `inference_cycle_detect` / `inference_forward_simulate` | 引擎审查自己的规则:冲突/环路/前向仿真,部署前机器体检 |
 
 ## 规则即业务指令处理器
 

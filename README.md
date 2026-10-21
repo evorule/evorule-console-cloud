@@ -97,6 +97,8 @@ No download, no install, no server — the evorule engine itself is compiled to 
 - **[Expense Compliance Check](./docs/scenarios/02-expense-compliance.md)** — rejects duplicate invoices; escalates over-limit to approval chain
 - **[Equipment Inspection Alert](./docs/scenarios/03-equipment-inspection.md)** — threshold-linked alerting and escalation
 - **[AI Compliance Gate](./docs/scenarios/04-ai-mfa-gate.md)** — AI Agent initiates a transfer without MFA → blocked and logged
+- **[Dimension Formula Verify](./docs/scenarios/05-dimension-verify.md)** — the engine catches `E = m*v` (kinetic ≠ momentum): AI-authored formulas checked by SI dimension analysis, bit-replayable
+- **[Rule-Set Static Reasoning](./docs/scenarios/06-rule-reasoning.md)** — the engine audits its own rules: conflict detection, cycle detection, forward-chain simulation before you deploy
 
 Each rule ships with two sets of contrast inputs and field-by-field expected outputs — reproduce one in 3 minutes. See [Scenario Examples Overview](./docs/scenarios/README.md).
 
@@ -500,6 +502,8 @@ Copyright (C) 2026 EvoRule Project. All rights reserved.
 - **[报销合规检查](./docs/scenarios/02-expense-compliance.md)** — 重复发票驳回；超标升级审批链
 - **[设备巡检告警](./docs/scenarios/03-equipment-inspection.md)** — 阈值联动告警与升级上报
 - **[AI 合规门禁](./docs/scenarios/04-ai-mfa-gate.md)** — AI Agent 未过 MFA 发起转账 → 阻断留痕
+- **[公式量纲验证](./docs/scenarios/05-dimension-verify.md)** — `E = m*v` 当场被抓:AI 给的公式由 SI 量纲引擎判定,单位过不过机器说了算
+- **[规则集静态推理](./docs/scenarios/06-rule-reasoning.md)** — 引擎审查自己的规则:冲突六型学检测/环路检测/前向链仿真,部署前的机器体检
 
 每条规则附两组对照输入与逐字段预期输出，3 分钟可复现一条。见 [场景示例总览](./docs/scenarios/README.md)。
 
