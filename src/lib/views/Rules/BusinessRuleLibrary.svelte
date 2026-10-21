@@ -22,6 +22,7 @@
     selectedRule,
     selectRule,
     updateRule,
+    useBackend,
     useWorkspaceBackend,
     currentWorkspace,
     isRuleReadonly,
@@ -41,6 +42,14 @@
   } from "$lib/stores/business-form-schema";
   import { activeTermsByIndustry } from "$lib/stores/business-terms";
   import { explainStructured } from "./business-preview-explainer";
+  import { CloudHttpBackend } from "$lib/backend/cloud-http-backend";
+  import CheckupReportDialog from "$lib/views/Checkup/CheckupReportDialog.svelte";
+  import {
+    buildRulesetBundle,
+    runCheckup,
+    latestCheckup,
+    type CheckupReport,
+  } from "$lib/rules-checkup/checkup";
   import DeveloperModeToggle from "./DeveloperModeToggle.svelte";
   import DevJsonEditor from "./DevJsonEditor.svelte";
   import BusinessTermFilter from "./BusinessTermFilter.svelte";
@@ -65,6 +74,31 @@
 
   // backend 在组件初始化期捕获(Svelte 5 context 不支持事件处理器内调用)
   const wb = useWorkspaceBackend();
+  const execBackend = useBackend();
+  const cloudBackend = execBackend instanceof CloudHttpBackend ? execBackend : null;
+
+  // === 静态体检(规则库全量→四项静态分析→红黄绿报告) ===
+  let checkupRunning = $state(false);
+  let checkupReport = $state<CheckupReport | null>(null);
+  async function runCheckupNow(): Promise<void> {
+    const ws = $currentWorkspace;
+    if (!ws || !cloudBackend) return;
+    checkupRunning = true;
+    try {
+      const bundle = await buildRulesetBundle(wb, ws.id, $rules);
+      if (bundle.rules.length === 0) {
+        toastError("无可体检的规则(全部为空/无版本)", "静态体检");
+        return;
+      }
+      const report = await runCheckup(cloudBackend, bundle, ws.id);
+      latestCheckup.set(report);
+      checkupReport = report;
+    } catch (e) {
+      toastError((e as Error).message, "静态体检失败");
+    } finally {
+      checkupRunning = false;
+    }
+  }
 
   // === 模式状态 ===
   let devMode = $state(false);
@@ -274,6 +308,16 @@
         {/if}
         <button
           class="btn"
+          onclick={() => void runCheckupNow()}
+          disabled={checkupRunning || !cloudBackend}
+          title={cloudBackend
+            ? "全量静态分析:冲突六型学/环路/收敛/效果影响面——只报告不拦截"
+            : "需连接 evorule-server(设置→网络切本地/联网模式)"}
+        >
+          {checkupRunning ? "🩺 体检中…" : "🩺 静态体检"}
+        </button>
+        <button
+          class="btn"
           onclick={() => (manageOpen = true)}
           title="管理分类与标签以组织规则库"
         >
@@ -469,6 +513,9 @@
         {:else}
           <TagManager />
         {/if}
+    {#if checkupReport}
+      <CheckupReportDialog report={checkupReport} onclose={() => (checkupReport = null)} />
+    {/if}
       </div>
     </div>
   {/if}
