@@ -115,6 +115,15 @@
       </button>
       <button
         class="dataset-card"
+        onclick={() => goto(`${base}/compute`)}
+        title="确定性计算工坊:公式量纲验证 + 量纲感知计算"
+      >
+        <span class="card-icon">🧮</span>
+        <span class="card-title">确定性计算</span>
+        <span class="card-desc">公式量纲验证 / 量纲感知计算 —— 单位过不过,机器说了算</span>
+      </button>
+      <button
+        class="dataset-card"
         class:active={$demoDatasetStore === "medical"}
         onclick={() => handleSelectDataset("medical")}
       >

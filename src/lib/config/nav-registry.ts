@@ -123,6 +123,15 @@ export const NAV_REGISTRY: readonly NavDef[] = [
     loginRequired: true,
   },
   {
+    id: "compute",
+    label: "确定性计算",
+    icon: "🧮",
+    path: "/compute",
+    group: "discover",
+    title: "确定性计算工坊 — 公式量纲验证+量纲感知计算(结果带单位与精确分数,bitwise_replayable)",
+    jump: true,
+  },
+  {
     id: "sessionVerify",
     label: "会话验证",
     icon: "🔎",
