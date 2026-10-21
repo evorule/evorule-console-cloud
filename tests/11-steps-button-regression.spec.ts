@@ -155,7 +155,7 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 		await expect(page.locator('.onboarding-wizard')).toHaveCount(0);
 	});
 
-	test('step 1/[未登录] demo 数据集切换按钮可点击(2 个 dataset-card)', async ({
+	test('step 1/[未登录] demo 场景卡可切换(4 张:agent/计算/医疗/财务)', async ({
 		page
 	}) => {
 		await page.goto('/', { waitUntil: 'networkidle' });
@@ -165,12 +165,14 @@ test.describe('11 步按钮回归(common + step 1/2/4/10/11)', () => {
 			timeout: 10_000
 		});
 
+		// 四场景卡:Agent 编程审计(默认)/确定性计算(工具入口)/医疗/财务
 		const cards = page.locator('.dataset-card');
-		await expect(cards).toHaveCount(2);
+		await expect(cards).toHaveCount(4);
 
 		await expect(cards.first()).toHaveClass(/active/);
-		await cards.nth(1).click();
-		await expect(cards.nth(1)).toHaveClass(/active/);
+		// 切医疗(第 3 张):active 迁移,agent 失活
+		await cards.nth(2).click();
+		await expect(cards.nth(2)).toHaveClass(/active/);
 		await expect(cards.first()).not.toHaveClass(/active/);
 	});
 

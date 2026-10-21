@@ -55,3 +55,29 @@ jobs:
 
       - name: 公开面矩阵扫描 (AI 身份 + 内部编号阻断)
         run: python3 scripts/scan_public_face.py --fail-on A1 --fail-on B
+
+  # ==========================================================================
+  # e2e：Playwright 全套(80 用例,mock 模式零外部依赖)。
+  # 生产口径:PR 必跑必绿——UI 真实浏览器行为是发布门,不做可选档。
+  # ==========================================================================
+  e2e:
+    name: E2E (playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e suite
+        run: npx playwright test
+        env:
+          CI: 'true'
