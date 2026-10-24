@@ -21,6 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 许可证合规 (AGPL §4): THIRD-PARTY-NOTICES.md + LICENSES/third-party/
+      # 出自根仓声明面单一事实源, 钉 SHA 保可复现; LICENSE/NOTICE.md 用本仓自带
+      - name: Checkout 根仓声明面 SSOT (钉 SHA)
+        uses: actions/checkout@v4
+        with:
+          repository: evorule/evorule
+          ref: 5560fe93c2443c1d985d21b534535b241333cffd
+          path: lic-ssot
+          persist-credentials: false
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -46,14 +56,62 @@ jobs:
             exit 1
           fi
 
+      # 源码提供入口 (AGPL §13): 置于 public-surface 扫描之后, 生成物不参与扫描
+      - name: 生成 SOURCE.md 与源码 tarball (AGPL §13)
+        run: |
+          set -e
+          VER="${GITHUB_REF_NAME#v}"
+          SRC_TGZ="evorule-console-cloud-${VER}-source.tar.gz"
+          git archive --format=tar.gz --prefix="evorule-console-cloud-${VER}/" -o "${SRC_TGZ}" HEAD
+          SRC_SHA=$(sha256sum "${SRC_TGZ}" | cut -d' ' -f1)
+          cat > SOURCE.md <<'EOF'
+          <!--
+            Copyright 2026 EvoRule Project
+
+            SPDX-License-Identifier: AGPL-3.0-or-later
+          -->
+
+          # EvoRule Console Cloud — 源码提供入口（AGPL-3.0 §13）
+
+          本分发包对应 EvoRule Console Cloud v@@VER@@，以 AGPL-3.0-or-later 授权。
+          本文件随包分发，用于定位并校验与该包对应的完整源码（AGPL-3.0 第 13 条）。
+
+          | 字段 | 值 |
+          |---|---|
+          | 发布 tag | v@@VER@@ |
+          | 源码仓库（权威源） | <https://gitee.com/evorule/evorule-console-cloud> |
+          | 源码仓库（GitHub 镜像） | <https://github.com/evorule/evorule-console-cloud> |
+          | 源码 tarball | `evorule-console-cloud-@@VER@@-source.tar.gz`（随本 Release 附件分发） |
+          | 源码 tarball SHA256 | `@@SHA@@` |
+
+          ## 获取与校验方式
+
+          1. `git clone` 上表任一仓库，`git checkout v@@VER@@`
+          2. 复现归档：`git archive --format=tar.gz --prefix=evorule-console-cloud-@@VER@@/ -o evorule-console-cloud-@@VER@@-source.tar.gz HEAD`
+          3. 计算 SHA256 并与上表值比对（同一记录亦在随 Release 发布的 `sha256-checks.txt` 中）
+
+          ## 第三方组件
+
+          许可正文与归属声明见包内 `THIRD-PARTY-NOTICES.md` 与 `LICENSES/third-party/`
+          （出自根仓声明面单一事实源，钉版 commit 5560fe93c2443c1d985d21b534535b241333cffd）。
+          EOF
+          sed -i "s/@@VER@@/${VER}/g; s/@@SHA@@/${SRC_SHA}/g" SOURCE.md
+          ls -la SOURCE.md "${SRC_TGZ}"
+
       - name: 打包 web 静态产物
         run: |
           set -e
           VER="${GITHUB_REF_NAME#v}"
           PKG="evorule-console-cloud-${VER}-web"
           cp -r build "${PKG}"
+          # 许可证合规五件套 (AGPL §4): 随包附带许可正文、第三方声明与源码入口
+          cp LICENSE NOTICE.md "${PKG}/"
+          cp lic-ssot/THIRD-PARTY-NOTICES.md "${PKG}/"
+          mkdir -p "${PKG}/LICENSES"
+          cp -r lic-ssot/LICENSES/third-party "${PKG}/LICENSES/third-party"
+          cp SOURCE.md "${PKG}/"
           zip -qr "${PKG}.zip" "${PKG}"
-          sha256sum "${PKG}.zip" > sha256-checks.txt
+          sha256sum "${PKG}.zip" "evorule-console-cloud-${VER}-source.tar.gz" > sha256-checks.txt
           cat sha256-checks.txt
 
       - name: 上传分发包 artifact
@@ -62,6 +120,7 @@ jobs:
           name: web-package
           path: |
             evorule-console-cloud-*-web.zip
+            evorule-console-cloud-*-source.tar.gz
             sha256-checks.txt
 
   release:
@@ -82,11 +141,13 @@ jobs:
         with:
           files: |
             release-assets/evorule-console-cloud-*-web.zip
+            release-assets/evorule-console-cloud-*-source.tar.gz
             release-assets/sha256-checks.txt
           body: |
             EvoRule Console Cloud ${{ github.ref_name }} web 静态产物。
 
-            - `evorule-console-cloud-*-web.zip` — adapter-static 预渲染站点,任意静态服务器可托管
+            - `evorule-console-cloud-*-web.zip` — adapter-static 预渲染站点,任意静态服务器可托管 (包内含许可正文与第三方声明)
+            - `evorule-console-cloud-*-source.tar.gz` — 源码 tarball (AGPL §13), 指纹见包内 SOURCE.md 与 sha256-checks.txt
             - `sha256-checks.txt` — 包完整性校验
 
             在线 demo 无需下载:https://evorule.github.io/evorule-console-cloud/
@@ -135,7 +196,7 @@ jobs:
           echo "gitee Release id: ${RELEASE_ID}"
 
           cd gitee-assets
-          for f in $(ls evorule-console-cloud-*-web.zip sha256-checks.txt); do
+          for f in $(ls evorule-console-cloud-*-web.zip evorule-console-cloud-*-source.tar.gz sha256-checks.txt); do
             echo "上传 ${f} ..."
             curl --retry 3 --retry-delay 5 --retry-connrefused -fsS -X POST \
               "https://gitee.com/api/v5/repos/${REPO}/releases/${RELEASE_ID}/attach_files" \
