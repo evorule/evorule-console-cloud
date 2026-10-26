@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 EvoRule Project
 //
-// ruleValidator 黄金向量测试(/ W2.1)
+// ruleValidator 对齐闸测试(黄金向量)
 //
+// 定位(对齐闸第二层,常量层之后):本文件不是普通单元测试——每条向量逐条映射
+// evorule-server core/rule_schema/schemas/_shared/v1.0.json($defs SSOT)的约束,
+// 是 tcb→_shared→console-cloud 同步链在 cloud 端的漂移哨兵。
 // 对齐权威:evorule-server core/rule_schema/schemas/_shared/v1.0.json(固化版)
-// — 7 域类型(含 has_fields)、inner 嵌套(禁 domains/domain,P0-03)、
+// — 8 域类型(含 has_fields/in 集合成员域)、inner 嵌套(禁 domains/domain,P0-03)、
 //   path 正则(拒绝空段/缺闭合/空索引/非数字索引/索引后拼接/单数 __io_result__,P1-03)、
-//   6 元指令 params 完备性、G6 兜底降为 warning、G3 双路径降为 warning
+//   元指令 params 完备性、G6 兜底降为 warning、G3 双路径降为 warning
 // 正反例移植自 _shared/v1.0.json 各 $defs 描述与 rule_schema 测试语义。
+// 配套(对齐闸其余两层):ruleValidator.ts 头注释(常量即锚)+ integration-tests 仓
+// CI 跨仓对拍 job(从 _shared 提取权威枚举/正则与 ruleValidator.ts 常量比对,不一致即红)。
+//
+// 同步义务检查单(改动本文件或 ruleValidator.ts 前逐项过):
+//   [ ] _shared/v1.0.json 是否已变更?已变更则先同步常量与本文件向量,再动实施件
+//   [ ] 枚举增删是否同时改了 ruleValidator.ts 常量与 integration-tests 对拍基准?
+//   [ ] 新约束是否具备至少一对正/反向量?无向量=无守门
 
 import { describe, expect, test } from 'vitest';
 import { RuleValidator, friendlyRuleError } from '../ruleValidator';
@@ -110,8 +120,8 @@ describe('G2 元指令与 params 完备性', () => {
   });
 });
 
-describe('G4 域类型与 inner 嵌套(7 域类型 + P0-03)', () => {
-  test('7 域类型全量通过(含 has_fields)', () => {
+describe('G4 域类型与 inner 嵌套(8 域类型 + P0-03)', () => {
+  test('8 域类型全量通过(含 has_fields/in)', () => {
     const r = v(JSON.stringify({
       transform: [
         {
@@ -128,6 +138,7 @@ describe('G4 域类型与 inner 嵌套(7 域类型 + P0-03)', () => {
                       { type: 'eq', path: 'data.a', value: 1 },
                       { type: 'not', inner: [{ type: 'lt', path: 'data.b', value: 5 }] },
                       { type: 'exists', path: 'data.c' },
+                      { type: 'in', path: 'data.role', values: ['admin', 'auditor'] },
                       { type: 'has_fields', path: 'data', fields: ['a', 'b'] }
                     ]
                   },
@@ -201,6 +212,45 @@ describe('G4 域类型与 inner 嵌套(7 域类型 + P0-03)', () => {
     );
     expect(r.valid).toBe(false);
     expect(r.errors.some((e) => e.gate === 'G4' && e.message.includes('instruction_type'))).toBe(true);
+  });
+
+  test('in 集合成员域:合法形态(path+非空 values 字面量数组)通过', () => {
+    const r = v(
+      '{"transform":[{"type":"branch","params":{"domain":{"type":"in","path":"data.role","values":["admin","auditor"]},"on_true":[]}}]}'
+    );
+    expect(r.valid).toBe(true);
+    expect(r.errors).toEqual([]);
+  });
+
+  test('in.values 混合字面量放行(纯字面量语义,不做 __ 引用解析)', () => {
+    const r = v(
+      '{"transform":[{"type":"branch","params":{"domain":{"type":"in","path":"data.level","values":[1,"high"]},"on_true":[]}}]}'
+    );
+    expect(r.errors.filter((e) => e.gate === 'G4' || e.gate === 'G5')).toEqual([]);
+  });
+
+  test('in 缺 values → G4', () => {
+    const r = v(
+      '{"transform":[{"type":"branch","params":{"domain":{"type":"in","path":"data.role"},"on_true":[]}}]}'
+    );
+    expect(r.valid).toBe(false);
+    expect(r.errors.some((e) => e.gate === 'G4' && e.message.includes('values'))).toBe(true);
+  });
+
+  test('in values 空数组 → G4(运行时语义为 Unsat,空集成员判定永不成立)', () => {
+    const r = v(
+      '{"transform":[{"type":"branch","params":{"domain":{"type":"in","path":"data.role","values":[]},"on_true":[]}}]}'
+    );
+    expect(r.valid).toBe(false);
+    expect(r.errors.some((e) => e.gate === 'G4' && e.message.includes('values'))).toBe(true);
+  });
+
+  test('in path 非法 → G5', () => {
+    const r = v(
+      '{"transform":[{"type":"branch","params":{"domain":{"type":"in","path":"x.","values":["a"]},"on_true":[]}}]}'
+    );
+    expect(r.valid).toBe(false);
+    expect(r.errors.some((e) => e.gate === 'G5' && e.message.includes('in.path'))).toBe(true);
   });
 });
 

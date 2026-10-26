@@ -2459,7 +2459,7 @@
                       <div class="val-err">✗ [{err.gate}]{err.path ? ` ${err.path}:` : ':'} {err.message}</div>
                     {/each}
                     {#if liveValidation.valid}
-                      <div class="val-ok">✓ 无 error(可保存;以下为建议项)</div>
+                      <div class="val-ok">✓ 无 error(可保存;以下为建议项;入库权威校验由 server 在保存时执行)</div>
                     {/if}
                     {#each liveValidation.warnings as w (w.gate + w.message)}
                       <div class="val-warn">△ [{w.gate}]{w.path ? ` ${w.path}:` : ':'} {w.message}</div>

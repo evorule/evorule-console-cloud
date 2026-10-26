@@ -8,12 +8,18 @@
  *                 提交前即时反馈;server POST /api/rules/validate(schema gate
  *                 + governance 详细校验)仍是入库前的权威预检
  *
- * 对齐源(/ W2.1,2026-09-04 重对齐):
+ * 对齐源(W2.1 重对齐):
  *   evorule-server core/rule_schema/schemas/_shared/v1.0.json(固化版,$defs SSOT)
- *   — 6 元指令枚举 + 各指令 params 完备性(_shared L161-281)
- *   — 7 基础域类型(含 has_fields,L30)+ inner 嵌套(禁 domain/domains,P0-03,L59-63)
- *   — path 正则(L9,权威源 evorule-tcb/src/path.rs)+ 单数 __io_result__ 拒绝(P1-03,L10)
- *   — I/O 结果复数 __io_results__.<io_type>(L234)
+ *   — 元指令枚举($defs/transform_rule.type.enum;本层公开白名单=全集−enforce:
+ *     enforce 仅 L2 元规则文件,业务文件由 server 装载门禁拒载)
+ *   — 8 基础域类型($defs/domain.type.enum,含 in 集合成员域)+ inner 嵌套(禁 domain/domains,P0-03)
+ *   — path 正则($defs/path.pattern,权威源 evorule-tcb/src/path.rs)+ 单数 __io_result__ 拒绝(P1-03)
+ *   — I/O 结果复数 __io_results__.<io_type>
+ *
+ * 对齐闸三层(漂移防线,常量即锚——改本文件常量必须同步 _shared 或反向):
+ *   1. 本文件常量(元指令白名单/域类型/set operation/path 正则)为对齐锚
+ *   2. 黄金向量测试(__tests__/ruleValidator.test.ts)逐条映射 $defs 约束,文件尾附同步义务检查单
+ *   3. integration-tests 仓 CI 跨仓对拍 job:从 _shared 提取权威枚举/正则与本文件常量比对,不一致即红
  *
  * 分级:
  *   errors   — 阻断(结构非法,本地即拦,不等 server)
@@ -25,7 +31,7 @@
  *   G2: 元指令类型(公开白名单 4 种 = dispatch − enforce)+ params 完备性(set: attr/operation/value; branch: domain/on_true;
  *       io_request: io_type; push: instructions)
  *   G3: io_request 双路径模式(裸 io_request → warning;建议包在 exists(__io_results__…) 分支内,参考 core_eval 桥接剧本)
- *   G4: 域类型合法性(7 种)+ 每域必填字段 + inner 嵌套(出现 domain/domains 键即 error,P0-03)
+ *   G4: 域类型合法性(8 种)+ 每域必填字段 + inner 嵌套(出现 domain/domains 键即 error,P0-03)
  *   G5: path 语法(正则对齐 _shared $defs/path)+ 单数 __io_result__ 拒绝 + path_or_literal(__ 前缀字符串必须合法路径)
  *   G6: 兜底规则建议(末条非 branch+all(inner:[]) → warning;无匹配→Error fact 是引擎既定显式行为,非 schema 违规)
  *   G7: 递归深度限制(≤ 64 层,对齐 MAX_BRANCH_DEPTH)
@@ -101,8 +107,9 @@ export interface ValidationResult {
 // 公开白名单 4 元指令(权威源 evorule-tcb/src/executor.rs dispatch;_shared L166)
 // collect/merge 已退役（2026-09-14 清理）；enforce 仅 L2 层级文件（00_constraint_ 新前缀/00_meta_ 旧兼容 + L2 tier 声明）,业务文件由 server 装载门禁拒载
 const VALID_META_INSTRUCTIONS = ['set', 'push', 'branch', 'io_request'];
-// 7 基础域类型(权威源 evorule-tcb/src/domain.rs;_shared L30,派生域不在枚举内)
-const VALID_DOMAIN_TYPES = ['eq', 'lt', 'exists', 'instruction', 'all', 'not', 'has_fields'];
+// 8 基础域类型(权威源 evorule-tcb/src/domain.rs;_shared $defs/domain.type.enum,派生域不在枚举内)
+// in 为 vendored 增补域(集合成员判定,多模型准入白名单表达面):path 必填 + values 非空字面量数组
+const VALID_DOMAIN_TYPES = ['eq', 'lt', 'in', 'exists', 'instruction', 'all', 'not', 'has_fields'];
 // set 元指令 operation 枚举(_shared L181)
 const VALID_SET_OPERATIONS = ['set', 'add', 'sub'];
 const MAX_RECURSION_DEPTH = 64;
@@ -451,7 +458,7 @@ export class RuleValidator {
     }
     const d = domain as Record<string, unknown>;
 
-    // G4: 域类型(7 种)
+    // G4: 域类型(8 种)
     if (typeof d.type !== 'string' || !VALID_DOMAIN_TYPES.includes(d.type)) {
       errors.push({
         gate: 'G4',
@@ -491,6 +498,26 @@ export class RuleValidator {
             gate: 'G5',
             message: `${d.type}.value 为 __ 前缀字符串时必须是合法路径(当前: ${String(d.value)})`,
             path: `${path}.value`
+          });
+        }
+        break;
+      }
+      case 'in': {
+        // in(集合成员判定):path 必填 + values 非空数组(_shared in 域约束:required
+        // path+values,values minItems 1——空数组运行时语义为 Unsat,装载门禁拒载);
+        // 成员为纯字面量,不做 __ 引用解析(故 values 项无 path 语法约束)
+        if (!isValidPath(d.path)) {
+          errors.push({
+            gate: 'G5',
+            message: `in.path 必填且必须是合法路径(当前: ${String(d.path)})`,
+            path: `${path}.path`
+          });
+        }
+        if (!Array.isArray(d.values) || (d.values as unknown[]).length === 0) {
+          errors.push({
+            gate: 'G4',
+            message: 'in.values 必填:非空数组(集合成员字面量;空数组运行时语义为 Unsat)',
+            path: `${path}.values`
           });
         }
         break;

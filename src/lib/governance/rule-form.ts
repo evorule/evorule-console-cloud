@@ -52,7 +52,7 @@ export function localSaveGate(ruleBody: string): LocalSaveGate {
   if (r.valid) return { blocked: false };
   return {
     blocked: true,
-    message: `本地校验未通过(未发起网络请求,共 ${r.errors.length} 项 error):\n${formatIssues(r.errors)}`
+    message: `本地校验未通过(未发起网络请求,共 ${r.errors.length} 项 error;本层为 UX 预检,入库最终以 server 校验为准):\n${formatIssues(r.errors)}`
   };
 }
 
