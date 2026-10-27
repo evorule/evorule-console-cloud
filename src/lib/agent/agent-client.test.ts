@@ -49,9 +49,27 @@ type StatusEntry = { status: string; detail?: AgentStatusDetail };
 
 function makeClient(
 	overrides: Partial<ConstructorParameters<typeof AgentClient>[0]> = {}
-): { client: AgentClient; events: unknown[]; statuses: StatusEntry[] } {
+): {
+	client: AgentClient;
+	events: unknown[];
+	statuses: StatusEntry[];
+	fetchMock: ReturnType<typeof vi.fn>;
+} {
 	const events: unknown[] = [];
 	const statuses: StatusEntry[] = [];
+	// 缺省 fetch:应答换票端点(POST /api/auth/ticket → 一次性短票);
+	// 其余 URL 一律抛错(REST 用例自行注入)
+	const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+		const url = typeof input === 'string' ? input : String(input);
+		if (url.includes('/api/auth/ticket')) {
+			return {
+				ok: true,
+				status: 200,
+				json: async () => ({ ticket: 'one-time-ticket', expires_in: 30 })
+			};
+		}
+		throw new Error(`unexpected fetch in test: ${url}`);
+	});
 	const client = new AgentClient({
 		baseUrl: 'http://127.0.0.1:8081',
 		agentType: 'general',
@@ -59,10 +77,15 @@ function makeClient(
 		onEvent: (e) => void events.push(e),
 		onStatus: (s, d) => void statuses.push({ status: s, detail: d }),
 		wsFactory: (url) => new MockSocket(url),
-		fetchImpl: vi.fn() as unknown as typeof fetch,
+		fetchImpl: fetchMock as unknown as typeof fetch,
 		...overrides
 	});
-	return { client, events, statuses };
+	return { client, events, statuses, fetchMock };
+}
+
+/** 微任务冲刷:connect 现为异步换票先行,socket 在若干微任务后才创建 */
+async function flush(): Promise<void> {
+	for (let i = 0; i < 6; i++) await Promise.resolve();
 }
 
 const lastSocket = (): MockSocket => MockSocket.made[MockSocket.made.length - 1];
@@ -211,30 +234,46 @@ describe('parseAgentEvent 事件解析(API.md §6 全表)', () => {
 });
 
 describe('建连与 URL', () => {
-	test('connect 成功:状态序列 + URL(new 会话 + token)', async () => {
-		const { client, statuses } = makeClient();
+	test('connect 成功:状态序列 + 换票请求 + URL(new 会话 + 一次性票)', async () => {
+		const { client, statuses, fetchMock } = makeClient();
 		const p = client.connect();
 		expect(client.linkStatus).toBe('connecting');
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		expect(statuses.map((s) => s.status)).toEqual(['connecting', 'connected']);
+		// 换票:POST /api/auth/ticket + Bearer 头(长期凭据仅进此请求头)
+		const [ticketUrl, ticketInit] = fetchMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit
+		];
+		expect(ticketUrl).toBe('http://127.0.0.1:8081/api/auth/ticket');
+		expect(ticketInit.method).toBe('POST');
+		expect(ticketInit.headers).toMatchObject({ Authorization: 'Bearer secret-token' });
+		// WS URL 带一次性短票,长期凭据不再进 query
 		expect(lastSocket().url).toBe(
-			'ws://127.0.0.1:8081/api/sessions/new/ws?agent_type=general&token=secret-token'
+			'ws://127.0.0.1:8081/api/sessions/new/ws?agent_type=general&ticket=one-time-ticket'
 		);
 		expect(client.linkStatus).toBe('connected');
 	});
 
-	test('https → wss;无 token 不带参数', async () => {
-		const { client } = makeClient({ baseUrl: 'https://agent.example.com', authToken: undefined });
+	test('https → wss;无 token 不带参数也不换票', async () => {
+		const { client, fetchMock } = makeClient({
+			baseUrl: 'https://agent.example.com',
+			authToken: undefined
+		});
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		expect(lastSocket().url).toBe('wss://agent.example.com/api/sessions/new/ws?agent_type=general');
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
 	test('指定 sessionId → URL 续接', async () => {
 		const { client } = makeClient({ sessionId: '42' });
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		expect(lastSocket().url).toContain('/api/sessions/42/ws');
@@ -243,6 +282,7 @@ describe('建连与 URL', () => {
 	test('连接中重复 connect 拒绝', async () => {
 		const { client } = makeClient();
 		const p1 = client.connect();
+		await flush();
 		await expect(client.connect()).rejects.toThrow('connect-already-active');
 		client.close();
 		await expect(p1).rejects.toThrow('connect-cancelled');
@@ -253,6 +293,7 @@ describe('帧发送', () => {
 	test('send/interrupt/rewind 帧 JSON 正确', async () => {
 		const { client } = makeClient();
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		client.send('帮我查看当前目录结构');
@@ -277,6 +318,7 @@ describe('事件接收', () => {
 	test('SessionCreated 更新 sessionId 并转发事件;坏帧静默', async () => {
 		const { client, events } = makeClient();
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		lastSocket().serverSend({ type: 'SessionCreated', session_id: '77' });
@@ -294,6 +336,7 @@ describe('建连超时与首连失败', () => {
 	test('建连超时:reject connect-timeout,进入 disconnected,不自动重试', async () => {
 		const { client, statuses } = makeClient({ connectTimeoutMs: 100 });
 		const p = client.connect();
+		await flush();
 		const assertion = expect(p).rejects.toThrow('connect-timeout');
 		vi.advanceTimersByTime(100);
 		await assertion;
@@ -309,6 +352,7 @@ describe('建连超时与首连失败', () => {
 	test('首连即断:reject connect-failed,不自动重试', async () => {
 		const { client, statuses } = makeClient();
 		const p = client.connect();
+		await flush();
 		const assertion = expect(p).rejects.toThrow('connect-failed');
 		lastSocket().serverClose();
 		await assertion;
@@ -323,6 +367,7 @@ describe('断线重连与续接', () => {
 	test('断线后 1s 重连,URL 续接同会话', async () => {
 		const { client, statuses } = makeClient();
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		lastSocket().serverSend({ type: 'SessionCreated', session_id: '77' });
@@ -333,6 +378,7 @@ describe('断线重连与续接', () => {
 			detail: { attempt: 1 }
 		});
 		vi.advanceTimersByTime(1_000);
+		await flush();
 		expect(MockSocket.made.length).toBe(2);
 		expect(lastSocket().url).toContain('/api/sessions/77/ws');
 		lastSocket().serverOpen();
@@ -343,15 +389,18 @@ describe('断线重连与续接', () => {
 	test('重试退避翻倍(1s → 2s)', async () => {
 		const { client } = makeClient();
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		lastSocket().serverSend({ type: 'SessionCreated', session_id: '9' });
 		lastSocket().serverClose(); // 断线 → 1s 后重试
 		vi.advanceTimersByTime(1_000);
+		await flush();
 		lastSocket().serverClose(); // 重试未连上即断 → 2s 后重试
 		vi.advanceTimersByTime(1_000);
 		expect(MockSocket.made.length).toBe(2); // 2s 未到
 		vi.advanceTimersByTime(1_000);
+		await flush();
 		expect(MockSocket.made.length).toBe(3);
 		expect(lastSocket().url).toContain('/api/sessions/9/ws');
 	});
@@ -359,12 +408,15 @@ describe('断线重连与续接', () => {
 	test('重连耗尽 → disconnected(reconnect-exhausted)', async () => {
 		const { client, statuses } = makeClient({ reconnect: { maxAttempts: 2 } });
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		lastSocket().serverClose(); // → retry1 @1s
 		vi.advanceTimersByTime(1_000);
+		await flush();
 		lastSocket().serverClose(); // retry1 失败 → retry2 @2s
 		vi.advanceTimersByTime(2_000);
+		await flush();
 		lastSocket().serverClose(); // retry2 失败 → 耗尽
 		expect(client.linkStatus).toBe('disconnected');
 		expect(statuses[statuses.length - 1].detail?.error).toBe('reconnect-exhausted');
@@ -375,14 +427,17 @@ describe('断线重连与续接', () => {
 	test('耗尽后可重新 connect 续接原会话', async () => {
 		const { client } = makeClient({ reconnect: { maxAttempts: 1 } });
 		let p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		lastSocket().serverSend({ type: 'SessionCreated', session_id: '5' });
 		lastSocket().serverClose();
 		vi.advanceTimersByTime(1_000);
+		await flush();
 		lastSocket().serverClose(); // 耗尽
 		expect(client.linkStatus).toBe('disconnected');
 		p = client.connect(); // 用户手动重连
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		expect(lastSocket().url).toContain('/api/sessions/5/ws');
@@ -394,12 +449,48 @@ describe('用户关闭', () => {
 	test('已连接后 close:断开且不重连', async () => {
 		const { client } = makeClient();
 		const p = client.connect();
+		await flush();
 		lastSocket().serverOpen();
 		await p;
 		client.close();
 		expect(client.linkStatus).toBe('disconnected');
 		vi.advanceTimersByTime(60_000);
 		expect(MockSocket.made.length).toBe(1);
+	});
+});
+
+describe('换票(POST /api/auth/ticket)', () => {
+	test('换票 HTTP 失败 → connect-failed 终态,不建 socket 不重试', async () => {
+		const { client, statuses } = makeClient({
+			fetchImpl: vi.fn().mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof fetch
+		});
+		await expect(client.connect()).rejects.toThrow('connect-failed');
+		expect(client.linkStatus).toBe('disconnected');
+		expect(statuses[statuses.length - 1]).toEqual({
+			status: 'disconnected',
+			detail: { error: 'connect-failed' }
+		});
+		expect(MockSocket.made.length).toBe(0);
+		vi.advanceTimersByTime(60_000);
+		expect(MockSocket.made.length).toBe(0); // 首连失败不自动重试
+	});
+
+	test('换票超时(5s abort)→ connect-failed', async () => {
+		// fetch 挂起不决,仅 signal abort 能将其唤醒(模拟真实 fetch 行为)
+		const f = vi.fn(
+			(_url: string, init?: RequestInit) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+				})
+		);
+		const { client, statuses } = makeClient({ fetchImpl: f as unknown as typeof fetch });
+		const p = client.connect();
+		const assertion = expect(p).rejects.toThrow('connect-failed');
+		vi.advanceTimersByTime(5_000);
+		await assertion;
+		expect(client.linkStatus).toBe('disconnected');
+		expect(statuses[statuses.length - 1].detail?.error).toBe('connect-failed');
+		expect(MockSocket.made.length).toBe(0);
 	});
 });
 

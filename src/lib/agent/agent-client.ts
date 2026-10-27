@@ -2,7 +2,7 @@
 // Copyright (C) 2026 EvoRule Project
 // evorule-console-cloud — evo-agent AgentClient(WS 双向为主 + REST 兜底)
 //
-// WS 双向为主(/api/sessions/{id}/ws?agent_type=&token=),REST 兜底
+// WS 双向为主(/api/sessions/{id}/ws?agent_type=&ticket=),REST 兜底
 // (listAgents / approve / cancel)。
 //
 // 状态机:
@@ -13,8 +13,10 @@
 //   首次连接失败/超时 → disconnected(不自动重连,UI 呈现不可达空态,场景④)
 //   close() → disconnected(用户主动;会话保留在服务端,可再 connect 续接)
 //
-// 纪律:token 仅进 WS URL query(evo-agent 协议既定)与 REST Bearer 头;
-//      不进日志/错误消息。发送帧前置条件 = WS 已 open,否则抛 not-connected。
+// 纪律:长期凭据仅进 REST Bearer 头,不进 WS URL(WS 握手不能带自定义头);
+//      建连前以 Bearer 换一次性短票(POST /api/auth/ticket,单次消费即焚),
+//      经 ?ticket= 通行;token/ticket 均不进日志/错误消息。发送帧前置条件 =
+//      WS 已 open,否则抛 not-connected。
 
 import { parseAgentEvent } from './types';
 import type { AgentClientFrame, AgentServerEvent, AgentSummary } from './types';
@@ -82,6 +84,8 @@ export interface ApproveOptions {
 }
 
 const DEFAULT_CONNECT_TIMEOUT_MS = 10_000;
+/** 换票请求超时(独立于建连超时;超时即本次建连失败) */
+const TICKET_TIMEOUT_MS = 5_000;
 const DEFAULT_RECONNECT: AgentReconnectPolicy = {
 	maxAttempts: 5,
 	baseDelayMs: 1_000,
@@ -105,6 +109,8 @@ export class AgentClient {
 	private userClosed = false;
 	private phase: 'initial' | 'retry' = 'initial';
 	private attempt = 0;
+	/** 建连尝试序号(换票为异步,防陈旧尝试在 close/重连后复活) */
+	private openSeq = 0;
 	private timeoutFired = false;
 	private connectTimer: ReturnType<typeof setTimeout> | null = null;
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -236,12 +242,32 @@ export class AgentClient {
 		return h;
 	}
 
-	private buildUrl(): string {
-		// http(s) → ws(s);token 走 URL query 为 evo-agent 协议既定形态
+	private buildUrl(ticket: string | null): string {
+		// http(s) → ws(s);一次性短票走 URL query(WS 握手不能带自定义头)
 		const wsBase = this.restBase().replace(/^http/i, 'ws');
 		const params = new URLSearchParams({ agent_type: this.agentType });
-		if (this.authToken) params.set('token', this.authToken);
+		if (ticket) params.set('ticket', ticket);
 		return `${wsBase}/api/sessions/${encodeURIComponent(this._sessionId)}/ws?${params.toString()}`;
+	}
+
+	/** 以 Bearer 换一次性短票(POST /api/auth/ticket);未配置凭据返回 null(鉴权关闭形态) */
+	private async acquireTicket(): Promise<string | null> {
+		if (!this.authToken) return null;
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), TICKET_TIMEOUT_MS);
+		try {
+			const res = await this.fetchImpl(`${this.restBase()}/api/auth/ticket`, {
+				method: 'POST',
+				headers: this.restHeaders(),
+				signal: controller.signal
+			});
+			if (!res.ok) throw new Error(`ticket-http-${res.status}`);
+			const data = (await res.json()) as { ticket?: string };
+			if (!data.ticket) throw new Error('ticket-bad-payload');
+			return data.ticket;
+		} finally {
+			clearTimeout(timer);
+		}
 	}
 
 	private sendFrame(frame: AgentClientFrame): void {
@@ -276,13 +302,29 @@ export class AgentClient {
 	}
 
 	/** 发起一次建连尝试;resolve = 打开成功(reconnect 场景无外部等待方) */
-	private openAttempt(): Promise<void> {
+	private async openAttempt(): Promise<void> {
+		const seq = ++this.openSeq;
+		let ticket: string | null;
+		try {
+			ticket = await this.acquireTicket();
+		} catch {
+			// 换票失败 = 本次尝试未开即败:首连走 connect-failed 终态,重连走退避
+			if (this.phase === 'initial') {
+				this.setStatus('disconnected', { error: 'connect-failed' });
+				throw new Error('connect-failed');
+			}
+			this.timeoutFired = false;
+			this.handleAttemptEnd(false);
+			return;
+		}
+		if (seq !== this.openSeq) return; // 已被新一轮尝试接管,静默退场
+		if (this.userClosed) throw new Error('connect-cancelled');
 		return new Promise<void>((resolve, reject) => {
 			this.timeoutFired = false;
 			let opened = false;
 			let ws: AgentWebSocketLike;
 			try {
-				ws = this.wsFactory(this.buildUrl());
+				ws = this.wsFactory(this.buildUrl(ticket));
 			} catch {
 				this.setStatus('disconnected', { error: 'connect-failed' });
 				reject(new Error('connect-failed'));
