@@ -552,9 +552,7 @@
     </button>
 
     <a class="header-brand" href="/" onclick={(e) => { e.preventDefault(); go("/"); }}>
-      <span class="logo">
-        <img src="/evo_logo_96.png" alt="EvoRule logo" draggable="false" />
-      </span>
+      <!-- logo 已移除:ide 顶栏已有同款金色双环徽标,面板内不再重复(2026-10-29 用户裁定) -->
       <span class="brand-text">evorule</span>
       <span class="brand-cloud">console-cloud</span>
     </a>
