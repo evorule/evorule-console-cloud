@@ -125,10 +125,11 @@ describe('AgentWorkspace — 三栏骨架', () => {
 		expect(container.querySelector('.lcol')).toBeTruthy();
 		expect(container.querySelector('.mcol')).toBeTruthy();
 		expect(container.querySelector('.rcol')).toBeTruthy();
-		// 左栏:会话空态 + 角色区 + 工作区灰显(P2 标注)
+		// 左栏:会话空态 + 角色区 + 工作区指示器(会话级声明,B-066)
 		expect(screen.getByText('暂无会话')).toBeTruthy();
 		expect(screen.getByText('角色')).toBeTruthy();
-		expect(screen.getByText('P2')).toBeTruthy();
+		expect(screen.getByText('工作区')).toBeTruthy();
+		expect(container.querySelector('.ws-path')).toBeTruthy();
 		// 中栏:执行过程头部 + 时间线空态 + 审计页入口
 		expect(screen.getByText('执行过程')).toBeTruthy();
 		expect(screen.getByText('暂无执行记录')).toBeTruthy();
@@ -190,6 +191,88 @@ describe('AgentWorkspace — 三栏骨架', () => {
 		const stop = screen.getByText('停止') as HTMLButtonElement;
 		expect(send.disabled).toBe(true);
 		expect(stop.disabled).toBe(true);
+	});
+});
+
+describe('AgentWorkspace — 工作文件夹(会话级声明,B-066)', () => {
+	const WS_KEY = 'evorule-console-cloud:agent-workspace';
+
+	afterEach(() => {
+		localStorage.removeItem(WS_KEY);
+	});
+
+	/** 打开编辑面板并填入路径(不点应用) */
+	async function openWsEdit(container: HTMLElement, path: string): Promise<HTMLButtonElement> {
+		fireEvent.click(screen.getByText('更改'));
+		await tick();
+		const input = container.querySelector('.ws-input') as HTMLInputElement;
+		fireEvent.input(input, { target: { value: path } });
+		await tick();
+		return container.querySelector('.ws-btn-pri') as HTMLButtonElement;
+	}
+
+	it('缺省:指示器显示兜底文案;新会话建连不带 workspace 声明(服务端兜底)', async () => {
+		setCfg({ enabled: true });
+		const { factory, stubs } = makeStubFactory();
+		const { container } = render(AgentWorkspace, { props: { createClient: factory } });
+		expect((container.querySelector('.ws-path') as HTMLElement).textContent).toBe('缺省工作区');
+		fireEvent.click(screen.getByText('新建会话'));
+		await tick();
+		await typeAndSend(container, '任务');
+		await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalled());
+		expect(stubs[0].options.workspace).toBeUndefined();
+	});
+
+	it('输入绝对路径应用:指示器同步+localStorage 记忆+新会话建连携带声明', async () => {
+		setCfg({ enabled: true });
+		const { factory, stubs } = makeStubFactory();
+		const { container } = render(AgentWorkspace, { props: { createClient: factory } });
+		const apply = await openWsEdit(container, 'D:\\proj\\我的项目');
+		expect(apply.disabled).toBe(false);
+		fireEvent.click(apply);
+		await tick();
+		// 指示器同步 + 偏好记忆落盘(客户偏好逐步形成的载体)
+		expect((container.querySelector('.ws-path') as HTMLElement).textContent).toBe(
+			'D:\\proj\\我的项目'
+		);
+		expect(localStorage.getItem(WS_KEY)).toBe('D:\\proj\\我的项目');
+		// 新会话建连携带声明
+		fireEvent.click(screen.getByText('新建会话'));
+		await tick();
+		await typeAndSend(container, '任务');
+		await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalled());
+		expect(stubs[0].options.workspace).toBe('D:\\proj\\我的项目');
+	});
+
+	it('相对路径无效:应用键禁用+错误提示', async () => {
+		setCfg({ enabled: true });
+		const { container } = render(AgentWorkspace);
+		const apply = await openWsEdit(container, 'relative/path');
+		expect(apply.disabled).toBe(true);
+		expect(container.querySelector('.ws-err')).toBeTruthy();
+	});
+
+	it('恢复默认:清记忆+指示器回落兜底;续接会话不带声明(边界不随偏好撕裂)', async () => {
+		localStorage.setItem(WS_KEY, 'D:\\old');
+		setCfg({ enabled: true });
+		// 既有会话(续接形态):render 前建,列表恢复后可点击
+		const s = createSession('general', '旧会话');
+		attachSessionId(s.localId, 'session_old');
+		const { factory, stubs } = makeStubFactory();
+		const { container } = render(AgentWorkspace, { props: { createClient: factory } });
+		fireEvent.click(container.querySelector('.sit') as HTMLElement);
+		await tick();
+		await typeAndSend(container, '续接');
+		await vi.waitFor(() => expect(stubs[0].send).toHaveBeenCalled());
+		// 续接声明不携带:服务端每轮 fresh 重建 runner,声明会让旧会话新轮次撕裂到新边界
+		expect(stubs[0].options.workspace).toBeUndefined();
+		// 恢复默认:面板内点击后记忆清除
+		fireEvent.click(screen.getByText('更改'));
+		await tick();
+		fireEvent.click(screen.getByText('恢复默认'));
+		await tick();
+		expect(localStorage.getItem(WS_KEY)).toBeNull();
+		expect((container.querySelector('.ws-path') as HTMLElement).textContent).toBe('缺省工作区');
 	});
 });
 

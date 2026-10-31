@@ -279,6 +279,26 @@ describe('建连与 URL', () => {
 		expect(lastSocket().url).toContain('/api/sessions/42/ws');
 	});
 
+	test('声明 workspace → URL query 携带(路径编码)', async () => {
+		const { client } = makeClient({ workspace: 'D:\\proj\\我的项目' });
+		const p = client.connect();
+		await flush();
+		lastSocket().serverOpen();
+		await p;
+		expect(lastSocket().url).toContain(
+			`workspace=${encodeURIComponent('D:\\proj\\我的项目')}`
+		);
+	});
+
+	test('未声明 workspace → URL 不带 workspace 参数(服务端兜底)', async () => {
+		const { client } = makeClient({});
+		const p = client.connect();
+		await flush();
+		lastSocket().serverOpen();
+		await p;
+		expect(lastSocket().url).not.toContain('workspace=');
+	});
+
 	test('连接中重复 connect 拒绝', async () => {
 		const { client } = makeClient();
 		const p1 = client.connect();

@@ -60,6 +60,13 @@ export interface AgentClientOptions {
 	authToken?: string;
 	/** 已有会话 ID(续接);缺省 'new' 由服务端新建 */
 	sessionId?: string;
+	/**
+	 * 会话级工作区声明(绝对路径,声明优先):随 WS URL query 送达,
+	 * 服务端以此为本会话能力边界根/终端 cwd。新连接(=新会话)生效,
+	 * 进行中的会话保持原边界;缺省省略 = 服务端 agent-root 兜底
+	 * (首启缺省 Documents\evo-agent,由壳侧 --agent-root 决定)。
+	 */
+	workspace?: string;
 	onEvent: (e: AgentServerEvent) => void;
 	onStatus: (status: AgentLinkStatus, detail?: AgentStatusDetail) => void;
 	/** 建连超时(含 WS 握手),超时判本次失败;缺省 10s */
@@ -96,6 +103,7 @@ export class AgentClient {
 	private readonly baseUrl: string;
 	private readonly agentType: string;
 	private readonly authToken: string;
+	private readonly workspace: string;
 	private readonly onEvent: (e: AgentServerEvent) => void;
 	private readonly onStatus: (status: AgentLinkStatus, detail?: AgentStatusDetail) => void;
 	private readonly connectTimeoutMs: number;
@@ -120,6 +128,7 @@ export class AgentClient {
 		this.baseUrl = options.baseUrl;
 		this.agentType = options.agentType;
 		this.authToken = options.authToken ?? '';
+		this.workspace = options.workspace ?? '';
 		this._sessionId = options.sessionId ?? 'new';
 		this.onEvent = options.onEvent;
 		this.onStatus = options.onStatus;
@@ -247,6 +256,8 @@ export class AgentClient {
 		const wsBase = this.restBase().replace(/^http/i, 'ws');
 		const params = new URLSearchParams({ agent_type: this.agentType });
 		if (ticket) params.set('ticket', ticket);
+		// 会话级工作区声明(绝对路径;声明优先,服务端能力边界根跟随)
+		if (this.workspace) params.set('workspace', this.workspace);
 		return `${wsBase}/api/sessions/${encodeURIComponent(this._sessionId)}/ws?${params.toString()}`;
 	}
 

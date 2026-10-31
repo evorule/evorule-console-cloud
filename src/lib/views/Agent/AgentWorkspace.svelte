@@ -51,6 +51,76 @@
   /** 倒计时环形 SVG 周长(r=12) */
   const APPROVAL_RING_C = 2 * Math.PI * 12;
 
+  // ---- 工作文件夹(会话级声明;记忆=localStorage 单源,客户偏好逐步形成) ----
+  /** 偏好记忆 key(与 agent-sessions 同前缀风格;webview 持久 profile 跨重启存活) */
+  const WORKSPACE_PREF_KEY = "evorule-console-cloud:agent-workspace";
+  /** 读取偏好记忆(空串=未设置,走服务端缺省) */
+  function readWorkspacePref(): string {
+    try {
+      return localStorage.getItem(WORKSPACE_PREF_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  }
+  let wsPref = $state(readWorkspacePref());
+  /** 服务端缺省落点(GET /workspace-info;展示用——未声明偏好时的实际生效值) */
+  let wsDefaultPath = $state<string | null>(null);
+  let wsEditing = $state(false);
+  let wsDraft = $state("");
+  /** 绝对路径轻校验:Windows 盘符(D:\…)或 UNC(\\…)——服务端只收绝对路径,此处为 UX 兜底 */
+  const wsValid = $derived(
+    /^[A-Za-z]:[\\/]/.test(wsDraft.trim()) || /^\\\\/.test(wsDraft.trim())
+  );
+  /** 指示器显示:偏好值 > 服务端缺省 > 未知兜底 */
+  const wsDisplay = $derived(
+    wsPref || wsDefaultPath || t("agent.ws.default")
+  );
+
+  /** 拉取服务端缺省落点(只读;失败静默走兜底文案,不阻塞工作区) */
+  $effect(() => {
+    if (!enabled || !configured || !cfg.baseUrl) return;
+    const url = `${cfg.baseUrl.replace(/\/$/, "")}/api/workspace-info`;
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (cfg.authToken) headers.Authorization = `Bearer ${cfg.authToken}`;
+    fetch(url, { headers })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((v: { workspace_root?: string }) => {
+        if (typeof v.workspace_root === "string" && v.workspace_root) {
+          wsDefaultPath = v.workspace_root;
+        }
+      })
+      .catch(() => {
+        /* 查询失败:显示兜底文案,不改行为 */
+      });
+  });
+
+  /** 应用偏好:记忆落 localStorage;生效语义=新会话(ensureConnected 携带声明) */
+  function applyWs(): void {
+    const v = wsDraft.trim();
+    if (!wsValid) return;
+    wsPref = v;
+    try {
+      localStorage.setItem(WORKSPACE_PREF_KEY, v);
+    } catch {
+      /* 记忆失败不阻断本次会话生效 */
+    }
+    wsEditing = false;
+  }
+  /** 恢复默认:清记忆(下次会话回落服务端缺省) */
+  function resetWs(): void {
+    wsPref = "";
+    try {
+      localStorage.removeItem(WORKSPACE_PREF_KEY);
+    } catch {
+      /* 同上 */
+    }
+    wsEditing = false;
+  }
+  function openWsEdit(): void {
+    wsDraft = wsPref;
+    wsEditing = true;
+  }
+
   /** 测试注入缝:缺省真实客户端,组件测试注入桩(连接层行为在客户端单测覆盖) */
   type ClientLike = Pick<AgentClient, "connect" | "send" | "interrupt" | "rewind" | "approve" | "close">;
   interface Props {
@@ -675,6 +745,11 @@
       agentType: s.role,
       authToken: cfg.authToken,
       sessionId: resumePending ? s.sessionId : undefined,
+      // 会话级工作区声明只随新会话送达:服务端每轮 fresh 重建 runner 且声明
+      // 优先——续接若也声明,偏好变更会把旧会话新轮次撕裂到新边界(checkpoint
+      // 链随根分叉)。续接不声明 → 回落服务端缺省 = 会话建立时的实际落点
+      // (已知边缘:建立后续接之间改了壳级偏好会漂移;生效语义=仅新会话)
+      workspace: resumePending ? undefined : wsPref || undefined,
       onEvent: handleEvent,
       onStatus: handleStatus
     });
@@ -837,9 +912,39 @@
 
       <div class="sec">
         <b>{t("agent.workspace")}</b>
-        <span class="ptag">P2</span>
+        <button class="mini" type="button" onclick={openWsEdit}>{t("agent.ws.edit")}</button>
       </div>
-      <div class="hint-line dim">{t("agent.workspacePending")}</div>
+      <div class="ws-item" title={wsDisplay}>
+        <span class="ws-path">{wsDisplay}</span>
+      </div>
+      {#if wsEditing}
+        <div class="ws-edit">
+          <input
+            class="ws-input"
+            type="text"
+            bind:value={wsDraft}
+            placeholder={t("agent.ws.placeholder")}
+            spellcheck="false"
+            onkeydown={(e) => {
+              if (e.key === "Enter" && wsValid) applyWs();
+              if (e.key === "Escape") wsEditing = false;
+            }}
+          />
+          {#if wsDraft.trim() && !wsValid}
+            <p class="ws-err">{t("agent.ws.invalid")}</p>
+          {/if}
+          <div class="ws-acts">
+            <button class="ws-btn-pri" type="button" disabled={!wsValid} onclick={applyWs}>
+              {t("agent.ws.apply")}
+            </button>
+            <button class="ws-btn-sec" type="button" onclick={resetWs}>{t("agent.ws.reset")}</button>
+            <button class="ws-btn-sec" type="button" onclick={() => (wsEditing = false)}>
+              {t("agent.ws.cancel")}
+            </button>
+          </div>
+          <p class="ws-hint">{t("agent.ws.hint")}</p>
+        </div>
+      {/if}
     </aside>
 
     <!-- ===== 中栏:执行过程视图 ===== -->
@@ -1184,14 +1289,6 @@
   .roles-sec {
     margin-top: var(--sp-sm);
   }
-  .ptag {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: var(--r-full);
-    padding: 2px var(--sp-xs);
-  }
   .mini {
     font-size: 11px;
     font-weight: var(--fw-med);
@@ -1216,7 +1313,90 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .hint-line.dim {
+  /* --- 工作文件夹指示器+编辑面板(会话级声明;复用既有 token,无自造色) --- */
+  .ws-item {
+    padding: var(--sp-xxs) var(--sp-xs);
+  }
+  .ws-path {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 14px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ws-edit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-xs);
+    padding: var(--sp-xs);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--bg-card);
+    margin: 0 var(--sp-xxs);
+  }
+  .ws-input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 14px;
+    padding: var(--sp-xxs) var(--sp-xs);
+  }
+  .ws-input::placeholder {
+    color: var(--text-muted);
+  }
+  .ws-err {
+    margin: 0;
+    font-size: 10px;
+    line-height: 14px;
+    color: var(--danger);
+  }
+  .ws-acts {
+    display: flex;
+    gap: var(--sp-xxs);
+    flex-wrap: wrap;
+  }
+  .ws-btn-pri {
+    font-size: 10px;
+    font-weight: var(--fw-med);
+    color: #ffffff;
+    background: var(--brand);
+    border: none;
+    border-radius: var(--r-sm);
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  .ws-btn-pri:hover:not(:disabled) {
+    background: var(--brand-hover);
+  }
+  .ws-btn-pri:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .ws-btn-sec {
+    font-size: 10px;
+    font-weight: var(--fw-med);
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  .ws-btn-sec:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+  .ws-hint {
+    margin: 0;
+    font-size: 10px;
+    line-height: 14px;
     color: var(--text-muted);
   }
 
