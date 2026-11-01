@@ -2,7 +2,7 @@
 
 本文档记录 evorule-console-cloud 所有版本变更。
 
-> **发版治理规则**：大众版开发完成后**不立即发版**，必须经过反复人工测试，才 tag v0.1.0 + push 到 Gitee 公开仓。开发期（Phase 1-7）本地 commit 保留版本控制，**不 push** 到 Gitee。
+> **发版治理规则**：大众版开发完成后**不立即发版**，必须经过反复人工测试，才 tag v0.1.0 + push 到 GitHub 公开仓。开发期（Phase 1-7）本地 commit 保留版本控制，**不 push** 到 GitHub。
 
 ---
 

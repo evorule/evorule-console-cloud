@@ -30,12 +30,12 @@ import { base } from "$app/paths";
 
   function jumpDocs(path: string) {
     // docs/ 下的文件是 markdown,跳到 GitHub 仓
-    const url = `https://gitee.com/evorule/evorule-console-cloud/blob/main/${path}`;
+    const url = `https://github.com/evorule/evorule-console-cloud/blob/main/${path}`;
     window.open(url, "_blank", "noopener");
   }
 
   function openFeedback() {
-    const url = "https://gitee.com/evorule/evorule-console-cloud/issues";
+    const url = "https://github.com/evorule/evorule-console-cloud/issues";
     window.open(url, "_blank", "noopener");
   }
 
@@ -160,7 +160,7 @@ import { base } from "$app/paths";
       <ul>
         <li>
           <button class="link-btn" onclick={openFeedback}>
-            Gitee Issues
+            GitHub Issues
           </button>
           — 提交问题/建议(推荐,可跟踪处理进度)
         </li>
@@ -168,7 +168,7 @@ import { base } from "$app/paths";
           <button class="link-btn" onclick={openMail}>
             evorulelab@gmail.com
           </button>
-          — 邮件反馈(离线环境或不想注册 Gitee 时用)
+          — 邮件反馈(离线环境或不想注册 GitHub 时用)
         </li>
       </ul>
       <p class="feedback-note">

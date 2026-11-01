@@ -23,7 +23,7 @@
 **版本**：0.1.0
 **最后更新**：2026-08-03
 
-> evorule-console-cloud 是 [evorule-console](https://gitee.com/evorule/evorule-console) 内核的衍生产品，定位为**二次开发者专业起点**（联网 + 云 LLM）。本文档仅约束本仓；EvoRule 项目级原则见各仓自身的贡献指南。
+> evorule-console-cloud 是 [evorule-console](https://github.com/evorule/evorule-console) 内核的衍生产品，定位为**二次开发者专业起点**（联网 + 云 LLM）。本文档仅约束本仓；EvoRule 项目级原则见各仓自身的贡献指南。
 
 ---
 
@@ -88,7 +88,7 @@
 
 ## 🐛 报告 Bug
 
-使用 [Gitee Issues](https://gitee.com/evorule/evorule-console-cloud/issues)。
+使用 [GitHub Issues](https://github.com/evorule/evorule-console-cloud/issues)。
 
 **报告模板**：
 
@@ -141,7 +141,7 @@
 
 ### 工作流
 
-1. **Fork 本仓** → 在你的 Gitee 账号下创建 fork
+1. **Fork 本仓** → 在你的 GitHub 账号下创建 fork
 2. **建分支**：`git checkout -b feature/your-feature-name`
 3. **写代码 + 写测试** — 覆盖率不得下降
 4. **本地验证**（必须全部通过）：
@@ -155,7 +155,7 @@
    ```
 
 5. **推送**：`git push origin feature/your-feature-name`
-6. **提 PR** 到 Gitee，填写 PR 模板
+6. **提 PR** 到 GitHub，填写 PR 模板
 7. **签 CLA**（见下文）
 8. **等 review** — 维护者 7 天内回复
 
@@ -291,9 +291,9 @@ test(e2e): add apiKey security verification case
 
 ## 联系
 
-- **Gitee Issues**：<https://gitee.com/evorule/evorule-console-cloud/issues>
+- **GitHub Issues**：<https://github.com/evorule/evorule-console-cloud/issues>
 - **邮箱**：<evorulelab@gmail.com>
-- **组织**：[EvoRule](https://gitee.com/evorule)
+- **组织**：[EvoRule](https://github.com/evorule)
 
 ---
 

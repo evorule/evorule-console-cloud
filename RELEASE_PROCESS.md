@@ -28,7 +28,7 @@
 ## 发版治理原则
 
 >
-| 阶段 | 版本号 | Gitee 状态 | 说明 |
+| 阶段 | 版本号 | GitHub 状态 | 说明 |
 | --- | --- | --- | --- |
 | 开发期（Phase 1-7）| `0.0.x` | 本地 commit，**不 push** | 功能开发 + 自动化测试 |
 | 人工测试期 | `0.0.x` | 本地 commit，**不 push** | 项目方人工验收 + 修复回归 |
@@ -136,25 +136,25 @@ git commit -m "release(cloud): v0.1.0 联网大众版首发
 git tag -a v0.1.0 -m "evorule-console-cloud v0.1.0 联网大众版首发"
 ```
 
-### 步骤 7：push 到 Gitee 公开仓
+### 步骤 7：push 到 GitHub 公开仓
 
 ```bash
-git remote add origin https://gitee.com/evorule/evorule-console-cloud.git
+git remote add origin https://github.com/evorule/evorule-console-cloud.git
 git push -u origin main
 git push origin v0.1.0
 ```
 
 ### 步骤 8：发布后验证
 
-- [ ] Gitee 页面显示完整文件列表
-- [ ] tag v0.1.0 在 Gitee Releases 显示
+- [ ] GitHub 页面显示完整文件列表
+- [ ] tag v0.1.0 在 GitHub Releases 显示
 - [ ] `npm install` 从 git URL 拉取成功（在新环境验证）
 - [ ] README 徽章显示正确版本
 - [ ] CHANGELOG 显示 v0.1.0 发版日期
 
 ### 步骤 9：发布后工作
 
-- 在 Gitee 创建 v0.1.0 Release（附 CHANGELOG 摘要）
+- 在 GitHub 创建 v0.1.0 Release（附 CHANGELOG 摘要）
 - 更新本仓的“下个版本规划”（v0.2.0 L2 本地 LLM 等）
 
 ---
@@ -187,7 +187,7 @@ v0.1.0 不含 L2 本地 LLM。L2 作为付费扩展，规划在 v0.2.0+ 实施�
 
 - **发版决策**：项目维护者
 - **技术执行**：维护者
-- **Gitee Issues**：<https://gitee.com/evorule/evorule-console-cloud/issues>
+- **GitHub Issues**：<https://github.com/evorule/evorule-console-cloud/issues>
 - **邮箱**：<evorulelab@gmail.com>
 
 ---
