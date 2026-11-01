@@ -77,7 +77,7 @@ jobs:
           | 字段 | 值 |
           |---|---|
           | 发布 tag | v@@VER@@ |
-          | 源码仓库（权威源） | <https://gitee.com/evorule/evorule-console-cloud> |
+          | 源码仓库（权威源） | <https://github.com/evorule/evorule-console-cloud> |
           | 源码仓库（GitHub 镜像） | <https://github.com/evorule/evorule-console-cloud> |
           | 源码 tarball | `evorule-console-cloud-@@VER@@-source.tar.gz`（随本 Release 附件分发） |
           | 源码 tarball SHA256 | `@@SHA@@` |

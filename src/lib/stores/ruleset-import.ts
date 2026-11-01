@@ -196,7 +196,7 @@ export async function buildDjbhRulesetPackage(): Promise<RulesetPackage> {
 			level: 3,
 			author: "EvoRule Project",
 			license: "AGPL-3.0-or-later",
-			repository: "https://gitee.com/evorule/evorule-rules",
+			repository: "https://github.com/evorule/evorule-system-rules",
 			createdAt: "2026-08-01T00:00:00.000Z",
 			updatedAt: now,
 			tags: ["djbh", "level3", "gate", "compliance"],

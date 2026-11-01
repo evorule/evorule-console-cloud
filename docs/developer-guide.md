@@ -223,7 +223,7 @@ bundle 导入后只对**新会话**生效；老会话不回放新规则。验证
 
 ## 九、Agent 会话台（evo-agent 接入）
 
-「Agent 会话台」（侧栏 → Agent）把 evo-agent（[gitee.com/evorule/evo-agent](https://gitee.com/evorule/evo-agent)）的 ReAct 执行流接进控制台：三栏布局（会话列表 ｜ 执行时间线 ｜ 对话流），支持流式对话、工具调用时间线、高危操作审批（60s 倒计时）、轮次中断与版本回滚，并提供到审计页的会话深链。协议细节以 evo-agent 仓 `API.md` §6 为准。
+「Agent 会话台」（侧栏 → Agent）把 evo-agent（[github.com/evorule/evo-agent](https://github.com/evorule/evo-agent)）的 ReAct 执行流接进控制台：三栏布局（会话列表 ｜ 执行时间线 ｜ 对话流），支持流式对话、工具调用时间线、高危操作审批（60s 倒计时）、轮次中断与版本回滚，并提供到审计页的会话深链。协议细节以 evo-agent 仓 `API.md` §6 为准。
 
 ### 启用与连接
 

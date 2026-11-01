@@ -3,7 +3,7 @@
 // kernel/ — evorule-console 内核快照（v0.1.1 依赖闭包子集，2026-08-27 内联）
 //
 // 来源与边界：
-//   - 本目录是从 evorule-console（gitee.com/evo-rule-lab/evorule-console）
+//   - 本目录是从 evorule-console（github.com/evorule/evorule-console）
 //     复制而来的**快照**，仅包含本仓实际使用的依赖闭包。
 //   - 快照后本仓不再依赖 @evorule/console npm 包，独立演进。
 //     内核仓后续修复不会自动同步到本目录；反向亦然。

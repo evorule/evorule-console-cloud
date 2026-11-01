@@ -90,7 +90,7 @@
   </div>
 
   <h2>还有问题?</h2>
-  <p>看 <a href="https://gitee.com/evorule/evorule-console-cloud/issues" target="_blank" rel="noopener">Issues</a> 或直接看仓根目录 <code>docs/</code>(完整文档,本页面只是摘要)。</p>
+  <p>看 <a href="https://github.com/evorule/evorule-console-cloud/issues" target="_blank" rel="noopener">Issues</a> 或直接看仓根目录 <code>docs/</code>(完整文档,本页面只是摘要)。</p>
 </div>
 
 <style>
