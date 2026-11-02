@@ -77,14 +77,13 @@ jobs:
           | 字段 | 值 |
           |---|---|
           | 发布 tag | v@@VER@@ |
-          | 源码仓库（权威源） | <https://github.com/evorule/evorule-console-cloud> |
-          | 源码仓库（GitHub 镜像） | <https://github.com/evorule/evorule-console-cloud> |
+          | 源码仓库 | <https://github.com/evorule/evorule-console-cloud> |
           | 源码 tarball | `evorule-console-cloud-@@VER@@-source.tar.gz`（随本 Release 附件分发） |
           | 源码 tarball SHA256 | `@@SHA@@` |
 
           ## 获取与校验方式
 
-          1. `git clone` 上表任一仓库，`git checkout v@@VER@@`
+          1. `git clone` 上表仓库，`git checkout v@@VER@@`
           2. 复现归档：`git archive --format=tar.gz --prefix=evorule-console-cloud-@@VER@@/ -o evorule-console-cloud-@@VER@@-source.tar.gz HEAD`
           3. 计算 SHA256 并与上表值比对（同一记录亦在随 Release 发布的 `sha256-checks.txt` 中）
 
